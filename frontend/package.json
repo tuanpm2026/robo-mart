@@ -1,0 +1,10 @@
+{
+  "name": "robo-mart-frontend",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "customer-website",
+    "admin-dashboard"
+  ]
+}

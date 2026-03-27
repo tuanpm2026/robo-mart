@@ -1,0 +1,14 @@
+{
+  "type": "record",
+  "name": "BaseEventEnvelope",
+  "namespace": "com.robomart.events",
+  "fields": [
+    {"name": "eventId", "type": "string"},
+    {"name": "eventType", "type": "string"},
+    {"name": "aggregateId", "type": "string"},
+    {"name": "aggregateType", "type": "string"},
+    {"name": "timestamp", "type": "long", "logicalType": "timestamp-millis"},
+    {"name": "version", "type": "int"},
+    {"name": "payload", "type": "string"}
+  ]
+}
