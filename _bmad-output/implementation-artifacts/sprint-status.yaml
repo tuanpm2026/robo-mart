@@ -1,0 +1,128 @@
+# generated: 2026-03-27
+# last_updated: 2026-03-27
+# project: robo-mart
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: {project-root}/_bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-03-27
+last_updated: 2026-03-27T09:45:00
+project: robo-mart
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
+
+development_status:
+  # Epic 1: Project Foundation & Product Discovery
+  epic-1: in-progress
+  1-1-scaffold-monorepo-minimal-development-infrastructure: ready-for-dev
+  1-2-implement-product-service-with-rest-read-api: backlog
+  1-3-implement-elasticsearch-integration-product-sync-via-outbox-pattern: backlog
+  1-4-implement-product-search-with-full-text-filtering: backlog
+  1-5-implement-graphql-product-endpoint: backlog
+  1-6-setup-customer-website-foundation-design-system: backlog
+  1-7-implement-customer-product-browsing-search-ui: backlog
+  epic-1-retrospective: optional
+
+  # Epic 2: Shopping Cart Experience
+  epic-2: backlog
+  2-1-add-redis-to-infrastructure-implement-cart-service-core: backlog
+  2-2-implement-cart-persistence-ttl-expiry: backlog
+  2-3-implement-redis-caching-with-event-driven-invalidation: backlog
+  2-4-implement-customer-cart-ui: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: User Authentication & Authorization
+  epic-3: backlog
+  3-1-add-keycloak-api-gateway-infrastructure: backlog
+  3-2-implement-customer-registration-login: backlog
+  3-3-implement-api-gateway-jwt-validation-rbac: backlog
+  3-4-implement-anonymous-cart-merge-on-login: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Order Processing & Distributed Transactions
+  epic-4: backlog
+  4-1-add-order-infrastructure-services-databases-grpc: backlog
+  4-2-implement-inventory-service-with-distributed-locking: backlog
+  4-3-implement-payment-service-with-idempotency-retry: backlog
+  4-4-implement-order-saga-orchestrator-phase-a-core-flow: backlog
+  4-5-implement-order-cancellation-with-saga-compensation: backlog
+  4-6-implement-customer-order-tracking-ui: backlog
+  4-7-implement-customer-checkout-flow-ui: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: Admin Product & Inventory Management
+  epic-5: backlog
+  5-1-setup-admin-dashboard-foundation-design-system: backlog
+  5-2-implement-admin-product-crud: backlog
+  5-3-implement-product-image-upload: backlog
+  5-4-implement-admin-inventory-management: backlog
+  5-5-implement-admin-order-management: backlog
+  epic-5-retrospective: optional
+
+  # Epic 6: Notifications & Event-Driven Communication
+  epic-6: backlog
+  6-1-implement-notification-service-core-order-notifications: backlog
+  6-2-implement-low-stock-alerts-cart-expiry-notifications: backlog
+  6-3-implement-dead-letter-queue-for-failed-events: backlog
+  epic-6-retrospective: optional
+
+  # Epic 7: Admin Real-Time Dashboard & Reporting
+  epic-7: backlog
+  7-1-implement-websocket-real-time-event-feed: backlog
+  7-2-implement-admin-dashboard-overview-with-metrics: backlog
+  7-3-implement-cqrs-reporting-dlq-management: backlog
+  7-4-implement-system-health-monitoring: backlog
+  epic-7-retrospective: optional
+
+  # Epic 8: System Resilience & Graceful Degradation
+  epic-8: backlog
+  8-1-implement-circuit-breaker-resilience-patterns: backlog
+  8-2-implement-graceful-degradation-3-tiers: backlog
+  8-3-implement-rate-limiting-graceful-shutdown: backlog
+  8-4-implement-saga-phase-b-hardened-orchestration: backlog
+  epic-8-retrospective: optional
+
+  # Epic 9: Observability & Operations
+  epic-9: backlog
+  9-1-implement-distributed-tracing-correlation-id-propagation: backlog
+  9-2-implement-health-checks-centralized-configuration: backlog
+  9-3-implement-service-discovery-reconciliation-audit-trail: backlog
+  epic-9-retrospective: optional
+
+  # Epic 10: Comprehensive Testing & Quality Assurance
+  epic-10: backlog
+  10-1-implement-test-support-module-unit-test-foundation: backlog
+  10-2-implement-integration-contract-tests: backlog
+  10-3-implement-e2e-performance-chaos-tests: backlog
+  10-4-implement-ci-cd-pipelines-quality-gates: backlog
+  epic-10-retrospective: optional

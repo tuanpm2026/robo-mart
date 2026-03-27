@@ -1,0 +1,40 @@
+# === IDE ===
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Java / Maven ===
+target/
+*.class
+*.jar
+*.war
+*.ear
+!.mvn/wrapper/maven-wrapper.jar
+
+# === Node.js ===
+node_modules/
+dist/
+.nuxt/
+.output/
+
+# === Environment ===
+.env
+.env.*
+!.env.example
+
+# === Logs ===
+*.log
+logs/
+
+# === Docker ===
+docker-compose.override.yml
+
+# === Claude Code ===
+.claude/projects/
