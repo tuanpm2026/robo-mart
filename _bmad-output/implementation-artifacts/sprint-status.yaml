@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-27
-last_updated: 2026-03-28T19:30:00+07:00
+last_updated: 2026-03-28T20:12:00+07:00
 project: robo-mart
 project_key: NOKEY
 tracking_system: file-system
@@ -48,8 +48,8 @@ development_status:
   1-2-implement-product-service-with-rest-read-api: done
   1-3-implement-elasticsearch-integration-product-sync-via-outbox-pattern: done
   1-4-implement-product-search-with-full-text-filtering: done
-  1-5-implement-graphql-product-endpoint: backlog
-  1-6-setup-customer-website-foundation-design-system: backlog
+  1-5-implement-graphql-product-endpoint: done
+  1-6-setup-customer-website-foundation-design-system: done
   1-7-implement-customer-product-browsing-search-ui: backlog
   epic-1-retrospective: optional
 

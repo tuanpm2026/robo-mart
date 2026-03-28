@@ -20,3 +20,15 @@
 - **No relevance ranking test**: AC #1 specifies relevance ranking with name boost x3 > brand boost x2, but no test verifies ordering.
 - **No performance test for 500ms p95 SLA**: AC #6 requires search p95 < 500ms but no load testing artifact exists.
 - **Sort parameters from Pageable not validated**: Sort params from query string are passed directly to ES without whitelisting. Invalid sort fields could cause ES errors.
+
+## Deferred from: code review of 1-5-implement-graphql-product-endpoint (2026-03-28)
+
+- **ProductConnection.totalElements uses int cast from long**: `(int) searchResult.pagination().totalElements()` could overflow for >2.1B products. Use Long in ProductConnection DTO for correctness. Low risk at current scale.
+- **Stale ES data causes totalElements mismatch**: Products deleted between Elasticsearch search and PostgreSQL fetch are silently dropped from results, causing totalElements to be higher than actual content count. Same eventual consistency gap as REST search endpoint.
+- **Schema field name `imageUrl` vs AC example `url`**: GraphQL schema uses `imageUrl` (matching entity field), but AC example shows `url`. The AC is illustrative; `imageUrl` is the correct naming.
+- **No explicit GraphQL error handling**: No custom DataFetcherExceptionResolver or @GraphQLExceptionHandler. Spring for GraphQL's default handler wraps exceptions into GraphQL error format. Explicit handling deferred to Epic 8 (resilience).
+
+## Deferred from: code review of 1-6-setup-customer-website-foundation-design-system (2026-03-28)
+
+- **Focus management on route navigation**: After route change, focus should move to `#main-content` for screen reader / keyboard-only users. Add `router.afterEach` hook. Deferred — future story or Epic 8 accessibility hardening scope.
+- **Router error boundary / onError handler**: No error handling for component import failures or navigation errors. Add `router.onError()` and async component error boundaries. Deferred — Epic 8 resilience scope.
