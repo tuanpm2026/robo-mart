@@ -1,0 +1,49 @@
+type Query {
+    product(id: ID!): Product
+    products(
+        categoryId: ID
+        minPrice: Float
+        maxPrice: Float
+        keyword: String
+        brand: String
+        minRating: Float
+        page: Int = 0
+        size: Int = 20
+    ): ProductConnection!
+}
+
+type Product {
+    id: ID!
+    sku: String!
+    name: String!
+    description: String
+    price: Float!
+    rating: Float
+    brand: String
+    stockQuantity: Int!
+    category: Category!
+    images: [ProductImage!]!
+    createdAt: String
+    updatedAt: String
+}
+
+type Category {
+    id: ID!
+    name: String!
+    description: String
+}
+
+type ProductImage {
+    id: ID!
+    imageUrl: String!
+    altText: String
+    displayOrder: Int!
+}
+
+type ProductConnection {
+    content: [Product!]!
+    totalElements: Int!
+    totalPages: Int!
+    page: Int!
+    size: Int!
+}
