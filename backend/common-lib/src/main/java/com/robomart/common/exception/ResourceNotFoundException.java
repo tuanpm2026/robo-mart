@@ -12,4 +12,8 @@ public class ResourceNotFoundException extends RoboMartException {
         super(ErrorCode.RESOURCE_NOT_FOUND,
                 String.format("%s not found with id: %s", resourceType, id));
     }
+
+    protected ResourceNotFoundException(ErrorCode errorCode, String message) {
+        super(errorCode, message);
+    }
 }
