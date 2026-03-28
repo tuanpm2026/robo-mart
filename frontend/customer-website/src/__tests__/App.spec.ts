@@ -1,9 +1,14 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
+import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config'
 import ToastService from 'primevue/toastservice'
 import App from '../App.vue'
+
+vi.mock('@/api/productApi', () => ({
+  searchProducts: vi.fn().mockResolvedValue({ data: [], pagination: { page: 0, size: 5, totalElements: 0, totalPages: 0 }, traceId: '' }),
+}))
 
 function createTestRouter() {
   return createRouter({
@@ -15,12 +20,13 @@ function createTestRouter() {
 describe('App', () => {
   it('should render skip-to-main-content link', async () => {
     const router = createTestRouter()
+    const pinia = createPinia()
     await router.push('/')
     await router.isReady()
 
     const wrapper = mount(App, {
       global: {
-        plugins: [router, PrimeVue, ToastService],
+        plugins: [router, pinia, PrimeVue, ToastService],
       },
     })
 
@@ -32,12 +38,13 @@ describe('App', () => {
 
   it('should render Toast component', async () => {
     const router = createTestRouter()
+    const pinia = createPinia()
     await router.push('/')
     await router.isReady()
 
     const wrapper = mount(App, {
       global: {
-        plugins: [router, PrimeVue, ToastService],
+        plugins: [router, pinia, PrimeVue, ToastService],
       },
     })
 
@@ -46,12 +53,13 @@ describe('App', () => {
 
   it('should render DefaultLayout', async () => {
     const router = createTestRouter()
+    const pinia = createPinia()
     await router.push('/')
     await router.isReady()
 
     const wrapper = mount(App, {
       global: {
-        plugins: [router, PrimeVue, ToastService],
+        plugins: [router, pinia, PrimeVue, ToastService],
       },
     })
 

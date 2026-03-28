@@ -1,5 +1,21 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
+import { RouterView, RouterLink, useRoute } from 'vue-router'
+import SearchBar from '@/components/product/SearchBar.vue'
+import { useCategoryStore } from '@/stores/useCategoryStore'
+
+const categoryStore = useCategoryStore()
+const route = useRoute()
+
+function onCategoryClick(categoryId: number | null) {
+  categoryStore.selectCategory(categoryId)
+}
+
+function isCategoryActive(categoryId: number | null): boolean {
+  if (categoryId === null) {
+    return !route.query.categoryId
+  }
+  return String(route.query.categoryId) === String(categoryId)
+}
 </script>
 
 <template>
@@ -12,22 +28,7 @@ import { RouterView } from 'vue-router'
           </RouterLink>
         </div>
 
-        <div class="header__search">
-          <div class="header__search-placeholder" aria-label="Search products">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
-              fill="none"
-              aria-hidden="true"
-              class="header__search-icon"
-            >
-              <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="2" />
-              <path d="M13.5 13.5L17 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-            </svg>
-            <span>Search products...</span>
-          </div>
-        </div>
+        <SearchBar />
 
         <div class="header__actions">
           <button class="header__cart-btn" type="button" aria-label="Shopping cart, 0 items">
@@ -87,7 +88,24 @@ import { RouterView } from 'vue-router'
 
     <nav class="category-nav" aria-label="Product categories">
       <div class="category-nav__inner">
-        <span class="category-nav__placeholder">Categories will appear here</span>
+        <RouterLink
+          to="/"
+          class="category-nav__link"
+          :class="{ 'category-nav__link--active': isCategoryActive(null) }"
+          @click="onCategoryClick(null)"
+        >
+          All
+        </RouterLink>
+        <RouterLink
+          v-for="category in categoryStore.categories"
+          :key="category.id"
+          :to="{ path: '/', query: { categoryId: category.id } }"
+          class="category-nav__link"
+          :class="{ 'category-nav__link--active': isCategoryActive(category.id) }"
+          @click="onCategoryClick(category.id)"
+        >
+          {{ category.name }}
+        </RouterLink>
       </div>
     </nav>
 
@@ -138,27 +156,6 @@ import { RouterView } from 'vue-router'
   letter-spacing: -0.5px;
 }
 
-.header__search {
-  flex: 1;
-  max-width: 600px;
-}
-
-.header__search-placeholder {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  border: 1px solid var(--color-gray-200);
-  border-radius: 8px;
-  color: var(--color-gray-400);
-  font-size: 14px;
-  cursor: text;
-}
-
-.header__search-icon {
-  flex-shrink: 0;
-}
-
 .header__actions {
   display: flex;
   align-items: center;
@@ -196,15 +193,35 @@ import { RouterView } from 'vue-router'
 .category-nav__inner {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 8px;
   max-width: 1280px;
   margin: 0 auto;
   padding: 8px 24px;
+  overflow-x: auto;
 }
 
-.category-nav__placeholder {
+.category-nav__link {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 16px;
   font-size: 14px;
-  color: var(--color-gray-400);
+  font-weight: 500;
+  color: var(--color-gray-600);
+  text-decoration: none;
+  border-radius: 20px;
+  white-space: nowrap;
+  transition: background-color 200ms, color 200ms;
+}
+
+.category-nav__link:hover {
+  background: var(--color-gray-100);
+  color: var(--color-gray-900);
+}
+
+.category-nav__link--active {
+  background: var(--color-primary-50);
+  color: var(--color-primary-600);
+  font-weight: 600;
 }
 
 .main-content {
@@ -231,7 +248,8 @@ import { RouterView } from 'vue-router'
 
 @media (prefers-reduced-motion: reduce) {
   .header__cart-btn,
-  .header__user-btn {
+  .header__user-btn,
+  .category-nav__link {
     transition: none;
   }
 }

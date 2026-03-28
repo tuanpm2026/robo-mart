@@ -18,6 +18,7 @@
   "dependencies": {
     "@fontsource/inter": "^5.2.8",
     "@primevue/themes": "^4.5.4",
+    "axios": "^1.14.0",
     "pinia": "^3.0.4",
     "primevue": "^4.5.4",
     "vue": "^3.5.30",

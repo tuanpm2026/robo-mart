@@ -32,3 +32,9 @@
 
 - **Focus management on route navigation**: After route change, focus should move to `#main-content` for screen reader / keyboard-only users. Add `router.afterEach` hook. Deferred — future story or Epic 8 accessibility hardening scope.
 - **Router error boundary / onError handler**: No error handling for component import failures or navigation errors. Add `router.onError()` and async component error boundaries. Deferred — Epic 8 resilience scope.
+
+## Deferred from: code review of 1-7-implement-customer-product-browsing-search-ui (2026-03-28)
+
+- **Search results uses plain div grid instead of PrimeVue DataView**: AC #4 mentions DataView but implementation uses CSS grid — functionally equivalent. Consider using DataView for built-in list/grid toggle if needed later.
+- **No request cancellation on rapid navigation**: Category clicks and product navigation don't cancel in-flight API requests. Add AbortController to API client or use watchEffect with cleanup for request cancellation.
+- **Hardcoded price slider max ($1000)**: FilterSidebar price range is capped at $1000. Should derive max from actual product data or make configurable.
