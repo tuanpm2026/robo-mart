@@ -11,3 +11,12 @@
 - **Consumer idempotency via eventId not implemented**: Task 7.5 specifies eventId-based dedup, but ES save by product ID is inherently idempotent (same ID overwrites). EventId dedup needed only if side effects beyond indexing are added.
 - **Auto-register schemas should be disabled in production**: `auto.register.schemas=true` is convenient for dev but should be `false` in production to prevent accidental schema mutations.
 - **Corrupt events retry forever without retry count limit**: Unpublished events that fail to serialize/publish are retried every second indefinitely. Needs a `retry_count` column or max-retry mechanism to skip permanently broken events.
+
+## Deferred from: code review of 1-4-implement-product-search-with-full-text-filtering (2026-03-28)
+
+- **GlobalExceptionHandler missing HandlerMethodValidationException handler**: Validation errors from @ModelAttribute @Valid may return 500 instead of 400 in Spring Framework 7. Need to add handler for HandlerMethodValidationException.
+- **No error handling when Elasticsearch is unavailable**: ProductSearchService.search() does not catch ES connection errors. Should wrap in try-catch and throw ExternalServiceException (503) or implement circuit breaker (Epic 8 scope).
+- **No sort for match_all queries**: When no keyword is provided, match_all returns results in non-deterministic order, which can cause inconsistent pagination.
+- **No relevance ranking test**: AC #1 specifies relevance ranking with name boost x3 > brand boost x2, but no test verifies ordering.
+- **No performance test for 500ms p95 SLA**: AC #6 requires search p95 < 500ms but no load testing artifact exists.
+- **Sort parameters from Pageable not validated**: Sort params from query string are passed directly to ES without whitelisting. Invalid sort fields could cause ES errors.
