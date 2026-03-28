@@ -1,0 +1,23 @@
+{
+  "type": "record",
+  "name": "ProductUpdatedEvent",
+  "namespace": "com.robomart.events.product",
+  "fields": [
+    {"name": "eventId", "type": "string"},
+    {"name": "eventType", "type": "string"},
+    {"name": "aggregateId", "type": "string"},
+    {"name": "aggregateType", "type": "string"},
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "version", "type": "int"},
+    {"name": "productId", "type": "long"},
+    {"name": "sku", "type": "string"},
+    {"name": "name", "type": "string"},
+    {"name": "description", "type": ["null", "string"], "default": null},
+    {"name": "price", "type": "string"},
+    {"name": "categoryId", "type": "long"},
+    {"name": "categoryName", "type": "string"},
+    {"name": "brand", "type": ["null", "string"], "default": null},
+    {"name": "rating", "type": ["null", "string"], "default": null},
+    {"name": "stockQuantity", "type": "int"}
+  ]
+}
