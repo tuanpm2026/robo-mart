@@ -41,6 +41,7 @@
         <module>events</module>
         <module>test-support</module>
         <module>product-service</module>
+        <module>cart-service</module>
     </modules>
 
     <dependencyManagement>

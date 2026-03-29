@@ -38,3 +38,10 @@
 - **Search results uses plain div grid instead of PrimeVue DataView**: AC #4 mentions DataView but implementation uses CSS grid — functionally equivalent. Consider using DataView for built-in list/grid toggle if needed later.
 - **No request cancellation on rapid navigation**: Category clicks and product navigation don't cancel in-flight API requests. Add AbortController to API client or use watchEffect with cleanup for request cancellation.
 - **Hardcoded price slider max ($1000)**: FilterSidebar price range is capped at $1000. Should derive max from actual product data or make configurable.
+
+## Deferred from: code review of 2-1-add-redis-to-infrastructure-implement-cart-service-core (2026-03-29)
+
+- **Race condition on read-modify-write**: CartService.addItem() reads cart, modifies in-memory, saves — no distributed locking. Concurrent adds to same cart could lose items. Needs ShedLock or Redis WATCH/MULTI or Redisson distributed lock (Epic 8 scope).
+- **No Redis authentication**: Docker Compose Redis container has no password set. Acceptable for local dev, but production deployment must configure `requirepass` and `spring.data.redis.password`.
+- **Missing Redis connection timeouts**: `application.yml` has no explicit `spring.data.redis.timeout` or `spring.data.redis.lettuce.pool` config. Add connection/command timeouts for production readiness.
+- **No Redis error handling / circuit breaker**: CartService does not catch `RedisConnectionFailureException`. Service fails with 500 when Redis is down. Wrap in circuit breaker pattern (Epic 8 scope).

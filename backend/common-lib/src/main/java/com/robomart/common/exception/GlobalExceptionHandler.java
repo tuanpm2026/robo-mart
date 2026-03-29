@@ -12,6 +12,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import com.robomart.common.dto.ApiErrorResponse;
 import com.robomart.common.dto.ErrorDetail;
@@ -61,6 +62,19 @@ public class GlobalExceptionHandler {
         Map<String, String> fieldErrors = new HashMap<>();
         ex.getBindingResult().getFieldErrors()
                 .forEach(e -> fieldErrors.put(e.getField(), e.getDefaultMessage()));
+        var error = new ErrorDetail("VALIDATION_ERROR", "Request validation failed", fieldErrors);
+        var response = new ApiErrorResponse(error, getTraceId(), Instant.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ApiErrorResponse> handleHandlerMethodValidation(HandlerMethodValidationException ex) {
+        log.warn("Handler method validation error: {}", ex.getMessage());
+        Map<String, String> fieldErrors = new HashMap<>();
+        ex.getAllValidationResults().forEach(result ->
+                result.getResolvableErrors().forEach(error ->
+                        fieldErrors.put(result.getMethodParameter().getParameterName(),
+                                error.getDefaultMessage())));
         var error = new ErrorDetail("VALIDATION_ERROR", "Request validation failed", fieldErrors);
         var response = new ApiErrorResponse(error, getTraceId(), Instant.now());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);

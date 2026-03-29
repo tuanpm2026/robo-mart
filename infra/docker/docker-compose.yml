@@ -110,6 +110,26 @@ services:
       timeout: 10s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: robomart-redis
+    profiles: ["core"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   kafka-ui:
     image: provectuslabs/kafka-ui:v0.7.2
     container_name: robomart-kafka-ui
@@ -136,3 +156,4 @@ volumes:
   postgres-data:
   elasticsearch-data:
   kafka-data:
+  redis-data:

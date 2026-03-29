@@ -13,6 +13,6 @@ import org.springframework.test.context.ActiveProfiles;
 @Retention(RetentionPolicy.RUNTIME)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Import({PostgresContainerConfig.class, KafkaContainerConfig.class, ElasticsearchContainerConfig.class})
+@Import({PostgresContainerConfig.class, KafkaContainerConfig.class, ElasticsearchContainerConfig.class, RedisContainerConfig.class})
 public @interface IntegrationTest {
 }

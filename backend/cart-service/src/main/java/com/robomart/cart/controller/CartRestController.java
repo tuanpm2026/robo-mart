@@ -1,0 +1,100 @@
+package com.robomart.cart.controller;
+
+import java.util.UUID;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.robomart.cart.dto.AddCartItemRequest;
+import com.robomart.cart.dto.CartResponse;
+import com.robomart.cart.dto.UpdateCartItemRequest;
+import com.robomart.cart.service.CartService;
+import com.robomart.common.dto.ApiResponse;
+
+import io.micrometer.tracing.Span;
+import io.micrometer.tracing.TraceContext;
+import io.micrometer.tracing.Tracer;
+import jakarta.validation.Valid;
+
+@RestController
+@RequestMapping("/api/v1/cart")
+public class CartRestController {
+
+    public static final String CART_ID_HEADER = "X-Cart-Id";
+
+    private final CartService cartService;
+    private final Tracer tracer;
+
+    public CartRestController(CartService cartService, Tracer tracer) {
+        this.cartService = cartService;
+        this.tracer = tracer;
+    }
+
+    @PostMapping("/items")
+    public ResponseEntity<ApiResponse<CartResponse>> addItem(
+            @RequestHeader(value = CART_ID_HEADER, required = false) String cartId,
+            @RequestBody @Valid AddCartItemRequest request) {
+
+        if (cartId == null || cartId.isBlank()) {
+            cartId = UUID.randomUUID().toString();
+        }
+
+        CartResponse cart = cartService.addItem(cartId, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header(CART_ID_HEADER, cart.cartId())
+                .body(new ApiResponse<>(cart, getTraceId()));
+    }
+
+    @PutMapping("/items/{productId}")
+    public ResponseEntity<ApiResponse<CartResponse>> updateItemQuantity(
+            @RequestHeader(value = CART_ID_HEADER) String cartId,
+            @PathVariable Long productId,
+            @RequestBody @Valid UpdateCartItemRequest request) {
+
+        CartResponse cart = cartService.updateItemQuantity(cartId, productId, request);
+        return ResponseEntity.ok()
+                .header(CART_ID_HEADER, cart.cartId())
+                .body(new ApiResponse<>(cart, getTraceId()));
+    }
+
+    @DeleteMapping("/items/{productId}")
+    public ResponseEntity<Void> removeItem(
+            @RequestHeader(value = CART_ID_HEADER) String cartId,
+            @PathVariable Long productId) {
+
+        cartService.removeItem(cartId, productId);
+        return ResponseEntity.noContent()
+                .header(CART_ID_HEADER, cartId)
+                .build();
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<CartResponse>> getCart(
+            @RequestHeader(value = CART_ID_HEADER) String cartId) {
+
+        CartResponse cart = cartService.getCart(cartId);
+        return ResponseEntity.ok()
+                .header(CART_ID_HEADER, cart.cartId())
+                .body(new ApiResponse<>(cart, getTraceId()));
+    }
+
+    private String getTraceId() {
+        Span currentSpan = tracer.currentSpan();
+        if (currentSpan != null) {
+            TraceContext context = currentSpan.context();
+            if (context != null) {
+                return context.traceId();
+            }
+        }
+        return "";
+    }
+}
