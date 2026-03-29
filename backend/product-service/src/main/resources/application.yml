@@ -8,6 +8,10 @@ spring:
     locations: classpath:db/migration
   elasticsearch:
     uris: http://localhost:9200
+  data:
+    redis:
+      host: localhost
+      port: 6379
   kafka:
     bootstrap-servers: localhost:29092
     properties:

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
@@ -33,6 +34,11 @@ public class ProductSearchService {
         this.tracer = tracer;
     }
 
+    @Cacheable(value = "productSearch",
+               key = "#request.keyword() + ':' + #request.categoryId() + ':' + " +
+                     "#request.brand() + ':' + #request.minPrice() + ':' + #request.maxPrice() + ':' + " +
+                     "#request.minRating() + ':' + #pageable.pageNumber + ':' + " +
+                     "T(Math).min(#pageable.pageSize, 100) + ':' + #pageable.sort")
     public PagedResponse<ProductListResponse> search(ProductSearchRequest request, Pageable pageable) {
         Pageable clampedPageable = clampPageSize(pageable);
 

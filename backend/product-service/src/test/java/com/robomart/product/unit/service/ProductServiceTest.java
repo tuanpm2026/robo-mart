@@ -125,9 +125,8 @@ class ProductServiceTest {
 
         var result = productService.getProductById(1L);
 
-        assertThat(result.data().id()).isEqualTo(1L);
-        assertThat(result.data().name()).isEqualTo("Test Product");
-        assertThat(result.traceId()).isEqualTo("test-trace-id");
+        assertThat(result.id()).isEqualTo(1L);
+        assertThat(result.name()).isEqualTo("Test Product");
     }
 
     @Test

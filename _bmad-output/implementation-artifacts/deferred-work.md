@@ -52,3 +52,14 @@
 - **No userId/cartId input validation for special characters**: `X-User-Id` and `X-Cart-Id` headers are used directly as Redis keys without sanitization. Malicious characters (newlines, control chars) could be injected. Will be handled by API Gateway input validation in Epic 3.
 - **No max length check on userId/cartId**: Extremely long header values could cause Redis memory issues. Will be enforced by API Gateway in Epic 3.
 - **Slow TTL integration tests (~150s)**: `shouldExpireCartAfterTtl` and `shouldResetTtlOnCartAccess` use Thread.sleep() for real TTL expiry verification. Consider adding `@Tag("slow")` and running only in nightly CI.
+
+## Deferred from: code review of 2-3-implement-redis-caching-with-event-driven-invalidation (2026-03-29)
+
+- **`findAll()` full cart scan on every product update**: `ProductEventConsumer.onProductUpdated()` calls `cartRepository.findAll()` which scans all carts in Redis. Accepted as MVP tech debt (low cart count). For scale, add a reverse index productId → cartIds (Epic 8 scope).
+- **Cart read-modify-write race condition during event processing**: `ProductEventConsumer` reads cart, modifies price, saves — no distributed locking. Concurrent user cart modifications could be lost. Same root cause as Story 2.1 deferred item (Epic 8 scope).
+- **No Dead Letter Topic (DLT) for failed Kafka messages**: `KafkaConsumerConfig` uses `DefaultErrorHandler` with `FixedBackOff(1000L, 3)` — after retries, failed messages are silently dropped. Need `DeadLetterPublishingRecoverer` for production (infrastructure concern).
+- **No exception handling around individual `cartRepository.save()`**: If save fails mid-loop, partial updates occur and retry processes already-saved carts again. Retry via error handler is adequate for MVP.
+- **No atomicity guarantee on multi-cart update**: Each cart saved individually without transaction. Redis doesn't support multi-key transactions. Partial updates possible on crash.
+- **Race condition between cache population and invalidation**: Classic cache-aside race — thread reads stale data from DB, preempted, another thread evicts cache, first thread stores stale data. Bounded by 5-minute TTL.
+- **Cart TTL not explicitly reset after Kafka price update**: `ProductEventConsumer` saves cart after price update but doesn't explicitly set `updatedAt` or manage TTL. Minor behavioral concern.
+- **`AUTO_OFFSET_RESET=earliest` replays historical events on first consumer group creation**: New cart-service consumer group will replay all historical product events on first deploy, each triggering a `findAll()` scan. One-time first-deploy concern.

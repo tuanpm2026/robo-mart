@@ -20,6 +20,10 @@
             <groupId>com.robomart</groupId>
             <artifactId>common-lib</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.robomart</groupId>
+            <artifactId>events</artifactId>
+        </dependency>
 
         <!-- Spring Boot -->
         <dependency>
@@ -37,6 +41,16 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- Kafka -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-avro-serializer</artifactId>
         </dependency>
 
         <!-- MapStruct -->

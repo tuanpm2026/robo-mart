@@ -2,13 +2,13 @@ package com.robomart.product.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.robomart.common.dto.ApiResponse;
 import com.robomart.common.dto.PagedResponse;
 import com.robomart.common.dto.PaginationMeta;
 import com.robomart.product.dto.ProductDetailResponse;
@@ -62,14 +62,14 @@ public class ProductService {
         return new PagedResponse<>(products, pagination, getTraceId());
     }
 
-    public ApiResponse<ProductDetailResponse> getProductById(Long productId) {
+    @Cacheable(value = "productDetail", key = "#productId")
+    public ProductDetailResponse getProductById(Long productId) {
         log.debug("Fetching product detail for id={}", productId);
 
         Product product = productRepository.findByIdWithDetails(productId)
                 .orElseThrow(() -> new ProductNotFoundException(productId));
 
-        var detail = productMapper.toDetailResponse(product);
-        return new ApiResponse<>(detail, getTraceId());
+        return productMapper.toDetailResponse(product);
     }
 
     private Pageable clampPageSize(Pageable pageable) {

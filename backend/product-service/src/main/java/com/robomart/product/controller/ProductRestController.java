@@ -18,6 +18,7 @@ import com.robomart.product.dto.ProductSearchRequest;
 import com.robomart.product.service.ProductSearchService;
 import com.robomart.product.service.ProductService;
 
+import io.micrometer.tracing.Tracer;
 import jakarta.validation.Valid;
 
 @RestController
@@ -26,11 +27,14 @@ public class ProductRestController {
 
     private final ProductService productService;
     private final ProductSearchService productSearchService;
+    private final Tracer tracer;
 
     public ProductRestController(ProductService productService,
-                                 ProductSearchService productSearchService) {
+                                 ProductSearchService productSearchService,
+                                 Tracer tracer) {
         this.productService = productService;
         this.productSearchService = productSearchService;
+        this.tracer = tracer;
     }
 
     @GetMapping
@@ -55,7 +59,18 @@ public class ProductRestController {
     public ResponseEntity<ApiResponse<ProductDetailResponse>> getProductById(
             @PathVariable Long productId) {
 
-        ApiResponse<ProductDetailResponse> response = productService.getProductById(productId);
-        return ResponseEntity.ok(response);
+        ProductDetailResponse detail = productService.getProductById(productId);
+        return ResponseEntity.ok(new ApiResponse<>(detail, getTraceId()));
+    }
+
+    private String getTraceId() {
+        var span = tracer.currentSpan();
+        if (span != null) {
+            var context = span.context();
+            if (context != null) {
+                return context.traceId();
+            }
+        }
+        return "no-trace";
     }
 }
