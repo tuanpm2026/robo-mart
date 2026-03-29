@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.robomart.cart.config.CartProperties;
 import com.robomart.cart.dto.AddCartItemRequest;
 import com.robomart.cart.dto.CartResponse;
 import com.robomart.cart.dto.UpdateCartItemRequest;
@@ -21,24 +22,33 @@ public class CartService {
 
     private final CartRepository cartRepository;
     private final CartMapper cartMapper;
+    private final CartProperties cartProperties;
 
-    public CartService(CartRepository cartRepository, CartMapper cartMapper) {
+    public CartService(CartRepository cartRepository, CartMapper cartMapper, CartProperties cartProperties) {
         this.cartRepository = cartRepository;
         this.cartMapper = cartMapper;
+        this.cartProperties = cartProperties;
     }
 
-    public CartResponse addItem(String cartId, AddCartItemRequest request) {
+    public CartResponse addItem(String cartId, AddCartItemRequest request, String userId) {
         log.debug("Adding item productId={} qty={} to cart={}", request.productId(), request.quantity(), cartId);
 
         Cart cart = cartRepository.findById(cartId)
-                .orElseGet(() -> new Cart(cartId));
+                .orElseGet(() -> {
+                    Cart newCart = new Cart(cartId);
+                    if (userId != null) {
+                        newCart.setUserId(userId);
+                    }
+                    return newCart;
+                });
 
         var item = new CartItem(request.productId(), request.productName(),
                 request.price(), request.quantity());
         cart.addItem(item);
 
+        refreshTtl(cart);
         cartRepository.save(cart);
-        log.debug("Cart {} saved with {} items", cartId, cart.getItems().size());
+        log.debug("Cart {} saved with {} items, TTL={}s", cartId, cart.getItems().size(), cart.getTimeToLive());
 
         return cartMapper.toCartResponse(cart);
     }
@@ -55,6 +65,7 @@ public class CartService {
         item.setQuantity(request.quantity());
         cart.setUpdatedAt(java.time.Instant.now());
 
+        refreshTtl(cart);
         cartRepository.save(cart);
         return cartMapper.toCartResponse(cart);
     }
@@ -70,6 +81,7 @@ public class CartService {
         }
 
         cart.removeItem(productId);
+        refreshTtl(cart);
         cartRepository.save(cart);
     }
 
@@ -79,6 +91,13 @@ public class CartService {
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new CartNotFoundException(cartId));
 
+        refreshTtl(cart);
+        cartRepository.save(cart);
+
         return cartMapper.toCartResponse(cart);
+    }
+
+    private void refreshTtl(Cart cart) {
+        cart.setTimeToLive(cartProperties.getTtlSeconds());
     }
 }

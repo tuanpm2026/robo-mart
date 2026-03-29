@@ -45,3 +45,10 @@
 - **No Redis authentication**: Docker Compose Redis container has no password set. Acceptable for local dev, but production deployment must configure `requirepass` and `spring.data.redis.password`.
 - **Missing Redis connection timeouts**: `application.yml` has no explicit `spring.data.redis.timeout` or `spring.data.redis.lettuce.pool` config. Add connection/command timeouts for production readiness.
 - **No Redis error handling / circuit breaker**: CartService does not catch `RedisConnectionFailureException`. Service fails with 500 when Redis is down. Wrap in circuit breaker pattern (Epic 8 scope).
+
+## Deferred from: code review of 2-2-implement-cart-persistence-ttl-expiry (2026-03-29)
+
+- **GET cart resets TTL via save() — race condition amplified**: `getCart()` now reads then saves to refresh TTL, creating another read-modify-write race condition. Same underlying issue as Story 2.1 deferred item. Needs distributed locking (Epic 8 scope).
+- **No userId/cartId input validation for special characters**: `X-User-Id` and `X-Cart-Id` headers are used directly as Redis keys without sanitization. Malicious characters (newlines, control chars) could be injected. Will be handled by API Gateway input validation in Epic 3.
+- **No max length check on userId/cartId**: Extremely long header values could cause Redis memory issues. Will be enforced by API Gateway in Epic 3.
+- **Slow TTL integration tests (~150s)**: `shouldExpireCartAfterTtl` and `shouldResetTtlOnCartAccess` use Thread.sleep() for real TTL expiry verification. Consider adding `@Tag("slow")` and running only in nightly CI.

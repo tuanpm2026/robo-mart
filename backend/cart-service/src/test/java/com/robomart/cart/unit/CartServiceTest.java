@@ -6,9 +6,11 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.robomart.cart.config.CartProperties;
 import com.robomart.cart.dto.AddCartItemRequest;
 import com.robomart.cart.dto.CartResponse;
 import com.robomart.cart.dto.UpdateCartItemRequest;
@@ -34,12 +36,15 @@ class CartServiceTest {
     private CartRepository cartRepository;
 
     private CartMapper cartMapper;
+    private CartProperties cartProperties;
     private CartService cartService;
 
     @BeforeEach
     void setUp() {
         cartMapper = new CartMapperImpl();
-        cartService = new CartService(cartRepository, cartMapper);
+        cartProperties = new CartProperties();
+        cartProperties.setTtlMinutes(1440);
+        cartService = new CartService(cartRepository, cartMapper, cartProperties);
     }
 
     @Test
@@ -49,7 +54,7 @@ class CartServiceTest {
         when(cartRepository.findById(cartId)).thenReturn(Optional.empty());
         when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        CartResponse response = cartService.addItem(cartId, request);
+        CartResponse response = cartService.addItem(cartId, request, null);
 
         assertThat(response.cartId()).isEqualTo(cartId);
         assertThat(response.items()).hasSize(1);
@@ -71,7 +76,7 @@ class CartServiceTest {
         when(cartRepository.findById(cartId)).thenReturn(Optional.of(existingCart));
         when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        CartResponse response = cartService.addItem(cartId, request);
+        CartResponse response = cartService.addItem(cartId, request, null);
 
         assertThat(response.items()).hasSize(2);
         assertThat(response.totalItems()).isEqualTo(4);
@@ -88,7 +93,7 @@ class CartServiceTest {
         when(cartRepository.findById(cartId)).thenReturn(Optional.of(existingCart));
         when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        CartResponse response = cartService.addItem(cartId, request);
+        CartResponse response = cartService.addItem(cartId, request, null);
 
         assertThat(response.items()).hasSize(1);
         assertThat(response.items().getFirst().quantity()).isEqualTo(5);
@@ -177,6 +182,7 @@ class CartServiceTest {
         Cart cart = new Cart(cartId);
         cart.addItem(new CartItem(1L, "Product A", new BigDecimal("15.50"), 3));
         when(cartRepository.findById(cartId)).thenReturn(Optional.of(cart));
+        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
 
         CartResponse response = cartService.getCart(cartId);
 
@@ -200,6 +206,7 @@ class CartServiceTest {
         String cartId = "cart-empty";
         Cart cart = new Cart(cartId);
         when(cartRepository.findById(cartId)).thenReturn(Optional.of(cart));
+        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
 
         CartResponse response = cartService.getCart(cartId);
 
@@ -207,5 +214,131 @@ class CartServiceTest {
         assertThat(response.items()).isEmpty();
         assertThat(response.totalItems()).isZero();
         assertThat(response.totalPrice()).isEqualByComparingTo(BigDecimal.ZERO);
+    }
+
+    // === Story 2.2: TTL and userId tests ===
+
+    @Test
+    void shouldSetTtlFromPropertiesOnAddItem() {
+        String cartId = "cart-ttl";
+        var request = new AddCartItemRequest(1L, "Product", new BigDecimal("10.00"), 1);
+        when(cartRepository.findById(cartId)).thenReturn(Optional.empty());
+        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        cartService.addItem(cartId, request, null);
+
+        ArgumentCaptor<Cart> captor = ArgumentCaptor.forClass(Cart.class);
+        verify(cartRepository).save(captor.capture());
+        assertThat(captor.getValue().getTimeToLive()).isEqualTo(1440 * 60L);
+    }
+
+    @Test
+    void shouldSetTtlOnUpdateItemQuantity() {
+        String cartId = "cart-ttl";
+        Cart cart = new Cart(cartId);
+        cart.addItem(new CartItem(1L, "Product", new BigDecimal("10.00"), 1));
+        when(cartRepository.findById(cartId)).thenReturn(Optional.of(cart));
+        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        cartService.updateItemQuantity(cartId, 1L, new UpdateCartItemRequest(3));
+
+        ArgumentCaptor<Cart> captor = ArgumentCaptor.forClass(Cart.class);
+        verify(cartRepository).save(captor.capture());
+        assertThat(captor.getValue().getTimeToLive()).isEqualTo(1440 * 60L);
+    }
+
+    @Test
+    void shouldSetTtlOnRemoveItem() {
+        String cartId = "cart-ttl";
+        Cart cart = new Cart(cartId);
+        cart.addItem(new CartItem(1L, "Product", new BigDecimal("10.00"), 1));
+        when(cartRepository.findById(cartId)).thenReturn(Optional.of(cart));
+        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        cartService.removeItem(cartId, 1L);
+
+        ArgumentCaptor<Cart> captor = ArgumentCaptor.forClass(Cart.class);
+        verify(cartRepository).save(captor.capture());
+        assertThat(captor.getValue().getTimeToLive()).isEqualTo(1440 * 60L);
+    }
+
+    @Test
+    void shouldResetTtlOnGetCart() {
+        String cartId = "cart-ttl";
+        Cart cart = new Cart(cartId);
+        cart.addItem(new CartItem(1L, "Product", new BigDecimal("10.00"), 1));
+        when(cartRepository.findById(cartId)).thenReturn(Optional.of(cart));
+        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        cartService.getCart(cartId);
+
+        ArgumentCaptor<Cart> captor = ArgumentCaptor.forClass(Cart.class);
+        verify(cartRepository).save(captor.capture());
+        assertThat(captor.getValue().getTimeToLive()).isEqualTo(1440 * 60L);
+    }
+
+    @Test
+    void shouldUseTtlFromProperties() {
+        cartProperties.setTtlMinutes(30);
+        CartService serviceWith30MinTtl = new CartService(cartRepository, cartMapper, cartProperties);
+
+        String cartId = "cart-custom-ttl";
+        var request = new AddCartItemRequest(1L, "Product", new BigDecimal("10.00"), 1);
+        when(cartRepository.findById(cartId)).thenReturn(Optional.empty());
+        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        serviceWith30MinTtl.addItem(cartId, request, null);
+
+        ArgumentCaptor<Cart> captor = ArgumentCaptor.forClass(Cart.class);
+        verify(cartRepository).save(captor.capture());
+        assertThat(captor.getValue().getTimeToLive()).isEqualTo(30 * 60L);
+    }
+
+    @Test
+    void shouldUseUserIdAsCartIdWhenProvided() {
+        String userId = "user-42";
+        var request = new AddCartItemRequest(1L, "Product", new BigDecimal("10.00"), 1);
+        when(cartRepository.findById(userId)).thenReturn(Optional.empty());
+        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CartResponse response = cartService.addItem(userId, request, userId);
+
+        assertThat(response.cartId()).isEqualTo(userId);
+        ArgumentCaptor<Cart> captor = ArgumentCaptor.forClass(Cart.class);
+        verify(cartRepository).save(captor.capture());
+        assertThat(captor.getValue().getUserId()).isEqualTo(userId);
+    }
+
+    @Test
+    void shouldNotSetUserIdWhenNullProvided() {
+        String cartId = "cart-anon";
+        var request = new AddCartItemRequest(1L, "Product", new BigDecimal("10.00"), 1);
+        when(cartRepository.findById(cartId)).thenReturn(Optional.empty());
+        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        cartService.addItem(cartId, request, null);
+
+        ArgumentCaptor<Cart> captor = ArgumentCaptor.forClass(Cart.class);
+        verify(cartRepository).save(captor.capture());
+        assertThat(captor.getValue().getUserId()).isNull();
+    }
+
+    @Test
+    void shouldPreserveUserIdOnSubsequentAddItem() {
+        String userId = "user-42";
+        Cart existingCart = new Cart(userId);
+        existingCart.setUserId(userId);
+        existingCart.addItem(new CartItem(1L, "Product A", new BigDecimal("10.00"), 1));
+
+        var request = new AddCartItemRequest(2L, "Product B", new BigDecimal("20.00"), 1);
+        when(cartRepository.findById(userId)).thenReturn(Optional.of(existingCart));
+        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        cartService.addItem(userId, request, userId);
+
+        ArgumentCaptor<Cart> captor = ArgumentCaptor.forClass(Cart.class);
+        verify(cartRepository).save(captor.capture());
+        assertThat(captor.getValue().getUserId()).isEqualTo(userId);
+        assertThat(captor.getValue().getItems()).hasSize(2);
     }
 }

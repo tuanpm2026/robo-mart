@@ -1,13 +1,12 @@
 package com.robomart.cart.integration;
 
-import java.math.BigDecimal;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.client.RestClient;
 
 import com.robomart.test.IntegrationTest;
@@ -15,6 +14,7 @@ import com.robomart.test.IntegrationTest;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
+@TestPropertySource(properties = "robomart.cart.ttl-minutes=1")
 class CartIntegrationTest {
 
     @LocalServerPort
@@ -31,6 +31,8 @@ class CartIntegrationTest {
                 })
                 .build();
     }
+
+    // === Story 2.1 tests (unchanged behavior) ===
 
     @Test
     void shouldCreateCartAndAddItemWhenNoCartIdProvided() {
@@ -261,5 +263,169 @@ class CartIntegrationTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).contains("CART_ITEM_NOT_FOUND");
+    }
+
+    // === Story 2.2: Cart Persistence by userId ===
+
+    @Test
+    void shouldPersistCartByUserId() {
+        String userId = "user-persist-test";
+
+        // Create cart with userId
+        var createResponse = restClient.post()
+                .uri("/api/v1/cart/items")
+                .header("X-User-Id", userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 100, "productName": "User Cart Item", "price": 49.99, "quantity": 2}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        // Retrieve with same userId (simulates new session)
+        var response = restClient.get()
+                .uri("/api/v1/cart")
+                .header("X-User-Id", userId)
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("\"User Cart Item\"");
+        assertThat(response.getBody()).contains("\"totalItems\":2");
+    }
+
+    @Test
+    void shouldReturnSameCartForSameUserId() {
+        String userId = "user-accumulate-test";
+
+        // Add first item
+        restClient.post()
+                .uri("/api/v1/cart/items")
+                .header("X-User-Id", userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 1, "productName": "Item A", "price": 10.00, "quantity": 1}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        // Add second item (same userId, new request)
+        restClient.post()
+                .uri("/api/v1/cart/items")
+                .header("X-User-Id", userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 2, "productName": "Item B", "price": 20.00, "quantity": 1}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        // Verify both items in same cart
+        var response = restClient.get()
+                .uri("/api/v1/cart")
+                .header("X-User-Id", userId)
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("\"Item A\"");
+        assertThat(response.getBody()).contains("\"Item B\"");
+        assertThat(response.getBody()).contains("\"totalItems\":2");
+    }
+
+    @Test
+    void shouldMaintainAnonymousCartBehavior() {
+        // Create anonymous cart (no X-User-Id)
+        var createResponse = restClient.post()
+                .uri("/api/v1/cart/items")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 50, "productName": "Anon Item", "price": 15.00, "quantity": 1}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        String cartId = createResponse.getHeaders().getFirst("X-Cart-Id");
+        assertThat(cartId).isNotNull().isNotBlank();
+
+        // Retrieve with X-Cart-Id (no X-User-Id)
+        var response = restClient.get()
+                .uri("/api/v1/cart")
+                .header("X-Cart-Id", cartId)
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).contains("\"Anon Item\"");
+    }
+
+    // === Story 2.2: TTL Expiry ===
+    // NOTE: getCart() saves the cart to reset TTL. Use Thread.sleep() instead of
+    // Awaitility polling (which would keep resetting TTL via GET requests).
+
+    @Test
+    void shouldExpireCartAfterTtl() throws InterruptedException {
+        // TTL is set to 1 minute via @TestPropertySource
+        // Do NOT call GET after creation — it would reset TTL
+        var createResponse = restClient.post()
+                .uri("/api/v1/cart/items")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 99, "productName": "Expiring Item", "price": 5.00, "quantity": 1}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        String cartId = createResponse.getHeaders().getFirst("X-Cart-Id");
+        assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        // Wait for TTL expiry (60s + 10s buffer)
+        Thread.sleep(70_000);
+
+        // Single check — cart should be expired
+        var expiredResponse = restClient.get()
+                .uri("/api/v1/cart")
+                .header("X-Cart-Id", cartId)
+                .retrieve()
+                .toEntity(String.class);
+        assertThat(expiredResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void shouldResetTtlOnCartAccess() throws InterruptedException {
+        // TTL is 1 minute. Access at 40s resets TTL. Cart should survive past 80s total.
+        var createResponse = restClient.post()
+                .uri("/api/v1/cart/items")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 88, "productName": "Refreshing Item", "price": 12.00, "quantity": 1}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        String cartId = createResponse.getHeaders().getFirst("X-Cart-Id");
+
+        // Wait 40 seconds, then access cart to reset TTL
+        Thread.sleep(40_000);
+
+        var refreshResponse = restClient.get()
+                .uri("/api/v1/cart")
+                .header("X-Cart-Id", cartId)
+                .retrieve()
+                .toEntity(String.class);
+        assertThat(refreshResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        // Wait another 40 seconds (total 80s from creation, 40s from last access)
+        // Cart should still exist because TTL was reset at ~40s mark
+        Thread.sleep(40_000);
+
+        var stillAliveResponse = restClient.get()
+                .uri("/api/v1/cart")
+                .header("X-Cart-Id", cartId)
+                .retrieve()
+                .toEntity(String.class);
+        assertThat(stillAliveResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 }

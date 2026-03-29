@@ -2,7 +2,11 @@ package com.robomart.cart;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
+import com.robomart.cart.config.CartProperties;
+
+@EnableConfigurationProperties(CartProperties.class)
 @SpringBootApplication(
         scanBasePackages = "com.robomart",
         excludeName = {

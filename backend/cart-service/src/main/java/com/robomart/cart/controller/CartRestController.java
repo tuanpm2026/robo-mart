@@ -30,6 +30,7 @@ import jakarta.validation.Valid;
 public class CartRestController {
 
     public static final String CART_ID_HEADER = "X-Cart-Id";
+    public static final String USER_ID_HEADER = "X-User-Id";
 
     private final CartService cartService;
     private final Tracer tracer;
@@ -42,13 +43,12 @@ public class CartRestController {
     @PostMapping("/items")
     public ResponseEntity<ApiResponse<CartResponse>> addItem(
             @RequestHeader(value = CART_ID_HEADER, required = false) String cartId,
+            @RequestHeader(value = USER_ID_HEADER, required = false) String userId,
             @RequestBody @Valid AddCartItemRequest request) {
 
-        if (cartId == null || cartId.isBlank()) {
-            cartId = UUID.randomUUID().toString();
-        }
+        String resolvedCartId = resolveCartId(userId, cartId);
 
-        CartResponse cart = cartService.addItem(cartId, request);
+        CartResponse cart = cartService.addItem(resolvedCartId, request, userId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .header(CART_ID_HEADER, cart.cartId())
                 .body(new ApiResponse<>(cart, getTraceId()));
@@ -56,11 +56,14 @@ public class CartRestController {
 
     @PutMapping("/items/{productId}")
     public ResponseEntity<ApiResponse<CartResponse>> updateItemQuantity(
-            @RequestHeader(value = CART_ID_HEADER) String cartId,
+            @RequestHeader(value = CART_ID_HEADER, required = false) String cartId,
+            @RequestHeader(value = USER_ID_HEADER, required = false) String userId,
             @PathVariable Long productId,
             @RequestBody @Valid UpdateCartItemRequest request) {
 
-        CartResponse cart = cartService.updateItemQuantity(cartId, productId, request);
+        String resolvedCartId = resolveCartId(userId, cartId);
+
+        CartResponse cart = cartService.updateItemQuantity(resolvedCartId, productId, request);
         return ResponseEntity.ok()
                 .header(CART_ID_HEADER, cart.cartId())
                 .body(new ApiResponse<>(cart, getTraceId()));
@@ -68,23 +71,39 @@ public class CartRestController {
 
     @DeleteMapping("/items/{productId}")
     public ResponseEntity<Void> removeItem(
-            @RequestHeader(value = CART_ID_HEADER) String cartId,
+            @RequestHeader(value = CART_ID_HEADER, required = false) String cartId,
+            @RequestHeader(value = USER_ID_HEADER, required = false) String userId,
             @PathVariable Long productId) {
 
-        cartService.removeItem(cartId, productId);
+        String resolvedCartId = resolveCartId(userId, cartId);
+
+        cartService.removeItem(resolvedCartId, productId);
         return ResponseEntity.noContent()
-                .header(CART_ID_HEADER, cartId)
+                .header(CART_ID_HEADER, resolvedCartId)
                 .build();
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<CartResponse>> getCart(
-            @RequestHeader(value = CART_ID_HEADER) String cartId) {
+            @RequestHeader(value = CART_ID_HEADER, required = false) String cartId,
+            @RequestHeader(value = USER_ID_HEADER, required = false) String userId) {
 
-        CartResponse cart = cartService.getCart(cartId);
+        String resolvedCartId = resolveCartId(userId, cartId);
+
+        CartResponse cart = cartService.getCart(resolvedCartId);
         return ResponseEntity.ok()
                 .header(CART_ID_HEADER, cart.cartId())
                 .body(new ApiResponse<>(cart, getTraceId()));
+    }
+
+    private String resolveCartId(String userId, String cartId) {
+        if (userId != null && !userId.isBlank()) {
+            return userId.trim();
+        }
+        if (cartId != null && !cartId.isBlank()) {
+            return cartId.trim();
+        }
+        return UUID.randomUUID().toString();
     }
 
     private String getTraceId() {

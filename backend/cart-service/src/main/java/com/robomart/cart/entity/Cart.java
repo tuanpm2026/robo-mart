@@ -9,15 +9,20 @@ import java.util.Optional;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
+import org.springframework.data.redis.core.TimeToLive;
 
 @RedisHash("cart")
 public class Cart {
 
     @Id
     private String id;
+    private String userId;
     private List<CartItem> items = new ArrayList<>();
     private Instant createdAt;
     private Instant updatedAt;
+
+    @TimeToLive
+    private Long timeToLive;
 
     public Cart() {
     }
@@ -36,12 +41,20 @@ public class Cart {
         this.id = id;
     }
 
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
     public List<CartItem> getItems() {
         return Collections.unmodifiableList(items);
     }
 
     public void setItems(List<CartItem> items) {
-        this.items = items;
+        this.items = new ArrayList<>(items);
     }
 
     public Instant getCreatedAt() {
@@ -58,6 +71,14 @@ public class Cart {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Long getTimeToLive() {
+        return timeToLive;
+    }
+
+    public void setTimeToLive(Long timeToLive) {
+        this.timeToLive = timeToLive;
     }
 
     public Optional<CartItem> findItem(Long productId) {
