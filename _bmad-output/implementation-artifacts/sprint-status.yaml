@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-27
-last_updated: 2026-03-30
+last_updated: "2026-03-30"
 project: robo-mart
 project_key: NOKEY
 tracking_system: file-system
@@ -65,7 +65,7 @@ development_status:
   epic-3: in-progress
   3-1-add-keycloak-api-gateway-infrastructure: done
   3-2-implement-customer-registration-login: done
-  3-3-implement-api-gateway-jwt-validation-rbac: backlog
+  3-3-implement-api-gateway-jwt-validation-rbac: done
   3-4-implement-anonymous-cart-merge-on-login: backlog
   epic-3-retrospective: optional
 

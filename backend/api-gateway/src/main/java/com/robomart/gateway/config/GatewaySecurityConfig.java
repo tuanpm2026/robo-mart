@@ -23,15 +23,13 @@ public class GatewaySecurityConfig {
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         http
                 .authorizeExchange(exchanges -> exchanges
-                        // Public endpoints — no auth required
                         .pathMatchers("/actuator/health/**").permitAll()
                         .pathMatchers("/api/v1/products/**").permitAll()
-                        .pathMatchers("/api/v1/cart/**").permitAll()
                         .pathMatchers("/graphql").permitAll()
-                        // All other routes — permit for now, Story 3.3 adds RBAC.
-                        // Note: permitAll() still rejects requests with invalid Bearer tokens.
-                        // This is intentional Spring Security behavior.
-                        .anyExchange().permitAll()
+                        .pathMatchers("/api/v1/cart/**").permitAll()
+                        .pathMatchers("/api/v1/orders/**").authenticated()
+                        .pathMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt

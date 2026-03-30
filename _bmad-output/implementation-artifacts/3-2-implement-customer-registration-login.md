@@ -1,6 +1,6 @@
 # Story 3.2: Implement Customer Registration & Login
 
-Status: review
+Status: done
 
 ## Story
 

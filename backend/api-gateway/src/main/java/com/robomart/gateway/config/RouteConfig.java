@@ -15,6 +15,12 @@ public class RouteConfig {
     @Value("${gateway.services.cart-service:http://localhost:8082}")
     private String cartServiceUri;
 
+    @Value("${gateway.services.order-service:http://localhost:8083}")
+    private String orderServiceUri;
+
+    @Value("${gateway.services.inventory-service:http://localhost:8084}")
+    private String inventoryServiceUri;
+
     @Bean
     public RouteLocator routeLocator(RouteLocatorBuilder builder) {
         return builder.routes()
@@ -27,6 +33,18 @@ public class RouteConfig {
                 .route("cart-service", r -> r
                         .path("/api/v1/cart/**")
                         .uri(cartServiceUri))
+                .route("order-service", r -> r
+                        .path("/api/v1/orders/**")
+                        .uri(orderServiceUri))
+                .route("admin-products", r -> r
+                        .path("/api/v1/admin/products/**")
+                        .uri(productServiceUri))
+                .route("admin-orders", r -> r
+                        .path("/api/v1/admin/orders/**")
+                        .uri(orderServiceUri))
+                .route("admin-inventory", r -> r
+                        .path("/api/v1/admin/inventory/**")
+                        .uri(inventoryServiceUri))
                 .build();
     }
 }

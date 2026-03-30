@@ -67,3 +67,8 @@
 ## Deferred from: code review of 2-4-implement-customer-cart-ui (2026-03-29)
 
 - **Missing product image thumbnails in cart (AC3)**: Backend CartItem DTO only returns `productId, productName, price, quantity, subtotal` — no `imageUrl` field. CartItem.vue uses SVG placeholder. Backend needs to add `imageUrl` to CartItem DTO (or CartService should store imageUrl when adding items). Deferred — backend API change needed.
+
+## Deferred from: code review of 3-3-implement-api-gateway-jwt-validation-rbac (2026-03-30)
+
+- **No rate limiting on cart endpoints**: `/api/v1/cart/**` is `permitAll()` with client-supplied anonymous identity. Attacker can create unlimited anonymous cart sessions. Pre-existing from Epic 2 design. Consider rate limiting in Epic 8 (resilience).
+- **GraphQL endpoint may bypass path-based RBAC**: `/graphql` is public. If federated mutations for orders/admin are added later, path-based security cannot distinguish operations. Architectural concern for future GraphQL federation/stitching.

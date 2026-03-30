@@ -23,6 +23,8 @@ gateway:
   services:
     product-service: http://localhost:8081
     cart-service: http://localhost:8082
+    order-service: http://localhost:8083
+    inventory-service: http://localhost:8084
   cors:
     customer-origin: http://localhost:5173
     admin-origin: http://localhost:5174
