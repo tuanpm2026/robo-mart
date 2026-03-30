@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-27
-last_updated: 2026-03-29
+last_updated: 2026-03-29T12:00:00Z
 project: robo-mart
 project_key: NOKEY
 tracking_system: file-system
@@ -54,12 +54,12 @@ development_status:
   epic-1-retrospective: done
 
   # Epic 2: Shopping Cart Experience
-  epic-2: in-progress
+  epic-2: done
   2-1-add-redis-to-infrastructure-implement-cart-service-core: done
   2-2-implement-cart-persistence-ttl-expiry: done
   2-3-implement-redis-caching-with-event-driven-invalidation: done
-  2-4-implement-customer-cart-ui: backlog
-  epic-2-retrospective: optional
+  2-4-implement-customer-cart-ui: done
+  epic-2-retrospective: done
 
   # Epic 3: User Authentication & Authorization
   epic-3: backlog

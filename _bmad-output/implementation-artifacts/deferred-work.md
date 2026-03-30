@@ -63,3 +63,7 @@
 - **Race condition between cache population and invalidation**: Classic cache-aside race — thread reads stale data from DB, preempted, another thread evicts cache, first thread stores stale data. Bounded by 5-minute TTL.
 - **Cart TTL not explicitly reset after Kafka price update**: `ProductEventConsumer` saves cart after price update but doesn't explicitly set `updatedAt` or manage TTL. Minor behavioral concern.
 - **`AUTO_OFFSET_RESET=earliest` replays historical events on first consumer group creation**: New cart-service consumer group will replay all historical product events on first deploy, each triggering a `findAll()` scan. One-time first-deploy concern.
+
+## Deferred from: code review of 2-4-implement-customer-cart-ui (2026-03-29)
+
+- **Missing product image thumbnails in cart (AC3)**: Backend CartItem DTO only returns `productId, productName, price, quantity, subtotal` — no `imageUrl` field. CartItem.vue uses SVG placeholder. Backend needs to add `imageUrl` to CartItem DTO (or CartService should store imageUrl when adding items). Deferred — backend API change needed.

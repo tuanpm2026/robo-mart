@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed, watch } from 'vue'
+import { onMounted, computed, watch, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import Galleria from 'primevue/galleria'
 import Rating from 'primevue/rating'
@@ -10,10 +10,13 @@ import Skeleton from 'primevue/skeleton'
 import { useToast } from 'primevue/usetoast'
 import { EmptyState } from '@robo-mart/shared'
 import { useProductStore } from '@/stores/useProductStore'
+import { useCartStore } from '@/stores/useCartStore'
 
 const route = useRoute()
 const productStore = useProductStore()
+const cartStore = useCartStore()
 const toast = useToast()
+const isAddingToCart = ref(false)
 
 const productId = computed(() => Number(route.params.id))
 
@@ -76,13 +79,34 @@ watch(productId, (newId) => {
   productStore.fetchProductDetail(newId)
 })
 
-function addToCart() {
-  toast.add({
-    severity: 'info',
-    summary: 'Cart coming soon',
-    detail: 'Shopping cart will be available in a future update.',
-    life: 3000,
-  })
+async function addToCart() {
+  if (!product.value || isAddingToCart.value) return
+  isAddingToCart.value = true
+  try {
+    await cartStore.addItem({
+      productId: product.value.id,
+      productName: product.value.name,
+      price: product.value.price,
+      quantity: 1,
+    })
+    toast.add({
+      severity: 'success',
+      summary: 'Added to cart',
+      detail: `${product.value.name} has been added to your cart.`,
+      life: 3000,
+      actionRoute: '/cart',
+      actionLabel: 'Go to Cart',
+    })
+  } catch {
+    toast.add({
+      severity: 'error',
+      summary: 'Failed to add',
+      detail: 'Could not add item to cart. Please try again.',
+      life: 5000,
+    })
+  } finally {
+    isAddingToCart.value = false
+  }
 }
 </script>
 
@@ -170,6 +194,7 @@ function addToCart() {
             v-if="product.stockQuantity > 0"
             label="Add to Cart"
             icon="pi pi-shopping-cart"
+            :loading="isAddingToCart"
             @click="addToCart"
             class="product-detail__add-btn"
           />

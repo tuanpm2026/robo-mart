@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Rating from 'primevue/rating'
 import Tag from 'primevue/tag'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
+import { useCartStore } from '@/stores/useCartStore'
 import type { ProductListItem } from '@/types/product'
 
 const props = defineProps<{
@@ -13,6 +14,8 @@ const props = defineProps<{
 
 const router = useRouter()
 const toast = useToast()
+const cartStore = useCartStore()
+const isAddingToCart = ref(false)
 
 const stockSeverity = computed(() => {
   if (props.product.stockQuantity === 0) return 'danger'
@@ -32,14 +35,35 @@ function navigateToProduct() {
   router.push(`/products/${props.product.id}`)
 }
 
-function addToCart(event: Event) {
+async function addToCart(event: Event) {
   event.stopPropagation()
-  toast.add({
-    severity: 'info',
-    summary: 'Cart coming soon',
-    detail: 'Shopping cart will be available in a future update.',
-    life: 3000,
-  })
+  if (isAddingToCart.value) return
+  isAddingToCart.value = true
+  try {
+    await cartStore.addItem({
+      productId: props.product.id,
+      productName: props.product.name,
+      price: props.product.price,
+      quantity: 1,
+    })
+    toast.add({
+      severity: 'success',
+      summary: 'Added to cart',
+      detail: `${props.product.name} has been added to your cart.`,
+      life: 3000,
+      actionRoute: '/cart',
+      actionLabel: 'Go to Cart',
+    })
+  } catch {
+    toast.add({
+      severity: 'error',
+      summary: 'Failed to add',
+      detail: 'Could not add item to cart. Please try again.',
+      life: 5000,
+    })
+  } finally {
+    isAddingToCart.value = false
+  }
 }
 </script>
 

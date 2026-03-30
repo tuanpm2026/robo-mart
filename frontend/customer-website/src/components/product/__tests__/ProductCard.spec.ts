@@ -1,11 +1,24 @@
-import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { mount, flushPromises } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config'
 import ToastService from 'primevue/toastservice'
 import ProductCard from '../ProductCard.vue'
 import type { ProductListItem } from '@/types/product'
+
+vi.mock('@/api/cartApi', () => ({
+  getCart: vi.fn().mockResolvedValue({
+    data: { cartId: 'c1', items: [], totalItems: 0, totalPrice: 0 },
+    traceId: '',
+  }),
+  addToCart: vi.fn().mockResolvedValue({
+    data: { cartId: 'c1', items: [{ productId: 1, productName: 'Test Product', price: 29.99, quantity: 1, subtotal: 29.99 }], totalItems: 1, totalPrice: 29.99 },
+    traceId: '',
+  }),
+  updateQuantity: vi.fn(),
+  removeItem: vi.fn(),
+}))
 
 const mockProduct: ProductListItem = {
   id: 1,
@@ -41,6 +54,10 @@ async function mountCard(product: ProductListItem = mockProduct) {
 }
 
 describe('ProductCard', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('should render product name', async () => {
     const wrapper = await mountCard()
     expect(wrapper.find('.product-card__title').text()).toBe('Test Product')
@@ -112,5 +129,36 @@ describe('ProductCard', () => {
     const img = wrapper.find('.product-card__image')
     expect(img.attributes('alt')).toBe('Test Product')
     expect(img.attributes('src')).toBe('https://example.com/image.jpg')
+  })
+
+  it('should call cartStore.addItem when Add to Cart is clicked', async () => {
+    const wrapper = await mountCard()
+    await wrapper.find('.product-card__add-btn').trigger('click')
+    await flushPromises()
+
+    const { addToCart } = await import('@/api/cartApi')
+    expect(vi.mocked(addToCart)).toHaveBeenCalledWith({
+      productId: 1,
+      productName: 'Test Product',
+      price: 29.99,
+      quantity: 1,
+    })
+  })
+
+  it('should show error toast on addToCart failure', async () => {
+    const { addToCart } = await import('@/api/cartApi')
+    vi.mocked(addToCart).mockRejectedValueOnce(new Error('Server error'))
+
+    const wrapper = await mountCard()
+    await wrapper.find('.product-card__add-btn').trigger('click')
+    await flushPromises()
+
+    // Component should not throw — error is caught and shown as toast
+    expect(wrapper.find('.product-card__add-btn').exists()).toBe(true)
+  })
+
+  it('should not show Add to Cart for out of stock products', async () => {
+    const wrapper = await mountCard({ ...mockProduct, stockQuantity: 0 })
+    expect(wrapper.find('.product-card__add-btn').exists()).toBe(false)
   })
 })

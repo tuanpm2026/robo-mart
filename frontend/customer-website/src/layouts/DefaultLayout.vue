@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { RouterView, RouterLink, useRoute } from 'vue-router'
+import Badge from 'primevue/badge'
 import SearchBar from '@/components/product/SearchBar.vue'
 import { useCategoryStore } from '@/stores/useCategoryStore'
+import { useCartStore } from '@/stores/useCartStore'
 
 const categoryStore = useCategoryStore()
+const cartStore = useCartStore()
 const route = useRoute()
 
 function onCategoryClick(categoryId: number | null) {
@@ -31,7 +34,11 @@ function isCategoryActive(categoryId: number | null): boolean {
         <SearchBar />
 
         <div class="header__actions">
-          <button class="header__cart-btn" type="button" aria-label="Shopping cart, 0 items">
+          <RouterLink
+            to="/cart"
+            class="header__cart-btn"
+            :aria-label="`Shopping cart, ${cartStore.totalItems} items`"
+          >
             <svg
               width="24"
               height="24"
@@ -55,7 +62,13 @@ function isCategoryActive(categoryId: number | null): boolean {
                 stroke-linejoin="round"
               />
             </svg>
-          </button>
+            <Badge
+              v-if="cartStore.totalItems > 0"
+              :value="cartStore.totalItems"
+              class="header__cart-badge"
+              aria-live="polite"
+            />
+          </RouterLink>
           <button class="header__user-btn" type="button" aria-label="User menu">
             <svg
               width="24"
@@ -165,6 +178,7 @@ function isCategoryActive(categoryId: number | null): boolean {
 
 .header__cart-btn,
 .header__user-btn {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -176,7 +190,21 @@ function isCategoryActive(categoryId: number | null): boolean {
   border-radius: 8px;
   color: var(--color-gray-600);
   cursor: pointer;
+  text-decoration: none;
   transition: background-color 200ms, color 200ms;
+}
+
+.header__cart-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  animation: badge-pop 200ms ease-out;
+}
+
+@keyframes badge-pop {
+  0% { transform: scale(0.5); }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
 .header__cart-btn:hover,
@@ -251,6 +279,10 @@ function isCategoryActive(categoryId: number | null): boolean {
   .header__user-btn,
   .category-nav__link {
     transition: none;
+  }
+
+  .header__cart-badge {
+    animation: none;
   }
 }
 </style>

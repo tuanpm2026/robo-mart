@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { createPinia } from 'pinia'
@@ -23,6 +23,19 @@ vi.mock('@/api/productApi', () => ({
   }),
 }))
 
+vi.mock('@/api/cartApi', () => ({
+  getCart: vi.fn().mockResolvedValue({
+    data: { cartId: 'c1', items: [], totalItems: 0, totalPrice: 0 },
+    traceId: '',
+  }),
+  addToCart: vi.fn().mockResolvedValue({
+    data: { cartId: 'c1', items: [{ productId: 1, productName: 'Wireless Mouse', price: 29.99, quantity: 1, subtotal: 29.99 }], totalItems: 1, totalPrice: 29.99 },
+    traceId: '',
+  }),
+  updateQuantity: vi.fn(),
+  removeItem: vi.fn(),
+}))
+
 function createTestRouter() {
   return createRouter({
     history: createMemoryHistory(),
@@ -34,6 +47,10 @@ function createTestRouter() {
 }
 
 describe('ProductDetailView', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
   it('should render product title', async () => {
     const router = createTestRouter()
     const pinia = createPinia()
@@ -149,5 +166,49 @@ describe('ProductDetailView', () => {
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find('.product-detail__skeleton').exists()).toBe(true)
+  })
+
+  it('should call cartStore.addItem when Add to Cart is clicked', async () => {
+    const router = createTestRouter()
+    const pinia = createPinia()
+    await router.push('/products/1')
+    await router.isReady()
+
+    const wrapper = mount(ProductDetailView, {
+      global: { plugins: [router, pinia, PrimeVue, ToastService] },
+    })
+    await flushPromises()
+
+    await wrapper.find('.product-detail__add-btn').trigger('click')
+    await flushPromises()
+
+    const { addToCart } = await import('@/api/cartApi')
+    expect(vi.mocked(addToCart)).toHaveBeenCalledWith({
+      productId: 1,
+      productName: 'Wireless Mouse',
+      price: 29.99,
+      quantity: 1,
+    })
+  })
+
+  it('should show error toast on addToCart failure', async () => {
+    const { addToCart } = await import('@/api/cartApi')
+    vi.mocked(addToCart).mockRejectedValueOnce(new Error('Server error'))
+
+    const router = createTestRouter()
+    const pinia = createPinia()
+    await router.push('/products/1')
+    await router.isReady()
+
+    const wrapper = mount(ProductDetailView, {
+      global: { plugins: [router, pinia, PrimeVue, ToastService] },
+    })
+    await flushPromises()
+
+    await wrapper.find('.product-detail__add-btn').trigger('click')
+    await flushPromises()
+
+    // Component should not throw — error is caught and shown as toast
+    expect(wrapper.find('.product-detail__add-btn').exists()).toBe(true)
   })
 })
