@@ -190,6 +190,78 @@ services:
       retries: 10
       start_period: 60s
 
+  postgres-order:
+    image: postgres:17
+    container_name: robomart-postgres-order
+    profiles: ["core"]
+    environment:
+      POSTGRES_DB: order_db
+      POSTGRES_USER: ${POSTGRES_USER:-robomart}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-robomart}
+    ports:
+      - "${ORDER_DB_PORT:-5434}:5432"
+    volumes:
+      - order-data:/var/lib/postgresql/data
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-robomart}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-inventory:
+    image: postgres:17
+    container_name: robomart-postgres-inventory
+    profiles: ["core"]
+    environment:
+      POSTGRES_DB: inventory_db
+      POSTGRES_USER: ${POSTGRES_USER:-robomart}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-robomart}
+    ports:
+      - "${INVENTORY_DB_PORT:-5435}:5432"
+    volumes:
+      - inventory-data:/var/lib/postgresql/data
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-robomart}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-payment:
+    image: postgres:17
+    container_name: robomart-postgres-payment
+    profiles: ["core"]
+    environment:
+      POSTGRES_DB: payment_db
+      POSTGRES_USER: ${POSTGRES_USER:-robomart}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-robomart}
+    ports:
+      - "${PAYMENT_DB_PORT:-5436}:5432"
+    volumes:
+      - payment-data:/var/lib/postgresql/data
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-robomart}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   kafka-ui:
     image: provectuslabs/kafka-ui:v0.7.2
     container_name: robomart-kafka-ui
@@ -223,3 +295,6 @@ volumes:
   kafka-data:
   redis-data:
   keycloak-data:
+  order-data:
+  inventory-data:
+  payment-data:

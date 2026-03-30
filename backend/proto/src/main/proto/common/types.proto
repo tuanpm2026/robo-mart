@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package com.robomart.proto.common;
+
+option java_package = "com.robomart.proto.common";
+option java_outer_classname = "CommonTypesProto";
+option java_multiple_files = true;
+
+message Money {
+  string currency = 1;
+  string amount = 2;
+}
+
+message Address {
+  string street = 1;
+  string city = 2;
+  string state = 3;
+  string zip = 4;
+  string country = 5;
+}

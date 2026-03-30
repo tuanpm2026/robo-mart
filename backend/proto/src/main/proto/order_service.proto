@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package com.robomart.proto.order;
+
+option java_package = "com.robomart.proto.order";
+option java_outer_classname = "OrderServiceProto";
+option java_multiple_files = true;
+
+import "common/types.proto";
+
+service OrderService {
+  rpc CreateOrder(CreateOrderRequest) returns (CreateOrderResponse);
+  rpc GetOrder(GetOrderRequest) returns (GetOrderResponse);
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
+}
+
+message OrderItemRequest {
+  string product_id = 1;
+  string product_name = 2;
+  int32 quantity = 3;
+  com.robomart.proto.common.Money unit_price = 4;
+}
+
+message CreateOrderRequest {
+  string user_id = 1;
+  repeated OrderItemRequest items = 2;
+  com.robomart.proto.common.Address shipping_address = 3;
+  string idempotency_key = 4;
+}
+
+message CreateOrderResponse {
+  bool success = 1;
+  string message = 2;
+  string order_id = 3;
+  string status = 4;
+}
+
+message GetOrderRequest {
+  string order_id = 1;
+}
+
+message OrderItemResponse {
+  string product_id = 1;
+  string product_name = 2;
+  int32 quantity = 3;
+  com.robomart.proto.common.Money unit_price = 4;
+  com.robomart.proto.common.Money subtotal = 5;
+}
+
+message GetOrderResponse {
+  string order_id = 1;
+  string user_id = 2;
+  repeated OrderItemResponse items = 3;
+  com.robomart.proto.common.Money total_amount = 4;
+  string status = 5;
+  com.robomart.proto.common.Address shipping_address = 6;
+  int64 created_at = 7;
+  int64 updated_at = 8;
+}
+
+message CancelOrderRequest {
+  string order_id = 1;
+  string reason = 2;
+  string cancelled_by = 3;
+}
+
+message CancelOrderResponse {
+  bool success = 1;
+  string message = 2;
+  string status = 3;
+}

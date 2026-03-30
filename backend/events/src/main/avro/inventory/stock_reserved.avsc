@@ -1,0 +1,16 @@
+{
+  "type": "record",
+  "name": "StockReservedEvent",
+  "namespace": "com.robomart.events.inventory",
+  "fields": [
+    {"name": "eventId", "type": "string"},
+    {"name": "eventType", "type": "string"},
+    {"name": "aggregateId", "type": "string"},
+    {"name": "aggregateType", "type": "string"},
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "version", "type": "int"},
+    {"name": "orderId", "type": "string"},
+    {"name": "productId", "type": "string"},
+    {"name": "quantity", "type": "int"}
+  ]
+}

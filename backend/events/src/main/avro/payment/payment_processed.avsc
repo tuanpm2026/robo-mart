@@ -1,0 +1,18 @@
+{
+  "type": "record",
+  "name": "PaymentProcessedEvent",
+  "namespace": "com.robomart.events.payment",
+  "fields": [
+    {"name": "eventId", "type": "string"},
+    {"name": "eventType", "type": "string"},
+    {"name": "aggregateId", "type": "string"},
+    {"name": "aggregateType", "type": "string"},
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "version", "type": "int"},
+    {"name": "paymentId", "type": "string"},
+    {"name": "orderId", "type": "string"},
+    {"name": "amount", "type": "string"},
+    {"name": "transactionId", "type": "string"},
+    {"name": "status", "type": "string"}
+  ]
+}

@@ -79,3 +79,11 @@
 - **X-User-Id trusted without ownership validation on anonymousCartId**: Cart service trusts X-User-Id header and accepts any anonymousCartId in request body. An authenticated user could theoretically merge another user's cart by guessing their UUID. Mitigated by UUID randomness (128-bit) and gateway auth enforcement. Pre-existing trust model.
 - **No upper bound on cart item count during merge**: Cart.addItem() caps quantity at 9999 per item but does not limit total distinct items. Anonymous cart with many unique products could bloat the auth cart. Pre-existing — addToCart() has same issue.
 - **Missing MissingRequestHeaderException handler returns 500 instead of 400**: When X-User-Id header is missing, Spring throws MissingRequestHeaderException which falls through to generic Exception handler returning 500. Pre-existing — affects all endpoints using @RequestHeader.
+
+## Deferred from: code review of 4-1-add-order-infrastructure-services-databases-grpc (2026-03-30)
+
+- **InventoryItem.productId (Long) vs proto/Avro product_id (String) type mismatch**: Entity uses Long to match DB BIGINT, proto/Avro uses String. Mapping layer (String.valueOf/Long.parseLong) to be added when gRPC service implementation lands in later stories. Same applies to OrderItem.productId.
+- **Outbox index uses single-column (published) instead of composite (published, created_at)**: The story template recommends `(published, created_at)` for sorted polling, but implementation follows existing product-service pattern with `(published)` only. Optimize when outbox volume warrants it.
+- **SagaAuditLog.orderId VARCHAR vs orders.id BIGINT**: By design for cross-service string references per proto convention. No FK constraint since saga audit log uses string IDs for flexibility.
+- **Proto timestamps use int64 instead of google.protobuf.Timestamp**: Acceptable for infrastructure story. Can be updated in future proto evolution when needed.
+- **SQL tables missing CHECK constraints for quantities and amounts**: Consistent with existing product-service pattern. Add `CHECK (quantity > 0)`, `CHECK (amount > 0)`, `CHECK (available_quantity >= 0)` etc. when business logic is implemented.

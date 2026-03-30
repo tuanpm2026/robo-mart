@@ -1,0 +1,16 @@
+{
+  "type": "record",
+  "name": "OrderStatusChangedEvent",
+  "namespace": "com.robomart.events.order",
+  "fields": [
+    {"name": "eventId", "type": "string"},
+    {"name": "eventType", "type": "string"},
+    {"name": "aggregateId", "type": "string"},
+    {"name": "aggregateType", "type": "string"},
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "version", "type": "int"},
+    {"name": "orderId", "type": "string"},
+    {"name": "previousStatus", "type": "string"},
+    {"name": "newStatus", "type": "string"}
+  ]
+}

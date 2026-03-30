@@ -25,6 +25,13 @@
         <avro.version>1.12.0</avro.version>
         <logstash-logback-encoder.version>8.0</logstash-logback-encoder.version>
         <confluent.version>7.9.0</confluent.version>
+        <spring-grpc.version>1.0.2</spring-grpc.version>
+        <grpc.version>1.77.1</grpc.version>
+        <protobuf.version>4.33.4</protobuf.version>
+        <guava.version>33.4.8-jre</guava.version>
+        <error-prone.version>2.41.0</error-prone.version>
+        <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
+        <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
     </properties>
 
     <repositories>
@@ -43,6 +50,9 @@
         <module>product-service</module>
         <module>cart-service</module>
         <module>api-gateway</module>
+        <module>order-service</module>
+        <module>inventory-service</module>
+        <module>payment-service</module>
     </modules>
 
     <dependencyManagement>
@@ -52,6 +62,15 @@
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
                 <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Spring gRPC BOM -->
+            <dependency>
+                <groupId>org.springframework.grpc</groupId>
+                <artifactId>spring-grpc-dependencies</artifactId>
+                <version>${spring-grpc.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -108,6 +127,18 @@
                 <groupId>net.logstash.logback</groupId>
                 <artifactId>logstash-logback-encoder</artifactId>
                 <version>${logstash-logback-encoder.version}</version>
+            </dependency>
+
+            <!-- Convergence pins for gRPC transitive deps -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_annotations</artifactId>
+                <version>${error-prone.version}</version>
             </dependency>
 
             <!-- Confluent Kafka Avro Serializer -->

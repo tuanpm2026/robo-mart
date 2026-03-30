@@ -1,0 +1,28 @@
+{
+  "type": "record",
+  "name": "OrderCreatedEvent",
+  "namespace": "com.robomart.events.order",
+  "fields": [
+    {"name": "eventId", "type": "string"},
+    {"name": "eventType", "type": "string"},
+    {"name": "aggregateId", "type": "string"},
+    {"name": "aggregateType", "type": "string"},
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "version", "type": "int"},
+    {"name": "orderId", "type": "string"},
+    {"name": "userId", "type": "string"},
+    {"name": "items", "type": {"type": "array", "items": {
+      "type": "record",
+      "name": "OrderItemDetail",
+      "fields": [
+        {"name": "productId", "type": "string"},
+        {"name": "productName", "type": "string"},
+        {"name": "quantity", "type": "int"},
+        {"name": "unitPrice", "type": "string"},
+        {"name": "subtotal", "type": "string"}
+      ]
+    }}},
+    {"name": "totalAmount", "type": "string"},
+    {"name": "status", "type": "string"}
+  ]
+}

@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package com.robomart.proto.payment;
+
+option java_package = "com.robomart.proto.payment";
+option java_outer_classname = "PaymentServiceProto";
+option java_multiple_files = true;
+
+import "common/types.proto";
+
+service PaymentService {
+  rpc ProcessPayment(ProcessPaymentRequest) returns (ProcessPaymentResponse);
+  rpc RefundPayment(RefundPaymentRequest) returns (RefundPaymentResponse);
+}
+
+message ProcessPaymentRequest {
+  string order_id = 1;
+  string user_id = 2;
+  com.robomart.proto.common.Money amount = 3;
+  string idempotency_key = 4;
+}
+
+message ProcessPaymentResponse {
+  bool success = 1;
+  string message = 2;
+  string payment_id = 3;
+  string transaction_id = 4;
+}
+
+message RefundPaymentRequest {
+  string payment_id = 1;
+  string order_id = 2;
+  com.robomart.proto.common.Money amount = 3;
+  string reason = 4;
+}
+
+message RefundPaymentResponse {
+  bool success = 1;
+  string message = 2;
+  string refund_transaction_id = 3;
+}

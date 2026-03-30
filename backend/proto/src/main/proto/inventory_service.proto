@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package com.robomart.proto.inventory;
+
+option java_package = "com.robomart.proto.inventory";
+option java_outer_classname = "InventoryServiceProto";
+option java_multiple_files = true;
+
+service InventoryService {
+  rpc ReserveInventory(ReserveInventoryRequest) returns (ReserveInventoryResponse);
+  rpc ReleaseInventory(ReleaseInventoryRequest) returns (ReleaseInventoryResponse);
+  rpc GetInventory(GetInventoryRequest) returns (GetInventoryResponse);
+}
+
+message ReserveInventoryRequest {
+  string order_id = 1;
+  repeated ReservationItem items = 2;
+}
+
+message ReservationItem {
+  string product_id = 1;
+  int32 quantity = 2;
+}
+
+message ReserveInventoryResponse {
+  bool success = 1;
+  string message = 2;
+  string reservation_id = 3;
+}
+
+message ReleaseInventoryRequest {
+  string order_id = 1;
+  string reservation_id = 2;
+  repeated ReservationItem items = 3;
+}
+
+message ReleaseInventoryResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message GetInventoryRequest {
+  string product_id = 1;
+}
+
+message GetInventoryResponse {
+  string product_id = 1;
+  int32 available_quantity = 2;
+  int32 reserved_quantity = 3;
+  int32 total_quantity = 4;
+}

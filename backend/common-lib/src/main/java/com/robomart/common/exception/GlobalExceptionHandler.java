@@ -71,7 +71,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleHandlerMethodValidation(HandlerMethodValidationException ex) {
         log.warn("Handler method validation error: {}", ex.getMessage());
         Map<String, String> fieldErrors = new HashMap<>();
-        ex.getAllValidationResults().forEach(result ->
+        ex.getParameterValidationResults().forEach(result ->
                 result.getResolvableErrors().forEach(error ->
                         fieldErrors.put(result.getMethodParameter().getParameterName(),
                                 error.getDefaultMessage())));
