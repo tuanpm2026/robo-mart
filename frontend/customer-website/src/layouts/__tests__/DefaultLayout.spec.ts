@@ -3,10 +3,24 @@ import { mount } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config'
+import ToastService from 'primevue/toastservice'
+import { useAuthStore } from '@/stores/useAuthStore'
 import DefaultLayout from '../DefaultLayout.vue'
 
 vi.mock('@/api/productApi', () => ({
   searchProducts: vi.fn().mockResolvedValue({ data: [], pagination: { page: 0, size: 5, totalElements: 0, totalPages: 0 }, traceId: '' }),
+}))
+
+vi.mock('@/auth/authService', () => ({
+  getUser: vi.fn().mockResolvedValue(null),
+  getAccessToken: vi.fn().mockReturnValue(null),
+  login: vi.fn(),
+  register: vi.fn(),
+  logout: vi.fn(),
+  renewToken: vi.fn().mockResolvedValue(null),
+  saveRedirectPath: vi.fn(),
+  consumeRedirectPath: vi.fn().mockReturnValue('/'),
+  subscribeToAuthEvents: vi.fn().mockReturnValue(vi.fn()),
 }))
 
 function createTestRouter() {
@@ -23,7 +37,7 @@ function mountLayout() {
     await router.push('/')
     await router.isReady()
     return mount(DefaultLayout, {
-      global: { plugins: [router, pinia, PrimeVue] },
+      global: { plugins: [router, pinia, PrimeVue, ToastService] },
     })
   }}
 }
@@ -67,11 +81,11 @@ describe('DefaultLayout', () => {
     expect(wrapper.find('.search-bar').exists()).toBe(true)
   })
 
-  it('should render cart and user action buttons', async () => {
+  it('should render user button with Log in label when unauthenticated', async () => {
     const { mount: m } = mountLayout()
     const wrapper = await m()
     expect(wrapper.find('[aria-label="Shopping cart, 0 items"]').exists()).toBe(true)
-    expect(wrapper.find('[aria-label="User menu"]').exists()).toBe(true)
+    expect(wrapper.find('[aria-label="Log in"]').exists()).toBe(true)
   })
 
   it('should render category navigation links', async () => {
@@ -80,5 +94,16 @@ describe('DefaultLayout', () => {
     const links = wrapper.findAll('.category-nav__link')
     expect(links.length).toBeGreaterThan(1)
     expect(links[0]!.text()).toBe('All')
+  })
+
+  it('should show user name and menu button when authenticated', async () => {
+    const { mount: m, pinia } = mountLayout()
+    const store = useAuthStore(pinia)
+    store.user = { id: 'u1', email: 'john@test.com', firstName: 'John', lastName: 'Doe', roles: ['CUSTOMER'] }
+    store.accessToken = 'token-123'
+
+    const wrapper = await m()
+    expect(wrapper.find('[aria-label="User menu"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('John')
   })
 })

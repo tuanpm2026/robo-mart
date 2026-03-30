@@ -1,13 +1,39 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { RouterView, RouterLink, useRoute } from 'vue-router'
 import Badge from 'primevue/badge'
+import Menu from 'primevue/menu'
+import { useToast } from 'primevue/usetoast'
 import SearchBar from '@/components/product/SearchBar.vue'
+import LoginModal from '@/components/auth/LoginModal.vue'
 import { useCategoryStore } from '@/stores/useCategoryStore'
 import { useCartStore } from '@/stores/useCartStore'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 const categoryStore = useCategoryStore()
 const cartStore = useCartStore()
+const authStore = useAuthStore()
 const route = useRoute()
+const toast = useToast()
+
+const showLoginModal = ref(false)
+const userMenu = ref()
+
+const userMenuItems = ref([
+  {
+    label: 'My Account',
+    icon: 'pi pi-user',
+    disabled: true,
+  },
+  {
+    separator: true,
+  },
+  {
+    label: 'Logout',
+    icon: 'pi pi-sign-out',
+    command: handleLogout,
+  },
+])
 
 function onCategoryClick(categoryId: number | null) {
   categoryStore.selectCategory(categoryId)
@@ -18,6 +44,24 @@ function isCategoryActive(categoryId: number | null): boolean {
     return !route.query.categoryId
   }
   return String(route.query.categoryId) === String(categoryId)
+}
+
+function onUserButtonClick(event: Event) {
+  if (authStore.isAuthenticated) {
+    userMenu.value.toggle(event)
+  } else {
+    showLoginModal.value = true
+  }
+}
+
+async function handleLogout() {
+  await authStore.logout()
+  toast.add({
+    severity: 'success',
+    summary: 'Logged out',
+    detail: 'You have been logged out successfully.',
+    life: 3000,
+  })
 }
 </script>
 
@@ -69,32 +113,45 @@ function isCategoryActive(categoryId: number | null): boolean {
               aria-live="polite"
             />
           </RouterLink>
-          <button class="header__user-btn" type="button" aria-label="User menu">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
-              <path
-                d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <circle
-                cx="12"
-                cy="7"
-                r="4"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
+
+          <button
+            class="header__user-btn"
+            type="button"
+            :aria-label="authStore.isAuthenticated ? 'User menu' : 'Log in'"
+            @click="onUserButtonClick"
+          >
+            <template v-if="authStore.isAuthenticated">
+              <span class="header__user-name">{{ authStore.displayName }}</span>
+              <i class="pi pi-chevron-down header__user-chevron" />
+            </template>
+            <template v-else>
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <path
+                  d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+                <circle
+                  cx="12"
+                  cy="7"
+                  r="4"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </template>
           </button>
+          <Menu ref="userMenu" :model="userMenuItems" :popup="true" />
         </div>
       </div>
     </header>
@@ -131,6 +188,8 @@ function isCategoryActive(categoryId: number | null): boolean {
         <p>&copy; {{ new Date().getFullYear() }} RoboMart. All rights reserved.</p>
       </div>
     </footer>
+
+    <LoginModal v-model:visible="showLoginModal" />
   </div>
 </template>
 
@@ -182,9 +241,9 @@ function isCategoryActive(categoryId: number | null): boolean {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
+  min-width: 40px;
   height: 40px;
-  padding: 0;
+  padding: 0 8px;
   background: none;
   border: none;
   border-radius: 8px;
@@ -211,6 +270,20 @@ function isCategoryActive(categoryId: number | null): boolean {
 .header__user-btn:hover {
   background: var(--color-gray-100);
   color: var(--color-gray-900);
+}
+
+.header__user-name {
+  font-size: 14px;
+  font-weight: 500;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header__user-chevron {
+  font-size: 10px;
+  margin-left: 4px;
 }
 
 .category-nav {

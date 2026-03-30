@@ -64,7 +64,7 @@ development_status:
   # Epic 3: User Authentication & Authorization
   epic-3: in-progress
   3-1-add-keycloak-api-gateway-infrastructure: done
-  3-2-implement-customer-registration-login: backlog
+  3-2-implement-customer-registration-login: done
   3-3-implement-api-gateway-jwt-validation-rbac: backlog
   3-4-implement-anonymous-cart-merge-on-login: backlog
   epic-3-retrospective: optional

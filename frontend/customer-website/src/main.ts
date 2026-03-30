@@ -8,10 +8,13 @@ import { customerTheme } from '@robo-mart/shared'
 
 import App from './App.vue'
 import router from './router'
+import { setAuthAccessor } from './api/client'
+import { useAuthStore } from './stores/useAuthStore'
 
 const app = createApp(App)
+const pinia = createPinia()
 
-app.use(createPinia())
+app.use(pinia)
 app.use(router)
 app.use(PrimeVue, {
   theme: {
@@ -23,4 +26,16 @@ app.use(PrimeVue, {
 })
 app.use(ToastService)
 
-app.mount('#app')
+// Wire auth store into API client (avoids circular import)
+const authStore = useAuthStore()
+setAuthAccessor(() => ({
+  accessToken: authStore.accessToken,
+  userId: authStore.user?.id || null,
+  refreshToken: () => authStore.refreshToken(),
+  logout: () => authStore.logout(),
+}))
+
+// Initialize auth state before mounting (restore session from storage)
+authStore.initAuth().finally(() => {
+  app.mount('#app')
+})

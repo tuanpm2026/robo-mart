@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Silent Renew</title>
+  </head>
+  <body>
+    <script>
+      // This page is loaded in a hidden iframe by oidc-client-ts for silent token renewal.
+      // It notifies the parent window of the authentication result.
+      // With Keycloak, refresh tokens are preferred over iframe-based renewal,
+      // so this page is a fallback only.
+      window.parent.postMessage(window.location.href, window.location.origin)
+    </script>
+  </body>
+</html>
