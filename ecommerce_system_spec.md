@@ -70,7 +70,7 @@ Laptop:
 - Code + test nhanh
 
 Server (HP Z420):
-- K3s cluster
+- K8s cluster
 - Full system test
 
 Flow:
@@ -103,7 +103,7 @@ Pipeline:
 
 - Spring Boot
 - Docker
-- Kubernetes (K3s)
+- Kubernetes (K8s)
 - Kafka
 - Redis
 - PostgreSQL

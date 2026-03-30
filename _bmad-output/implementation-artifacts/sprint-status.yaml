@@ -63,12 +63,12 @@ development_status:
   epic-2-retrospective: done
 
   # Epic 3: User Authentication & Authorization
-  epic-3: in-progress
+  epic-3: done
   3-1-add-keycloak-api-gateway-infrastructure: done
   3-2-implement-customer-registration-login: done
   3-3-implement-api-gateway-jwt-validation-rbac: done
   3-4-implement-anonymous-cart-merge-on-login: done
-  epic-3-retrospective: optional
+  epic-3-retrospective: done
 
   # Epic 4: Order Processing & Distributed Transactions
   epic-4: backlog
