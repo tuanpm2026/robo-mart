@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { getCart, addToCart, updateQuantity, removeItem } from '@/api/cartApi'
+import { getCart, addToCart, updateQuantity, removeItem, mergeCart } from '@/api/cartApi'
+import { clearAnonymousIdCache } from '@/api/client'
 import type { CartItem, AddToCartRequest } from '@/types/cart'
 
 export const useCartStore = defineStore('cart', () => {
@@ -77,6 +78,21 @@ export const useCartStore = defineStore('cart', () => {
     }
   }
 
+  async function mergeAnonymousCart(): Promise<void> {
+    const ANONYMOUS_KEY = 'robomart-user-id'
+    const anonymousId = localStorage.getItem(ANONYMOUS_KEY)
+    if (!anonymousId) return
+
+    try {
+      const response = await mergeCart(anonymousId)
+      items.value = response.data.items
+      localStorage.removeItem(ANONYMOUS_KEY)
+      clearAnonymousIdCache()
+    } catch (err) {
+      console.error('Cart merge failed:', err)
+    }
+  }
+
   function $reset() {
     items.value = []
     isLoading.value = false
@@ -93,6 +109,7 @@ export const useCartStore = defineStore('cart', () => {
     addItem,
     updateItemQuantity,
     removeCartItem,
+    mergeAnonymousCart,
     $reset,
   }
 })

@@ -3,6 +3,7 @@ package com.robomart.gateway.config;
 import com.robomart.security.converter.KeycloakRealmRoleConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
@@ -26,6 +27,7 @@ public class GatewaySecurityConfig {
                         .pathMatchers("/actuator/health/**").permitAll()
                         .pathMatchers("/api/v1/products/**").permitAll()
                         .pathMatchers("/graphql").permitAll()
+                        .pathMatchers(HttpMethod.POST, "/api/v1/cart/merge").authenticated()
                         .pathMatchers("/api/v1/cart/**").permitAll()
                         .pathMatchers("/api/v1/orders/**").authenticated()
                         .pathMatchers("/api/v1/admin/**").hasRole("ADMIN")

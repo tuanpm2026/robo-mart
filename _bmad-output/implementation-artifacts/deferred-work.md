@@ -72,3 +72,10 @@
 
 - **No rate limiting on cart endpoints**: `/api/v1/cart/**` is `permitAll()` with client-supplied anonymous identity. Attacker can create unlimited anonymous cart sessions. Pre-existing from Epic 2 design. Consider rate limiting in Epic 8 (resilience).
 - **GraphQL endpoint may bypass path-based RBAC**: `/graphql` is public. If federated mutations for orders/admin are added later, path-based security cannot distinguish operations. Architectural concern for future GraphQL federation/stitching.
+
+## Deferred from: code review of 3-4-implement-anonymous-cart-merge-on-login (2026-03-30)
+
+- **Race condition: non-atomic read-modify-write in CartMergeService**: No Redis transaction or distributed lock around findById → addItem → save → deleteById. Concurrent merge calls could duplicate items. Acknowledged in spec as acceptable risk for one-time-per-session operation. Same root cause as Story 2.1 deferred item (Epic 8 scope).
+- **X-User-Id trusted without ownership validation on anonymousCartId**: Cart service trusts X-User-Id header and accepts any anonymousCartId in request body. An authenticated user could theoretically merge another user's cart by guessing their UUID. Mitigated by UUID randomness (128-bit) and gateway auth enforcement. Pre-existing trust model.
+- **No upper bound on cart item count during merge**: Cart.addItem() caps quantity at 9999 per item but does not limit total distinct items. Anonymous cart with many unique products could bloat the auth cart. Pre-existing — addToCart() has same issue.
+- **Missing MissingRequestHeaderException handler returns 500 instead of 400**: When X-User-Id header is missing, Spring throws MissingRequestHeaderException which falls through to generic Exception handler returning 500. Pre-existing — affects all endpoints using @RequestHeader.

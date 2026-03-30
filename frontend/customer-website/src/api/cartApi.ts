@@ -26,3 +26,10 @@ export async function updateQuantity(
 export async function removeItem(productId: number): Promise<void> {
   await apiClient.delete(`/api/v1/cart/items/${productId}`)
 }
+
+export async function mergeCart(anonymousCartId: string): Promise<ApiResponse<Cart>> {
+  const { data } = await apiClient.post<ApiResponse<Cart>>('/api/v1/cart/merge', {
+    anonymousCartId,
+  })
+  return data
+}

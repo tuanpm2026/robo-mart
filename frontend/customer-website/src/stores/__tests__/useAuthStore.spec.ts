@@ -25,6 +25,14 @@ const mockSaveRedirectPath = vi.fn()
 const mockConsumeRedirectPath = vi.fn().mockReturnValue('/cart')
 const mockSubscribeToAuthEvents = vi.fn().mockReturnValue(vi.fn())
 
+const mockMergeAnonymousCart = vi.fn().mockResolvedValue(undefined)
+
+vi.mock('@/stores/useCartStore', () => ({
+  useCartStore: () => ({
+    mergeAnonymousCart: mockMergeAnonymousCart,
+  }),
+}))
+
 vi.mock('@/auth/authService', () => ({
   login: (...args: unknown[]) => mockLogin(...args),
   register: (...args: unknown[]) => mockRegister(...args),
@@ -115,6 +123,41 @@ describe('useAuthStore', () => {
       await store.initAuth()
 
       expect(store.isAuthenticated).toBe(false)
+    })
+
+    it('should merge anonymous cart when authenticated and localStorage has anonymous ID', async () => {
+      mockGetUser.mockResolvedValue(mockOidcUser)
+      mockGetAccessToken.mockReturnValue('mock-access-token')
+      localStorage.setItem('robomart-user-id', 'anon-uuid-init')
+
+      const store = useAuthStore()
+      await store.initAuth()
+
+      expect(mockMergeAnonymousCart).toHaveBeenCalled()
+    })
+
+    it('should not merge anonymous cart when no anonymous ID in localStorage', async () => {
+      mockGetUser.mockResolvedValue(mockOidcUser)
+      mockGetAccessToken.mockReturnValue('mock-access-token')
+      localStorage.removeItem('robomart-user-id')
+
+      const store = useAuthStore()
+      await store.initAuth()
+
+      expect(mockMergeAnonymousCart).not.toHaveBeenCalled()
+    })
+
+    it('should proceed with init even if merge fails', async () => {
+      mockGetUser.mockResolvedValue(mockOidcUser)
+      mockGetAccessToken.mockReturnValue('mock-access-token')
+      localStorage.setItem('robomart-user-id', 'anon-uuid-init')
+      mockMergeAnonymousCart.mockRejectedValueOnce(new Error('Merge failed'))
+
+      const store = useAuthStore()
+      await store.initAuth()
+
+      expect(store.isAuthenticated).toBe(true)
+      expect(store.accessToken).toBe('mock-access-token')
     })
 
     it('should subscribe to auth events on init', async () => {
@@ -353,6 +396,30 @@ describe('useAuthStore', () => {
     it('should return empty string when no user', () => {
       const store = useAuthStore()
       expect(store.displayName).toBe('')
+    })
+  })
+
+  // === Story 3.4: Cart Merge on Login ===
+
+  describe('cart merge on handleCallback', () => {
+    it('shouldMergeCartDuringLoginCallback', async () => {
+      mockLoginCallback.mockResolvedValue(mockOidcUser)
+
+      const store = useAuthStore()
+      await store.handleCallback()
+
+      expect(mockMergeAnonymousCart).toHaveBeenCalled()
+    })
+
+    it('shouldProceedWithRedirectEvenIfMergeFails', async () => {
+      mockLoginCallback.mockResolvedValue(mockOidcUser)
+      mockMergeAnonymousCart.mockRejectedValueOnce(new Error('Merge failed'))
+
+      const store = useAuthStore()
+      const path = await store.handleCallback()
+
+      expect(path).toBe('/cart')
+      expect(store.isAuthenticated).toBe(true)
     })
   })
 

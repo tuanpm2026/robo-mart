@@ -2,6 +2,7 @@ import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import type { AuthUser } from '@/types/auth'
 import type { User } from 'oidc-client-ts'
+import { useCartStore } from '@/stores/useCartStore'
 import {
   login as authLogin,
   loginCallback,
@@ -69,6 +70,15 @@ export const useAuthStore = defineStore('auth', () => {
       isLoading.value = false
     }
 
+    // Merge anonymous cart if authenticated and localStorage still has anonymous ID
+    if (user.value && accessToken.value && localStorage.getItem('robomart-user-id')) {
+      try {
+        await useCartStore().mergeAnonymousCart()
+      } catch {
+        // Non-blocking — merge failure should not break init
+      }
+    }
+
     // Subscribe to OIDC events for cross-tab sync and silent renewal updates
     if (!unsubscribeEvents) {
       unsubscribeEvents = subscribeToAuthEvents({
@@ -114,6 +124,14 @@ export const useAuthStore = defineStore('auth', () => {
       const oidcUser = await loginCallback()
       user.value = mapOidcUser(oidcUser)
       accessToken.value = oidcUser.access_token
+
+      // Merge anonymous cart after login (non-blocking)
+      try {
+        await useCartStore().mergeAnonymousCart()
+      } catch {
+        // Merge failure should not block login flow
+      }
+
       return consumeRedirectPath()
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Authentication failed'

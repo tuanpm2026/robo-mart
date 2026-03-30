@@ -3,6 +3,10 @@ import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
 let cachedAnonymousId: string | null = null
 
+export function clearAnonymousIdCache(): void {
+  cachedAnonymousId = null
+}
+
 export function getAnonymousUserId(): string {
   if (cachedAnonymousId) return cachedAnonymousId
   try {

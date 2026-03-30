@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.robomart.cart.dto.AddCartItemRequest;
 import com.robomart.cart.dto.CartResponse;
+import com.robomart.cart.dto.MergeCartRequest;
 import com.robomart.cart.dto.UpdateCartItemRequest;
+import com.robomart.cart.service.CartMergeService;
 import com.robomart.cart.service.CartService;
 import com.robomart.common.dto.ApiResponse;
 
@@ -33,10 +35,12 @@ public class CartRestController {
     public static final String USER_ID_HEADER = "X-User-Id";
 
     private final CartService cartService;
+    private final CartMergeService cartMergeService;
     private final Tracer tracer;
 
-    public CartRestController(CartService cartService, Tracer tracer) {
+    public CartRestController(CartService cartService, CartMergeService cartMergeService, Tracer tracer) {
         this.cartService = cartService;
+        this.cartMergeService = cartMergeService;
         this.tracer = tracer;
     }
 
@@ -81,6 +85,15 @@ public class CartRestController {
         return ResponseEntity.noContent()
                 .header(CART_ID_HEADER, resolvedCartId)
                 .build();
+    }
+
+    @PostMapping("/merge")
+    public ResponseEntity<ApiResponse<CartResponse>> mergeCart(
+            @RequestHeader(value = USER_ID_HEADER) String userId,
+            @RequestBody @Valid MergeCartRequest request) {
+
+        CartResponse cart = cartMergeService.mergeCart(request.anonymousCartId(), userId);
+        return ResponseEntity.ok(new ApiResponse<>(cart, getTraceId()));
     }
 
     @GetMapping

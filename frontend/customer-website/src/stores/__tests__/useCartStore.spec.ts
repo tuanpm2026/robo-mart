@@ -40,6 +40,23 @@ vi.mock('@/api/cartApi', () => ({
     traceId: 'trace-1',
   }),
   removeItem: vi.fn().mockResolvedValue(undefined),
+  mergeCart: vi.fn().mockResolvedValue({
+    data: {
+      cartId: 'user-uuid-123',
+      items: [
+        { productId: 1, productName: 'Product 1', price: 10.0, quantity: 3, subtotal: 30.0 },
+        { productId: 2, productName: 'Product 2', price: 25.5, quantity: 1, subtotal: 25.5 },
+        { productId: 3, productName: 'Product 3', price: 15.0, quantity: 2, subtotal: 30.0 },
+      ],
+      totalItems: 6,
+      totalPrice: 85.5,
+    },
+    traceId: 'trace-merge',
+  }),
+}))
+
+vi.mock('@/api/client', () => ({
+  clearAnonymousIdCache: vi.fn(),
 }))
 
 describe('useCartStore', () => {
@@ -198,5 +215,72 @@ describe('useCartStore', () => {
     expect(store.items).toEqual([])
     expect(store.isLoading).toBe(false)
     expect(store.error).toBeNull()
+  })
+
+  // === Story 3.4: Cart Merge ===
+
+  describe('mergeAnonymousCart', () => {
+    it('shouldCallMergeApiWithAnonymousIdFromLocalStorage', async () => {
+      const { mergeCart } = await import('@/api/cartApi')
+      localStorage.setItem('robomart-user-id', 'anon-uuid-test')
+
+      const store = useCartStore()
+      await store.mergeAnonymousCart()
+
+      expect(mergeCart).toHaveBeenCalledWith('anon-uuid-test')
+    })
+
+    it('shouldUpdateStoreWithMergedCartResponse', async () => {
+      localStorage.setItem('robomart-user-id', 'anon-uuid-test')
+
+      const store = useCartStore()
+      await store.mergeAnonymousCart()
+
+      expect(store.items).toHaveLength(3)
+      expect(store.totalItems).toBe(6)
+      expect(store.totalPrice).toBe(85.5)
+    })
+
+    it('shouldClearLocalStorageAfterSuccessfulMerge', async () => {
+      localStorage.setItem('robomart-user-id', 'anon-uuid-test')
+
+      const store = useCartStore()
+      await store.mergeAnonymousCart()
+
+      expect(localStorage.getItem('robomart-user-id')).toBeNull()
+    })
+
+    it('shouldClearAnonymousIdCacheAfterSuccessfulMerge', async () => {
+      const { clearAnonymousIdCache } = await import('@/api/client')
+      localStorage.setItem('robomart-user-id', 'anon-uuid-test')
+
+      const store = useCartStore()
+      await store.mergeAnonymousCart()
+
+      expect(clearAnonymousIdCache).toHaveBeenCalled()
+    })
+
+    it('shouldNotCallMergeWhenNoAnonymousIdExists', async () => {
+      const { mergeCart } = await import('@/api/cartApi')
+      localStorage.removeItem('robomart-user-id')
+
+      const store = useCartStore()
+      await store.mergeAnonymousCart()
+
+      expect(mergeCart).not.toHaveBeenCalled()
+    })
+
+    it('shouldHandleMergeFailureGracefully', async () => {
+      const { mergeCart } = await import('@/api/cartApi')
+      vi.mocked(mergeCart).mockRejectedValueOnce(new Error('Merge failed'))
+      localStorage.setItem('robomart-user-id', 'anon-uuid-test')
+
+      const store = useCartStore()
+      // Should not throw
+      await store.mergeAnonymousCart()
+
+      // localStorage should NOT be cleared on failure
+      expect(localStorage.getItem('robomart-user-id')).toBe('anon-uuid-test')
+    })
   })
 })

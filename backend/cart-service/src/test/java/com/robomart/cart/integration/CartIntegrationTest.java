@@ -11,6 +11,9 @@ import org.springframework.web.client.RestClient;
 
 import com.robomart.test.IntegrationTest;
 
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
@@ -21,6 +24,7 @@ class CartIntegrationTest {
     private int port;
 
     private RestClient restClient;
+    private final JsonMapper jsonMapper = JsonMapper.builder().build();
 
     @BeforeEach
     void setUp() {
@@ -391,6 +395,186 @@ class CartIntegrationTest {
                 .retrieve()
                 .toEntity(String.class);
         assertThat(expiredResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    // === Story 3.4: Cart Merge on Login ===
+
+    @Test
+    void shouldMergeAnonymousCartIntoAuthenticatedUserCart() {
+        String anonymousId = "anon-merge-test-" + System.nanoTime();
+        String userId = "user-merge-test-" + System.nanoTime();
+
+        // Create anonymous cart with 2 items
+        restClient.post()
+                .uri("/api/v1/cart/items")
+                .header("X-Cart-Id", anonymousId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 1, "productName": "Anon Item A", "price": 10.00, "quantity": 2}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        restClient.post()
+                .uri("/api/v1/cart/items")
+                .header("X-Cart-Id", anonymousId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 2, "productName": "Anon Item B", "price": 20.00, "quantity": 1}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        // Create authenticated user cart with 1 item
+        restClient.post()
+                .uri("/api/v1/cart/items")
+                .header("X-User-Id", userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 3, "productName": "Auth Item C", "price": 30.00, "quantity": 1}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        // Merge
+        var mergeResponse = restClient.post()
+                .uri("/api/v1/cart/merge")
+                .header("X-User-Id", userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"anonymousCartId\": \"" + anonymousId + "\"}")
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(mergeResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode mergeData = jsonMapper.readTree(mergeResponse.getBody()).get("data");
+        assertThat(mergeData.get("totalItems").intValue()).isEqualTo(4);
+        assertThat(mergeData.get("items").toString())
+                .contains("Anon Item A", "Anon Item B", "Auth Item C");
+
+        // Verify anonymous cart is deleted
+        var anonCartResponse = restClient.get()
+                .uri("/api/v1/cart")
+                .header("X-Cart-Id", anonymousId)
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(anonCartResponse.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void shouldSumDuplicateProductQuantitiesOnMerge() {
+        String anonymousId = "anon-dup-test-" + System.nanoTime();
+        String userId = "user-dup-test-" + System.nanoTime();
+
+        // Same product in both carts
+        restClient.post()
+                .uri("/api/v1/cart/items")
+                .header("X-Cart-Id", anonymousId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 1, "productName": "Shared Product", "price": 10.00, "quantity": 3}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        restClient.post()
+                .uri("/api/v1/cart/items")
+                .header("X-User-Id", userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 1, "productName": "Shared Product", "price": 10.00, "quantity": 2}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        var mergeResponse = restClient.post()
+                .uri("/api/v1/cart/merge")
+                .header("X-User-Id", userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"anonymousCartId\": \"" + anonymousId + "\"}")
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(mergeResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode dupData = jsonMapper.readTree(mergeResponse.getBody()).get("data");
+        assertThat(dupData.get("totalItems").intValue()).isEqualTo(5);
+    }
+
+    @Test
+    void shouldReturnUserCartWhenAnonymousCartNotFoundOnMerge() {
+        String userId = "user-noanon-test-" + System.nanoTime();
+
+        // Create authenticated cart
+        restClient.post()
+                .uri("/api/v1/cart/items")
+                .header("X-User-Id", userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 1, "productName": "Existing Item", "price": 10.00, "quantity": 1}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        // Merge with non-existent anonymous cart
+        var mergeResponse = restClient.post()
+                .uri("/api/v1/cart/merge")
+                .header("X-User-Id", userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"anonymousCartId": "nonexistent-anon-id"}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(mergeResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode noAnonData = jsonMapper.readTree(mergeResponse.getBody()).get("data");
+        assertThat(noAnonData.get("totalItems").intValue()).isEqualTo(1);
+        assertThat(noAnonData.get("items").toString()).contains("Existing Item");
+    }
+
+    @Test
+    void shouldHandleIdempotentMergeCalls() {
+        String anonymousId = "anon-idempotent-" + System.nanoTime();
+        String userId = "user-idempotent-" + System.nanoTime();
+
+        // Create anonymous cart
+        restClient.post()
+                .uri("/api/v1/cart/items")
+                .header("X-Cart-Id", anonymousId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 1, "productName": "Item A", "price": 10.00, "quantity": 1}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        String mergeBody = "{\"anonymousCartId\": \"" + anonymousId + "\"}";
+
+        // First merge
+        var firstMerge = restClient.post()
+                .uri("/api/v1/cart/merge")
+                .header("X-User-Id", userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(mergeBody)
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(firstMerge.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode firstData = jsonMapper.readTree(firstMerge.getBody()).get("data");
+        assertThat(firstData.get("totalItems").intValue()).isEqualTo(1);
+
+        // Second merge (anon cart already deleted) — should be a graceful no-op
+        var secondMerge = restClient.post()
+                .uri("/api/v1/cart/merge")
+                .header("X-User-Id", userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(mergeBody)
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(secondMerge.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode secondData = jsonMapper.readTree(secondMerge.getBody()).get("data");
+        assertThat(secondData.get("totalItems").intValue()).isEqualTo(1);
     }
 
     @Test
