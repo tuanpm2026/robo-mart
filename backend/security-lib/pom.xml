@@ -12,5 +12,37 @@
 
     <artifactId>security-lib</artifactId>
     <name>Robo-Mart Security Library</name>
-    <description>JWT filter, security config, auth utilities</description>
+    <description>Keycloak JWT role converter, auth context utilities — shared by servlet and reactive consumers</description>
+
+    <dependencies>
+        <!-- SLF4J for logging in converters -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- Spring Security OAuth2 Resource Server (core library, no web framework) -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-resource-server</artifactId>
+        </dependency>
+
+        <!-- Spring Security OAuth2 JOSE (JWT parsing/validation) -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-jose</artifactId>
+        </dependency>
+
+        <!-- Test dependencies -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>

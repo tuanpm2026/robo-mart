@@ -42,6 +42,7 @@
         <module>test-support</module>
         <module>product-service</module>
         <module>cart-service</module>
+        <module>api-gateway</module>
     </modules>
 
     <dependencyManagement>

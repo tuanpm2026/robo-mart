@@ -130,6 +130,66 @@ services:
       timeout: 5s
       retries: 5
 
+  keycloak-db:
+    image: postgres:17
+    container_name: robomart-keycloak-db
+    profiles: ["core"]
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: ${KEYCLOAK_DB_USER:-keycloak}
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
+    ports:
+      - "${KEYCLOAK_DB_PORT:-5433}:5432"
+    volumes:
+      - keycloak-data:/var/lib/postgresql/data
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${KEYCLOAK_DB_USER:-keycloak}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.4
+    container_name: robomart-keycloak
+    profiles: ["core"]
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    command:
+      - start-dev
+      - --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:-admin}
+      KC_HTTP_PORT: 8180
+      KC_HEALTH_ENABLED: "true"
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-keycloak}
+    ports:
+      - "${KEYCLOAK_PORT:-8180}:8180"
+    volumes:
+      - ./keycloak:/opt/keycloak/data/import
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8180 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+
   kafka-ui:
     image: provectuslabs/kafka-ui:v0.7.2
     container_name: robomart-kafka-ui
@@ -151,9 +211,15 @@ services:
       resources:
         limits:
           memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/clusters || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
 
 volumes:
   postgres-data:
   elasticsearch-data:
   kafka-data:
   redis-data:
+  keycloak-data:

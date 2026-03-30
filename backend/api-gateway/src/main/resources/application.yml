@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: api-gateway
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/robomart
+
+  cloud:
+    gateway:
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+
+server:
+  port: 8080
+
+# Downstream service URIs
+gateway:
+  services:
+    product-service: http://localhost:8081
+    cart-service: http://localhost:8082
+  cors:
+    customer-origin: http://localhost:5173
+    admin-origin: http://localhost:5174
+    keycloak-origin: http://localhost:8180
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: when-authorized
+    gateway:
+      enabled: true

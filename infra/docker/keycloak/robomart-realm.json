@@ -1,0 +1,139 @@
+{
+  "id": "robomart",
+  "realm": "robomart",
+  "displayName": "RoboMart",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 86400,
+  "offlineSessionIdleTimeout": 2592000,
+  "offlineSessionMaxLifespan": 5184000,
+  "roles": {
+    "realm": [
+      {
+        "name": "CUSTOMER",
+        "description": "Customer role — browse, purchase, view own orders"
+      },
+      {
+        "name": "ADMIN",
+        "description": "Admin role — full CRUD on products, inventory, orders, reports"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "robo-mart-frontend",
+      "name": "RoboMart Frontend SPA",
+      "description": "Public client for Customer Website and Admin Dashboard",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:5173/*",
+        "http://localhost:5174/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173",
+        "http://localhost:5174"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*##http://localhost:5174/*"
+      }
+    },
+    {
+      "clientId": "robo-mart-gateway",
+      "name": "RoboMart API Gateway",
+      "description": "Confidential client for API Gateway (server-side)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "gateway-secret",
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080"
+      ]
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "google",
+      "providerId": "google",
+      "enabled": false,
+      "trustEmail": true,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "GOOGLE_CLIENT_ID_PLACEHOLDER",
+        "clientSecret": "GOOGLE_CLIENT_SECRET_PLACEHOLDER",
+        "defaultScope": "openid email profile"
+      }
+    },
+    {
+      "alias": "github",
+      "providerId": "github",
+      "enabled": false,
+      "trustEmail": true,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "clientId": "GITHUB_CLIENT_ID_PLACEHOLDER",
+        "clientSecret": "GITHUB_CLIENT_SECRET_PLACEHOLDER",
+        "defaultScope": "user:email"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "demo-customer",
+      "email": "demo-customer@robomart.com",
+      "firstName": "Demo",
+      "lastName": "Customer",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "customer123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "CUSTOMER"
+      ]
+    },
+    {
+      "username": "demo-admin",
+      "email": "demo-admin@robomart.com",
+      "firstName": "Demo",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "ADMIN"
+      ]
+    }
+  ]
+}
