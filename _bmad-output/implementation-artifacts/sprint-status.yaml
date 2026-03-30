@@ -36,6 +36,7 @@
 
 generated: 2026-03-27
 last_updated: "2026-03-30"
+# Story 4.2 completed: 2026-03-30
 # Story 4.1 completed: 2026-03-30
 # Story 4.1 created: 2026-03-30
 # Story 3.4 created: 2026-03-30
@@ -75,7 +76,7 @@ development_status:
   # Epic 4: Order Processing & Distributed Transactions
   epic-4: in-progress
   4-1-add-order-infrastructure-services-databases-grpc: done
-  4-2-implement-inventory-service-with-distributed-locking: backlog
+  4-2-implement-inventory-service-with-distributed-locking: done
   4-3-implement-payment-service-with-idempotency-retry: backlog
   4-4-implement-order-saga-orchestrator-phase-a-core-flow: backlog
   4-5-implement-order-cancellation-with-saga-compensation: backlog
