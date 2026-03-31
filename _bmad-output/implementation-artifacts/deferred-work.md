@@ -87,3 +87,7 @@
 - **SagaAuditLog.orderId VARCHAR vs orders.id BIGINT**: By design for cross-service string references per proto convention. No FK constraint since saga audit log uses string IDs for flexibility.
 - **Proto timestamps use int64 instead of google.protobuf.Timestamp**: Acceptable for infrastructure story. Can be updated in future proto evolution when needed.
 - **SQL tables missing CHECK constraints for quantities and amounts**: Consistent with existing product-service pattern. Add `CHECK (quantity > 0)`, `CHECK (amount > 0)`, `CHECK (available_quantity >= 0)` etc. when business logic is implemented.
+
+## Deferred from: code review of 4-3-implement-payment-service-with-idempotency-retry (2026-03-31)
+
+- **Clock skew on idempotency TTL check**: `Instant.now()` used for TTL comparison susceptible to clock skew across replicas. Use database `CURRENT_TIMESTAMP` in a custom repository query for production multi-instance deployment. Architectural decision for production deployment.
