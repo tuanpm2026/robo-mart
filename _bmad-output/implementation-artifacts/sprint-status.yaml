@@ -36,6 +36,8 @@
 
 generated: 2026-03-27
 last_updated: "2026-03-31"
+# Story 4.4 done: 2026-03-31
+# Story 4.4 created: 2026-03-31
 # Story 4.3 created: 2026-03-30
 # Story 4.2 completed: 2026-03-30
 # Story 4.1 completed: 2026-03-30
@@ -79,7 +81,7 @@ development_status:
   4-1-add-order-infrastructure-services-databases-grpc: done
   4-2-implement-inventory-service-with-distributed-locking: done
   4-3-implement-payment-service-with-idempotency-retry: done
-  4-4-implement-order-saga-orchestrator-phase-a-core-flow: backlog
+  4-4-implement-order-saga-orchestrator-phase-a-core-flow: done
   4-5-implement-order-cancellation-with-saga-compensation: backlog
   4-6-implement-customer-order-tracking-ui: backlog
   4-7-implement-customer-checkout-flow-ui: backlog

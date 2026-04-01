@@ -10,9 +10,19 @@ spring:
     bootstrap-servers: localhost:29092
     properties:
       schema.registry.url: http://localhost:8085
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
   grpc:
     server:
       port: 9093
+    client:
+      inventory-service:
+        address: 'static://localhost:9094'
+        negotiation-type: plaintext
+      payment-service:
+        address: 'static://localhost:9095'
+        negotiation-type: plaintext
 
 server:
   port: 8083

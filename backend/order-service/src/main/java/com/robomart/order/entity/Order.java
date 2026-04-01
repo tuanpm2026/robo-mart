@@ -34,6 +34,15 @@ public class Order extends BaseEntity {
     @Column(name = "shipping_address", columnDefinition = "TEXT")
     private String shippingAddress;
 
+    @Column(name = "reservation_id", length = 100)
+    private String reservationId;
+
+    @Column(name = "payment_id", length = 100)
+    private String paymentId;
+
+    @Column(name = "cancellation_reason", columnDefinition = "TEXT")
+    private String cancellationReason;
+
     @Version
     private Integer version;
 
@@ -75,8 +84,36 @@ public class Order extends BaseEntity {
         this.shippingAddress = shippingAddress;
     }
 
+    public String getReservationId() {
+        return reservationId;
+    }
+
+    public void setReservationId(String reservationId) {
+        this.reservationId = reservationId;
+    }
+
+    public String getPaymentId() {
+        return paymentId;
+    }
+
+    public void setPaymentId(String paymentId) {
+        this.paymentId = paymentId;
+    }
+
+    public String getCancellationReason() {
+        return cancellationReason;
+    }
+
+    public void setCancellationReason(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
+    }
+
     public Integer getVersion() {
         return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 
     public List<OrderItem> getItems() {

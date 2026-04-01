@@ -91,3 +91,12 @@
 ## Deferred from: code review of 4-3-implement-payment-service-with-idempotency-retry (2026-03-31)
 
 - **Clock skew on idempotency TTL check**: `Instant.now()` used for TTL comparison susceptible to clock skew across replicas. Use database `CURRENT_TIMESTAMP` in a custom repository query for production multi-instance deployment. Architectural decision for production deployment.
+
+## Deferred from: code review of 4-4-implement-order-saga-orchestrator-phase-a-core-flow (2026-03-31)
+
+- **Multiple service instances recovering same stale orders**: recoverStaleSagas() has no distributed lock. Concurrent startup of multiple replicas will all attempt to compensate the same stale orders, potentially double-releasing inventory. Requires Redis distributed lock or DB advisory lock (ShedLock). Out of Phase A scope.
+- **recoverStaleSagas() blocks startup synchronously for large volumes**: Sequential blocking gRPC calls per stale order. With thousands of stale orders this blocks readiness indefinitely and risks K8s liveness probe failure. Future: async recovery with bounded concurrency and a startup timeout budget.
+- **No gRPC deadlines/timeouts configured**: Blocking stubs have no deadline set. Slow/hung downstream services will block saga threads indefinitely. Configure per-call deadlines via stub.withDeadlineAfter() or global channel config in production.
+- **Hardcoded currency "USD" in ProcessPaymentStep**: Multi-currency support not in scope for Phase A. Revisit when multi-region/multi-currency requirements emerge.
+- **Order.setVersion() public accessor exposes version manipulation**: Needed for the saveAndFlush version-sync pattern. Low risk in current codebase but violates encapsulation. Future: make package-private or adopt a different version-sync approach.
+- **Orphaned payment in PAYMENT_PROCESSING crash recovery (Phase A known limitation)**: recoverStaleSagas() cancels order without checking if payment already succeeded. No refund is issued. Deferred to Story 4.5 which implements full cancel-order saga with payment compensation.
