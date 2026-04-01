@@ -10,6 +10,7 @@ import org.springframework.grpc.server.service.GrpcService;
 import com.robomart.common.exception.ResourceNotFoundException;
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderItem;
+import com.robomart.order.exception.OrderNotCancellableException;
 import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.order.service.OrderService;
 import com.robomart.proto.common.Address;
@@ -116,7 +117,25 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
 
     @Override
     public void cancelOrder(CancelOrderRequest request, StreamObserver<CancelOrderResponse> responseObserver) {
-        responseObserver.onError(Status.UNIMPLEMENTED.withDescription("CancelOrder not yet implemented — Story 4.5").asRuntimeException());
+        try {
+            Long orderId = Long.parseLong(request.getOrderId());
+            orderService.cancelOrder(orderId, request.getReason(), request.getCancelledBy());
+            responseObserver.onNext(CancelOrderResponse.newBuilder()
+                    .setSuccess(true)
+                    .setMessage("Order cancelled successfully")
+                    .setStatus("CANCELLED")
+                    .build());
+            responseObserver.onCompleted();
+        } catch (OrderNotCancellableException e) {
+            responseObserver.onError(Status.FAILED_PRECONDITION.withDescription(e.getMessage()).asRuntimeException());
+        } catch (ResourceNotFoundException e) {
+            responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
+        } catch (NumberFormatException e) {
+            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid orderId format").asRuntimeException());
+        } catch (Exception e) {
+            log.error("Unexpected error in cancelOrder: orderId={}", request.getOrderId(), e);
+            responseObserver.onError(Status.INTERNAL.withDescription("Internal error during order cancellation").asRuntimeException());
+        }
     }
 
     private String formatAddress(Address address) {

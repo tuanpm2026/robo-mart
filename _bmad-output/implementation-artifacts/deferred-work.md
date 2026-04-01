@@ -100,3 +100,11 @@
 - **Hardcoded currency "USD" in ProcessPaymentStep**: Multi-currency support not in scope for Phase A. Revisit when multi-region/multi-currency requirements emerge.
 - **Order.setVersion() public accessor exposes version manipulation**: Needed for the saveAndFlush version-sync pattern. Low risk in current codebase but violates encapsulation. Future: make package-private or adopt a different version-sync approach.
 - **Orphaned payment in PAYMENT_PROCESSING crash recovery (Phase A known limitation)**: recoverStaleSagas() cancels order without checking if payment already succeeded. No refund is issued. Deferred to Story 4.5 which implements full cancel-order saga with payment compensation.
+
+## Deferred from: code review of 4-5-implement-order-cancellation-with-saga-compensation (2026-04-01)
+
+- **sagaId used as both sagaId and correlationId in logSagaStep**: `logSagaStep(sagaId, sagaId, ...)` passes orderId for both args. Pre-existing pattern established in Story 4.4; not introduced by this story. Fix when saga audit log reporting needs separate correlation IDs.
+- **SagaStepException retryable=false for all gRPC errors in RefundPaymentStep**: Transient errors like UNAVAILABLE are marked non-retryable, meaning a temporarily unavailable payment service skips refund permanently. Intentional best-effort design for Story 4.5 scope; revisit in Epic 8 resilience work.
+- **Best-effort cancellation has no persistent refund_failed flag**: When refund fails during CONFIRMED order cancellation, error is logged but no flag/field persists on the order. Reconciliation job cannot identify orders with failed refunds. Deferred — reconciliation tooling is out of Story 4.5 scope (Epic 6 or Epic 8).
+- **Empty items list when reservationId non-null**: If orderItemRepository.findByOrderId() returns empty for an order with a reservationId, ReleaseInventoryStep sends a release request with no items. Items are loaded upfront in cancelOrder() so this shouldn't occur in normal operation; add guard when defensive hardening lands in Epic 8.
+- **UnsupportedOperationException in RefundPaymentStep.compensate()**: Throws UnsupportedOperationException if compensate() is ever called. Intentional defensive design (forward-only step). Consider logging + no-op if this creates issues during future refactoring.

@@ -41,6 +41,7 @@ import com.robomart.order.saga.SagaContext;
 import com.robomart.order.saga.SagaStep;
 import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.order.saga.steps.ProcessPaymentStep;
+import com.robomart.order.saga.steps.RefundPaymentStep;
 import com.robomart.order.saga.steps.ReleaseInventoryStep;
 import com.robomart.order.saga.steps.ReserveInventoryStep;
 
@@ -77,6 +78,9 @@ class OrderSagaOrchestratorTest {
     @Mock
     private ReleaseInventoryStep releaseInventoryStep;
 
+    @Mock
+    private RefundPaymentStep refundPaymentStep;
+
     private OrderSagaOrchestrator orchestrator;
     private ObjectMapper objectMapper;
 
@@ -93,7 +97,8 @@ class OrderSagaOrchestratorTest {
                 objectMapper,
                 reserveInventoryStep,
                 processPaymentStep,
-                releaseInventoryStep);
+                releaseInventoryStep,
+                refundPaymentStep);
 
         // TransactionTemplate executes callback immediately in tests
         lenient().when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
@@ -110,6 +115,7 @@ class OrderSagaOrchestratorTest {
         lenient().when(reserveInventoryStep.getName()).thenReturn("ReserveInventory");
         lenient().when(processPaymentStep.getName()).thenReturn("ProcessPayment");
         lenient().when(releaseInventoryStep.getName()).thenReturn("ReleaseInventory");
+        lenient().when(refundPaymentStep.getName()).thenReturn("RefundPaymentStep");
     }
 
     private Order buildOrder() {

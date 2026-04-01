@@ -3,17 +3,21 @@ package com.robomart.order.service;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+
 import com.robomart.common.exception.ResourceNotFoundException;
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderItem;
 import com.robomart.order.entity.OrderStatusHistory;
 import com.robomart.order.enums.OrderStatus;
+import com.robomart.order.exception.OrderNotCancellableException;
 import com.robomart.order.repository.OrderItemRepository;
 import com.robomart.order.repository.OrderRepository;
 import com.robomart.order.repository.OrderStatusHistoryRepository;
@@ -23,6 +27,8 @@ import com.robomart.order.saga.OrderSagaOrchestrator;
 public class OrderService {
 
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+
+    private static final Set<OrderStatus> CANCELLABLE_STATUSES = Set.of(OrderStatus.PENDING, OrderStatus.CONFIRMED);
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -108,6 +114,36 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
         order.setItems(orderItemRepository.findByOrderId(orderId));
         return order;
+    }
+
+    public void cancelOrder(Long orderId, String reason, String cancelledBy) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+
+        if (!order.getUserId().equals(cancelledBy)) {
+            throw new ResourceNotFoundException("Order not found: " + orderId);
+        }
+
+        if (!CANCELLABLE_STATUSES.contains(order.getStatus())) {
+            throw new OrderNotCancellableException(
+                    "Order " + orderId + " cannot be cancelled in state: " + order.getStatus());
+        }
+
+        order.setItems(orderItemRepository.findByOrderId(orderId));
+
+        String cancelReason = (reason != null && !reason.isBlank()) ? reason : "Customer requested cancellation";
+
+        try {
+            if (order.getStatus() == OrderStatus.PENDING) {
+                orderSagaOrchestrator.cancelPendingSaga(order, cancelReason, cancelledBy);
+            } else {
+                orderSagaOrchestrator.cancelConfirmedSaga(order, cancelReason, cancelledBy);
+            }
+        } catch (ObjectOptimisticLockingFailureException e) {
+            throw new OrderNotCancellableException(
+                    "Order " + orderId + " cannot be cancelled in state: " + order.getStatus()
+                            + " (concurrent modification — please retry)");
+        }
     }
 
     public record OrderItemRequest(String productId, String productName, int quantity, BigDecimal unitPrice) {

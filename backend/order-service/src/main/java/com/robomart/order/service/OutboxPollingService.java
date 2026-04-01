@@ -18,6 +18,7 @@ public class OutboxPollingService {
     private static final Logger log = LoggerFactory.getLogger(OutboxPollingService.class);
     private static final int BATCH_SIZE = 50;
     private static final String TOPIC_STATUS_CHANGED = "order.order.status-changed";
+    private static final String TOPIC_CANCELLED = "order.order.cancelled";
 
     private final OutboxEventRepository outboxEventRepository;
     private final KafkaTemplate<String, String> kafkaTemplate;
@@ -62,6 +63,7 @@ public class OutboxPollingService {
     private String resolveTopicForEvent(String eventType) {
         return switch (eventType) {
             case "order_status_changed" -> TOPIC_STATUS_CHANGED;
+            case "order_cancelled" -> TOPIC_CANCELLED;
             default -> "order." + eventType;
         };
     }
