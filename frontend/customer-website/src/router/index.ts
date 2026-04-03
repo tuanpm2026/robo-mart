@@ -38,6 +38,18 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/checkout',
+      name: 'checkout',
+      component: () => import('../views/CheckoutView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
+      path: '/order-confirmation/:orderId',
+      name: 'order-confirmation',
+      component: () => import('../views/OrderConfirmationView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/auth/callback',
       name: 'auth-callback',
       component: () => import('../views/AuthCallbackView.vue'),

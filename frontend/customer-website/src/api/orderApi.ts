@@ -1,6 +1,6 @@
 import apiClient from './client'
 import type { PagedResponse, ApiResponse } from '@/types/product'
-import type { OrderSummary, OrderDetail, OrderListParams } from '@/types/order'
+import type { OrderSummary, OrderDetail, OrderListParams, PlaceOrderRequest } from '@/types/order'
 
 export async function getOrders(params?: OrderListParams): Promise<PagedResponse<OrderSummary>> {
   const { data } = await apiClient.get<PagedResponse<OrderSummary>>('/api/v1/orders', { params })
@@ -14,4 +14,9 @@ export async function getOrder(orderId: number): Promise<ApiResponse<OrderDetail
 
 export async function cancelOrder(orderId: number, reason?: string): Promise<void> {
   await apiClient.post(`/api/v1/orders/${orderId}/cancel`, { reason })
+}
+
+export async function placeOrder(request: PlaceOrderRequest): Promise<ApiResponse<OrderSummary>> {
+  const { data } = await apiClient.post<ApiResponse<OrderSummary>>('/api/v1/orders', request)
+  return data
 }

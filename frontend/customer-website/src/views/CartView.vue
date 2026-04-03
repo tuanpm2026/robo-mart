@@ -2,7 +2,7 @@
 import { onMounted, reactive } from 'vue'
 import Skeleton from 'primevue/skeleton'
 import { useToast } from 'primevue/usetoast'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { EmptyState } from '@robo-mart/shared'
 import { useCartStore } from '@/stores/useCartStore'
 import CartItemComponent from '@/components/cart/CartItem.vue'
@@ -10,11 +10,20 @@ import CartSummary from '@/components/cart/CartSummary.vue'
 
 const cartStore = useCartStore()
 const toast = useToast()
+const route = useRoute()
 const router = useRouter()
 const loadingItems = reactive(new Set<number>())
 
 onMounted(() => {
   cartStore.fetchCart()
+  if (route.query.error === 'out_of_stock') {
+    toast.add({
+      severity: 'warn',
+      summary: 'Item unavailable',
+      detail: 'An item just sold out and could not be added to your order. Please review your cart.',
+      life: 6000,
+    })
+  }
 })
 
 async function onUpdateQuantity(productId: number, quantity: number) {

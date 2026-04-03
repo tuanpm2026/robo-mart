@@ -98,7 +98,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function login(idpHint?: string, loginHint?: string): Promise<void> {
+  async function login(idpHint?: string, loginHint?: string, redirectTo?: string): Promise<void> {
     error.value = null
     const params: Record<string, string> = {}
     if (idpHint) {
@@ -107,7 +107,8 @@ export const useAuthStore = defineStore('auth', () => {
     if (loginHint) {
       params.login_hint = loginHint
     }
-    saveRedirectPath(window.location.pathname + window.location.search + window.location.hash)
+    const path = redirectTo ?? (window.location.pathname + window.location.search + window.location.hash)
+    saveRedirectPath(path)
     await authLogin(Object.keys(params).length > 0 ? params : undefined)
   }
 

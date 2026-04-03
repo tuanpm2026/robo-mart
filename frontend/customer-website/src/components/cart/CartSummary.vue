@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 defineProps<{
   totalItems: number
@@ -8,6 +9,15 @@ defineProps<{
 }>()
 
 const router = useRouter()
+const authStore = useAuthStore()
+
+function handleCheckout() {
+  if (authStore.isAuthenticated) {
+    router.push('/checkout')
+  } else {
+    authStore.login(undefined, undefined, '/checkout')
+  }
+}
 </script>
 
 <template>
@@ -30,9 +40,8 @@ const router = useRouter()
       <Button
         label="Proceed to Checkout"
         severity="primary"
-        disabled
-        v-tooltip.top="'Coming soon'"
         class="cart-summary__checkout-btn"
+        @click="handleCheckout"
       />
       <Button
         label="Continue Shopping"

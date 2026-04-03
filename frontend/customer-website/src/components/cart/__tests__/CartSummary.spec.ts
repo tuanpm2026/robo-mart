@@ -1,9 +1,17 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
+import { createPinia, setActivePinia } from 'pinia'
 import PrimeVue from 'primevue/config'
-import Tooltip from 'primevue/tooltip'
 import CartSummary from '../CartSummary.vue'
+
+// Mock useAuthStore
+vi.mock('@/stores/useAuthStore', () => ({
+  useAuthStore: () => ({
+    isAuthenticated: false,
+    login: vi.fn(),
+  }),
+}))
 
 function createTestRouter() {
   return createRouter({
@@ -11,6 +19,7 @@ function createTestRouter() {
     routes: [
       { path: '/', component: { template: '<div />' } },
       { path: '/cart', component: { template: '<div />' } },
+      { path: '/checkout', component: { template: '<div />' } },
     ],
   })
 }
@@ -23,12 +32,15 @@ async function mountSummary(totalItems = 3, totalPrice = 45.5) {
     props: { totalItems, totalPrice },
     global: {
       plugins: [router, PrimeVue],
-      directives: { tooltip: Tooltip },
     },
   })
 }
 
 describe('CartSummary', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
   it('should render total items count', async () => {
     const wrapper = await mountSummary(3, 45.5)
     expect(wrapper.text()).toContain('Items (3)')
@@ -39,11 +51,11 @@ describe('CartSummary', () => {
     expect(wrapper.text()).toContain('$45.50')
   })
 
-  it('should have disabled checkout button', async () => {
+  it('should render an enabled checkout button', async () => {
     const wrapper = await mountSummary()
     const checkoutBtn = wrapper.find('.cart-summary__checkout-btn')
     expect(checkoutBtn.exists()).toBe(true)
-    expect(checkoutBtn.attributes('disabled')).toBeDefined()
+    expect(checkoutBtn.attributes('disabled')).toBeUndefined()
   })
 
   it('should navigate home on continue shopping click', async () => {
@@ -56,7 +68,6 @@ describe('CartSummary', () => {
       props: { totalItems: 3, totalPrice: 45.5 },
       global: {
         plugins: [router, PrimeVue],
-        directives: { tooltip: Tooltip },
       },
     })
 

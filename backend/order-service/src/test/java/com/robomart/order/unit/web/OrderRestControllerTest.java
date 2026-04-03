@@ -2,6 +2,9 @@ package com.robomart.order.unit.web;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -20,10 +23,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import com.robomart.common.dto.ApiResponse;
 import com.robomart.common.dto.PagedResponse;
 import com.robomart.common.exception.ResourceNotFoundException;
+import com.robomart.order.entity.Order;
 import com.robomart.order.enums.OrderStatus;
 import com.robomart.order.service.OrderService;
+import com.robomart.order.web.CreateOrderItemRequest;
+import com.robomart.order.web.CreateOrderRequest;
 import com.robomart.order.web.OrderDetailResponse;
 import com.robomart.order.web.OrderRestController;
 import com.robomart.order.web.OrderSummaryResponse;
@@ -124,5 +131,93 @@ class OrderRestControllerTest {
         assertThatThrownBy(() -> controller.getOrder(42L, "  "))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("42");
+    }
+
+    // --- createOrder ---
+
+    private Order buildOrder(Long id, String userId, OrderStatus status, BigDecimal totalAmount) {
+        Order order = new Order();
+        try {
+            var idField = com.robomart.common.entity.BaseEntity.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(order, id);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        order.setUserId(userId);
+        order.setStatus(status);
+        order.setTotalAmount(totalAmount);
+        order.setItems(List.of());
+        return order;
+    }
+
+    @Test
+    @DisplayName("createOrder with valid request and confirmed saga returns 201")
+    void createOrder_validRequest_sagaConfirmed_returns201() {
+        String userId = "user-1";
+        CreateOrderRequest request = new CreateOrderRequest(
+                List.of(new CreateOrderItemRequest("1", "Product A", 2, new BigDecimal("49.99"))),
+                "123 Main St, City, State 12345");
+
+        Order mockOrder = buildOrder(10L, userId, OrderStatus.CONFIRMED, new BigDecimal("99.98"));
+
+        when(orderService.createOrder(eq(userId), anyList(), eq(request.shippingAddress())))
+                .thenReturn(mockOrder);
+
+        ResponseEntity<ApiResponse<OrderSummaryResponse>> response = controller.createOrder(request, userId);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().data().id()).isEqualTo(10L);
+        assertThat(response.getBody().data().status()).isEqualTo(OrderStatus.CONFIRMED);
+    }
+
+    @Test
+    @DisplayName("createOrder with null userId throws ResourceNotFoundException")
+    void createOrder_nullUserId_throwsResourceNotFoundException() {
+        CreateOrderRequest request = new CreateOrderRequest(
+                List.of(new CreateOrderItemRequest("1", "Product A", 1, new BigDecimal("10.00"))),
+                "123 Main St");
+
+        assertThatThrownBy(() -> controller.createOrder(request, null))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("createOrder when saga fails with payment throws OrderPaymentFailedException")
+    void createOrder_sagaPaymentFailed_throwsOrderPaymentFailedException() {
+        String userId = "user-1";
+        CreateOrderRequest request = new CreateOrderRequest(
+                List.of(new CreateOrderItemRequest("1", "Product A", 1, new BigDecimal("10.00"))),
+                "123 Main St");
+
+        Order cancelledOrder = buildOrder(11L, userId, OrderStatus.CANCELLED, new BigDecimal("10.00"));
+        cancelledOrder.setCancellationReason("Payment declined");
+
+        when(orderService.createOrder(eq(userId), anyList(), anyString()))
+                .thenReturn(cancelledOrder);
+
+        assertThatThrownBy(() -> controller.createOrder(request, userId))
+                .isInstanceOf(com.robomart.order.exception.OrderPaymentFailedException.class)
+                .hasMessageContaining("Payment declined");
+    }
+
+    @Test
+    @DisplayName("createOrder when saga fails with inventory throws OrderInventoryFailedException")
+    void createOrder_sagaInventoryFailed_throwsOrderInventoryFailedException() {
+        String userId = "user-1";
+        CreateOrderRequest request = new CreateOrderRequest(
+                List.of(new CreateOrderItemRequest("1", "Product A", 1, new BigDecimal("10.00"))),
+                "123 Main St");
+
+        Order cancelledOrder = buildOrder(12L, userId, OrderStatus.CANCELLED, new BigDecimal("10.00"));
+        cancelledOrder.setCancellationReason("Insufficient stock");
+
+        when(orderService.createOrder(eq(userId), anyList(), anyString()))
+                .thenReturn(cancelledOrder);
+
+        assertThatThrownBy(() -> controller.createOrder(request, userId))
+                .isInstanceOf(com.robomart.order.exception.OrderInventoryFailedException.class)
+                .hasMessageContaining("Insufficient stock");
     }
 }

@@ -22,8 +22,10 @@
     "oidc-client-ts": "^3.5.0",
     "pinia": "^3.0.4",
     "primevue": "^4.5.4",
+    "vee-validate": "^4.15.1",
     "vue": "^3.5.30",
-    "vue-router": "^5.0.3"
+    "vue-router": "^5.0.3",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.2",

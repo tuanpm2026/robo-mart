@@ -47,3 +47,15 @@ export interface OrderListParams {
   page?: number
   size?: number
 }
+
+export interface CreateOrderItemPayload {
+  productId: string
+  productName: string
+  quantity: number
+  unitPrice: number
+}
+
+export interface PlaceOrderRequest {
+  items: CreateOrderItemPayload[]
+  shippingAddress: string
+}

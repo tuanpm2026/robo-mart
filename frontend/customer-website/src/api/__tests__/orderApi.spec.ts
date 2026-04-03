@@ -78,6 +78,37 @@ describe('orderApi', () => {
     })
   })
 
+  // --- placeOrder ---
+
+  describe('placeOrder', () => {
+    it('posts to /api/v1/orders and returns created order summary', async () => {
+      const apiClient = (await import('../client')).default
+      const mockResponse = {
+        data: {
+          id: 1,
+          createdAt: '2026-04-03T00:00:00Z',
+          totalAmount: 20,
+          status: 'CONFIRMED',
+          itemCount: 1,
+          cancellationReason: null,
+        },
+        traceId: 'trace-abc',
+      }
+      vi.mocked(apiClient.post).mockResolvedValueOnce({ data: mockResponse })
+
+      const { placeOrder } = await import('../orderApi')
+      const request = {
+        items: [{ productId: '1', productName: 'Widget', quantity: 2, unitPrice: 10 }],
+        shippingAddress: 'Jane Doe, 123 Main St, SF, CA 12345, US',
+      }
+      const result = await placeOrder(request)
+
+      expect(apiClient.post).toHaveBeenCalledWith('/api/v1/orders', request)
+      expect(result.data.id).toBe(1)
+      expect(result.data.status).toBe('CONFIRMED')
+    })
+  })
+
   // --- cancelOrder ---
 
   describe('cancelOrder', () => {
