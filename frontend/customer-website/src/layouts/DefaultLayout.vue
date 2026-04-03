@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { RouterView, RouterLink, useRoute } from 'vue-router'
+import { RouterView, RouterLink, useRoute, useRouter } from 'vue-router'
 import Badge from 'primevue/badge'
 import Menu from 'primevue/menu'
 import { useToast } from 'primevue/usetoast'
@@ -14,6 +14,7 @@ const categoryStore = useCategoryStore()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 const route = useRoute()
+const router = useRouter()
 const toast = useToast()
 
 const showLoginModal = ref(false)
@@ -24,6 +25,11 @@ const userMenuItems = ref([
     label: 'My Account',
     icon: 'pi pi-user',
     disabled: true,
+  },
+  {
+    label: 'My Orders',
+    icon: 'pi pi-list',
+    command: () => router.push('/orders'),
   },
   {
     separator: true,

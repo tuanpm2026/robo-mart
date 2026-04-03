@@ -3,10 +3,15 @@ package com.robomart.order.service;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -22,6 +27,10 @@ import com.robomart.order.repository.OrderItemRepository;
 import com.robomart.order.repository.OrderRepository;
 import com.robomart.order.repository.OrderStatusHistoryRepository;
 import com.robomart.order.saga.OrderSagaOrchestrator;
+import com.robomart.order.web.OrderDetailResponse;
+import com.robomart.order.web.OrderItemResponse;
+import com.robomart.order.web.OrderStatusHistoryResponse;
+import com.robomart.order.web.OrderSummaryResponse;
 
 @Service
 public class OrderService {
@@ -114,6 +123,52 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
         order.setItems(orderItemRepository.findByOrderId(orderId));
         return order;
+    }
+
+    public Page<OrderSummaryResponse> getOrdersByUser(String userId, int page, int size) {
+        Page<Order> orders = orderRepository.findByUserId(
+                userId, PageRequest.of(page, size, Sort.by("createdAt").descending()));
+        List<Long> orderIds = orders.getContent().stream().map(Order::getId).toList();
+        Map<Long, Long> itemCounts = orderIds.isEmpty() ? Map.of()
+                : orderItemRepository.countsByOrderIds(orderIds).stream()
+                        .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+        return orders.map(order -> new OrderSummaryResponse(
+                order.getId(),
+                order.getCreatedAt(),
+                order.getTotalAmount(),
+                order.getStatus(),
+                itemCounts.getOrDefault(order.getId(), 0L).intValue(),
+                order.getCancellationReason()));
+    }
+
+    public OrderDetailResponse getOrderForUser(Long orderId, String userId) {
+        Order order = getOrder(orderId);
+        if (!order.getUserId().equals(userId)) {
+            throw new ResourceNotFoundException("Order not found: " + orderId);
+        }
+        List<OrderStatusHistory> history =
+                orderStatusHistoryRepository.findByOrderIdOrderByChangedAtAsc(orderId);
+        List<OrderItemResponse> itemResponses = order.getItems().stream()
+                .map(item -> new OrderItemResponse(
+                        item.getProductId(),
+                        item.getProductName(),
+                        item.getQuantity(),
+                        item.getUnitPrice(),
+                        item.getSubtotal()))
+                .toList();
+        List<OrderStatusHistoryResponse> historyResponses = history.stream()
+                .map(h -> new OrderStatusHistoryResponse(h.getStatus(), h.getChangedAt()))
+                .toList();
+        return new OrderDetailResponse(
+                order.getId(),
+                order.getCreatedAt(),
+                order.getUpdatedAt(),
+                order.getTotalAmount(),
+                order.getStatus(),
+                order.getShippingAddress(),
+                order.getCancellationReason(),
+                itemResponses,
+                historyResponses);
     }
 
     public void cancelOrder(Long orderId, String reason, String cancelledBy) {

@@ -108,3 +108,12 @@
 - **Best-effort cancellation has no persistent refund_failed flag**: When refund fails during CONFIRMED order cancellation, error is logged but no flag/field persists on the order. Reconciliation job cannot identify orders with failed refunds. Deferred — reconciliation tooling is out of Story 4.5 scope (Epic 6 or Epic 8).
 - **Empty items list when reservationId non-null**: If orderItemRepository.findByOrderId() returns empty for an order with a reservationId, ReleaseInventoryStep sends a release request with no items. Items are loaded upfront in cancelOrder() so this shouldn't occur in normal operation; add guard when defensive hardening lands in Epic 8.
 - **UnsupportedOperationException in RefundPaymentStep.compensate()**: Throws UnsupportedOperationException if compensate() is ever called. Intentional defensive design (forward-only step). Consider logging + no-op if this creates issues during future refactoring.
+
+## Deferred from: code review of 4-6-implement-customer-order-tracking-ui (2026-04-03)
+
+- **`PagedResponse`/`ApiResponse`/`PaginationMeta` imported from `@/types/product` in order API/store**: Cross-domain coupling. Should be extracted to a shared types module. Pre-existing pattern in the codebase.
+- **Router guard calls `useAuthStore()` outside component setup**: Pinia timing risk if bootstrap order changes (e.g., `app.use(pinia)` moved after router init). Pre-existing pattern used by other routes.
+- **`orderId` parsed via `Number(route.params.id)`**: Floats (e.g., `3.14`) pass `isNaN` guard but are rejected by backend with 400. Large integers lose precision silently. Backend validation is the effective guard.
+- **`getOrderForUser` not `@Transactional`**: Each repository call has its own transaction. Currently safe because `getOrder()` explicitly calls `setItems()`. If that changes, `order.getItems()` could throw `LazyInitializationException`. Add `@Transactional(readOnly=true)` as a safety net.
+- **`OrderItem` uses `productId` as `v-for` key in OrderDetailView**: Duplicate products in one order would cause Vue rendering bugs. Fixing requires adding an item `id` field to `OrderItemResponse` DTO (backend change).
+- **`aria-valuetext` on progressbar uses step label not actual order status**: For CANCELLED orders at step 0, screen readers announce "Order received" instead of "Cancelled". Minor a11y issue.
