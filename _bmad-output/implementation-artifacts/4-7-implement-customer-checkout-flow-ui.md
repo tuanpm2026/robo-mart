@@ -1,6 +1,6 @@
 # Story 4.7: Implement Customer Checkout Flow UI
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 

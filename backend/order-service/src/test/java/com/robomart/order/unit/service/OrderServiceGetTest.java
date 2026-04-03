@@ -97,7 +97,7 @@ class OrderServiceGetTest {
 
         when(orderRepository.findByUserId(any(String.class), any())).thenReturn(orderPage);
         when(orderItemRepository.countsByOrderIds(List.of(10L)))
-                .thenReturn(List.of(new Object[]{10L, 3L}));
+                .thenReturn(List.<Object[]>of(new Object[]{10L, 3L}));
 
         Page<OrderSummaryResponse> result = orderService.getOrdersByUser(userId, 0, 10);
 
@@ -139,6 +139,7 @@ class OrderServiceGetTest {
         history.setChangedAt(Instant.now().minusSeconds(60));
 
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(orderItemRepository.findByOrderId(orderId)).thenReturn(List.of(item));
         when(orderStatusHistoryRepository.findByOrderIdOrderByChangedAtAsc(orderId))
                 .thenReturn(List.of(history));
 
