@@ -1,6 +1,6 @@
 # Story 4.6: Implement Customer Order Tracking UI
 
-Status: in-progress
+Status: done
 
 ## Story
 
@@ -199,4 +199,4 @@ Implemented full-stack Customer Order Tracking UI (Story 4.6):
 ## Status History
 - ready-for-dev (backlog) → in-progress: 2026-04-02
 - in-progress → review: 2026-04-02
-- review → in-progress: 2026-04-03 (code review patches applied)
+- review → done: 2026-04-03 (all patches applied in code review session)
