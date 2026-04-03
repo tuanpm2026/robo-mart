@@ -117,3 +117,8 @@
 - **`getOrderForUser` not `@Transactional`**: Each repository call has its own transaction. Currently safe because `getOrder()` explicitly calls `setItems()`. If that changes, `order.getItems()` could throw `LazyInitializationException`. Add `@Transactional(readOnly=true)` as a safety net.
 - **`OrderItem` uses `productId` as `v-for` key in OrderDetailView**: Duplicate products in one order would cause Vue rendering bugs. Fixing requires adding an item `id` field to `OrderItemResponse` DTO (backend change).
 - **`aria-valuetext` on progressbar uses step label not actual order status**: For CANCELLED orders at step 0, screen readers announce "Order received" instead of "Cancelled". Minor a11y issue.
+
+## Deferred from: code review of 4-7-implement-customer-checkout-flow-ui (2026-04-03)
+
+- **Postal code regex is US-only** (`/^\d{5}(-\d{4})?$/`): International postal codes rejected. Design choice for MVP single-market; revisit when multi-region support is needed. `StepShippingAddress.vue`
+- **Auth guard redirects to `/` for expired-token re-entry to `/checkout`**: User loses checkout context. Pre-existing router guard behavior not introduced by this story; revisit when deep-link auth recovery is needed.

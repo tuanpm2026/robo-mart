@@ -20,6 +20,7 @@ const checkoutStore = useCheckoutStore()
 const cartStore = useCartStore()
 
 onMounted(async () => {
+  checkoutStore.$reset()
   if (cartStore.items.length === 0) {
     await cartStore.fetchCart()
   }
@@ -33,7 +34,18 @@ watch(
   () => checkoutStore.error,
   (err) => {
     if (err?.type === 'INVENTORY_FAILED') {
+      checkoutStore.$reset()
       router.push('/cart?error=out_of_stock')
+    }
+  },
+)
+
+// Redirect to /cart when cart becomes empty during checkout
+watch(
+  () => cartStore.items.length,
+  (len) => {
+    if (len === 0 && !checkoutStore.isPlacingOrder) {
+      router.replace('/cart')
     }
   },
 )

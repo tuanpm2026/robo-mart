@@ -20,9 +20,10 @@ onMounted(() => {
     toast.add({
       severity: 'warn',
       summary: 'Item unavailable',
-      detail: 'An item just sold out and could not be added to your order. Please review your cart.',
+      detail: 'An item just sold out. Please review your cart.',
       life: 6000,
     })
+    router.replace({ query: {} })
   }
 })
 

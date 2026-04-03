@@ -36,12 +36,18 @@ const schema = object({
 
 const { handleSubmit } = useForm<PaymentFormData>({
   validationSchema: schema,
+  validateOnMount: false,
   initialValues: checkoutStore.paymentData ?? {
     cardholderName: '', cardNumber: '', expiry: '', cvv: '',
   },
 })
 
-const { value: cardholderName, errorMessage: cardholderNameError } = useField<string>('cardholderName')
+// cardholderName validates on blur only (AC5)
+const {
+  value: cardholderName,
+  errorMessage: cardholderNameError,
+  handleBlur: blurCardholderName,
+} = useField<string>('cardholderName', undefined, { validateOnValueUpdate: false })
 const { value: cardNumber, errorMessage: cardNumberError } = useField<string>('cardNumber')
 const { value: expiry, errorMessage: expiryError } = useField<string>('expiry')
 const { value: cvv, errorMessage: cvvError } = useField<string>('cvv')
@@ -97,6 +103,7 @@ const paymentError = computed(() =>
           placeholder="Jane Doe"
           :class="{ 'p-invalid': cardholderNameError }"
           class="sp__input"
+          @blur="blurCardholderName"
         />
         <small v-if="cardholderNameError" class="p-error">{{ cardholderNameError }}</small>
       </div>

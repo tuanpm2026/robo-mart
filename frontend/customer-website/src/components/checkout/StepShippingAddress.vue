@@ -22,6 +22,7 @@ const schema = object({
 
 const { handleSubmit } = useForm<ShippingFormData>({
   validationSchema: schema,
+  validateOnMount: false,
   initialValues: checkoutStore.shippingData ?? {
     fullName: '', street: '', city: '', state: '', postalCode: '', country: 'US',
   },

@@ -52,7 +52,8 @@ export const useCheckoutStore = defineStore('checkout', () => {
 
   async function placeOrder() {
     const cartStore = useCartStore()
-    if (!shippingData.value) return
+    if (!shippingData.value || !paymentData.value) return
+    if (isPlacingOrder.value) return
 
     error.value = null
     isPlacingOrder.value = true
@@ -76,8 +77,8 @@ export const useCheckoutStore = defineStore('checkout', () => {
       }
 
       const result = await placeOrderApi(request)
-      cartStore.$reset()
       await router.push(`/order-confirmation/${result.data.id}`)
+      cartStore.$reset()
     } catch (err: unknown) {
       const axiosErr = err as AxiosError<ApiErrorBody>
       const errorCode = axiosErr.response?.data?.error?.code

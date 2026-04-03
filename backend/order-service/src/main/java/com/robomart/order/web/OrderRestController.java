@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
+
 import com.robomart.common.dto.ApiResponse;
 import com.robomart.common.dto.PagedResponse;
 import com.robomart.common.dto.PaginationMeta;
@@ -35,9 +37,11 @@ public class OrderRestController {
         this.orderService = orderService;
     }
 
+    private static final String INVENTORY_CANCELLATION_REASON = "Insufficient stock";
+
     @PostMapping
     public ResponseEntity<ApiResponse<OrderSummaryResponse>> createOrder(
-            @RequestBody CreateOrderRequest request,
+            @Valid @RequestBody CreateOrderRequest request,
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
         if (userId == null || userId.isBlank()) {
             throw new ResourceNotFoundException("Unauthorized");
@@ -49,8 +53,7 @@ public class OrderRestController {
         Order order = orderService.createOrder(userId, items, request.shippingAddress());
         if (order.getStatus() == OrderStatus.CANCELLED) {
             String reason = order.getCancellationReason() != null ? order.getCancellationReason() : "Order processing failed";
-            String reasonLower = reason.toLowerCase();
-            if (reasonLower.contains("stock") || reasonLower.contains("inventory") || reasonLower.contains("insufficient")) {
+            if (INVENTORY_CANCELLATION_REASON.equals(reason)) {
                 throw new OrderInventoryFailedException(reason);
             }
             throw new OrderPaymentFailedException(reason);

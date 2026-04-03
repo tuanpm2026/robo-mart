@@ -12,7 +12,12 @@ const orderStore = useOrderStore()
 const checkoutStore = useCheckoutStore()
 
 onMounted(async () => {
-  const orderId = Number(route.params.orderId)
+  const raw = Array.isArray(route.params.orderId) ? route.params.orderId[0] : route.params.orderId
+  const orderId = parseInt(raw, 10)
+  if (isNaN(orderId)) {
+    router.replace('/orders')
+    return
+  }
   checkoutStore.$reset()
   await orderStore.fetchOrder(orderId)
 })

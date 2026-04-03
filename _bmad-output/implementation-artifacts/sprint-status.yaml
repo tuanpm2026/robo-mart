@@ -36,6 +36,7 @@
 
 generated: 2026-03-27
 last_updated: "2026-04-03"
+# Story 4.7 done: 2026-04-03
 # Story 4.7 review: 2026-04-03
 # Story 4.7 created: 2026-04-03
 # Story 4.6 done: 2026-04-03
@@ -91,7 +92,7 @@ development_status:
   4-4-implement-order-saga-orchestrator-phase-a-core-flow: done
   4-5-implement-order-cancellation-with-saga-compensation: done
   4-6-implement-customer-order-tracking-ui: done
-  4-7-implement-customer-checkout-flow-ui: review
+  4-7-implement-customer-checkout-flow-ui: done
   epic-4-retrospective: optional
 
   # Epic 5: Admin Product & Inventory Management

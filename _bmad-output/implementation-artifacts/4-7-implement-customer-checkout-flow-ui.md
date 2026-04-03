@@ -289,3 +289,23 @@ N/A
 - `frontend/customer-website/src/stores/__tests__/useCheckoutStore.spec.ts` (new)
 - `frontend/customer-website/src/api/__tests__/orderApi.spec.ts` — added placeOrder test
 - `frontend/customer-website/src/components/cart/__tests__/CartSummary.spec.ts` — fixed Pinia/auth mock
+
+### Review Findings
+
+- [ ] [Review][Decision] AC1 login redirect pattern — CartSummary calls `authStore.login(undefined, undefined, '/checkout')` (Keycloak OIDC redirect) but story task 7.3 and AC1 spec say `router.push('/?loginRedirect=/checkout')`. Confirm which is the intended auth flow.
+- [ ] [Review][Patch] ResourceNotFoundException for missing X-User-Id should be 401-type, not 404 [OrderRestController.java:38]
+- [ ] [Review][Patch] Cancellation reason classified by fragile string-matching — any non-inventory reason falls through to payment failure [OrderRestController.java:48-55]
+- [ ] [Review][Patch] Cart reset before navigation — `cartStore.$reset()` called before `await router.push(...)` risks wiping cart on navigation failure [useCheckoutStore.ts:79]
+- [ ] [Review][Patch] Stale checkout store on /checkout re-entry — `checkoutStore.$reset()` never called in CheckoutView onMounted; stale INVENTORY_FAILED error causes immediate redirect loop [CheckoutView.vue:onMounted]
+- [ ] [Review][Patch] orderId parsed with `Number()` — unsafe for array params or NaN; `route.params.orderId` should be validated before use [OrderConfirmationView.vue:941]
+- [ ] [Review][Patch] No @Valid / bean validation on CreateOrderRequest — empty items list, null productId, negative quantity, null shippingAddress all accepted [CreateOrderRequest.java, CreateOrderItemRequest.java]
+- [ ] [Review][Patch] unitPrice typed as `number` in frontend — floating-point representation risk; should be serialized as string or validated [types/order.ts]
+- [ ] [Review][Patch] Double-submit on "Place Order" — `isPlacingOrder` guard is not set synchronously before DOM update; fast double-tap can send two backend requests [useCheckoutStore.ts:placeOrder]
+- [ ] [Review][Patch] AC3: StepCartReview disables "Continue" but does not redirect to /cart when cart becomes empty [StepCartReview.vue]
+- [ ] [Review][Patch] AC4: Shipping form validates on submit, not on blur per field — VeeValidate `validateOnBlur` or `@blur` handlers not set [StepShippingAddress.vue]
+- [ ] [Review][Patch] AC5: cardholderName should validate on blur only; no blur-specific config present [StepPayment.vue]
+- [ ] [Review][Patch] AC10: Toast message text deviates from spec — "An item just sold out and could not be added to your order. Please review your cart." vs spec "An item just sold out. Please review your cart." [CartView.vue:20]
+- [ ] [Review][Patch] paymentData null guard missing — only shippingData is guarded before placeOrder proceeds [useCheckoutStore.ts:55]
+- [ ] [Review][Patch] out_of_stock toast fires on every page refresh — `?error=out_of_stock` query param never cleared from URL [CartView.vue:onMounted]
+- [x] [Review][Defer] Postal code regex is US-only (/^\d{5}(-\d{4})?$/) — international postal codes rejected [StepShippingAddress.vue] — deferred, design choice for MVP single-market
+- [x] [Review][Defer] Auth guard redirects to / for expired-token re-entry to /checkout — user loses context [router/index.ts] — deferred, pre-existing router guard behavior

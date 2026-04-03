@@ -74,6 +74,7 @@ describe('useCheckoutStore', () => {
   it('placeOrder succeeds: navigates to confirmation and resets cart', async () => {
     const store = useCheckoutStore()
     store.setShippingData({ fullName: 'Jane', street: '123 St', city: 'SF', state: 'CA', postalCode: '12345', country: 'US' })
+    store.setPaymentData({ cardholderName: 'Jane', cardNumber: '4242424242424242', expiry: '12/99', cvv: '123' })
 
     vi.mocked(mockPlaceOrder).mockResolvedValue({
       data: { id: 42, status: 'CONFIRMED', createdAt: '', totalAmount: 20, itemCount: 1, cancellationReason: null },
@@ -91,6 +92,7 @@ describe('useCheckoutStore', () => {
   it('placeOrder sets PAYMENT_FAILED and goes to step 3 on payment error', async () => {
     const store = useCheckoutStore()
     store.setShippingData({ fullName: 'Jane', street: '123 St', city: 'SF', state: 'CA', postalCode: '12345', country: 'US' })
+    store.setPaymentData({ cardholderName: 'Jane', cardNumber: '4242424242424242', expiry: '12/99', cvv: '123' })
 
     vi.mocked(mockPlaceOrder).mockRejectedValue({
       response: { data: { error: { code: 'ORDER_PAYMENT_FAILED', message: 'Payment declined' } } },
@@ -107,6 +109,7 @@ describe('useCheckoutStore', () => {
   it('placeOrder sets INVENTORY_FAILED on inventory error', async () => {
     const store = useCheckoutStore()
     store.setShippingData({ fullName: 'Jane', street: '123 St', city: 'SF', state: 'CA', postalCode: '12345', country: 'US' })
+    store.setPaymentData({ cardholderName: 'Jane', cardNumber: '4242424242424242', expiry: '12/99', cvv: '123' })
 
     vi.mocked(mockPlaceOrder).mockRejectedValue({
       response: { data: { error: { code: 'ORDER_INVENTORY_FAILED', message: 'Insufficient stock' } } },
@@ -121,6 +124,7 @@ describe('useCheckoutStore', () => {
   it('placeOrder sets UNKNOWN error on unexpected failure', async () => {
     const store = useCheckoutStore()
     store.setShippingData({ fullName: 'Jane', street: '123 St', city: 'SF', state: 'CA', postalCode: '12345', country: 'US' })
+    store.setPaymentData({ cardholderName: 'Jane', cardNumber: '4242424242424242', expiry: '12/99', cvv: '123' })
 
     vi.mocked(mockPlaceOrder).mockRejectedValue(new Error('Network error'))
 
