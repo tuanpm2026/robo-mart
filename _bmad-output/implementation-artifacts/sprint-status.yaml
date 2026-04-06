@@ -35,7 +35,10 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-27
-last_updated: "2026-04-03"
+last_updated: "2026-04-06"
+# Story 5.1 done: 2026-04-06
+# Story 5.1 in-progress: 2026-04-06
+# Story 5.1 review: 2026-04-06
 # Story 4.7 done: 2026-04-03
 # Story 4.7 review: 2026-04-03
 # Story 4.7 created: 2026-04-03
@@ -85,7 +88,7 @@ development_status:
   epic-3-retrospective: done
 
   # Epic 4: Order Processing & Distributed Transactions
-  epic-4: in-progress
+  epic-4: done
   4-1-add-order-infrastructure-services-databases-grpc: done
   4-2-implement-inventory-service-with-distributed-locking: done
   4-3-implement-payment-service-with-idempotency-retry: done
@@ -93,11 +96,12 @@ development_status:
   4-5-implement-order-cancellation-with-saga-compensation: done
   4-6-implement-customer-order-tracking-ui: done
   4-7-implement-customer-checkout-flow-ui: done
-  epic-4-retrospective: optional
+  epic-4-retrospective: done
 
+# Story 5.1 created: 2026-04-06
   # Epic 5: Admin Product & Inventory Management
-  epic-5: backlog
-  5-1-setup-admin-dashboard-foundation-design-system: backlog
+  epic-5: in-progress
+  5-1-setup-admin-dashboard-foundation-design-system: done
   5-2-implement-admin-product-crud: backlog
   5-3-implement-product-image-upload: backlog
   5-4-implement-admin-inventory-management: backlog

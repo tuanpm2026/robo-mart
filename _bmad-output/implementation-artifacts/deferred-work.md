@@ -118,6 +118,13 @@
 - **`OrderItem` uses `productId` as `v-for` key in OrderDetailView**: Duplicate products in one order would cause Vue rendering bugs. Fixing requires adding an item `id` field to `OrderItemResponse` DTO (backend change).
 - **`aria-valuetext` on progressbar uses step label not actual order status**: For CANCELLED orders at step 0, screen readers announce "Order received" instead of "Cancelled". Minor a11y issue.
 
+## Deferred from: code review of 5-1-setup-admin-dashboard-foundation-design-system (2026-04-06)
+
+- **JWT signature not verified client-side**: Admin auth store decodes JWT payload with atob() without verifying signature. Architectural decision deferred to the admin OAuth story — the whole token management flow will be rewritten with proper OIDC. `useAdminAuthStore.ts`
+- **accessToken in public Pinia store API**: Raw token string is included in store's return value, accessible via Vue Devtools. Consider making it private when the auth flow is hardened in the admin OAuth story. `useAdminAuthStore.ts`
+- **useBreadcrumb() composable not extracted**: Breadcrumb label computed inline in AdminLayout rather than as a standalone composable. Functionally equivalent for this story's single-level breadcrumb; extract when multi-segment breadcrumbs are needed. `AdminLayout.vue`
+- **VueUse useEventListener not used**: CommandPalette uses raw addEventListener/removeEventListener. Cleanup is correct; migrate to VueUse pattern when VueUse is adopted more broadly in admin-dashboard. `CommandPalette.vue`
+
 ## Deferred from: code review of 4-7-implement-customer-checkout-flow-ui (2026-04-03)
 
 - **Postal code regex is US-only** (`/^\d{5}(-\d{4})?$/`): International postal codes rejected. Design choice for MVP single-market; revisit when multi-region support is needed. `StepShippingAddress.vue`

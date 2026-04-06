@@ -6,6 +6,7 @@ export { shadows } from './tokens/shadows'
 
 // Themes
 export { customerTheme } from './themes/customer-theme'
+export { adminTheme } from './themes/admin-theme'
 
 // Components
 export { default as EmptyState } from './components/EmptyState.vue'
