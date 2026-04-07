@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -356,6 +357,159 @@ class InventoryServiceTest {
             assertThat(result).isNotNull();
             assertThat(result.getProductId()).isEqualTo(PRODUCT_ID);
             assertThat(result.getAvailableQuantity()).isEqualTo(100);
+        }
+    }
+
+    @Nested
+    @DisplayName("restockItem")
+    class RestockItem {
+
+        @Test
+        @DisplayName("should increase available and total quantities")
+        void restockItem_validProduct_increasesAvailableAndTotal() throws Exception {
+            // given
+            InventoryItem item = createTestInventoryItem(PRODUCT_ID, 50, 5, 55);
+            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
+            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
+            // when
+            InventoryItem result = inventoryService.restockItem(PRODUCT_ID, 20, "Manual restock");
+
+            // then
+            assertThat(result.getAvailableQuantity()).isEqualTo(70);
+            assertThat(result.getTotalQuantity()).isEqualTo(75);
+        }
+
+        @Test
+        @DisplayName("should throw IllegalArgumentException when quantity <= 0")
+        void restockItem_invalidQuantity_throwsIllegalArgumentException() {
+            assertThatThrownBy(() -> inventoryService.restockItem(PRODUCT_ID, 0, null))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("Quantity must be positive");
+
+            assertThatThrownBy(() -> inventoryService.restockItem(PRODUCT_ID, -5, null))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+
+        @Test
+        @DisplayName("should throw ResourceNotFoundException when product not found")
+        void restockItem_productNotFound_throwsResourceNotFoundException() {
+            // given
+            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.empty());
+
+            // when / then
+            assertThatThrownBy(() -> inventoryService.restockItem(PRODUCT_ID, 10, null))
+                    .isInstanceOf(ResourceNotFoundException.class);
+        }
+
+        @Test
+        @DisplayName("should create StockMovement with RESTOCK type")
+        void restockItem_createsStockMovementWithRestockType() throws Exception {
+            // given
+            InventoryItem item = createTestInventoryItem(PRODUCT_ID, 50, 0, 50);
+            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
+            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
+            // when
+            inventoryService.restockItem(PRODUCT_ID, 10, "Test restock");
+
+            // then
+            verify(stockMovementRepository).save(stockMovementCaptor.capture());
+            StockMovement captured = stockMovementCaptor.getValue();
+            assertThat(captured.getType()).isEqualTo(StockMovementType.RESTOCK);
+            assertThat(captured.getQuantity()).isEqualTo(10);
+            assertThat(captured.getReason()).isEqualTo("Test restock");
+        }
+
+        @Test
+        @DisplayName("should create outbox event with stock_restocked type")
+        void restockItem_createsOutboxEventWithStockRestockedType() throws Exception {
+            // given
+            InventoryItem item = createTestInventoryItem(PRODUCT_ID, 50, 0, 50);
+            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
+            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(objectMapper.writeValueAsString(any())).thenReturn("{\"productId\":1}");
+
+            // when
+            inventoryService.restockItem(PRODUCT_ID, 10, null);
+
+            // then
+            verify(outboxEventRepository).save(outboxEventCaptor.capture());
+            OutboxEvent captured = outboxEventCaptor.getValue();
+            assertThat(captured.getEventType()).isEqualTo("stock_restocked");
+            assertThat(captured.getAggregateType()).isEqualTo("InventoryItem");
+            assertThat(captured.getAggregateId()).isEqualTo(PRODUCT_ID.toString());
+        }
+
+        @Test
+        @DisplayName("should use default reason when reason is null")
+        void restockItem_nullReason_usesDefaultReason() throws Exception {
+            // given
+            InventoryItem item = createTestInventoryItem(PRODUCT_ID, 50, 0, 50);
+            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
+            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
+            // when
+            inventoryService.restockItem(PRODUCT_ID, 10, null);
+
+            // then
+            verify(stockMovementRepository).save(stockMovementCaptor.capture());
+            assertThat(stockMovementCaptor.getValue().getReason()).isEqualTo("Admin restock");
+        }
+
+        @Test
+        @DisplayName("should propagate OptimisticLockingFailureException on concurrent save")
+        void restockItem_concurrentModification_throwsOptimisticLockingFailure() {
+            // given
+            InventoryItem item = createTestInventoryItem(PRODUCT_ID, 50, 0, 50);
+            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
+            when(inventoryItemRepository.save(any(InventoryItem.class)))
+                    .thenThrow(new org.springframework.orm.ObjectOptimisticLockingFailureException(
+                            InventoryItem.class.getName(), PRODUCT_ID));
+
+            // when / then
+            assertThatThrownBy(() -> inventoryService.restockItem(PRODUCT_ID, 10, null))
+                    .isInstanceOf(org.springframework.orm.ObjectOptimisticLockingFailureException.class);
+        }
+    }
+
+    @Nested
+    @DisplayName("bulkRestock")
+    class BulkRestock {
+
+        @Test
+        @DisplayName("should restock all specified products")
+        void bulkRestock_multipleProducts_restocksAll() throws Exception {
+            // given
+            Long productId2 = 2L;
+            InventoryItem item1 = createTestInventoryItem(PRODUCT_ID, 30, 0, 30);
+            InventoryItem item2 = createTestInventoryItem(productId2, 10, 0, 10);
+            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item1));
+            when(inventoryItemRepository.findByProductId(productId2)).thenReturn(Optional.of(item2));
+            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
+            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
+
+            // when
+            var results = inventoryService.bulkRestock(List.of(PRODUCT_ID, productId2), 50, "Bulk");
+
+            // then
+            assertThat(results).hasSize(2);
+            assertThat(results.get(0).getAvailableQuantity()).isEqualTo(80);
+            assertThat(results.get(1).getAvailableQuantity()).isEqualTo(60);
+            verify(stockMovementRepository, times(2)).save(any(StockMovement.class));
         }
     }
 }

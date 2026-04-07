@@ -13,11 +13,15 @@ import com.robomart.inventory.repository.OutboxEventRepository;
 import com.robomart.inventory.repository.StockMovementRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -345,5 +349,90 @@ public class InventoryService {
         } catch (Exception e) {
             log.error("Compensation failed for productId={}, manual intervention may be required", productId, e);
         }
+    }
+
+    /**
+     * Lists all inventory items with pagination (read-only, no locking needed).
+     *
+     * @param pageable pagination and sort parameters
+     * @return page of InventoryItems
+     */
+    @Transactional(readOnly = true)
+    public Page<InventoryItem> listInventory(Pageable pageable) {
+        return inventoryItemRepository.findAll(pageable);
+    }
+
+    /**
+     * Restocks a product by increasing available and total quantities.
+     * Uses @Transactional with optimistic locking (@Version on InventoryItem).
+     * Admin restock does not require distributed locking (single-user operation).
+     *
+     * @param productId the product ID
+     * @param quantity  quantity to add
+     * @param reason    audit reason (nullable)
+     * @return updated InventoryItem
+     * @throws ResourceNotFoundException  if product not found
+     * @throws IllegalArgumentException   if quantity <= 0
+     */
+    @Transactional
+    public InventoryItem restockItem(Long productId, int quantity, String reason) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be positive, got: " + quantity);
+        }
+
+        InventoryItem item = inventoryItemRepository.findByProductId(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("InventoryItem", productId));
+
+        item.setAvailableQuantity(item.getAvailableQuantity() + quantity);
+        item.setTotalQuantity(item.getTotalQuantity() + quantity);
+        InventoryItem saved = inventoryItemRepository.save(item);
+
+        StockMovement movement = new StockMovement();
+        movement.setInventoryItemId(saved.getId());
+        movement.setType(StockMovementType.RESTOCK);
+        movement.setQuantity(quantity);
+        movement.setReason(reason != null ? reason : "Admin restock");
+        stockMovementRepository.save(movement);
+
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("productId", productId);
+            payload.put("quantity", quantity);
+            payload.put("availableQuantity", saved.getAvailableQuantity());
+            payload.put("totalQuantity", saved.getTotalQuantity());
+
+            OutboxEvent event = new OutboxEvent(
+                    "InventoryItem",
+                    productId.toString(),
+                    "stock_restocked",
+                    objectMapper.writeValueAsString(payload)
+            );
+            outboxEventRepository.save(event);
+        } catch (Exception e) {
+            log.error("Failed to create stock_restocked outbox event", e);
+            throw new RuntimeException("Failed to create outbox event", e);
+        }
+
+        log.info("Stock restocked: productId={}, quantity={}, newAvailable={}, newTotal={}",
+                productId, quantity, saved.getAvailableQuantity(), saved.getTotalQuantity());
+
+        return saved;
+    }
+
+    /**
+     * Bulk restocks multiple products with the same quantity.
+     * All operations run in a single transaction.
+     *
+     * @param productIds list of product IDs to restock
+     * @param quantity   quantity to add to each product
+     * @param reason     audit reason (nullable)
+     * @return list of updated InventoryItems
+     */
+    @Transactional
+    public List<InventoryItem> bulkRestock(List<Long> productIds, int quantity, String reason) {
+        return productIds.stream()
+                .distinct()
+                .map(productId -> restockItem(productId, quantity, reason))
+                .toList();
     }
 }

@@ -130,6 +130,13 @@
 - **Postal code regex is US-only** (`/^\d{5}(-\d{4})?$/`): International postal codes rejected. Design choice for MVP single-market; revisit when multi-region support is needed. `StepShippingAddress.vue`
 - **Auth guard redirects to `/` for expired-token re-entry to `/checkout`**: User loses checkout context. Pre-existing router guard behavior not introduced by this story; revisit when deep-link auth recovery is needed.
 
+## Deferred from: code review of 5-4-implement-admin-inventory-management (2026-04-07)
+
+- **Frontend `listProducts(0, 1000)` scalability ceiling**: `useInventoryStore` loads all products in a single call for client-side enrichment. Redesign needed (backend join or search endpoint) if product catalog exceeds 1000 items.
+- **Inventory service has no `SecurityFilterChain`**: Defense-in-depth — service relies solely on API Gateway RBAC. Add service-level security when system-wide security hardening lands (Epic 8 scope).
+- **Store missing "filters" state (AC6)**: `useInventoryStore` does not expose filter state. AC6 wording is ambiguous; filter UI is an enhancement. Add when filtering requirements are clarified.
+- **Concurrent restock + reserve integration test**: Testing OptimisticLockException in integration requires concurrent thread setup. Deferred to Epic 8 resilience testing.
+
 ## Deferred from: code review of 5-3-implement-product-image-upload (2026-04-07)
 
 - **Stale FileUpload queue entries after upload clears**: PrimeVue `FileUpload` component keeps internal file entries visible after a successful upload completes. No public API to reset internal state from outside. Framework limitation — revisit if PrimeVue 5.x exposes a `clear()` ref method.
@@ -141,3 +148,9 @@
 - **401 redirect fires error toast before navigation completes**: `adminClient.ts` response interceptor sets `window.location.href` then rejects promise; callers show error toast briefly before redirect. Pre-existing auth pattern from Story 5.1; revisit when auth middleware is unified.
 - **Delete→Update concurrent race condition**: Two admins editing/deleting the same product concurrently leads to last-write-wins. `@Version` field exists on `Product` but is not enforced at service level. Revisit when admin team grows beyond single user.
 - **Bulk delete selection doesn't span pagination pages**: PrimeVue DataTable `v-model:selection` only tracks current page. Deleting selected items across pages silently skips off-page items. Low impact given 100-row default fetch; revisit if pagination is reduced.
+
+## Deferred from: code review of 5-4-implement-admin-inventory-management (2026-04-07)
+
+- **Frontend `listProducts(0, 1000)` scalability ceiling**: `useInventoryStore.loadInventory()` fetches up to 1000 products for client-side enrichment. If catalog exceeds 1000, products beyond page 1 get fallback names. Consider a server-side join or a dedicated `productId → name` endpoint.
+- **Inventory service has no `SecurityFilterChain`**: Admin endpoints rely solely on API Gateway for RBAC. Direct access to inventory-service bypasses auth. Add `@PreAuthorize` or a minimal `SecurityFilterChain` for defense-in-depth when system-wide security hardening is addressed.
+- **Store missing "filters" state (AC6)**: `useInventoryStore` has no filter state for searching by product name or filtering by low-stock status. AC6 mentions "filters" but spec wording is ambiguous. Add when UX feedback indicates need.

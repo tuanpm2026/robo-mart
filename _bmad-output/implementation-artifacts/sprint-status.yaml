@@ -35,7 +35,8 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-27
-last_updated: "2026-04-08"
+last_updated: "2026-04-07"
+# Story 5.4 review: 2026-04-07
 # Story 5.3 review: 2026-04-07
 # Story 5.3 in-progress: 2026-04-07
 # Story 5.3 created: 2026-04-07
@@ -108,7 +109,7 @@ development_status:
   5-1-setup-admin-dashboard-foundation-design-system: done
   5-2-implement-admin-product-crud: done
   5-3-implement-product-image-upload: done
-  5-4-implement-admin-inventory-management: backlog
+  5-4-implement-admin-inventory-management: done
   5-5-implement-admin-order-management: backlog
   epic-5-retrospective: optional
 
