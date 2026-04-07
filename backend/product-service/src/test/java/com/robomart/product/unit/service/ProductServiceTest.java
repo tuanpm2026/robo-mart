@@ -21,8 +21,11 @@ import com.robomart.product.entity.Category;
 import com.robomart.product.entity.Product;
 import com.robomart.product.exception.ProductNotFoundException;
 import com.robomart.product.mapper.ProductMapper;
+import com.robomart.product.repository.CategoryRepository;
 import com.robomart.product.repository.ProductRepository;
+import com.robomart.product.service.OutboxPublisher;
 import com.robomart.product.service.ProductService;
+import tools.jackson.databind.ObjectMapper;
 
 import io.micrometer.tracing.Span;
 import io.micrometer.tracing.TraceContext;
@@ -44,7 +47,16 @@ class ProductServiceTest {
     private ProductRepository productRepository;
 
     @Mock
+    private CategoryRepository categoryRepository;
+
+    @Mock
     private ProductMapper productMapper;
+
+    @Mock
+    private OutboxPublisher outboxPublisher;
+
+    @Mock
+    private ObjectMapper objectMapper;
 
     @Mock
     private Tracer tracer;
@@ -70,8 +82,9 @@ class ProductServiceTest {
         var product = createProduct();
         Page<Product> page = new PageImpl<>(List.of(product), PageRequest.of(0, 20), 1);
         var listResponse = new ProductListResponse(1L, "TEST-001", "Test Product",
+                "Test description",
                 BigDecimal.valueOf(29.99), BigDecimal.valueOf(4.5), "TestBrand", 100,
-                "Electronics", "https://images.robomart.com/test.jpg");
+                1L, "Electronics", "https://images.robomart.com/test.jpg");
 
         when(productRepository.findAllWithDetails(any(Pageable.class))).thenReturn(page);
         when(productMapper.toListResponse(page.getContent())).thenReturn(List.of(listResponse));
@@ -89,16 +102,17 @@ class ProductServiceTest {
         var product = createProduct();
         Page<Product> page = new PageImpl<>(List.of(product), PageRequest.of(0, 20), 1);
         var listResponse = new ProductListResponse(1L, "TEST-001", "Test Product",
+                null,
                 BigDecimal.valueOf(29.99), BigDecimal.valueOf(4.5), "TestBrand", 100,
-                "Electronics", null);
+                1L, "Electronics", null);
 
-        when(productRepository.findByCategoryId(eq(1L), any(Pageable.class))).thenReturn(page);
+        when(productRepository.findByCategoryIdAndActive(eq(1L), any(Pageable.class))).thenReturn(page);
         when(productMapper.toListResponse(page.getContent())).thenReturn(List.of(listResponse));
 
         var result = productService.getProducts(1L, PageRequest.of(0, 20));
 
         assertThat(result.data()).hasSize(1);
-        verify(productRepository).findByCategoryId(eq(1L), any(Pageable.class));
+        verify(productRepository).findByCategoryIdAndActive(eq(1L), any(Pageable.class));
     }
 
     @Test

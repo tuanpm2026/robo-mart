@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRoute, RouterLink, RouterView } from 'vue-router'
 import Toast from 'primevue/toast'
+import ConfirmDialog from 'primevue/confirmdialog'
 import Menu from 'primevue/menu'
 import Badge from 'primevue/badge'
 import { useAdminAuthStore } from '@/stores/useAdminAuthStore'
@@ -131,6 +132,7 @@ const userMenuItems = [
     </div>
 
     <!-- Global components -->
+    <ConfirmDialog />
     <Toast position="top-right" :maxToasts="3" />
     <CommandPalette ref="commandPaletteRef" />
   </div>

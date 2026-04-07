@@ -47,6 +47,9 @@ public class Product extends BaseEntity {
     @Column(name = "stock_quantity", nullable = false)
     private Integer stockQuantity = 0;
 
+    @Column(nullable = false)
+    private boolean active = true;
+
     @Version
     private Integer version;
 
@@ -117,6 +120,14 @@ public class Product extends BaseEntity {
 
     public void setStockQuantity(Integer stockQuantity) {
         this.stockQuantity = stockQuantity;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     public Integer getVersion() {

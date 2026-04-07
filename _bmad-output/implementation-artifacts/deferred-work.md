@@ -129,3 +129,11 @@
 
 - **Postal code regex is US-only** (`/^\d{5}(-\d{4})?$/`): International postal codes rejected. Design choice for MVP single-market; revisit when multi-region support is needed. `StepShippingAddress.vue`
 - **Auth guard redirects to `/` for expired-token re-entry to `/checkout`**: User loses checkout context. Pre-existing router guard behavior not introduced by this story; revisit when deep-link auth recovery is needed.
+
+## Deferred from: code review of 5-2-implement-admin-product-crud (2026-04-07)
+
+- **SKU uniqueness TOCTOU race**: `existsBySku()` check not atomic with `save()`. Requires a unique DB constraint on `sku` column + exception handler for `DataIntegrityViolationException`. Revisit in a future migration story.
+- **Unbounded `getAllCategories()` query**: `categoryRepository.findAll()` has no pagination. Acceptable while categories remain a small set (~10-50). Add `@Cacheable` or pagination if catalog grows.
+- **401 redirect fires error toast before navigation completes**: `adminClient.ts` response interceptor sets `window.location.href` then rejects promise; callers show error toast briefly before redirect. Pre-existing auth pattern from Story 5.1; revisit when auth middleware is unified.
+- **Delete→Update concurrent race condition**: Two admins editing/deleting the same product concurrently leads to last-write-wins. `@Version` field exists on `Product` but is not enforced at service level. Revisit when admin team grows beyond single user.
+- **Bulk delete selection doesn't span pagination pages**: PrimeVue DataTable `v-model:selection` only tracks current page. Deleting selected items across pages silently skips off-page items. Low impact given 100-row default fetch; revisit if pagination is reduced.

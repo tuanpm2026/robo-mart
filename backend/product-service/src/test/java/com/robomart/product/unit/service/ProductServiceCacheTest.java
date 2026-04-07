@@ -20,10 +20,13 @@ import com.robomart.product.entity.Category;
 import com.robomart.product.entity.Product;
 import com.robomart.product.exception.ProductNotFoundException;
 import com.robomart.product.mapper.ProductMapper;
+import com.robomart.product.repository.CategoryRepository;
 import com.robomart.product.repository.ProductRepository;
+import com.robomart.product.service.OutboxPublisher;
 import com.robomart.product.service.ProductService;
 
 import io.micrometer.tracing.Tracer;
+import tools.jackson.databind.ObjectMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -52,8 +55,23 @@ class ProductServiceCacheTest {
         }
 
         @Bean
+        CategoryRepository categoryRepository() {
+            return mock(CategoryRepository.class);
+        }
+
+        @Bean
         ProductMapper productMapper() {
             return mock(ProductMapper.class);
+        }
+
+        @Bean
+        OutboxPublisher outboxPublisher() {
+            return mock(OutboxPublisher.class);
+        }
+
+        @Bean
+        ObjectMapper objectMapper() {
+            return mock(ObjectMapper.class);
         }
 
         @Bean

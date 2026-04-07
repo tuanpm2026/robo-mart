@@ -111,10 +111,12 @@ public class ProductSearchService {
                 doc.getId(),
                 doc.getSku(),
                 doc.getName(),
+                doc.getDescription(),
                 doc.getPrice(),
                 doc.getRating(),
                 doc.getBrand(),
                 doc.getStockQuantity(),
+                doc.getCategoryId(),
                 doc.getCategoryName(),
                 null
         );

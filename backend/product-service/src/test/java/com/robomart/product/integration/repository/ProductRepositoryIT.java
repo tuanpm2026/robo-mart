@@ -25,7 +25,7 @@ class ProductRepositoryIT {
 
     @Test
     void shouldFindProductsByCategoryId() {
-        var page = productRepository.findByCategoryId(1L, PageRequest.of(0, 10));
+        var page = productRepository.findByCategoryIdAndActive(1L, PageRequest.of(0, 10));
 
         assertThat(page.getContent()).isNotEmpty();
         page.getContent().forEach(product ->
