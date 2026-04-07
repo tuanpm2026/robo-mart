@@ -130,6 +130,10 @@
 - **Postal code regex is US-only** (`/^\d{5}(-\d{4})?$/`): International postal codes rejected. Design choice for MVP single-market; revisit when multi-region support is needed. `StepShippingAddress.vue`
 - **Auth guard redirects to `/` for expired-token re-entry to `/checkout`**: User loses checkout context. Pre-existing router guard behavior not introduced by this story; revisit when deep-link auth recovery is needed.
 
+## Deferred from: code review of 5-3-implement-product-image-upload (2026-04-07)
+
+- **Stale FileUpload queue entries after upload clears**: PrimeVue `FileUpload` component keeps internal file entries visible after a successful upload completes. No public API to reset internal state from outside. Framework limitation — revisit if PrimeVue 5.x exposes a `clear()` ref method.
+
 ## Deferred from: code review of 5-2-implement-admin-product-crud (2026-04-07)
 
 - **SKU uniqueness TOCTOU race**: `existsBySku()` check not atomic with `save()`. Requires a unique DB constraint on `sku` column + exception handler for `DataIntegrityViolationException`. Revisit in a future migration story.

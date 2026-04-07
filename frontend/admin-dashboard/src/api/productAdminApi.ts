@@ -1,5 +1,17 @@
 import adminClient from './adminClient'
 
+export interface ProductImage {
+  id: number
+  imageUrl: string
+  altText: string | null
+  displayOrder: number
+}
+
+export interface ImageOrderItem {
+  imageId: number
+  displayOrder: number
+}
+
 export interface AdminProduct {
   id: number
   sku: string
@@ -10,7 +22,7 @@ export interface AdminProduct {
   rating: number | null
   stockQuantity: number
   category: { id: number; name: string; description: string | null }
-  images: { imageUrl: string; altText: string | null }[]
+  images: ProductImage[]
   createdAt: string
   updatedAt: string
 }
@@ -92,5 +104,36 @@ export async function deleteProduct(id: number): Promise<void> {
 
 export async function getCategories(): Promise<CategoryOption[]> {
   const { data } = await adminClient.get<CategoryOption[]>('/api/v1/admin/categories')
+  return data
+}
+
+export async function getProductDetail(id: number): Promise<AdminProduct> {
+  const { data } = await adminClient.get<ApiResponse<AdminProduct>>(`/api/v1/products/${id}`)
+  return data.data
+}
+
+export async function uploadImages(productId: number, files: File[]): Promise<ProductImage[]> {
+  const formData = new FormData()
+  files.forEach(f => formData.append('files', f))
+  const { data } = await adminClient.post<ProductImage[]>(
+    `/api/v1/admin/products/${productId}/images`,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  )
+  return data
+}
+
+export async function deleteImage(productId: number, imageId: number): Promise<void> {
+  await adminClient.delete(`/api/v1/admin/products/${productId}/images/${imageId}`)
+}
+
+export async function reorderImages(
+  productId: number,
+  items: ImageOrderItem[],
+): Promise<ProductImage[]> {
+  const { data } = await adminClient.put<ProductImage[]>(
+    `/api/v1/admin/products/${productId}/images/order`,
+    { items },
+  )
   return data
 }

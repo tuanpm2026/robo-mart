@@ -3,6 +3,10 @@ spring:
     name: product-service
   profiles:
     active: dev
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 52MB
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -19,6 +23,11 @@ spring:
 
 server:
   port: 8081
+
+robomart:
+  product:
+    image-storage-path: /tmp/robomart-images
+    image-base-url: http://localhost:8081
 
 ---
 spring:

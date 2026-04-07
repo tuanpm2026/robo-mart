@@ -7,7 +7,17 @@ import Select from 'primevue/select'
 import InputNumber from 'primevue/inputnumber'
 import Button from 'primevue/button'
 import SlideOverPanel from '@/components/SlideOverPanel.vue'
-import { createProduct, updateProduct, getCategories, type AdminProductListItem, type CategoryOption } from '@/api/productAdminApi'
+import ProductImageUpload from '@/components/products/ProductImageUpload.vue'
+import {
+  createProduct,
+  updateProduct,
+  getCategories,
+  getProductDetail,
+  uploadImages,
+  type AdminProductListItem,
+  type CategoryOption,
+  type ProductImage,
+} from '@/api/productAdminApi'
 
 const props = defineProps<{
   visible: boolean
@@ -24,6 +34,8 @@ const toast = useToast()
 const isVisible = ref(props.visible)
 const isSaving = ref(false)
 const categories = ref<CategoryOption[]>([])
+const existingImages = ref<ProductImage[]>([])
+const pendingFiles = ref<File[]>([])
 
 // Form fields
 const name = ref('')
@@ -47,6 +59,7 @@ watch(
     if (val) {
       resetForm()
       loadCategories()
+      loadImages()
     }
   },
 )
@@ -74,6 +87,19 @@ function resetForm() {
     sku.value = ''
   }
   errors.value = { name: '', category: '', price: '' }
+  existingImages.value = []
+  pendingFiles.value = []
+}
+
+async function loadImages() {
+  if (props.product) {
+    try {
+      const detail = await getProductDetail(props.product.id)
+      existingImages.value = detail.images
+    } catch {
+      // Non-critical — images will be empty
+    }
+  }
 }
 
 async function loadCategories() {
@@ -109,7 +135,7 @@ async function handleSubmit() {
   isSaving.value = true
   try {
     if (props.product) {
-      // Edit mode
+      // Edit mode — images are uploaded immediately on select in ProductImageUpload
       await updateProduct(props.product.id, {
         name: name.value.trim(),
         description: description.value.trim(),
@@ -119,8 +145,8 @@ async function handleSubmit() {
       })
       toast.add({ severity: 'success', summary: 'Product updated', life: 3000 })
     } else {
-      // Create mode
-      await createProduct({
+      // Create mode — upload pending images after product creation
+      const created = await createProduct({
         name: name.value.trim(),
         description: description.value.trim(),
         categoryId: selectedCategoryId.value!,
@@ -128,6 +154,9 @@ async function handleSubmit() {
         brand: brand.value.trim(),
         sku: sku.value.trim() || undefined,
       })
+      if (pendingFiles.value.length > 0) {
+        await uploadImages(created.id, pendingFiles.value)
+      }
       toast.add({ severity: 'success', summary: 'Product created', life: 3000 })
     }
     emit('saved')
@@ -208,6 +237,17 @@ async function handleSubmit() {
         <div class="field col-span-2">
           <label class="field-label">Description <span class="text-gray-400 text-xs">(optional)</span></label>
           <Textarea v-model="description" :rows="3" class="w-full" placeholder="Product description" auto-resize />
+        </div>
+
+        <!-- Product Images (full width) -->
+        <div class="field col-span-2">
+          <ProductImageUpload
+            :product-id="product?.id ?? null"
+            :existing-images="existingImages"
+            @update:existing-images="existingImages = $event"
+            @pending-files="pendingFiles = $event"
+            @images-changed="emit('saved')"
+          />
         </div>
       </div>
 

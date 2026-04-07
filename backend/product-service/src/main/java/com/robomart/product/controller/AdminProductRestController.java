@@ -3,6 +3,7 @@ package com.robomart.product.controller;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,13 +12,19 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.robomart.common.dto.ApiResponse;
+import com.robomart.common.exception.ValidationException;
 import com.robomart.product.dto.CategoryResponse;
 import com.robomart.product.dto.CreateProductRequest;
 import com.robomart.product.dto.ProductDetailResponse;
+import com.robomart.product.dto.ProductImageResponse;
+import com.robomart.product.dto.ReorderImagesRequest;
 import com.robomart.product.dto.UpdateProductRequest;
+import com.robomart.product.service.ProductImageService;
 import com.robomart.product.service.ProductService;
 
 import io.micrometer.tracing.Tracer;
@@ -30,10 +37,15 @@ import jakarta.validation.Valid;
 public class AdminProductRestController {
 
     private final ProductService productService;
+    private final ProductImageService productImageService;
     private final Tracer tracer;
 
-    public AdminProductRestController(ProductService productService, Tracer tracer) {
+    public AdminProductRestController(
+            ProductService productService,
+            ProductImageService productImageService,
+            Tracer tracer) {
         this.productService = productService;
+        this.productImageService = productImageService;
         this.tracer = tracer;
     }
 
@@ -62,6 +74,33 @@ public class AdminProductRestController {
     @GetMapping("/categories")
     public ResponseEntity<List<CategoryResponse>> getCategories() {
         return ResponseEntity.ok(productService.getAllCategories());
+    }
+
+    @PostMapping(value = "/products/{productId}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<List<ProductImageResponse>> uploadImages(
+            @PathVariable Long productId,
+            @RequestParam("files") List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
+            throw new ValidationException("No files provided");
+        }
+        List<ProductImageResponse> responses = productImageService.uploadImages(productId, files);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responses);
+    }
+
+    @DeleteMapping("/products/{productId}/images/{imageId}")
+    public ResponseEntity<Void> deleteImage(
+            @PathVariable Long productId,
+            @PathVariable Long imageId) {
+        productImageService.deleteImage(productId, imageId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/products/{productId}/images/order")
+    public ResponseEntity<List<ProductImageResponse>> reorderImages(
+            @PathVariable Long productId,
+            @RequestBody @Valid ReorderImagesRequest request) {
+        List<ProductImageResponse> responses = productImageService.reorderImages(productId, request);
+        return ResponseEntity.ok(responses);
     }
 
     private String getTraceId() {

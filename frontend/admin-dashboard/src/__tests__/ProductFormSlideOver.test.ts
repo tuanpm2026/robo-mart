@@ -10,9 +10,11 @@ vi.mock('@/api/productAdminApi', () => ({
   getCategories: vi.fn(),
   createProduct: vi.fn(),
   updateProduct: vi.fn(),
+  getProductDetail: vi.fn(),
+  uploadImages: vi.fn(),
 }))
 
-import { getCategories, createProduct, updateProduct } from '@/api/productAdminApi'
+import { getCategories, createProduct, updateProduct, uploadImages } from '@/api/productAdminApi'
 import ProductFormSlideOver from '../components/products/ProductFormSlideOver.vue'
 
 const mockCategories = [
@@ -47,6 +49,11 @@ function createGlobalConfig() {
       Select: { template: '<div />', props: ['modelValue', 'options'] },
       InputNumber: { template: '<input />', props: ['modelValue'] },
       Button: { template: '<button type="submit" @click="$emit(\'click\')"><slot /></button>' },
+      ProductImageUpload: {
+        template: '<div data-testid="product-image-upload" />',
+        props: ['productId', 'existingImages'],
+        emits: ['update:existingImages', 'pendingFiles'],
+      },
     },
   }
 }
@@ -143,6 +150,46 @@ describe('ProductFormSlideOver', () => {
     expect(createProduct).toHaveBeenCalledWith(
       expect.objectContaining({ name: 'New Product', categoryId: 1, price: 15.0 }),
     )
+  })
+
+  it('pending images are uploaded after create', async () => {
+    vi.mocked(createProduct).mockResolvedValue({
+      id: 42,
+      sku: 'SKU-NEW',
+      name: 'New Product',
+      description: null,
+      price: 10.0,
+      brand: null,
+      rating: null,
+      stockQuantity: 0,
+      category: { id: 1, name: 'Electronics', description: null },
+      images: [],
+      createdAt: '',
+      updatedAt: '',
+    })
+    vi.mocked(uploadImages).mockResolvedValue([])
+
+    const wrapper = shallowMount(ProductFormSlideOver, {
+      props: { visible: false, product: null },
+      global: createGlobalConfig(),
+    })
+    await wrapper.setProps({ visible: true })
+    await new Promise((r) => setTimeout(r, 10))
+    await wrapper.vm.$nextTick()
+
+    const vm = wrapper.vm as any
+    vm.name = 'New Product'
+    vm.selectedCategoryId = 1
+    vm.price = 10.0
+
+    // Simulate pending files set by ProductImageUpload
+    const pendingFile = new File(['data'], 'img.jpg', { type: 'image/jpeg' })
+    vm.pendingFiles = [pendingFile]
+
+    await vm.handleSubmit()
+
+    expect(createProduct).toHaveBeenCalledOnce()
+    expect(uploadImages).toHaveBeenCalledWith(42, [pendingFile])
   })
 
   it('calls updateProduct when submitting in edit mode', async () => {
