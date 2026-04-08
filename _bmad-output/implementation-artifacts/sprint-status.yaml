@@ -36,6 +36,7 @@
 
 generated: 2026-03-27
 last_updated: "2026-04-08"
+# Epic 5 retrospective done: 2026-04-08
 # Story 5.5 done: 2026-04-08
 # Story 5.5 review: 2026-04-08
 # Story 5.5 in-progress: 2026-04-08
@@ -109,13 +110,13 @@ development_status:
 
 # Story 5.1 created: 2026-04-06
   # Epic 5: Admin Product & Inventory Management
-  epic-5: in-progress
+  epic-5: done
   5-1-setup-admin-dashboard-foundation-design-system: done
   5-2-implement-admin-product-crud: done
   5-3-implement-product-image-upload: done
   5-4-implement-admin-inventory-management: done
   5-5-implement-admin-order-management: done
-  epic-5-retrospective: optional
+  epic-5-retrospective: done
 
   # Epic 6: Notifications & Event-Driven Communication
   epic-6: backlog
