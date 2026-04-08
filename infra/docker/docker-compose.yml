@@ -262,6 +262,30 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres-notification:
+    image: postgres:17-alpine
+    container_name: robomart-postgres-notification
+    profiles: ["core"]
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: ${NOTIFICATION_DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${NOTIFICATION_DB_PASSWORD:-postgres}
+    ports:
+      - "${NOTIFICATION_DB_PORT:-5437}:5432"
+    volumes:
+      - notification-data:/var/lib/postgresql/data
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${NOTIFICATION_DB_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   kafka-ui:
     image: provectuslabs/kafka-ui:v0.7.2
     container_name: robomart-kafka-ui
@@ -298,3 +322,4 @@ volumes:
   order-data:
   inventory-data:
   payment-data:
+  notification-data:

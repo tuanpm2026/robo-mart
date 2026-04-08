@@ -159,3 +159,12 @@
 
 - **No `@PreAuthorize` defense-in-depth on admin controller**: `OrderAdminRestController` relies solely on API Gateway RBAC. Direct access bypasses auth. Same pattern as other admin controllers. Add when system-wide security hardening lands (Epic 8 scope).
 - **Integration tests don't clean up between tests — order pollution**: `OrderAdminRestIT` inserts rows but doesn't truncate between tests. Pre-existing pattern in order-service integration tests (same as OrderCancellationIT, OrderSagaIT).
+
+## Deferred from: code review of 6-1-implement-notification-service-core-order-notifications (2026-04-08)
+
+- **No dead-letter topic after DefaultErrorHandler retry exhaustion**: `KafkaConsumerConfig` uses `DefaultErrorHandler(FixedBackOff(1000L, 3))` with no `DeadLetterPublishingRecoverer`. After 3 retries, failed notification events are permanently lost. Explicitly deferred to Story 6.3 (DLQ implementation).
+- **userId used as email address without user lookup**: `NotificationService.sendAndLog()` passes `userId` (Keycloak UUID) directly as the email `to` address. MockEmailService logs it silently, but a real SMTP implementation would fail. Requires a user-profile service or Keycloak admin API lookup to resolve userId → email. Out of 6.1 scope.
+- **PENDING notification status for reliable before-send logging**: Log record is only created after the email attempt. If the process crashes between email send and DB save, email is sent with no audit record. A `PENDING` status written before sending, updated to `SENT`/`FAILED` after, would prevent this. Enhancement beyond 6.1 scope.
+- **Null Avro event fields (.toString() NPE risk)**: `OrderEventConsumer` calls `.toString()` on `getNewStatus()`, `getPreviousStatus()`, `getOrderId()` without null checks. Avro schema enforces non-null for these required fields in current schema version; revisit if schema evolves to make these fields optional.
+- **Unbounded repository queries without Pageable**: `NotificationLogRepository.findByRecipient()` and `findByNotificationType()` return `List<>` with no pagination. Pre-existing pattern; add `Pageable` when notification volume warrants it.
+- **trace_id nullable in notification_log**: `trace_id VARCHAR(64)` has no NOT NULL constraint. Legitimate null when no active Micrometer span (e.g., during startup or test runs without tracing configured).
