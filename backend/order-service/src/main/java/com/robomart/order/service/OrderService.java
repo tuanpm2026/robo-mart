@@ -11,8 +11,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -27,6 +29,8 @@ import com.robomart.order.repository.OrderItemRepository;
 import com.robomart.order.repository.OrderRepository;
 import com.robomart.order.repository.OrderStatusHistoryRepository;
 import com.robomart.order.saga.OrderSagaOrchestrator;
+import com.robomart.order.web.AdminOrderDetailResponse;
+import com.robomart.order.web.AdminOrderSummaryResponse;
 import com.robomart.order.web.OrderDetailResponse;
 import com.robomart.order.web.OrderItemResponse;
 import com.robomart.order.web.OrderStatusHistoryResponse;
@@ -38,6 +42,10 @@ public class OrderService {
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
     private static final Set<OrderStatus> CANCELLABLE_STATUSES = Set.of(OrderStatus.PENDING, OrderStatus.CONFIRMED);
+
+    private static final Map<OrderStatus, OrderStatus> ADMIN_TRANSITIONS = Map.of(
+            OrderStatus.CONFIRMED, OrderStatus.SHIPPED,
+            OrderStatus.SHIPPED, OrderStatus.DELIVERED);
 
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -128,10 +136,8 @@ public class OrderService {
     public Page<OrderSummaryResponse> getOrdersByUser(String userId, int page, int size) {
         Page<Order> orders = orderRepository.findByUserId(
                 userId, PageRequest.of(page, size, Sort.by("createdAt").descending()));
-        List<Long> orderIds = orders.getContent().stream().map(Order::getId).toList();
-        Map<Long, Long> itemCounts = orderIds.isEmpty() ? Map.of()
-                : orderItemRepository.countsByOrderIds(orderIds).stream()
-                        .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
+        Map<Long, Long> itemCounts = buildItemCountMap(
+                orders.getContent().stream().map(Order::getId).toList());
         return orders.map(order -> new OrderSummaryResponse(
                 order.getId(),
                 order.getCreatedAt(),
@@ -169,6 +175,78 @@ public class OrderService {
                 order.getCancellationReason(),
                 itemResponses,
                 historyResponses);
+    }
+
+    // --- Admin methods ---
+
+    public Page<AdminOrderSummaryResponse> getAllOrders(int page, int size, List<OrderStatus> statuses) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        Page<Order> orders = (statuses == null || statuses.isEmpty())
+                ? orderRepository.findAll(pageable)
+                : orderRepository.findByStatusIn(statuses, pageable);
+        Map<Long, Long> itemCounts = buildItemCountMap(
+                orders.getContent().stream().map(Order::getId).toList());
+        return orders.map(order -> new AdminOrderSummaryResponse(
+                order.getId(),
+                order.getUserId(),
+                order.getCreatedAt(),
+                order.getTotalAmount(),
+                order.getStatus(),
+                itemCounts.getOrDefault(order.getId(), 0L).intValue(),
+                order.getCancellationReason()));
+    }
+
+    @Transactional(readOnly = true)
+    public AdminOrderDetailResponse getOrderDetailForAdmin(Long orderId) {
+        Order order = getOrder(orderId);
+        List<OrderStatusHistory> history =
+                orderStatusHistoryRepository.findByOrderIdOrderByChangedAtAsc(orderId);
+        List<OrderItemResponse> itemResponses = order.getItems().stream()
+                .map(item -> new OrderItemResponse(
+                        item.getProductId(),
+                        item.getProductName(),
+                        item.getQuantity(),
+                        item.getUnitPrice(),
+                        item.getSubtotal()))
+                .toList();
+        List<OrderStatusHistoryResponse> historyResponses = history.stream()
+                .map(h -> new OrderStatusHistoryResponse(h.getStatus(), h.getChangedAt()))
+                .toList();
+        return new AdminOrderDetailResponse(
+                order.getId(),
+                order.getUserId(),
+                order.getCreatedAt(),
+                order.getUpdatedAt(),
+                order.getTotalAmount(),
+                order.getStatus(),
+                order.getShippingAddress(),
+                order.getCancellationReason(),
+                itemResponses,
+                historyResponses);
+    }
+
+    @Transactional
+    public Order updateOrderStatus(Long orderId, OrderStatus newStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+        OrderStatus allowedNext = ADMIN_TRANSITIONS.get(order.getStatus());
+        if (allowedNext == null || allowedNext != newStatus) {
+            throw new IllegalStateException(
+                    "Invalid status transition: " + order.getStatus() + " -> " + newStatus);
+        }
+        order.setStatus(newStatus);
+        OrderStatusHistory history = new OrderStatusHistory();
+        history.setOrder(order);
+        history.setStatus(newStatus);
+        history.setChangedAt(Instant.now());
+        orderStatusHistoryRepository.save(history);
+        return orderRepository.save(order);
+    }
+
+    private Map<Long, Long> buildItemCountMap(List<Long> orderIds) {
+        return orderIds.isEmpty() ? Map.of()
+                : orderItemRepository.countsByOrderIds(orderIds).stream()
+                        .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
     }
 
     public void cancelOrder(Long orderId, String reason, String cancelledBy) {

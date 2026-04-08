@@ -16,4 +16,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @EntityGraph(attributePaths = {"items"})
     List<Order> findByStatusIn(List<OrderStatus> statuses);
+
+    Page<Order> findByStatusIn(List<OrderStatus> statuses, Pageable pageable);
 }

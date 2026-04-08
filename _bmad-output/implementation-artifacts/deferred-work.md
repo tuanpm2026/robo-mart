@@ -154,3 +154,8 @@
 - **Frontend `listProducts(0, 1000)` scalability ceiling**: `useInventoryStore.loadInventory()` fetches up to 1000 products for client-side enrichment. If catalog exceeds 1000, products beyond page 1 get fallback names. Consider a server-side join or a dedicated `productId → name` endpoint.
 - **Inventory service has no `SecurityFilterChain`**: Admin endpoints rely solely on API Gateway for RBAC. Direct access to inventory-service bypasses auth. Add `@PreAuthorize` or a minimal `SecurityFilterChain` for defense-in-depth when system-wide security hardening is addressed.
 - **Store missing "filters" state (AC6)**: `useInventoryStore` has no filter state for searching by product name or filtering by low-stock status. AC6 mentions "filters" but spec wording is ambiguous. Add when UX feedback indicates need.
+
+## Deferred from: code review of 5-5-implement-admin-order-management (2026-04-08)
+
+- **No `@PreAuthorize` defense-in-depth on admin controller**: `OrderAdminRestController` relies solely on API Gateway RBAC. Direct access bypasses auth. Same pattern as other admin controllers. Add when system-wide security hardening lands (Epic 8 scope).
+- **Integration tests don't clean up between tests — order pollution**: `OrderAdminRestIT` inserts rows but doesn't truncate between tests. Pre-existing pattern in order-service integration tests (same as OrderCancellationIT, OrderSagaIT).
