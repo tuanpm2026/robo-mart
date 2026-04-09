@@ -172,3 +172,9 @@
 - **Null Avro event fields (.toString() NPE risk)**: `OrderEventConsumer` calls `.toString()` on `getNewStatus()`, `getPreviousStatus()`, `getOrderId()` without null checks. Avro schema enforces non-null for these required fields in current schema version; revisit if schema evolves to make these fields optional.
 - **Unbounded repository queries without Pageable**: `NotificationLogRepository.findByRecipient()` and `findByNotificationType()` return `List<>` with no pagination. Pre-existing pattern; add `Pageable` when notification volume warrants it.
 - **trace_id nullable in notification_log**: `trace_id VARCHAR(64)` has no NOT NULL constraint. Legitimate null when no active Micrometer span (e.g., during startup or test runs without tracing configured).
+
+## Deferred from: code review of 6-3-implement-dead-letter-queue-for-failed-events (2026-04-09)
+
+- **No metrics/alerting in DlqConsumer**: DlqConsumer only logs at ERROR level. No Micrometer counter or admin notification. DLQ messages could go unnoticed if log monitoring is not configured. Out of scope for Story 6.3.
+- **No `@DirtiesContext` or test isolation for DLQ state across integration tests**: Shared Spring context among NotificationIntegrationIT, NotificationAlertIT, DlqRoutingIT. DLQ messages from earlier tests could leak. Pre-existing pattern across all notification-service integration tests.
+- **`TestKafkaProducerConfig` bean name `producerFactory` could conflict with `dlqProducerFactory`**: Multiple `ProducerFactory` and `KafkaTemplate` beans without `@Primary`. Works with current `@Qualifier` usage. Pre-existing fragility.
