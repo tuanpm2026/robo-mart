@@ -19,6 +19,9 @@ robomart:
   cart:
     ttl-minutes: 1440
 
+notification:
+  checkout-base-url: ${CHECKOUT_BASE_URL:http://localhost:5173/cart}
+
 management:
   endpoints:
     web:

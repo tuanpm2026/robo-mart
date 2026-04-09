@@ -42,8 +42,7 @@ class OrderEventConsumerTest {
 
         orderEventConsumer.onOrderStatusChanged(event);
 
-        verify(notificationService).sendOrderConfirmation("100");
-        verify(notificationService).sendPaymentSuccess("100");
+        verify(notificationService).sendOrderConfirmedNotifications("100");
     }
 
     @Test

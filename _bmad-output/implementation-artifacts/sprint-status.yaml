@@ -35,7 +35,10 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-27
-last_updated: "2026-04-08"
+last_updated: "2026-04-09"
+# Story 6.2 done: 2026-04-09
+# Story 6.2 review: 2026-04-09
+# Story 6.2 in-progress: 2026-04-09
 # Story 6.1 done: 2026-04-08
 # Story 6.1 review: 2026-04-08
 # Story 6.1 in-progress: 2026-04-08
@@ -125,7 +128,7 @@ development_status:
   # Epic 6: Notifications & Event-Driven Communication
   epic-6: in-progress
   6-1-implement-notification-service-core-order-notifications: done
-  6-2-implement-low-stock-alerts-cart-expiry-notifications: backlog
+  6-2-implement-low-stock-alerts-cart-expiry-notifications: done
   6-3-implement-dead-letter-queue-for-failed-events: backlog
   epic-6-retrospective: optional
 

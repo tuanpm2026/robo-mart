@@ -160,6 +160,10 @@
 - **No `@PreAuthorize` defense-in-depth on admin controller**: `OrderAdminRestController` relies solely on API Gateway RBAC. Direct access bypasses auth. Same pattern as other admin controllers. Add when system-wide security hardening lands (Epic 8 scope).
 - **Integration tests don't clean up between tests — order pollution**: `OrderAdminRestIT` inserts rows but doesn't truncate between tests. Pre-existing pattern in order-service integration tests (same as OrderCancellationIT, OrderSagaIT).
 
+## Deferred from: code review of 6-2-implement-low-stock-alerts-cart-expiry-notifications (2026-04-09)
+
+- **TTL value stale in CartExpiryWarningEvent**: The `expiresInSeconds` value captured during Redis SCAN may be slightly lower than the actual TTL by the time the event is built and delivered. The email will show an approximation. Acceptable timing approximation for UX purposes; document as "approximately N hours remaining".
+
 ## Deferred from: code review of 6-1-implement-notification-service-core-order-notifications (2026-04-08)
 
 - **No dead-letter topic after DefaultErrorHandler retry exhaustion**: `KafkaConsumerConfig` uses `DefaultErrorHandler(FixedBackOff(1000L, 3))` with no `DeadLetterPublishingRecoverer`. After 3 retries, failed notification events are permanently lost. Explicitly deferred to Story 6.3 (DLQ implementation).

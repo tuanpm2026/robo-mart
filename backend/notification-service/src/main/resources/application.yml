@@ -19,6 +19,9 @@ server:
 notification:
   order-service:
     url: ${ORDER_SERVICE_URL:http://localhost:8083}
+  product-service:
+    url: ${PRODUCT_SERVICE_URL:http://localhost:8081}
+  admin-email: ${ADMIN_EMAIL:admin@robomart.local}
 
 ---
 spring:

@@ -22,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.robomart.notification.client.OrderDetailDto;
 import com.robomart.notification.client.OrderItemDto;
 import com.robomart.notification.client.OrderServiceClient;
+import com.robomart.notification.client.ProductServiceClient;
 import com.robomart.notification.entity.NotificationLog;
 import com.robomart.notification.enums.NotificationChannel;
 import com.robomart.notification.enums.NotificationStatus;
@@ -37,6 +38,9 @@ class NotificationServiceTest {
 
     @Mock
     private OrderServiceClient orderServiceClient;
+
+    @Mock
+    private ProductServiceClient productServiceClient;
 
     @Mock
     private EmailService emailService;

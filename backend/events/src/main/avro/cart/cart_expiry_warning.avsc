@@ -1,0 +1,28 @@
+{
+  "type": "record",
+  "name": "CartExpiryWarningEvent",
+  "namespace": "com.robomart.events.cart",
+  "fields": [
+    {"name": "eventId", "type": "string"},
+    {"name": "eventType", "type": "string"},
+    {"name": "aggregateId", "type": "string"},
+    {"name": "aggregateType", "type": "string"},
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "version", "type": "int"},
+    {"name": "cartId", "type": "string"},
+    {"name": "userId", "type": "string"},
+    {"name": "expiresInSeconds", "type": "long"},
+    {"name": "checkoutUrl", "type": "string"},
+    {"name": "items", "type": {"type": "array", "items": {
+      "type": "record",
+      "name": "CartItemSummary",
+      "fields": [
+        {"name": "productId", "type": "long"},
+        {"name": "productName", "type": "string"},
+        {"name": "price", "type": "string"},
+        {"name": "quantity", "type": "int"},
+        {"name": "subtotal", "type": "string"}
+      ]
+    }}}
+  ]
+}
