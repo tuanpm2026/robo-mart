@@ -52,6 +52,9 @@ management:
     web:
       exposure:
         include: health,info,metrics
+  health:
+    elasticsearch:
+      enabled: false
 
 ---
 spring:

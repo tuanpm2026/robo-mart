@@ -59,7 +59,7 @@ services:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://kafka:29093,PLAINTEXT_HOST://0.0.0.0:29092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
@@ -169,6 +169,8 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:-admin}
       KC_HTTP_PORT: 8180
       KC_HEALTH_ENABLED: "true"
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_STRICT: "false"
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
       KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak}
@@ -184,7 +186,7 @@ services:
         limits:
           memory: 512M
     healthcheck:
-      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8180 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '200 OK'"]
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -312,6 +314,305 @@ services:
       interval: 15s
       timeout: 10s
       retries: 5
+
+  # ---- Backend App Services ----
+
+  product-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: product-service
+    image: robomart/product-service:local
+    container_name: robomart-product-service
+    profiles: ["app"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-robomart}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-robomart}
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
+      ROBOMART_PRODUCT_IMAGE_BASE_URL: http://localhost:8080
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  cart-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: cart-service
+    image: robomart/cart-service:local
+    container_name: robomart-cart-service
+    profiles: ["app"]
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+    environment:
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
+      CHECKOUT_BASE_URL: http://localhost:5173/cart
+      SPRING_AUTOCONFIGURE_EXCLUDE: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8082/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  order-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: order-service
+    image: robomart/order-service:local
+    container_name: robomart-order-service
+    profiles: ["app"]
+    depends_on:
+      postgres-order:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-order:5432/order_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-robomart}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-robomart}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
+      SPRING_GRPC_CLIENT_INVENTORY_SERVICE_ADDRESS: static://inventory-service:9094
+      SPRING_GRPC_CLIENT_PAYMENT_SERVICE_ADDRESS: static://payment-service:9095
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8083/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  inventory-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: inventory-service
+    image: robomart/inventory-service:local
+    container_name: robomart-inventory-service
+    profiles: ["app"]
+    depends_on:
+      postgres-inventory:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-inventory:5432/inventory_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-robomart}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-robomart}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8084/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  payment-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: payment-service
+    image: robomart/payment-service:local
+    container_name: robomart-payment-service
+    profiles: ["app"]
+    depends_on:
+      postgres-payment:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payment:5432/payment_db
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-robomart}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-robomart}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8086/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  notification-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: notification-service
+    image: robomart/notification-service:local
+    container_name: robomart-notification-service
+    profiles: ["app"]
+    depends_on:
+      postgres-notification:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      schema-registry:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-notification:5432/notification_db
+      SPRING_DATASOURCE_USERNAME: ${NOTIFICATION_DB_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${NOTIFICATION_DB_PASSWORD:-postgres}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8087/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  api-gateway:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: api-gateway
+    image: robomart/api-gateway:local
+    container_name: robomart-api-gateway
+    profiles: ["app"]
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      product-service:
+        condition: service_healthy
+      cart-service:
+        condition: service_healthy
+      order-service:
+        condition: service_healthy
+      inventory-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
+      GATEWAY_SERVICES_PRODUCT_SERVICE: http://product-service:8081
+      GATEWAY_SERVICES_CART_SERVICE: http://cart-service:8082
+      GATEWAY_SERVICES_ORDER_SERVICE: http://order-service:8083
+      GATEWAY_SERVICES_INVENTORY_SERVICE: http://inventory-service:8084
+      GATEWAY_SERVICES_NOTIFICATION_SERVICE: http://notification-service:8087
+      GATEWAY_CORS_CUSTOMER_ORIGIN: http://localhost:5173
+      GATEWAY_CORS_ADMIN_ORIGIN: http://localhost:5174
+      GATEWAY_CORS_KEYCLOAK_ORIGIN: http://localhost:8180
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  # ---- Frontend App Services ----
+
+  customer-website:
+    build:
+      context: ../../frontend
+      dockerfile: customer-website/Dockerfile
+    image: robomart/customer-website:local
+    container_name: robomart-customer-website
+    profiles: ["app"]
+    ports:
+      - "5173:80"
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  admin-dashboard:
+    build:
+      context: ../../frontend
+      dockerfile: admin-dashboard/Dockerfile
+    image: robomart/admin-dashboard:local
+    container_name: robomart-admin-dashboard
+    profiles: ["app"]
+    ports:
+      - "5174:80"
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
 
 volumes:
   postgres-data:

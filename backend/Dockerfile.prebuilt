@@ -1,0 +1,44 @@
+# Uses pre-built JARs — run `mvn package -Dmaven.test.skip=true` first
+
+FROM eclipse-temurin:21-jre-jammy AS api-gateway
+WORKDIR /app
+COPY api-gateway/target/api-gateway-0.0.1-SNAPSHOT.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+FROM eclipse-temurin:21-jre-jammy AS product-service
+WORKDIR /app
+COPY product-service/target/product-service-0.0.1-SNAPSHOT.jar app.jar
+RUN mkdir -p /tmp/robomart-images
+EXPOSE 8081
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+FROM eclipse-temurin:21-jre-jammy AS cart-service
+WORKDIR /app
+COPY cart-service/target/cart-service-0.0.1-SNAPSHOT.jar app.jar
+EXPOSE 8082
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+FROM eclipse-temurin:21-jre-jammy AS order-service
+WORKDIR /app
+COPY order-service/target/order-service-0.0.1-SNAPSHOT.jar app.jar
+EXPOSE 8083 9093
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+FROM eclipse-temurin:21-jre-jammy AS inventory-service
+WORKDIR /app
+COPY inventory-service/target/inventory-service-0.0.1-SNAPSHOT.jar app.jar
+EXPOSE 8084 9094
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+FROM eclipse-temurin:21-jre-jammy AS payment-service
+WORKDIR /app
+COPY payment-service/target/payment-service-0.0.1-SNAPSHOT.jar app.jar
+EXPOSE 8086 9095
+ENTRYPOINT ["java", "-jar", "app.jar"]
+
+FROM eclipse-temurin:21-jre-jammy AS notification-service
+WORKDIR /app
+COPY notification-service/target/notification-service-0.0.1-SNAPSHOT.jar app.jar
+EXPOSE 8087
+ENTRYPOINT ["java", "-jar", "app.jar"]

@@ -12,8 +12,8 @@ import com.robomart.cart.config.CartProperties;
 @SpringBootApplication(
         scanBasePackages = "com.robomart",
         excludeName = {
-                "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration",
-                "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
+                "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration",
+                "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration",
                 "org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration"
         }
 )

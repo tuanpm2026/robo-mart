@@ -12,7 +12,7 @@ import org.springframework.data.elasticsearch.annotations.InnerField;
 import org.springframework.data.elasticsearch.annotations.MultiField;
 import org.springframework.data.elasticsearch.annotations.Setting;
 
-@Document(indexName = "products")
+@Document(indexName = "products", createIndex = false)
 @Setting(shards = 1, replicas = 0)
 public class ProductDocument {
 
