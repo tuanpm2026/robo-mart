@@ -1,5 +1,8 @@
 package com.robomart.notification.unit;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
@@ -7,14 +10,22 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.robomart.notification.entity.FailedEvent;
 import com.robomart.notification.event.DlqConsumer;
+import com.robomart.notification.repository.FailedEventRepository;
 
 @ExtendWith(MockitoExtension.class)
 class DlqConsumerTest {
 
-    private final DlqConsumer dlqConsumer = new DlqConsumer();
+    @Mock
+    private FailedEventRepository failedEventRepository;
+
+    @InjectMocks
+    private DlqConsumer dlqConsumer;
 
     @Test
     void shouldLogAllDltHeadersOnDlqMessage() {
@@ -33,8 +44,9 @@ class DlqConsumerTest {
                 new ConsumerRecord<>("notification.dlq", 0, 0L, "order-123", "payload");
         headers.forEach(h -> record.headers().add(h));
 
-        // Should not throw — logging-only consumer
         dlqConsumer.onDlqMessage(record);
+
+        verify(failedEventRepository).save(any(FailedEvent.class));
     }
 
     @Test

@@ -24,6 +24,9 @@ public class RouteConfig {
     @Value("${gateway.services.notification-service:http://localhost:8087}")
     private String notificationServiceUri;
 
+    @Value("${gateway.services.payment-service:http://localhost:8086}")
+    private String paymentServiceUri;
+
     @Bean
     public RouteLocator routeLocator(RouteLocatorBuilder builder) {
         return builder.routes()
@@ -51,6 +54,15 @@ public class RouteConfig {
                 .route("admin-inventory", r -> r
                         .path("/api/v1/admin/inventory/**")
                         .uri(inventoryServiceUri))
+                .route("admin-reports", r -> r
+                        .path("/api/v1/admin/reports/**")
+                        .uri(orderServiceUri))
+                .route("admin-dlq", r -> r
+                        .path("/api/v1/admin/dlq/**")
+                        .uri(notificationServiceUri))
+                .route("admin-payments", r -> r
+                        .path("/api/v1/admin/payments/**")
+                        .uri(paymentServiceUri))
                 .build();
     }
 }

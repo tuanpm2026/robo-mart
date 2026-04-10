@@ -27,6 +27,8 @@ const breadcrumbLabel = computed(() => {
     'admin-products': 'Products',
     'admin-inventory': 'Inventory',
     'admin-orders': 'Orders',
+    'admin-reports': 'Reports',
+    'admin-system-events': 'Unprocessed Events',
   }
   return map[name ?? ''] ?? 'Admin'
 })
@@ -80,14 +82,14 @@ const userMenuItems = [
             <i class="pi pi-heart" />
             <span v-if="!isSidebarCollapsed">Health</span>
           </a>
-          <a href="#" class="admin-nav-item">
-            <i class="pi pi-bell" />
-            <span v-if="!isSidebarCollapsed">Events</span>
-          </a>
-          <a href="#" class="admin-nav-item">
+          <RouterLink to="/admin/system/events" class="admin-nav-item">
+            <i class="pi pi-exclamation-triangle" />
+            <span v-if="!isSidebarCollapsed">Unprocessed Events</span>
+          </RouterLink>
+          <RouterLink to="/admin/reports" class="admin-nav-item">
             <i class="pi pi-chart-bar" />
             <span v-if="!isSidebarCollapsed">Reports</span>
-          </a>
+          </RouterLink>
         </div>
       </nav>
 

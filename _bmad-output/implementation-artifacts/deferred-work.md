@@ -1,5 +1,18 @@
 # Deferred Work
 
+## Deferred from: code review of 7-3-implement-cqrs-reporting-dlq-management (2026-04-10)
+
+- **retryAll() concurrent double-processing**: Two concurrent `@Transactional` calls read the same PENDING list before either commits. Requires pessimistic lock or `SKIP LOCKED` SQL pattern.
+- **FailedEvent.status stringly-typed**: Magic strings `"PENDING"`, `"RESOLVED"`, `"FAILED_RETRY"` scattered across service, consumer, and controller. Refactor to Java enum.
+- **AC5 FAILED_RETRY path not implemented**: Retry always marks RESOLVED. Real failure path (increment retry_count, set FAILED_RETRY) deferred per spec Task 15 simplification note.
+- **AC6 incremental Retry All progress**: "N/M processed" per-item feedback requires SSE or WebSocket streaming from backend. Current bulk endpoint returns only final count.
+- **AC6 row selection for Retry All**: Retry All operates on all PENDING events; no DataTable row-selection for targeted bulk retry.
+- **AC7 gateway-level response aggregation**: Single API response combining Order + Payment data not implemented; tasks chose separate endpoints approach instead.
+- **DATE() timezone-naive in native query**: `DATE(o.created_at)` uses DB session timezone; orders near midnight in non-UTC deployments may be bucketed to wrong day.
+- **setFirstFailedAt() setter on updatable=false column**: `FailedEvent.setFirstFailedAt()` allows in-memory overwrite of a column that JPA won't update after insert.
+- **AC4 stack trace field missing**: DLQ expanded row shows errorClass + payloadPreview but not full stack trace. Adding requires new DB column + entity/DTO/UI changes.
+- **PaymentService not injected per spec Task 9**: `PaymentAdminRestController` uses `PaymentRepository` directly; `PaymentService` injection deferred as not needed for current use case.
+
 ## Deferred from: code review of 7-2-implement-admin-dashboard-overview-with-metrics (2026-04-10)
 
 - **Midnight boundary exclusion**: `countByCreatedAtAfter` and `sumTotalAmountByCreatedAtAfter` both use `>` (exclusive), so orders at exactly 00:00:00.000 UTC are excluded from today's metrics. Statistically negligible but technically imprecise.

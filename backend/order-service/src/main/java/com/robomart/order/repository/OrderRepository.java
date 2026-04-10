@@ -27,4 +27,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0.0) FROM Order o WHERE o.createdAt > :since")
     BigDecimal sumTotalAmountByCreatedAtAfter(@Param("since") Instant since);
+
+    @Query(value = "SELECT DATE(o.created_at) as date, o.status, COUNT(*) as cnt " +
+                   "FROM orders o WHERE o.created_at BETWEEN :from AND :to " +
+                   "GROUP BY DATE(o.created_at), o.status ORDER BY date",
+           nativeQuery = true)
+    List<Object[]> findOrderTrends(@Param("from") Instant from, @Param("to") Instant to);
 }

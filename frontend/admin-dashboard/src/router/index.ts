@@ -31,6 +31,18 @@ const router = createRouter({
       meta: { requiresAdmin: true },
     },
     {
+      path: '/admin/reports',
+      name: 'admin-reports',
+      component: () => import('../views/ReportsPage.vue'),
+      meta: { requiresAdmin: true },
+    },
+    {
+      path: '/admin/system/events',
+      name: 'admin-system-events',
+      component: () => import('../views/SystemEventsPage.vue'),
+      meta: { requiresAdmin: true },
+    },
+    {
       path: '/admin/unauthorized',
       name: 'admin-unauthorized',
       component: () => import('../views/UnauthorizedView.vue'),

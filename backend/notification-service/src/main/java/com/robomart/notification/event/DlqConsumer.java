@@ -10,10 +10,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+import com.robomart.notification.entity.FailedEvent;
+import com.robomart.notification.repository.FailedEventRepository;
+
 @Component
 public class DlqConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(DlqConsumer.class);
+
+    private final FailedEventRepository failedEventRepository;
+
+    public DlqConsumer(FailedEventRepository failedEventRepository) {
+        this.failedEventRepository = failedEventRepository;
+    }
 
     @KafkaListener(
             topics = "notification.dlq",
@@ -39,6 +48,55 @@ public class DlqConsumer {
                 originalTopic, partition, offset,
                 exceptionClass, exceptionMessage, retryCount,
                 firstFailureTs, lastFailureTs, consumerGroup, aggregateId);
+
+        try {
+            String preview = "unknown";
+            try {
+                if (record.value() != null) {
+                    preview = record.value().toString();
+                    if (preview.length() > 500) {
+                        preview = preview.substring(0, 500) + "...";
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Could not serialize DLQ payload: {}", e.getMessage());
+            }
+
+            int retryCountInt = 0;
+            try {
+                if (!"unknown".equals(retryCount)) {
+                    retryCountInt = Integer.parseInt(retryCount);
+                }
+            } catch (NumberFormatException ignored) {
+                // leave as 0
+            }
+
+            String errorMsg = "unknown".equals(exceptionMessage) ? null : exceptionMessage;
+            if (errorMsg != null && errorMsg.length() > 2000) {
+                errorMsg = errorMsg.substring(0, 2000);
+            }
+
+            FailedEvent failedEvent = new FailedEvent();
+            failedEvent.setEventType(originalTopic);
+            failedEvent.setAggregateId(aggregateId);
+            failedEvent.setOriginalTopic(originalTopic);
+            failedEvent.setErrorClass("unknown".equals(exceptionClass) ? null : exceptionClass);
+            failedEvent.setErrorMessage(errorMsg);
+            failedEvent.setPayloadPreview(preview);
+            failedEvent.setRetryCount(retryCountInt);
+            failedEvent.setStatus("PENDING");
+
+            if (aggregateId != null
+                    && failedEventRepository.existsByOriginalTopicAndAggregateIdAndStatus(
+                            originalTopic, aggregateId, "PENDING")) {
+                log.debug("DLQ event already tracked (topic={}, aggregateId={}), skipping duplicate",
+                        originalTopic, aggregateId);
+                return;
+            }
+            failedEventRepository.save(failedEvent);
+        } catch (Exception e) {
+            log.warn("Failed to persist DLQ event to database: {}", e.getMessage());
+        }
     }
 
     private String extractHeader(Headers headers, String key) {
