@@ -1,5 +1,12 @@
 # Deferred Work
 
+## Deferred from: code review of 7-2-implement-admin-dashboard-overview-with-metrics (2026-04-10)
+
+- **Midnight boundary exclusion**: `countByCreatedAtAfter` and `sumTotalAmountByCreatedAtAfter` both use `>` (exclusive), so orders at exactly 00:00:00.000 UTC are excluded from today's metrics. Statistically negligible but technically imprecise.
+- **Concurrent `loadMetrics()` race condition**: Shared `isLoading` ref resets when the first concurrent call finishes. Unlikely in practice since `loadMetrics` is only called from `onMounted`, but worth guarding with an in-flight ref if auto-refresh is added in a later story.
+- **MetricCard animation stale startVal on rapid updates**: If `props.value` changes while a previous animation is still running, the new animation starts from the mid-animation intermediate value. Minor visual artifact, not triggered under normal usage.
+- **NeedsAttentionSection shows "All clear" when inventory fetch fails**: If `loadInventory()` errors, `isLoading` drops to false and `lowStockItems` stays empty, showing the empty state instead of an error. Inventory store error handling is out of this story's scope.
+
 ## Deferred from: code review of 1-1-scaffold-monorepo-minimal-development-infrastructure (2026-03-27)
 
 - **common-lib heavyweight dependencies**: spring-boot-starter-web, spring-boot-starter-data-jpa, spring-boot-starter-actuator are compile-scope in common-lib, forcing all consumers to drag in full web server + JPA + actuator. Consider splitting DTOs/exceptions into a lighter module when more services are added.

@@ -36,6 +36,9 @@
 
 generated: 2026-03-27
 last_updated: "2026-04-10"
+# Story 7.2 done: 2026-04-10
+# Story 7.2 review: 2026-04-10
+# Story 7.2 created: 2026-04-10
 # Story 7.1 done: 2026-04-10
 # Story 7.1 review: 2026-04-09
 # Story 7.1 in-progress: 2026-04-09
@@ -143,7 +146,7 @@ development_status:
   # Epic 7: Admin Real-Time Dashboard & Reporting
   epic-7: in-progress
   7-1-implement-websocket-real-time-event-feed: done
-  7-2-implement-admin-dashboard-overview-with-metrics: backlog
+  7-2-implement-admin-dashboard-overview-with-metrics: done
   7-3-implement-cqrs-reporting-dlq-management: backlog
   7-4-implement-system-health-monitoring: backlog
   epic-7-retrospective: optional

@@ -3,6 +3,7 @@ package com.robomart.inventory.controller;
 import com.robomart.common.dto.ApiResponse;
 import com.robomart.inventory.dto.BulkRestockRequest;
 import com.robomart.inventory.dto.InventoryItemResponse;
+import com.robomart.inventory.dto.InventoryMetricsResponse;
 import com.robomart.inventory.dto.PagedInventoryResponse;
 import com.robomart.inventory.dto.RestockRequest;
 import com.robomart.inventory.entity.InventoryItem;
@@ -43,6 +44,11 @@ public class InventoryAdminRestController {
     public InventoryAdminRestController(InventoryService inventoryService, Tracer tracer) {
         this.inventoryService = inventoryService;
         this.tracer = tracer;
+    }
+
+    @GetMapping("/metrics")
+    public ResponseEntity<ApiResponse<InventoryMetricsResponse>> getMetrics() {
+        return ResponseEntity.ok(new ApiResponse<>(inventoryService.getMetrics(), getTraceId()));
     }
 
     @GetMapping

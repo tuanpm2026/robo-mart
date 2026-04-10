@@ -30,6 +30,7 @@ import com.robomart.order.repository.OrderItemRepository;
 import com.robomart.order.service.OrderService;
 import com.robomart.order.web.AdminOrderDetailResponse;
 import com.robomart.order.web.AdminOrderSummaryResponse;
+import com.robomart.order.web.OrderDashboardMetricsResponse;
 import com.robomart.order.web.UpdateOrderStatusRequest;
 
 // No @PreAuthorize needed — ADMIN role enforced at API Gateway level
@@ -47,6 +48,12 @@ public class OrderAdminRestController {
         this.orderService = orderService;
         this.orderItemRepository = orderItemRepository;
         this.tracer = tracer;
+    }
+
+    @GetMapping("/metrics")
+    public ResponseEntity<ApiResponse<OrderDashboardMetricsResponse>> getDashboardMetrics() {
+        OrderDashboardMetricsResponse metrics = orderService.getDashboardMetrics();
+        return ResponseEntity.ok(new ApiResponse<>(metrics, getTraceId()));
     }
 
     @GetMapping

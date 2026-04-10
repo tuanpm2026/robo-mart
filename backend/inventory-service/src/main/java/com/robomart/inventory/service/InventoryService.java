@@ -2,6 +2,7 @@ package com.robomart.inventory.service;
 
 import com.robomart.common.exception.ResourceNotFoundException;
 import com.robomart.inventory.config.RedisLockConfig;
+import com.robomart.inventory.dto.InventoryMetricsResponse;
 import com.robomart.inventory.entity.InventoryItem;
 import com.robomart.inventory.entity.OutboxEvent;
 import com.robomart.inventory.entity.StockMovement;
@@ -349,6 +350,17 @@ public class InventoryService {
         } catch (Exception e) {
             log.error("Compensation failed for productId={}, manual intervention may be required", productId, e);
         }
+    }
+
+    /**
+     * Returns dashboard metrics: count of low-stock items.
+     *
+     * @return InventoryMetricsResponse with lowStockCount
+     */
+    @Transactional(readOnly = true)
+    public InventoryMetricsResponse getMetrics() {
+        long count = inventoryItemRepository.countLowStockItems();
+        return new InventoryMetricsResponse(count);
     }
 
     /**

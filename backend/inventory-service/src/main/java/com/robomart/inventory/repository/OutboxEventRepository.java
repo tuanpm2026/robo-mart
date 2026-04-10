@@ -13,4 +13,6 @@ public interface OutboxEventRepository extends JpaRepository<OutboxEvent, Long> 
     @Query(value = "SELECT * FROM outbox_events WHERE published = false ORDER BY created_at ASC LIMIT :limit FOR UPDATE SKIP LOCKED",
             nativeQuery = true)
     List<OutboxEvent> findUnpublishedSkipLocked(@Param("limit") int limit);
+
+    List<OutboxEvent> findByPublishedFalseOrderByCreatedAtAsc();
 }

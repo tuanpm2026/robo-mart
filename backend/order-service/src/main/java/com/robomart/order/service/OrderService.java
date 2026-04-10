@@ -2,6 +2,8 @@ package com.robomart.order.service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,6 +33,7 @@ import com.robomart.order.repository.OrderStatusHistoryRepository;
 import com.robomart.order.saga.OrderSagaOrchestrator;
 import com.robomart.order.web.AdminOrderDetailResponse;
 import com.robomart.order.web.AdminOrderSummaryResponse;
+import com.robomart.order.web.OrderDashboardMetricsResponse;
 import com.robomart.order.web.OrderDetailResponse;
 import com.robomart.order.web.OrderItemResponse;
 import com.robomart.order.web.OrderStatusHistoryResponse;
@@ -178,6 +181,14 @@ public class OrderService {
     }
 
     // --- Admin methods ---
+
+    @Transactional(readOnly = true)
+    public OrderDashboardMetricsResponse getDashboardMetrics() {
+        Instant startOfToday = LocalDate.now(ZoneOffset.UTC).atStartOfDay().toInstant(ZoneOffset.UTC);
+        long count = orderRepository.countByCreatedAtAfter(startOfToday);
+        BigDecimal sum = orderRepository.sumTotalAmountByCreatedAtAfter(startOfToday);
+        return new OrderDashboardMetricsResponse(count, sum);
+    }
 
     public Page<AdminOrderSummaryResponse> getAllOrders(int page, int size, List<OrderStatus> statuses) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
