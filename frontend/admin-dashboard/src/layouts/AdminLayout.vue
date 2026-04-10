@@ -7,6 +7,7 @@ import Menu from 'primevue/menu'
 import Badge from 'primevue/badge'
 import { useAdminAuthStore } from '@/stores/useAdminAuthStore'
 import CommandPalette from '@/components/CommandPalette.vue'
+import ConnectionStatus from '@/components/common/ConnectionStatus.vue'
 
 const route = useRoute()
 const adminAuthStore = useAdminAuthStore()
@@ -107,6 +108,7 @@ const userMenuItems = [
           <span class="admin-breadcrumb-text">{{ breadcrumbLabel }}</span>
         </div>
         <div class="admin-topbar__actions">
+          <ConnectionStatus />
           <button class="admin-cmd-btn" @click="commandPaletteRef?.open()">
             <i class="pi pi-search" />
             <span>⌘K</span>

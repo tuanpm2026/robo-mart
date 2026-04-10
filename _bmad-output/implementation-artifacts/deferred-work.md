@@ -178,3 +178,7 @@
 - **No metrics/alerting in DlqConsumer**: DlqConsumer only logs at ERROR level. No Micrometer counter or admin notification. DLQ messages could go unnoticed if log monitoring is not configured. Out of scope for Story 6.3.
 - **No `@DirtiesContext` or test isolation for DLQ state across integration tests**: Shared Spring context among NotificationIntegrationIT, NotificationAlertIT, DlqRoutingIT. DLQ messages from earlier tests could leak. Pre-existing pattern across all notification-service integration tests.
 - **`TestKafkaProducerConfig` bean name `producerFactory` could conflict with `dlqProducerFactory`**: Multiple `ProducerFactory` and `KafkaTemplate` beans without `@Primary`. Works with current `@Qualifier` usage. Pre-existing fragility.
+
+## Deferred from: code review of 7-1-implement-websocket-real-time-event-feed (2026-04-09)
+
+- **Token expiry mid-session not handled on STOMP reconnect**: `createWebSocketClient(token)` captures the token at connect time. If the JWT expires during a long session, STOMP's built-in auto-reconnect reuses the expired token, causing the STOMP CONNECT to be rejected by `JwtStompInterceptor`, and reconnect will fail indefinitely. Explicitly out of scope per story notes; revisit in Epic 8 or a future auth hardening story.

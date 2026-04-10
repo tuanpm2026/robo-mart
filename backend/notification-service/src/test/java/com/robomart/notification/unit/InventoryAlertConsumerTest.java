@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.robomart.events.inventory.StockLowAlertEvent;
 import com.robomart.notification.event.InventoryAlertConsumer;
+import com.robomart.notification.service.AdminPushService;
 import com.robomart.notification.service.NotificationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -19,6 +20,9 @@ class InventoryAlertConsumerTest {
 
     @Mock
     private NotificationService notificationService;
+
+    @Mock
+    private AdminPushService adminPushService;
 
     @InjectMocks
     private InventoryAlertConsumer inventoryAlertConsumer;

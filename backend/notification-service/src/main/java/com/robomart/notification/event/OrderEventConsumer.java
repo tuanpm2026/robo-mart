@@ -6,6 +6,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 import com.robomart.events.order.OrderStatusChangedEvent;
+import com.robomart.notification.service.AdminPushService;
 import com.robomart.notification.service.NotificationService;
 
 @Component
@@ -14,9 +15,12 @@ public class OrderEventConsumer {
     private static final Logger log = LoggerFactory.getLogger(OrderEventConsumer.class);
 
     private final NotificationService notificationService;
+    private final AdminPushService adminPushService;
 
-    public OrderEventConsumer(NotificationService notificationService) {
+    public OrderEventConsumer(NotificationService notificationService,
+                              AdminPushService adminPushService) {
         this.notificationService = notificationService;
+        this.adminPushService = adminPushService;
     }
 
     @KafkaListener(topics = "order.order.status-changed",
@@ -33,5 +37,7 @@ public class OrderEventConsumer {
         } else if ("CANCELLED".equals(newStatus) && "PAYMENT_PROCESSING".equals(previousStatus)) {
             notificationService.sendPaymentFailure(orderId);
         }
+
+        adminPushService.pushOrderEvent(event);
     }
 }

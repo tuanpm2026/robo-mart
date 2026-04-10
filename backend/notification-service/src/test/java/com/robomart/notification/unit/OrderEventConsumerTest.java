@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.robomart.events.order.OrderStatusChangedEvent;
 import com.robomart.notification.event.OrderEventConsumer;
+import com.robomart.notification.service.AdminPushService;
 import com.robomart.notification.service.NotificationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -18,6 +19,9 @@ class OrderEventConsumerTest {
 
     @Mock
     private NotificationService notificationService;
+
+    @Mock
+    private AdminPushService adminPushService;
 
     @InjectMocks
     private OrderEventConsumer orderEventConsumer;

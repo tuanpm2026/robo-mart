@@ -6,6 +6,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 import com.robomart.events.inventory.StockLowAlertEvent;
+import com.robomart.notification.service.AdminPushService;
 import com.robomart.notification.service.NotificationService;
 
 @Component
@@ -14,9 +15,12 @@ public class InventoryAlertConsumer {
     private static final Logger log = LoggerFactory.getLogger(InventoryAlertConsumer.class);
 
     private final NotificationService notificationService;
+    private final AdminPushService adminPushService;
 
-    public InventoryAlertConsumer(NotificationService notificationService) {
+    public InventoryAlertConsumer(NotificationService notificationService,
+                                  AdminPushService adminPushService) {
         this.notificationService = notificationService;
+        this.adminPushService = adminPushService;
     }
 
     @KafkaListener(topics = "inventory.stock.low-alert",
@@ -28,5 +32,6 @@ public class InventoryAlertConsumer {
         log.info("Received low stock alert: productId={}, quantity={}, threshold={}",
                 productId, currentQuantity, threshold);
         notificationService.sendLowStockAlert(productId, currentQuantity, threshold);
+        adminPushService.pushInventoryAlert(event);
     }
 }

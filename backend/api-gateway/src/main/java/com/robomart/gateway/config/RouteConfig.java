@@ -21,9 +21,15 @@ public class RouteConfig {
     @Value("${gateway.services.inventory-service:http://localhost:8084}")
     private String inventoryServiceUri;
 
+    @Value("${gateway.services.notification-service:http://localhost:8087}")
+    private String notificationServiceUri;
+
     @Bean
     public RouteLocator routeLocator(RouteLocatorBuilder builder) {
         return builder.routes()
+                .route("notification-websocket", r -> r
+                        .path("/ws/**")
+                        .uri(notificationServiceUri))
                 .route("product-service", r -> r
                         .path("/api/v1/products/**")
                         .uri(productServiceUri))
