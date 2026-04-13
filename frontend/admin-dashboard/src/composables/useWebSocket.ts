@@ -3,7 +3,9 @@ import { useToast } from 'primevue/usetoast'
 import { createWebSocketClient } from '@/api/websocketClient'
 import { useWebSocketStore } from '@/stores/useWebSocketStore'
 import { useAdminAuthStore } from '@/stores/useAdminAuthStore'
+import { useSystemHealthStore } from '@/stores/useSystemHealthStore'
 import type { LiveEvent } from '@/stores/useWebSocketStore'
+import type { SystemHealthResponse } from '@/api/systemHealthApi'
 
 let stompClient: Client | null = null
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
@@ -45,6 +47,20 @@ export function useWebSocket() {
         store.addEvent(event)
       } catch (e) {
         console.error('Failed to parse inventory WebSocket event', e)
+      }
+    })
+
+    const systemHealthStore = useSystemHealthStore()
+    stompClient.subscribe('/topic/system-health', (message) => {
+      try {
+        const payload = JSON.parse(message.body) as SystemHealthResponse
+        if (!Array.isArray(payload?.services)) {
+          console.error('Invalid system health WebSocket payload: services is not an array')
+          return
+        }
+        systemHealthStore.updateFromWebSocket(payload)
+      } catch (e) {
+        console.error('Failed to parse system health WebSocket event', e)
       }
     })
   }

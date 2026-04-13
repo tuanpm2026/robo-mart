@@ -11,15 +11,18 @@ import Tag from 'primevue/tag'
 import LiveOrderFeed from '@/components/dashboard/LiveOrderFeed.vue'
 import MetricCard from '@/components/dashboard/MetricCard.vue'
 import NeedsAttentionSection from '@/components/dashboard/NeedsAttentionSection.vue'
+import SystemHealthPanel from '@/components/system/SystemHealthPanel.vue'
 import { useWebSocket } from '@/composables/useWebSocket'
 import { useDashboardStore } from '@/stores/useDashboardStore'
 import { useInventoryStore } from '@/stores/useInventoryStore'
 import { useOrderAdminStore } from '@/stores/useOrderAdminStore'
+import { useSystemHealthStore } from '@/stores/useSystemHealthStore'
 
 const { connect, disconnect } = useWebSocket()
 const dashboardStore = useDashboardStore()
 const inventoryStore = useInventoryStore()
 const orderStore = useOrderAdminStore()
+const systemHealthStore = useSystemHealthStore()
 
 onMounted(async () => {
   connect()
@@ -84,10 +87,10 @@ function orderStatusSeverity(status: string): string {
             />
             <MetricCard
               label="System Health"
-              :value="dashboardStore.systemHealth"
+              :value="systemHealthStore.overallHealth"
               format="label"
-              :color="dashboardStore.systemHealth === 'healthy' ? 'green' : dashboardStore.systemHealth === 'degraded' ? 'yellow' : 'red'"
-              :loading="dashboardStore.isLoading"
+              :color="systemHealthStore.overallHealth === 'healthy' ? 'green' : systemHealthStore.overallHealth === 'degraded' ? 'yellow' : 'red'"
+              :loading="systemHealthStore.isLoading"
             />
           </div>
 
@@ -130,9 +133,7 @@ function orderStatusSeverity(status: string): string {
         </TabPanel>
 
         <TabPanel value="system">
-          <div class="system-placeholder">
-            System health monitoring will be available in the next update.
-          </div>
+          <SystemHealthPanel />
         </TabPanel>
       </TabPanels>
     </Tabs>
@@ -181,12 +182,5 @@ function orderStatusSeverity(status: string): string {
   font-weight: 600;
   color: var(--color-gray-900, #111827);
   margin: 0 0 12px;
-}
-
-.system-placeholder {
-  padding: 48px 24px;
-  text-align: center;
-  color: var(--color-gray-500, #6b7280);
-  font-size: 15px;
 }
 </style>

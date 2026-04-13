@@ -83,7 +83,7 @@ class FailedEventServiceTest {
         FailedEvent e1 = pendingEvent(1L);
         FailedEvent e2 = pendingEvent(2L);
         FailedEvent e3 = pendingEvent(3L);
-        when(failedEventRepository.findByStatus("PENDING")).thenReturn(List.of(e1, e2, e3));
+        when(failedEventRepository.findByStatus(eq("PENDING"), any(Pageable.class))).thenReturn(List.of(e1, e2, e3));
         when(failedEventRepository.saveAll(anyList())).thenReturn(List.of(e1, e2, e3));
 
         int count = failedEventService.retryAll();

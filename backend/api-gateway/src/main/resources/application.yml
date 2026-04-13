@@ -26,6 +26,7 @@ gateway:
     order-service: http://localhost:8083
     inventory-service: http://localhost:8084
     payment-service: http://localhost:8086
+    notification-service: http://localhost:8087
   cors:
     customer-origin: http://localhost:5173
     admin-origin: http://localhost:5174
@@ -42,3 +43,7 @@ management:
       show-details: when-authorized
     gateway:
       enabled: true
+  metrics:
+    distribution:
+      percentiles:
+        "[http.server.requests]": 0.95

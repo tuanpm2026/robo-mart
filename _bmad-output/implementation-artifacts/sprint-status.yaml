@@ -35,7 +35,9 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-27
-last_updated: "2026-04-10"
+last_updated: "2026-04-13"
+# Story 7.4 done: 2026-04-13
+# Story 7.4 created: 2026-04-11
 # Story 7.3 done: 2026-04-10
 # Story 7.3 review: 2026-04-10
 # Story 7.3 in-progress: 2026-04-10
@@ -152,7 +154,7 @@ development_status:
   7-1-implement-websocket-real-time-event-feed: done
   7-2-implement-admin-dashboard-overview-with-metrics: done
   7-3-implement-cqrs-reporting-dlq-management: done
-  7-4-implement-system-health-monitoring: backlog
+  7-4-implement-system-health-monitoring: done
   epic-7-retrospective: optional
 
   # Epic 8: System Resilience & Graceful Degradation

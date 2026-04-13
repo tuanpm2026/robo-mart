@@ -63,6 +63,9 @@ public class RouteConfig {
                 .route("admin-payments", r -> r
                         .path("/api/v1/admin/payments/**")
                         .uri(paymentServiceUri))
+                .route("admin-system-health", r -> r
+                        .path("/api/v1/admin/system/health")
+                        .uri(notificationServiceUri))
                 .build();
     }
 }

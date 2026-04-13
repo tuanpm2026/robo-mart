@@ -202,3 +202,9 @@
 ## Deferred from: code review of 7-1-implement-websocket-real-time-event-feed (2026-04-09)
 
 - **Token expiry mid-session not handled on STOMP reconnect**: `createWebSocketClient(token)` captures the token at connect time. If the JWT expires during a long session, STOMP's built-in auto-reconnect reuses the expired token, causing the STOMP CONNECT to be rejected by `JwtStompInterceptor`, and reconnect will fail indefinitely. Explicitly out of scope per story notes; revisit in Epic 8 or a future auth hardening story.
+
+## Deferred from: code review of 7-4-implement-system-health-monitoring (2026-04-13)
+
+- **`lagHistory` keys never pruned for decommissioned/renamed services**: `updateLagHistory` in `useSystemHealthStore.ts` only appends; old service name keys accumulate in memory indefinitely. Low risk while service names are static; add pruning logic if service topology can change at runtime.
+- **Scheduler thread blocked during health sweep**: `HealthPushScheduler.pushHealthUpdate()` runs on Spring's default single-thread scheduler. With 7 services × 3s timeout, worst-case sweep takes ~6s, blocking other `@Scheduled` tasks for that duration. `fixedDelay` prevents overlap but doesn't eliminate thread starvation. Mitigate with a dedicated `TaskExecutor` if more scheduled tasks are added to notification-service.
+- **`overallHealth` returns `'healthy'` when services array is empty**: Pre-load state on the dashboard shows green status before any data is fetched. Minor UX false positive; consider returning `'unknown'` when `services.length === 0`.

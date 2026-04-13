@@ -10,6 +10,7 @@ import com.robomart.events.order.OrderStatusChangedEvent;
 import com.robomart.notification.client.OrderDetailDto;
 import com.robomart.notification.client.OrderServiceClient;
 import com.robomart.notification.client.ProductServiceClient;
+import com.robomart.notification.web.SystemHealthResponse;
 
 @Service
 public class AdminPushService {
@@ -18,6 +19,7 @@ public class AdminPushService {
 
     private static final String TOPIC_ORDERS = "/topic/orders";
     private static final String TOPIC_INVENTORY_ALERTS = "/topic/inventory-alerts";
+    private static final String TOPIC_SYSTEM_HEALTH = "/topic/system-health";
 
     private final SimpMessagingTemplate messagingTemplate;
     private final OrderServiceClient orderServiceClient;
@@ -69,6 +71,15 @@ public class AdminPushService {
             log.debug("Pushed inventory alert to {}: productId={}, stock={}", TOPIC_INVENTORY_ALERTS, productId, currentStock);
         } catch (Exception e) {
             log.warn("Failed to push inventory alert to WebSocket: {}", e.getMessage());
+        }
+    }
+
+    public void pushSystemHealth(SystemHealthResponse health) {
+        try {
+            messagingTemplate.convertAndSend(TOPIC_SYSTEM_HEALTH, health);
+            log.debug("Pushed system health update: {} services", health.services().size());
+        } catch (Exception e) {
+            log.warn("Failed to push system health to WebSocket: {}", e.getMessage());
         }
     }
 

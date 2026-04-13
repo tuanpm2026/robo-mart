@@ -50,6 +50,10 @@ management:
     web:
       exposure:
         include: health,info,metrics
+  metrics:
+    distribution:
+      percentiles:
+        "[http.server.requests]": 0.95
 
 ---
 spring:

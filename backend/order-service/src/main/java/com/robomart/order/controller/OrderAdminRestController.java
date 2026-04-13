@@ -25,12 +25,15 @@ import com.robomart.common.dto.ApiResponse;
 import com.robomart.common.dto.PagedResponse;
 import com.robomart.common.dto.PaginationMeta;
 import com.robomart.order.entity.Order;
+import com.robomart.order.entity.OrderStatusHistory;
 import com.robomart.order.enums.OrderStatus;
 import com.robomart.order.repository.OrderItemRepository;
+import com.robomart.order.repository.OrderStatusHistoryRepository;
 import com.robomart.order.service.OrderService;
 import com.robomart.order.web.AdminOrderDetailResponse;
 import com.robomart.order.web.AdminOrderSummaryResponse;
 import com.robomart.order.web.OrderDashboardMetricsResponse;
+import com.robomart.order.web.OrderEventResponse;
 import com.robomart.order.web.UpdateOrderStatusRequest;
 
 // No @PreAuthorize needed — ADMIN role enforced at API Gateway level
@@ -42,11 +45,14 @@ public class OrderAdminRestController {
 
     private final OrderService orderService;
     private final OrderItemRepository orderItemRepository;
+    private final OrderStatusHistoryRepository orderStatusHistoryRepository;
     private final Tracer tracer;
 
-    public OrderAdminRestController(OrderService orderService, OrderItemRepository orderItemRepository, Tracer tracer) {
+    public OrderAdminRestController(OrderService orderService, OrderItemRepository orderItemRepository,
+                                    OrderStatusHistoryRepository orderStatusHistoryRepository, Tracer tracer) {
         this.orderService = orderService;
         this.orderItemRepository = orderItemRepository;
+        this.orderStatusHistoryRepository = orderStatusHistoryRepository;
         this.tracer = tracer;
     }
 
@@ -94,6 +100,19 @@ public class OrderAdminRestController {
                 itemCount,
                 order.getCancellationReason());
         return ResponseEntity.ok(new ApiResponse<>(summary, getTraceId()));
+    }
+
+    @GetMapping("/{orderId}/events")
+    public ResponseEntity<ApiResponse<List<OrderEventResponse>>> getOrderEvents(@PathVariable Long orderId) {
+        List<OrderStatusHistory> history =
+                orderStatusHistoryRepository.findByOrderIdOrderByChangedAtAsc(orderId);
+        if (history.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        List<OrderEventResponse> events = history.stream()
+                .map(h -> new OrderEventResponse(h.getId(), h.getStatus().name(), h.getChangedAt()))
+                .toList();
+        return ResponseEntity.ok(new ApiResponse<>(events, getTraceId()));
     }
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)

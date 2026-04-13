@@ -26,6 +26,16 @@ notification:
     url: ${ORDER_SERVICE_URL:http://localhost:8083}
   product-service:
     url: ${PRODUCT_SERVICE_URL:http://localhost:8081}
+  cart-service:
+    url: ${CART_SERVICE_URL:http://localhost:8082}
+  inventory-service:
+    url: ${INVENTORY_SERVICE_URL:http://localhost:8084}
+  payment-service:
+    url: ${PAYMENT_SERVICE_URL:http://localhost:8086}
+  notification-self:
+    url: ${NOTIFICATION_SERVICE_URL:http://localhost:8087}
+  api-gateway:
+    url: ${API_GATEWAY_URL:http://localhost:8080}
   admin-email: ${ADMIN_EMAIL:admin@robomart.local}
 
 ---
@@ -51,6 +61,10 @@ management:
     web:
       exposure:
         include: health,info,metrics
+  metrics:
+    distribution:
+      percentiles:
+        "[http.server.requests]": 0.95
 
 ---
 spring:
