@@ -3,8 +3,6 @@ package com.robomart.order.unit.saga.steps;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -19,10 +17,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.robomart.order.entity.Order;
 import com.robomart.order.enums.OrderStatus;
+import com.robomart.order.grpc.PaymentGrpcClient;
+import com.robomart.order.grpc.PaymentServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
 import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.order.saga.steps.ProcessPaymentStep;
-import com.robomart.proto.payment.PaymentServiceGrpc;
 import com.robomart.proto.payment.ProcessPaymentRequest;
 import com.robomart.proto.payment.ProcessPaymentResponse;
 
@@ -34,13 +33,13 @@ import io.grpc.StatusRuntimeException;
 class ProcessPaymentStepTest {
 
     @Mock
-    private PaymentServiceGrpc.PaymentServiceBlockingStub paymentStub;
+    private PaymentGrpcClient paymentClient;
 
     private ProcessPaymentStep step;
 
     @BeforeEach
     void setUp() {
-        step = new ProcessPaymentStep(paymentStub);
+        step = new ProcessPaymentStep(paymentClient);
     }
 
     private Order buildOrder() {
@@ -65,7 +64,7 @@ class ProcessPaymentStepTest {
         Order order = buildOrder();
         SagaContext context = new SagaContext(order);
 
-        when(paymentStub.processPayment(any(ProcessPaymentRequest.class)))
+        when(paymentClient.processPayment(any(ProcessPaymentRequest.class)))
                 .thenReturn(ProcessPaymentResponse.newBuilder()
                         .setSuccess(true)
                         .setPaymentId("pay-999")
@@ -83,7 +82,7 @@ class ProcessPaymentStepTest {
         Order order = buildOrder();
         SagaContext context = new SagaContext(order);
 
-        when(paymentStub.processPayment(any()))
+        when(paymentClient.processPayment(any()))
                 .thenThrow(new StatusRuntimeException(Status.FAILED_PRECONDITION.withDescription("Payment declined")));
 
         assertThatThrownBy(() -> step.execute(context))
@@ -94,48 +93,37 @@ class ProcessPaymentStepTest {
     }
 
     @Test
-    @DisplayName("shouldRetryThreeTimesOnTransientFailureThenThrow")
-    void shouldRetryThreeTimesOnTransientFailureThenThrow() {
+    @DisplayName("shouldThrowWithCompensationWhenCircuitOpen")
+    void shouldThrowWithCompensationWhenCircuitOpen() {
         Order order = buildOrder();
         SagaContext context = new SagaContext(order);
 
-        // Override step with shorter delays for testing
-        ProcessPaymentStep testStep = new ProcessPaymentStep(paymentStub) {
-            // Use reflection-free approach: step delays are in callWithRetry which uses Thread.sleep
-            // In unit test we use UNAVAILABLE which causes retries
-        };
+        when(paymentClient.processPayment(any()))
+                .thenThrow(new PaymentServiceUnavailableException("Payment service unavailable",
+                        new RuntimeException("Circuit breaker open")));
 
-        when(paymentStub.processPayment(any()))
-                .thenThrow(new StatusRuntimeException(Status.UNAVAILABLE.withDescription("Transient error")));
-
-        // This will sleep 1s+2s=3s total — reduce by testing with mock that fails fast
-        // We mock the stub to always return UNAVAILABLE, but we want to verify 3 attempts
-        // Note: this test will take ~3 seconds due to actual retry backoff
         assertThatThrownBy(() -> step.execute(context))
                 .isInstanceOf(SagaStepException.class)
                 .satisfies(e -> assertThat(((SagaStepException) e).isShouldCompensate()).isTrue());
 
         assertThat(order.getCancellationReason()).isEqualTo("Payment service unavailable");
-        verify(paymentStub, times(3)).processPayment(any());
     }
 
     @Test
-    @DisplayName("shouldSucceedOnSecondAttemptAfterTransientFailure")
-    void shouldSucceedOnSecondAttemptAfterTransientFailure() {
-        Order order = buildOrder();
-        SagaContext context = new SagaContext(order);
-
-        when(paymentStub.processPayment(any()))
-                .thenThrow(new StatusRuntimeException(Status.UNAVAILABLE.withDescription("Transient")))
-                .thenReturn(ProcessPaymentResponse.newBuilder()
-                        .setSuccess(true)
-                        .setPaymentId("pay-retry-success")
-                        .build());
-
-        step.execute(context);
-
-        assertThat(order.getPaymentId()).isEqualTo("pay-retry-success");
-        verify(paymentStub, times(2)).processPayment(any());
+    @DisplayName("shouldNotContainManualRetryLogic")
+    void shouldNotContainManualRetryLogic() throws Exception {
+        // Verify ProcessPaymentStep has no callWithRetry method (manual retry removed)
+        var methods = ProcessPaymentStep.class.getDeclaredMethods();
+        for (var method : methods) {
+            assertThat(method.getName()).doesNotContain("callWithRetry");
+        }
+        // Verify no retry-related constants exist
+        var fields = ProcessPaymentStep.class.getDeclaredFields();
+        for (var field : fields) {
+            assertThat(field.getName()).doesNotContainIgnoringCase("max_retries");
+            assertThat(field.getName()).doesNotContainIgnoringCase("initial_delay");
+            assertThat(field.getName()).doesNotContainIgnoringCase("backoff_multiplier");
+        }
     }
 
     @Test

@@ -36,6 +36,8 @@
 
 generated: 2026-03-27
 last_updated: "2026-04-13"
+# Story 8.1 done: 2026-04-13
+# Story 8.1 created: 2026-04-13
 # Story 7.4 done: 2026-04-13
 # Story 7.4 created: 2026-04-11
 # Story 7.3 done: 2026-04-10
@@ -158,8 +160,8 @@ development_status:
   epic-7-retrospective: optional
 
   # Epic 8: System Resilience & Graceful Degradation
-  epic-8: backlog
-  8-1-implement-circuit-breaker-resilience-patterns: backlog
+  epic-8: in-progress
+  8-1-implement-circuit-breaker-resilience-patterns: done
   8-2-implement-graceful-degradation-3-tiers: backlog
   8-3-implement-rate-limiting-graceful-shutdown: backlog
   8-4-implement-saga-phase-b-hardened-orchestration: backlog

@@ -19,10 +19,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderItem;
 import com.robomart.order.enums.OrderStatus;
+import com.robomart.order.grpc.InventoryGrpcClient;
+import com.robomart.order.grpc.InventoryServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
 import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.order.saga.steps.ReserveInventoryStep;
-import com.robomart.proto.inventory.InventoryServiceGrpc;
 import com.robomart.proto.inventory.ReserveInventoryRequest;
 import com.robomart.proto.inventory.ReserveInventoryResponse;
 
@@ -34,13 +35,13 @@ import io.grpc.StatusRuntimeException;
 class ReserveInventoryStepTest {
 
     @Mock
-    private InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub;
+    private InventoryGrpcClient inventoryClient;
 
     private ReserveInventoryStep step;
 
     @BeforeEach
     void setUp() {
-        step = new ReserveInventoryStep(inventoryStub);
+        step = new ReserveInventoryStep(inventoryClient);
     }
 
     private Order buildOrder() {
@@ -72,7 +73,7 @@ class ReserveInventoryStepTest {
         Order order = buildOrder();
         SagaContext context = new SagaContext(order);
 
-        when(inventoryStub.reserveInventory(any(ReserveInventoryRequest.class)))
+        when(inventoryClient.reserveInventory(any(ReserveInventoryRequest.class)))
                 .thenReturn(ReserveInventoryResponse.newBuilder()
                         .setSuccess(true)
                         .setReservationId("res-123")
@@ -89,7 +90,7 @@ class ReserveInventoryStepTest {
         Order order = buildOrder();
         SagaContext context = new SagaContext(order);
 
-        when(inventoryStub.reserveInventory(any()))
+        when(inventoryClient.reserveInventory(any()))
                 .thenThrow(new StatusRuntimeException(Status.FAILED_PRECONDITION.withDescription("Insufficient stock")));
 
         assertThatThrownBy(() -> step.execute(context))
@@ -105,8 +106,23 @@ class ReserveInventoryStepTest {
         Order order = buildOrder();
         SagaContext context = new SagaContext(order);
 
-        when(inventoryStub.reserveInventory(any()))
+        when(inventoryClient.reserveInventory(any()))
                 .thenThrow(new StatusRuntimeException(Status.UNAVAILABLE.withDescription("Service unavailable")));
+
+        assertThatThrownBy(() -> step.execute(context))
+                .isInstanceOf(SagaStepException.class)
+                .satisfies(e -> assertThat(((SagaStepException) e).isShouldCompensate()).isTrue());
+    }
+
+    @Test
+    @DisplayName("shouldThrowSagaStepExceptionWhenCircuitOpen")
+    void shouldThrowSagaStepExceptionWhenCircuitOpen() {
+        Order order = buildOrder();
+        SagaContext context = new SagaContext(order);
+
+        when(inventoryClient.reserveInventory(any()))
+                .thenThrow(new InventoryServiceUnavailableException("Inventory service unavailable",
+                        new RuntimeException("Circuit breaker open")));
 
         assertThatThrownBy(() -> step.execute(context))
                 .isInstanceOf(SagaStepException.class)
@@ -122,7 +138,6 @@ class ReserveInventoryStepTest {
     @Test
     @DisplayName("shouldBeNoOpOnCompensate")
     void shouldBeNoOpOnCompensate() {
-        // compensate should not throw
         step.compensate(new SagaContext(buildOrder()));
     }
 }

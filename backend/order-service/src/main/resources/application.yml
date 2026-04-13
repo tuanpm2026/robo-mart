@@ -27,6 +27,46 @@ spring:
 server:
   port: 8083
 
+resilience4j:
+  circuitbreaker:
+    instances:
+      inventory-service:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 5
+        failure-rate-threshold: 100
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 1
+        record-exceptions:
+          - io.grpc.StatusRuntimeException
+          - com.robomart.order.grpc.InventoryServiceUnavailableException
+      payment-service:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 5
+        failure-rate-threshold: 100
+        minimum-number-of-calls: 5
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 1
+        record-exceptions:
+          - io.grpc.StatusRuntimeException
+          - com.robomart.order.grpc.PaymentServiceUnavailableException
+  retry:
+    instances:
+      inventory-service:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - io.grpc.StatusRuntimeException
+      payment-service:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - io.grpc.StatusRuntimeException
+
 ---
 spring:
   config:

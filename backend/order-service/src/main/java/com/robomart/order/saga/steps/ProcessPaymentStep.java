@@ -5,11 +5,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.robomart.order.entity.Order;
+import com.robomart.order.grpc.PaymentGrpcClient;
+import com.robomart.order.grpc.PaymentServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
 import com.robomart.order.saga.SagaStep;
 import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.proto.common.Money;
-import com.robomart.proto.payment.PaymentServiceGrpc;
 import com.robomart.proto.payment.ProcessPaymentRequest;
 import com.robomart.proto.payment.ProcessPaymentResponse;
 
@@ -21,14 +22,10 @@ public class ProcessPaymentStep implements SagaStep {
 
     private static final Logger log = LoggerFactory.getLogger(ProcessPaymentStep.class);
 
-    private static final int MAX_RETRIES = 3;
-    private static final long INITIAL_DELAY_MS = 1000L;
-    private static final double BACKOFF_MULTIPLIER = 2.0;
+    private final PaymentGrpcClient paymentClient;
 
-    private final PaymentServiceGrpc.PaymentServiceBlockingStub paymentStub;
-
-    public ProcessPaymentStep(PaymentServiceGrpc.PaymentServiceBlockingStub paymentStub) {
-        this.paymentStub = paymentStub;
+    public ProcessPaymentStep(PaymentGrpcClient paymentClient) {
+        this.paymentClient = paymentClient;
     }
 
     @Override
@@ -51,44 +48,21 @@ public class ProcessPaymentStep implements SagaStep {
                 .setIdempotencyKey(order.getId().toString())
                 .build();
 
-        ProcessPaymentResponse response = callWithRetry(request, order);
-        order.setPaymentId(response.getPaymentId());
-        log.info("Payment processed for orderId={}, paymentId={}", order.getId(), response.getPaymentId());
-    }
-
-    private ProcessPaymentResponse callWithRetry(ProcessPaymentRequest request, Order order) {
-        long delayMs = INITIAL_DELAY_MS;
-        StatusRuntimeException lastException = null;
-
-        for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-            try {
-                return paymentStub.processPayment(request);
-            } catch (StatusRuntimeException e) {
-                if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
-                    lastException = e;
-                    log.warn("Payment transient failure for orderId={}, attempt={}/{}", order.getId(), attempt, MAX_RETRIES);
-                    if (attempt < MAX_RETRIES) {
-                        try {
-                            Thread.sleep(delayMs);
-                        } catch (InterruptedException ie) {
-                            Thread.currentThread().interrupt();
-                            throw new SagaStepException("Payment retry interrupted for orderId=" + order.getId(), ie, true);
-                        }
-                        delayMs = (long) (delayMs * BACKOFF_MULTIPLIER);
-                    }
-                } else if (e.getStatus().getCode() == Status.Code.FAILED_PRECONDITION) {
-                    order.setCancellationReason("Payment declined");
-                    throw new SagaStepException("Payment declined for orderId=" + order.getId(), e, true);
-                } else {
-                    order.setCancellationReason("Payment error: " + e.getStatus().getCode());
-                    throw new SagaStepException("Payment error for orderId=" + order.getId(), e, true);
-                }
+        try {
+            ProcessPaymentResponse response = paymentClient.processPayment(request);
+            order.setPaymentId(response.getPaymentId());
+            log.info("Payment processed for orderId={}, paymentId={}", order.getId(), response.getPaymentId());
+        } catch (StatusRuntimeException e) {
+            if (e.getStatus().getCode() == Status.Code.FAILED_PRECONDITION) {
+                order.setCancellationReason("Payment declined");
+                throw new SagaStepException("Payment declined for orderId=" + order.getId(), e, true);
             }
+            order.setCancellationReason("Payment error: " + e.getStatus().getCode());
+            throw new SagaStepException("Payment error for orderId=" + order.getId(), e, true);
+        } catch (PaymentServiceUnavailableException e) {
+            order.setCancellationReason("Payment service unavailable");
+            throw new SagaStepException("Payment service circuit open for orderId=" + order.getId(), e, true);
         }
-
-        // All retries exhausted
-        order.setCancellationReason("Payment service unavailable");
-        throw new SagaStepException("Payment service unavailable after " + MAX_RETRIES + " retries for orderId=" + order.getId(), lastException, true);
     }
 
     @Override

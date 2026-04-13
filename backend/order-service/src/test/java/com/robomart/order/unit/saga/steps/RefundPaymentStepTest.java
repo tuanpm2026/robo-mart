@@ -19,10 +19,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.robomart.order.entity.Order;
 import com.robomart.order.enums.OrderStatus;
+import com.robomart.order.grpc.PaymentGrpcClient;
+import com.robomart.order.grpc.PaymentServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
 import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.order.saga.steps.RefundPaymentStep;
-import com.robomart.proto.payment.PaymentServiceGrpc;
 import com.robomart.proto.payment.RefundPaymentRequest;
 import com.robomart.proto.payment.RefundPaymentResponse;
 
@@ -34,13 +35,13 @@ import io.grpc.StatusRuntimeException;
 class RefundPaymentStepTest {
 
     @Mock
-    private PaymentServiceGrpc.PaymentServiceBlockingStub paymentStub;
+    private PaymentGrpcClient paymentClient;
 
     private RefundPaymentStep step;
 
     @BeforeEach
     void setUp() {
-        step = new RefundPaymentStep(paymentStub);
+        step = new RefundPaymentStep(paymentClient);
     }
 
     private Order buildOrder() {
@@ -70,7 +71,7 @@ class RefundPaymentStepTest {
         SagaContext context = new SagaContext(order);
 
         assertThatNoException().isThrownBy(() -> step.execute(context));
-        verify(paymentStub, never()).refundPayment(any());
+        verify(paymentClient, never()).refundPayment(any());
     }
 
     @Test
@@ -79,14 +80,14 @@ class RefundPaymentStepTest {
         Order order = buildOrder();
         SagaContext context = new SagaContext(order);
 
-        when(paymentStub.refundPayment(any(RefundPaymentRequest.class)))
+        when(paymentClient.refundPayment(any(RefundPaymentRequest.class)))
                 .thenReturn(RefundPaymentResponse.newBuilder()
                         .setSuccess(true)
                         .setRefundTransactionId("refund-txn-789")
                         .build());
 
         assertThatNoException().isThrownBy(() -> step.execute(context));
-        verify(paymentStub).refundPayment(any(RefundPaymentRequest.class));
+        verify(paymentClient).refundPayment(any(RefundPaymentRequest.class));
     }
 
     @Test
@@ -95,7 +96,7 @@ class RefundPaymentStepTest {
         Order order = buildOrder();
         SagaContext context = new SagaContext(order);
 
-        when(paymentStub.refundPayment(any(RefundPaymentRequest.class)))
+        when(paymentClient.refundPayment(any(RefundPaymentRequest.class)))
                 .thenThrow(new StatusRuntimeException(Status.NOT_FOUND.withDescription("Payment not found")));
 
         assertThatNoException().isThrownBy(() -> step.execute(context));
@@ -107,8 +108,22 @@ class RefundPaymentStepTest {
         Order order = buildOrder();
         SagaContext context = new SagaContext(order);
 
-        when(paymentStub.refundPayment(any(RefundPaymentRequest.class)))
+        when(paymentClient.refundPayment(any(RefundPaymentRequest.class)))
                 .thenThrow(new StatusRuntimeException(Status.UNAVAILABLE.withDescription("Service down")));
+
+        assertThatThrownBy(() -> step.execute(context))
+                .isInstanceOf(SagaStepException.class);
+    }
+
+    @Test
+    @DisplayName("shouldThrowSagaStepExceptionWhenCircuitOpen")
+    void shouldThrowSagaStepExceptionWhenCircuitOpen() {
+        Order order = buildOrder();
+        SagaContext context = new SagaContext(order);
+
+        when(paymentClient.refundPayment(any(RefundPaymentRequest.class)))
+                .thenThrow(new PaymentServiceUnavailableException("Payment service unavailable",
+                        new RuntimeException("Circuit breaker open")));
 
         assertThatThrownBy(() -> step.execute(context))
                 .isInstanceOf(SagaStepException.class);

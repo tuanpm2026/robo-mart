@@ -5,11 +5,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.robomart.order.entity.Order;
+import com.robomart.order.grpc.PaymentGrpcClient;
+import com.robomart.order.grpc.PaymentServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
 import com.robomart.order.saga.SagaStep;
 import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.proto.common.Money;
-import com.robomart.proto.payment.PaymentServiceGrpc;
 import com.robomart.proto.payment.RefundPaymentRequest;
 
 import io.grpc.Status;
@@ -20,10 +21,10 @@ public class RefundPaymentStep implements SagaStep {
 
     private static final Logger log = LoggerFactory.getLogger(RefundPaymentStep.class);
 
-    private final PaymentServiceGrpc.PaymentServiceBlockingStub paymentStub;
+    private final PaymentGrpcClient paymentClient;
 
-    public RefundPaymentStep(PaymentServiceGrpc.PaymentServiceBlockingStub paymentStub) {
-        this.paymentStub = paymentStub;
+    public RefundPaymentStep(PaymentGrpcClient paymentClient) {
+        this.paymentClient = paymentClient;
     }
 
     @Override
@@ -55,7 +56,7 @@ public class RefundPaymentStep implements SagaStep {
                 .build();
 
         try {
-            var response = paymentStub.refundPayment(request);
+            var response = paymentClient.refundPayment(request);
             log.info("Payment refunded for orderId={}, refundTxId={}", order.getId(), response.getRefundTransactionId());
         } catch (StatusRuntimeException e) {
             if (e.getStatus().getCode() == Status.Code.NOT_FOUND) {
@@ -70,6 +71,9 @@ public class RefundPaymentStep implements SagaStep {
             }
             log.error("Failed to refund payment for orderId={}: {}", order.getId(), e.getMessage());
             throw new SagaStepException("Refund failed: " + e.getMessage(), false);
+        } catch (PaymentServiceUnavailableException e) {
+            log.error("Payment service unavailable during refund for orderId={}: {}", order.getId(), e.getMessage());
+            throw new SagaStepException("Refund failed — payment service circuit open: " + e.getMessage(), e, false);
         }
     }
 

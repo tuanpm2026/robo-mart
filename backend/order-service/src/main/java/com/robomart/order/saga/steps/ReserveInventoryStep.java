@@ -6,11 +6,11 @@ import org.springframework.stereotype.Component;
 
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderItem;
+import com.robomart.order.grpc.InventoryGrpcClient;
+import com.robomart.order.grpc.InventoryServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
 import com.robomart.order.saga.SagaStep;
 import com.robomart.order.saga.exception.SagaStepException;
-import com.robomart.proto.inventory.InventoryServiceGrpc;
-import com.robomart.proto.inventory.ReleaseInventoryRequest;
 import com.robomart.proto.inventory.ReservationItem;
 import com.robomart.proto.inventory.ReserveInventoryRequest;
 import com.robomart.proto.inventory.ReserveInventoryResponse;
@@ -23,10 +23,10 @@ public class ReserveInventoryStep implements SagaStep {
 
     private static final Logger log = LoggerFactory.getLogger(ReserveInventoryStep.class);
 
-    private final InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub;
+    private final InventoryGrpcClient inventoryClient;
 
-    public ReserveInventoryStep(InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub) {
-        this.inventoryStub = inventoryStub;
+    public ReserveInventoryStep(InventoryGrpcClient inventoryClient) {
+        this.inventoryClient = inventoryClient;
     }
 
     @Override
@@ -50,7 +50,7 @@ public class ReserveInventoryStep implements SagaStep {
         }
 
         try {
-            ReserveInventoryResponse response = inventoryStub.reserveInventory(requestBuilder.build());
+            ReserveInventoryResponse response = inventoryClient.reserveInventory(requestBuilder.build());
             order.setReservationId(response.getReservationId());
             log.info("Inventory reserved for orderId={}, reservationId={}", order.getId(), response.getReservationId());
         } catch (StatusRuntimeException e) {
@@ -59,6 +59,8 @@ public class ReserveInventoryStep implements SagaStep {
                 throw new SagaStepException("Insufficient stock for orderId=" + order.getId(), e, false);
             }
             throw new SagaStepException("Inventory reservation failed for orderId=" + order.getId(), e, true);
+        } catch (InventoryServiceUnavailableException e) {
+            throw new SagaStepException("Inventory service circuit open for orderId=" + order.getId(), e, true);
         }
     }
 

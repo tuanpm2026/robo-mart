@@ -84,6 +84,13 @@
             <artifactId>spring-grpc-spring-boot-starter</artifactId>
         </dependency>
 
+        <!-- Resilience4j — Circuit Breaker + Retry (Spring Boot 3/4 starter) -->
+        <!-- Includes spring-boot-starter-aop transitively for @CircuitBreaker / @Retry annotation processing -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-spring-boot3</artifactId>
+        </dependency>
+
         <!-- MapStruct -->
         <dependency>
             <groupId>org.mapstruct</groupId>
