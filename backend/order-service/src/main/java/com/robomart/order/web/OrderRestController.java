@@ -25,6 +25,7 @@ import com.robomart.order.entity.Order;
 import com.robomart.order.enums.OrderStatus;
 import com.robomart.order.exception.OrderInventoryFailedException;
 import com.robomart.order.exception.OrderPaymentFailedException;
+import com.robomart.order.saga.steps.ReserveInventoryStep;
 import com.robomart.order.service.OrderService;
 
 @RestController
@@ -38,6 +39,7 @@ public class OrderRestController {
     }
 
     private static final String INVENTORY_CANCELLATION_REASON = "Insufficient stock";
+    private static final String INVENTORY_CIRCUIT_REASON = ReserveInventoryStep.CIRCUIT_OPEN_CANCELLATION_REASON;
 
     @PostMapping
     public ResponseEntity<ApiResponse<OrderSummaryResponse>> createOrder(
@@ -51,13 +53,27 @@ public class OrderRestController {
                         item.productId(), item.productName(), item.quantity(), item.unitPrice()))
                 .toList();
         Order order = orderService.createOrder(userId, items, request.shippingAddress());
+
+        if (order.getStatus() == OrderStatus.PAYMENT_PENDING) {
+            // AC1: Payment circuit open — return 202 Accepted, customer informed to wait
+            OrderSummaryResponse summary = new OrderSummaryResponse(
+                    order.getId(), order.getCreatedAt(), order.getTotalAmount(),
+                    order.getStatus(), order.getItems().size(), order.getCancellationReason());
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponse<>(summary, MDC.get("traceId")));
+        }
+
         if (order.getStatus() == OrderStatus.CANCELLED) {
             String reason = order.getCancellationReason() != null ? order.getCancellationReason() : "Order processing failed";
             if (INVENTORY_CANCELLATION_REASON.equals(reason)) {
                 throw new OrderInventoryFailedException(reason);
             }
+            if (INVENTORY_CIRCUIT_REASON.equals(reason)) {
+                // AC2: Inventory circuit open — retry messaging
+                throw new OrderInventoryFailedException("We're experiencing a temporary issue. Please try again in a moment.");
+            }
             throw new OrderPaymentFailedException(reason);
         }
+
         OrderSummaryResponse summary = new OrderSummaryResponse(
                 order.getId(),
                 order.getCreatedAt(),

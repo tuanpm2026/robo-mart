@@ -19,6 +19,8 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import com.robomart.product.config.CacheConfig;
 import com.robomart.product.document.ProductDocument;
 import com.robomart.product.dto.ProductSearchRequest;
+import com.robomart.product.mapper.ProductMapper;
+import com.robomart.product.repository.ProductRepository;
 import com.robomart.product.service.ProductSearchService;
 
 import io.micrometer.tracing.Tracer;
@@ -53,6 +55,16 @@ class ProductSearchServiceCacheTest {
         @Bean
         Tracer tracer() {
             return mock(Tracer.class);
+        }
+
+        @Bean
+        ProductRepository productRepository() {
+            return mock(ProductRepository.class);
+        }
+
+        @Bean
+        ProductMapper productMapper() {
+            return mock(ProductMapper.class);
         }
     }
 

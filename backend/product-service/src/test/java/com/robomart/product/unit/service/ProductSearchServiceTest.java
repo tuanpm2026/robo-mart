@@ -3,6 +3,7 @@ package com.robomart.product.unit.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -17,6 +18,8 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
@@ -28,6 +31,10 @@ import com.robomart.common.dto.PagedResponse;
 import com.robomart.product.document.ProductDocument;
 import com.robomart.product.dto.ProductListResponse;
 import com.robomart.product.dto.ProductSearchRequest;
+import com.robomart.product.entity.Category;
+import com.robomart.product.entity.Product;
+import com.robomart.product.mapper.ProductMapper;
+import com.robomart.product.repository.ProductRepository;
 import com.robomart.product.service.ProductSearchService;
 
 import io.micrometer.tracing.Tracer;
@@ -37,6 +44,12 @@ class ProductSearchServiceTest {
 
     @Mock
     private ElasticsearchOperations elasticsearchOperations;
+
+    @Mock
+    private ProductRepository productRepository;
+
+    @Mock
+    private ProductMapper productMapper;
 
     @Mock
     private Tracer tracer;
@@ -217,6 +230,74 @@ class ProductSearchServiceTest {
         assertThat(capturedQuery).isNotNull();
         assertThat(capturedQuery.getPageable().getPageSize()).isEqualTo(20);
         assertThat(capturedQuery.getPageable().getPageNumber()).isZero();
+    }
+
+    @Test
+    void shouldFallBackToPostgresWhenElasticsearchThrows() {
+        when(elasticsearchOperations.search(any(NativeQuery.class), eq(ProductDocument.class)))
+                .thenThrow(new RuntimeException("Elasticsearch unavailable"));
+
+        Product product = createProduct(10L, "SKU-010", "Fallback Product", BigDecimal.valueOf(19.99), "FallbackBrand");
+        Page<Product> page = new PageImpl<>(List.of(product));
+        when(productRepository.searchByKeywordLike(eq("fallback"), eq(null), any(Pageable.class)))
+                .thenReturn(page);
+
+        ProductListResponse response = new ProductListResponse(10L, "SKU-010", "Fallback Product",
+                null, BigDecimal.valueOf(19.99), null, "FallbackBrand", 5, null, null, null);
+        when(productMapper.toListResponse(product)).thenReturn(response);
+
+        var request = new ProductSearchRequest("fallback", null, null, null, null, null);
+        PagedResponse<ProductListResponse> result = productSearchService.search(request, PageRequest.of(0, 20));
+
+        assertThat(result.data()).hasSize(1);
+        assertThat(result.data().getFirst().name()).isEqualTo("Fallback Product");
+        verify(productRepository).searchByKeywordLike(eq("fallback"), eq(null), any(Pageable.class));
+    }
+
+    @Test
+    void shouldReturnPagedResponseFromPostgresFallback() {
+        when(elasticsearchOperations.search(any(NativeQuery.class), eq(ProductDocument.class)))
+                .thenThrow(new RuntimeException("ES down"));
+
+        Product p1 = createProduct(1L, "SKU-001", "Product A", BigDecimal.valueOf(10.00), "Brand1");
+        Product p2 = createProduct(2L, "SKU-002", "Product B", BigDecimal.valueOf(20.00), "Brand2");
+        Page<Product> page = new PageImpl<>(List.of(p1, p2), PageRequest.of(0, 20), 2);
+        when(productRepository.searchByKeywordLike(eq(null), eq(null), any(Pageable.class)))
+                .thenReturn(page);
+
+        ProductListResponse r1 = new ProductListResponse(1L, "SKU-001", "Product A",
+                null, BigDecimal.valueOf(10.00), null, "Brand1", 10, null, null, null);
+        ProductListResponse r2 = new ProductListResponse(2L, "SKU-002", "Product B",
+                null, BigDecimal.valueOf(20.00), null, "Brand2", 20, null, null, null);
+        when(productMapper.toListResponse(p1)).thenReturn(r1);
+        when(productMapper.toListResponse(p2)).thenReturn(r2);
+
+        var request = new ProductSearchRequest(null, null, null, null, null, null);
+        PagedResponse<ProductListResponse> result = productSearchService.search(request, PageRequest.of(0, 20));
+
+        assertThat(result.data()).hasSize(2);
+        assertThat(result.pagination().totalElements()).isEqualTo(2);
+        assertThat(result.pagination().page()).isZero();
+    }
+
+    private Product createProduct(Long id, String sku, String name, BigDecimal price, String brand) {
+        Product p = new Product();
+        p.setSku(sku);
+        p.setName(name);
+        p.setPrice(price);
+        p.setBrand(brand);
+        p.setStockQuantity(5);
+        p.setActive(true);
+        try {
+            var idField = com.robomart.common.entity.BaseEntity.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(p, id);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        Category cat = new Category();
+        p.setCategory(cat);
+        return p;
     }
 
     private ProductDocument createProductDocument(Long id, String sku, String name, BigDecimal price,

@@ -60,8 +60,14 @@ public class ProcessPaymentStep implements SagaStep {
             order.setCancellationReason("Payment error: " + e.getStatus().getCode());
             throw new SagaStepException("Payment error for orderId=" + order.getId(), e, true);
         } catch (PaymentServiceUnavailableException e) {
-            order.setCancellationReason("Payment service unavailable");
-            throw new SagaStepException("Payment service circuit open for orderId=" + order.getId(), e, true);
+            // Circuit open — do NOT cancel, do NOT compensate inventory
+            // Hold order as PAYMENT_PENDING to allow retry when circuit closes
+            log.warn("Payment circuit open for orderId={} — holding as PAYMENT_PENDING", order.getId());
+            throw new SagaStepException(
+                    "Payment service circuit open for orderId=" + order.getId(), e,
+                    false,    // shouldCompensate: false — keep inventory reserved
+                    true      // shouldHoldAsPending: true — do NOT cancel
+            );
         }
     }
 

@@ -6,6 +6,7 @@ import Menu from 'primevue/menu'
 import { useToast } from 'primevue/usetoast'
 import SearchBar from '@/components/product/SearchBar.vue'
 import LoginModal from '@/components/auth/LoginModal.vue'
+import DegradationBanner from '@/components/common/DegradationBanner.vue'
 import { useCategoryStore } from '@/stores/useCategoryStore'
 import { useCartStore } from '@/stores/useCartStore'
 import { useAuthStore } from '@/stores/useAuthStore'
@@ -184,6 +185,8 @@ async function handleLogout() {
         </RouterLink>
       </div>
     </nav>
+
+    <DegradationBanner />
 
     <main id="main-content" class="main-content">
       <RouterView />

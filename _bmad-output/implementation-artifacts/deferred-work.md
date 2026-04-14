@@ -1,5 +1,19 @@
 # Deferred Work
 
+## Deferred from: code review of 8-2-implement-graceful-degradation-3-tiers (2026-04-14)
+
+- **W1 — Inventory reservation leak for PAYMENT_PENDING**: No retry/expiry/timeout mechanism for orders stuck in `PAYMENT_PENDING`. Inventory stays reserved indefinitely until payment circuit closes. Story 8.4 (scheduled payment retry) is the intended fix.
+- **W2 — PAYMENT_PENDING absent from recoverStaleSagas()**: On app restart, PAYMENT_PENDING orders are not scanned or retried. Spec marks this as stable (not stale). Story 8.4 adds the retry mechanism.
+- **W3 — No UX guidance for cancelling a PAYMENT_PENDING order**: Customers who try to cancel get a generic rejection. Spec defers PAYMENT_PENDING cancellation flows to a future story.
+- **W4 — Reflection-based BaseEntity.id in test helper**: `createProduct()` in `ProductSearchServiceTest` uses `getDeclaredField("id")` — brittle to rename or module changes. Test-only concern, not a behavior bug.
+- **W5 — Dismissed partial banner doesn't reappear on subsequent 503s**: `isBannerDismissed` from sessionStorage persists through degradation events. Per-session dismissal is the stated design intent.
+- **W6 — Transient PAYMENT_PROCESSING in order_status_history**: Orchestrator sets PAYMENT_PROCESSING before entering the payment step, then overrides to PAYMENT_PENDING — leaving a transient history entry that was never a stable state. Fixing this requires restructuring the step-target-state model in the orchestrator.
+- **D3 — `@Cacheable` caches degraded PostgreSQL fallback results**: When ES is down, fallback results (without brand/price/rating filters) are cached under the same key as full ES results. After ES recovers, degraded results continue to be served until cache TTL expires. Proper fix requires either a `PagedResponse.fallback` marker + `@Cacheable(unless=...)` (needs common-lib change) or a `CacheManager`-based approach with manual cache key computation.
+- **P1 — Resilience4j `@PostConstruct` race**: `addConfiguration()` registers named configs AFTER circuit breaker instances are already created by Spring AOP wiring — the `ignoreException` predicate for business errors may never apply. Requires investigation of correct Resilience4j API for per-instance config customization before instance creation.
+- **P5 — JPQL LIKE wildcard injection**: `searchByKeywordLike()` does not escape `%` and `_` characters in the keyword parameter — enables full-table-scan DoS amplification. Requires implementing a keyword escape utility (replace `%`→`\%`, `_`→`\_`, `\`→`\\` and add `ESCAPE '\\'` clause).
+- **P8 — `setUiAccessor` captures store instance**: `setUiAccessor(() -> uiStore)` holds a captured instance vs `setAuthAccessor` pattern that delegates to current store methods. Low risk in SPA (stores are singletons) but pattern inconsistency.
+- **P11 — Emergency cancel doesn't handle PAYMENT_PROCESSING**: If `updateOrderStatus(PAYMENT_PENDING)` throws a DB error, the order is left in `PAYMENT_PROCESSING`; `OrderService.createOrder()` emergency cancel only fires for `PENDING` status. Stale saga recovery eventually handles it but with an unnecessary delay.
+
 ## Deferred from: code review of 7-3-implement-cqrs-reporting-dlq-management (2026-04-10)
 
 - **retryAll() concurrent double-processing**: Two concurrent `@Transactional` calls read the same PENDING list before either commits. Requires pessimistic lock or `SKIP LOCKED` SQL pattern.

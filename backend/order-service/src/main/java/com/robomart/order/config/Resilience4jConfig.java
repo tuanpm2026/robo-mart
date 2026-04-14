@@ -1,12 +1,14 @@
 package com.robomart.order.config;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import io.github.resilience4j.circuitbreaker.configure.CircuitBreakerConfigCustomizer;
-import io.github.resilience4j.retry.configure.RetryConfigCustomizer;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.retry.RetryConfig;
+import io.github.resilience4j.retry.RetryRegistry;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import jakarta.annotation.PostConstruct;
 
 /**
  * Resilience4j customizers for gRPC circuit breakers and retry instances.
@@ -21,36 +23,33 @@ import io.grpc.StatusRuntimeException;
 @Configuration
 public class Resilience4jConfig {
 
+    private final CircuitBreakerRegistry circuitBreakerRegistry;
+    private final RetryRegistry retryRegistry;
+
+    public Resilience4jConfig(CircuitBreakerRegistry circuitBreakerRegistry, RetryRegistry retryRegistry) {
+        this.circuitBreakerRegistry = circuitBreakerRegistry;
+        this.retryRegistry = retryRegistry;
+    }
+
     private static boolean isBusinessError(Throwable e) {
         return e instanceof StatusRuntimeException sre
                 && sre.getStatus().getCode() == Status.Code.FAILED_PRECONDITION;
     }
 
-    // ── Inventory Service ────────────────────────────────────────────────────
+    @PostConstruct
+    public void configureIgnoreExceptions() {
+        CircuitBreakerConfig cbConfig = CircuitBreakerConfig
+                .from(circuitBreakerRegistry.getDefaultConfig())
+                .ignoreException(Resilience4jConfig::isBusinessError)
+                .build();
+        circuitBreakerRegistry.addConfiguration("inventory-service", cbConfig);
+        circuitBreakerRegistry.addConfiguration("payment-service", cbConfig);
 
-    @Bean
-    public CircuitBreakerConfigCustomizer inventoryCircuitBreakerCustomizer() {
-        return CircuitBreakerConfigCustomizer.of("inventory-service",
-                builder -> builder.ignoreException(Resilience4jConfig::isBusinessError));
-    }
-
-    @Bean
-    public RetryConfigCustomizer inventoryRetryCustomizer() {
-        return RetryConfigCustomizer.of("inventory-service",
-                builder -> builder.ignoreException(Resilience4jConfig::isBusinessError));
-    }
-
-    // ── Payment Service ──────────────────────────────────────────────────────
-
-    @Bean
-    public CircuitBreakerConfigCustomizer paymentCircuitBreakerCustomizer() {
-        return CircuitBreakerConfigCustomizer.of("payment-service",
-                builder -> builder.ignoreException(Resilience4jConfig::isBusinessError));
-    }
-
-    @Bean
-    public RetryConfigCustomizer paymentRetryCustomizer() {
-        return RetryConfigCustomizer.of("payment-service",
-                builder -> builder.ignoreException(Resilience4jConfig::isBusinessError));
+        RetryConfig retryConfig = RetryConfig
+                .from(retryRegistry.getDefaultConfig())
+                .retryOnException(e -> !isBusinessError(e))
+                .build();
+        retryRegistry.addConfiguration("inventory-service", retryConfig);
+        retryRegistry.addConfiguration("payment-service", retryConfig);
     }
 }

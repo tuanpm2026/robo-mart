@@ -5,6 +5,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
@@ -17,6 +18,9 @@ import com.robomart.common.dto.PaginationMeta;
 import com.robomart.product.document.ProductDocument;
 import com.robomart.product.dto.ProductListResponse;
 import com.robomart.product.dto.ProductSearchRequest;
+import com.robomart.product.entity.Product;
+import com.robomart.product.mapper.ProductMapper;
+import com.robomart.product.repository.ProductRepository;
 
 import io.micrometer.tracing.Tracer;
 
@@ -27,10 +31,17 @@ public class ProductSearchService {
     private static final int MAX_PAGE_SIZE = 100;
 
     private final ElasticsearchOperations elasticsearchOperations;
+    private final ProductRepository productRepository;
+    private final ProductMapper productMapper;
     private final Tracer tracer;
 
-    public ProductSearchService(ElasticsearchOperations elasticsearchOperations, Tracer tracer) {
+    public ProductSearchService(ElasticsearchOperations elasticsearchOperations,
+                                ProductRepository productRepository,
+                                ProductMapper productMapper,
+                                Tracer tracer) {
         this.elasticsearchOperations = elasticsearchOperations;
+        this.productRepository = productRepository;
+        this.productMapper = productMapper;
         this.tracer = tracer;
     }
 
@@ -42,25 +53,51 @@ public class ProductSearchService {
     public PagedResponse<ProductListResponse> search(ProductSearchRequest request, Pageable pageable) {
         Pageable clampedPageable = clampPageSize(pageable);
 
+        // Build the query outside the try block so query-construction errors are not masked as ES failures
         NativeQuery query = buildSearchQuery(request, clampedPageable);
 
-        log.debug("Executing product search: keyword={}, filters=[categoryId={}, brand={}, price={}-{}, minRating={}]",
-                request.keyword(), request.categoryId(), request.brand(),
-                request.minPrice(), request.maxPrice(), request.minRating());
+        try {
+            log.debug("Executing product search: keyword={}, filters=[categoryId={}, brand={}, price={}-{}, minRating={}]",
+                    request.keyword(), request.categoryId(), request.brand(),
+                    request.minPrice(), request.maxPrice(), request.minRating());
 
-        SearchHits<ProductDocument> searchHits = elasticsearchOperations.search(query, ProductDocument.class);
+            SearchHits<ProductDocument> searchHits = elasticsearchOperations.search(query, ProductDocument.class);
 
-        List<ProductListResponse> products = searchHits.getSearchHits().stream()
-                .map(hit -> toProductListResponse(hit.getContent()))
+            List<ProductListResponse> products = searchHits.getSearchHits().stream()
+                    .map(hit -> toProductListResponse(hit.getContent()))
+                    .toList();
+
+            var pagination = new PaginationMeta(
+                    clampedPageable.getPageNumber(),
+                    clampedPageable.getPageSize(),
+                    searchHits.getTotalHits(),
+                    calculateTotalPages(searchHits.getTotalHits(), clampedPageable.getPageSize())
+            );
+
+            return new PagedResponse<>(products, pagination, getTraceId());
+        } catch (Exception e) {
+            log.warn("Elasticsearch unavailable, falling back to PostgreSQL LIKE search: {}", e.getMessage());
+            try {
+                return searchWithPostgresFallback(request, clampedPageable);
+            } catch (Exception fallbackEx) {
+                log.error("PostgreSQL fallback also failed (dual-outage): {}", fallbackEx.getMessage(), fallbackEx);
+                throw fallbackEx;
+            }
+        }
+    }
+
+    private PagedResponse<ProductListResponse> searchWithPostgresFallback(ProductSearchRequest request, Pageable pageable) {
+        // Degraded mode: only keyword and categoryId filters are applied.
+        // brand, minPrice, maxPrice, and minRating are intentionally not supported in the JPQL fallback
+        // (acceptable per AC4 — reduced functionality means no relevance ranking and limited filter support).
+        String keyword = (request.keyword() != null && !request.keyword().isBlank()) ? request.keyword() : null;
+        Page<Product> page = productRepository.searchByKeywordLike(keyword, request.categoryId(), pageable);
+        List<ProductListResponse> products = page.getContent().stream()
+                .map(productMapper::toListResponse)
                 .toList();
-
         var pagination = new PaginationMeta(
-                clampedPageable.getPageNumber(),
-                clampedPageable.getPageSize(),
-                searchHits.getTotalHits(),
-                calculateTotalPages(searchHits.getTotalHits(), clampedPageable.getPageSize())
-        );
-
+                pageable.getPageNumber(), pageable.getPageSize(),
+                page.getTotalElements(), page.getTotalPages());
         return new PagedResponse<>(products, pagination, getTraceId());
     }
 

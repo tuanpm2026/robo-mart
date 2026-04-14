@@ -32,6 +32,15 @@ export function setAuthAccessor(
   getAuthState = accessor
 }
 
+// UI store accessor — set by main.ts after store initialization
+let getUiState: (() => { setDegradationTier: (tier: 'normal' | 'partial' | 'maintenance') => void }) | null = null
+
+export function setUiAccessor(
+  accessor: () => { setDegradationTier: (tier: 'normal' | 'partial' | 'maintenance') => void },
+): void {
+  getUiState = accessor
+}
+
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
   timeout: 10000,
@@ -59,7 +68,17 @@ let refreshPromise: Promise<boolean> | null = null
 let logoutInProgress = false
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // On any successful response, attempt to recover partial degradation tier back to normal.
+    // The setDegradationTier guard prevents accidentally downgrading from 'maintenance' to 'normal'
+    // (maintenance requires a page reload), so only 'partial' tier auto-recovers here.
+    try {
+      getUiState?.().setDegradationTier('normal')
+    } catch {
+      // Ignore store errors — degradation tier is non-critical
+    }
+    return response
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retried?: boolean }
 
@@ -95,6 +114,14 @@ apiClient.interceptors.response.use(
 
     if (error.response) {
       const { status } = error.response
+      if (status === 503) {
+        try {
+          getUiState?.().setDegradationTier('partial')
+        } catch {
+          // Ignore store errors
+        }
+        return Promise.reject(new Error('Service temporarily unavailable'))
+      }
       if (status === 404) {
         return Promise.reject(new Error('Resource not found'))
       }
@@ -102,6 +129,12 @@ apiClient.interceptors.response.use(
         return Promise.reject(new Error('Server error. Please try again later.'))
       }
     } else if (error.request) {
+      // No response at all — network/gateway down
+      try {
+        getUiState?.().setDegradationTier('maintenance')
+      } catch {
+        // Ignore store errors
+      }
       return Promise.reject(new Error('Network error. Please check your connection.'))
     }
     return Promise.reject(error)

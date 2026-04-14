@@ -93,8 +93,8 @@ class ProcessPaymentStepTest {
     }
 
     @Test
-    @DisplayName("shouldThrowWithCompensationWhenCircuitOpen")
-    void shouldThrowWithCompensationWhenCircuitOpen() {
+    @DisplayName("shouldThrowWithHoldAsPendingWhenCircuitOpen")
+    void shouldThrowWithHoldAsPendingWhenCircuitOpen() {
         Order order = buildOrder();
         SagaContext context = new SagaContext(order);
 
@@ -104,9 +104,14 @@ class ProcessPaymentStepTest {
 
         assertThatThrownBy(() -> step.execute(context))
                 .isInstanceOf(SagaStepException.class)
-                .satisfies(e -> assertThat(((SagaStepException) e).isShouldCompensate()).isTrue());
+                .satisfies(e -> {
+                    SagaStepException ex = (SagaStepException) e;
+                    assertThat(ex.isShouldCompensate()).isFalse();
+                    assertThat(ex.isShouldHoldAsPending()).isTrue();
+                });
 
-        assertThat(order.getCancellationReason()).isEqualTo("Payment service unavailable");
+        // No cancellationReason should be set when holding as PAYMENT_PENDING
+        assertThat(order.getCancellationReason()).isNull();
     }
 
     @Test

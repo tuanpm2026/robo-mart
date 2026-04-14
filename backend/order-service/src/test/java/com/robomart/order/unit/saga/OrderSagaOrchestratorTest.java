@@ -263,4 +263,59 @@ class OrderSagaOrchestratorTest {
             assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
         }
     }
+
+    @Nested
+    @DisplayName("Payment circuit open — PAYMENT_PENDING")
+    class PaymentCircuitOpen {
+
+        @Test
+        @DisplayName("shouldHoldOrderAsPaymentPendingWhenCircuitOpen")
+        void shouldHoldOrderAsPaymentPendingWhenCircuitOpen() {
+            Order order = buildOrder();
+            doNothing().when(reserveInventoryStep).execute(any(SagaContext.class));
+            doThrow(new SagaStepException("Payment service circuit open", null, false, true))
+                    .when(processPaymentStep).execute(any(SagaContext.class));
+
+            orchestrator.executeSaga(order);
+
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
+            verify(reserveInventoryStep).execute(any());
+            verify(processPaymentStep).execute(any());
+        }
+
+        @Test
+        @DisplayName("shouldNotCompensateInventoryWhenPaymentCircuitOpen")
+        void shouldNotCompensateInventoryWhenPaymentCircuitOpen() {
+            Order order = buildOrder();
+            doNothing().when(reserveInventoryStep).execute(any(SagaContext.class));
+            doThrow(new SagaStepException("Payment service circuit open", null, false, true))
+                    .when(processPaymentStep).execute(any(SagaContext.class));
+
+            orchestrator.executeSaga(order);
+
+            // Inventory must NOT be released — it stays reserved for the pending payment
+            verify(releaseInventoryStep, never()).compensate(any());
+        }
+
+        @Test
+        @DisplayName("shouldPublishStatusChangedEventWithPaymentPendingStatus")
+        void shouldPublishStatusChangedEventWithPaymentPendingStatus() {
+            Order order = buildOrder();
+            doNothing().when(reserveInventoryStep).execute(any(SagaContext.class));
+            doThrow(new SagaStepException("Payment service circuit open", null, false, true))
+                    .when(processPaymentStep).execute(any(SagaContext.class));
+
+            orchestrator.executeSaga(order);
+
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
+
+            // Verify outbox event carries PAYMENT_PENDING as newStatus
+            ArgumentCaptor<OutboxEvent> outboxCaptor = ArgumentCaptor.forClass(OutboxEvent.class);
+            verify(outboxEventRepository).save(outboxCaptor.capture());
+            OutboxEvent publishedEvent = outboxCaptor.getValue();
+            assertThat(publishedEvent.getEventType()).isEqualTo("order_status_changed");
+            assertThat(publishedEvent.getPayload()).contains("\"newStatus\":\"PAYMENT_PENDING\"");
+            assertThat(publishedEvent.getPayload()).contains("\"previousStatus\":\"PAYMENT_PROCESSING\"");
+        }
+    }
 }

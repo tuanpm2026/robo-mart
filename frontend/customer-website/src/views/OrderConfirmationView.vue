@@ -42,10 +42,20 @@ onMounted(async () => {
     <!-- Success -->
     <div v-else-if="orderStore.currentOrder" class="ocv__content">
       <div class="ocv__hero">
-        <div class="ocv__icon" aria-hidden="true">✓</div>
-        <h1 class="ocv__heading">Order Confirmed!</h1>
-        <p class="ocv__order-number">Order #{{ orderStore.currentOrder.id }}</p>
-        <p class="ocv__delivery">Estimated delivery: 3–5 business days</p>
+        <template v-if="orderStore.currentOrder.status === 'PAYMENT_PENDING'">
+          <div class="ocv__icon ocv__icon--pending" aria-hidden="true">⏳</div>
+          <h1 class="ocv__heading">Order Received!</h1>
+          <p class="ocv__order-number">Order #{{ orderStore.currentOrder.id }}</p>
+          <p class="ocv__payment-pending">
+            Order received. Payment is being processed — we'll notify you when confirmed.
+          </p>
+        </template>
+        <template v-else>
+          <div class="ocv__icon" aria-hidden="true">✓</div>
+          <h1 class="ocv__heading">Order Confirmed!</h1>
+          <p class="ocv__order-number">Order #{{ orderStore.currentOrder.id }}</p>
+          <p class="ocv__delivery">Estimated delivery: 3–5 business days</p>
+        </template>
       </div>
 
       <div class="ocv__summary">
@@ -138,6 +148,19 @@ onMounted(async () => {
   justify-content: center;
   margin-bottom: 8px;
   animation: ocv-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+.ocv__icon--pending {
+  background: #fef9c3;
+  color: #a16207;
+}
+.ocv__payment-pending {
+  font-size: 14px;
+  color: #a16207;
+  margin: 0;
+  padding: 8px 16px;
+  background: #fef9c3;
+  border: 1px solid #fde047;
+  border-radius: 8px;
 }
 .ocv__heading {
   font-size: 28px;

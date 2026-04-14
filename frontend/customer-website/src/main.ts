@@ -8,8 +8,9 @@ import { customerTheme } from '@robo-mart/shared'
 
 import App from './App.vue'
 import router from './router'
-import { setAuthAccessor } from './api/client'
+import { setAuthAccessor, setUiAccessor } from './api/client'
 import { useAuthStore } from './stores/useAuthStore'
+import { useUiStore } from './stores/useUiStore'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -34,6 +35,10 @@ setAuthAccessor(() => ({
   refreshToken: () => authStore.refreshToken(),
   logout: () => authStore.logout(),
 }))
+
+// Wire UI store into API client for degradation tier detection
+const uiStore = useUiStore()
+setUiAccessor(() => uiStore)
 
 // Initialize auth state before mounting (restore session from storage)
 authStore.initAuth().finally(() => {

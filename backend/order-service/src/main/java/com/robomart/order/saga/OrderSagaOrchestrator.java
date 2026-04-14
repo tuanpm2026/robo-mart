@@ -85,6 +85,15 @@ public class OrderSagaOrchestrator {
                 logSagaStep(sagaId, sagaId, step.getName(), "SUCCESS", null, null, null);
             } catch (SagaStepException e) {
                 logSagaStep(sagaId, sagaId, step.getName(), "FAILED", null, null, e.getMessage());
+
+                if (e.isShouldHoldAsPending()) {
+                    // Payment circuit open — hold order in PAYMENT_PENDING, keep inventory reserved
+                    updateOrderStatus(order, OrderStatus.PAYMENT_PENDING);
+                    publishStatusChangedEvent(order, targetState);
+                    log.info("Order held as PAYMENT_PENDING for orderId={}", sagaId);
+                    return;
+                }
+
                 if (e.isShouldCompensate()) {
                     runCompensation(context, sagaId);
                 }

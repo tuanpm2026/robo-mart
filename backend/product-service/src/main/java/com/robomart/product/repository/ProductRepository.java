@@ -30,4 +30,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Optional<Product> findByIdWithDetailsIncludeInactive(@Param("id") Long id);
 
     boolean existsBySku(String sku);
+
+    @EntityGraph(attributePaths = {"category"})
+    @Query("SELECT p FROM Product p WHERE p.active = true " +
+           "AND (:keyword IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "AND (:categoryId IS NULL OR p.category.id = :categoryId)")
+    Page<Product> searchByKeywordLike(
+            @Param("keyword") String keyword,
+            @Param("categoryId") Long categoryId,
+            Pageable pageable);
 }

@@ -23,6 +23,9 @@ public class ReserveInventoryStep implements SagaStep {
 
     private static final Logger log = LoggerFactory.getLogger(ReserveInventoryStep.class);
 
+    /** Shared constant — also referenced by OrderRestController to route circuit-open failures. */
+    public static final String CIRCUIT_OPEN_CANCELLATION_REASON = "Inventory temporarily unavailable";
+
     private final InventoryGrpcClient inventoryClient;
 
     public ReserveInventoryStep(InventoryGrpcClient inventoryClient) {
@@ -60,6 +63,7 @@ public class ReserveInventoryStep implements SagaStep {
             }
             throw new SagaStepException("Inventory reservation failed for orderId=" + order.getId(), e, true);
         } catch (InventoryServiceUnavailableException e) {
+            order.setCancellationReason(CIRCUIT_OPEN_CANCELLATION_REASON);
             throw new SagaStepException("Inventory service circuit open for orderId=" + order.getId(), e, true);
         }
     }

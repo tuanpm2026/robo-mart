@@ -2,6 +2,7 @@ package com.robomart.order.enums;
 
 public enum OrderStatus {
     PENDING,
+    PAYMENT_PENDING,
     INVENTORY_RESERVING,
     PAYMENT_PROCESSING,
     CONFIRMED,
