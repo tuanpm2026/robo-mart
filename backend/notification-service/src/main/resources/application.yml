@@ -17,9 +17,12 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/robomart/protocol/openid-connect/certs}
+  lifecycle:
+    timeout-per-shutdown-phase: 25s
 
 server:
   port: 8087
+  shutdown: graceful
 
 notification:
   order-service:

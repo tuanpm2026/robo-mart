@@ -49,6 +49,7 @@ public class KafkaConsumerConfig {
         factory.setConsumerFactory(consumerFactory());
         factory.setCommonErrorHandler(new DefaultErrorHandler(dlqRecoverer, new FixedBackOff(1000L, 3)));
         factory.getContainerProperties().setDeliveryAttemptHeader(true);
+        factory.getContainerProperties().setShutdownTimeout(20_000L);
         return factory;
     }
 }

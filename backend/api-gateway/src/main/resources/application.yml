@@ -8,6 +8,11 @@ spring:
         jwt:
           issuer-uri: http://localhost:8180/realms/robomart
 
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
   cloud:
     gateway:
       globalcors:
@@ -15,8 +20,12 @@ spring:
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
 
+  lifecycle:
+    timeout-per-shutdown-phase: 25s
+
 server:
   port: 8080
+  shutdown: graceful
 
 # Downstream service URIs
 gateway:
@@ -31,6 +40,15 @@ gateway:
     customer-origin: http://localhost:5173
     admin-origin: http://localhost:5174
     keycloak-origin: http://localhost:8180
+  # Rate limit configuration (AC3: configurable per endpoint)
+  rate-limit:
+    authenticated:
+      replenish-rate: 2        # tokens/sec → ~120 req/min sustained, burst up to 100 immediately
+      burst-capacity: 100      # max burst
+    anonymous:
+      replenish-rate: 1        # tokens/sec
+      burst-capacity: 60       # max tokens in bucket
+      requested-tokens: 3      # 60 tokens/min ÷ 3 = 20 req/min
 
 # Actuator
 management:

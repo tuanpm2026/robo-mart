@@ -13,9 +13,12 @@ spring:
   grpc:
     server:
       port: 9095
+  lifecycle:
+    timeout-per-shutdown-phase: 25s
 
 server:
   port: 8086
+  shutdown: graceful
 
 ---
 spring:

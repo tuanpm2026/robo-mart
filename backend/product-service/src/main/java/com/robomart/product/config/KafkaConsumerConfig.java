@@ -46,6 +46,7 @@ public class KafkaConsumerConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
         factory.setCommonErrorHandler(new DefaultErrorHandler(new FixedBackOff(1000L, 3)));
+        factory.getContainerProperties().setShutdownTimeout(20_000L);
         return factory;
     }
 }

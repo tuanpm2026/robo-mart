@@ -543,6 +543,8 @@ services:
     container_name: robomart-api-gateway
     profiles: ["app"]
     depends_on:
+      redis:
+        condition: service_healthy
       keycloak:
         condition: service_healthy
       product-service:
@@ -559,6 +561,8 @@ services:
       - "8080:8080"
     environment:
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
       GATEWAY_SERVICES_PRODUCT_SERVICE: http://product-service:8081
       GATEWAY_SERVICES_CART_SERVICE: http://cart-service:8082
       GATEWAY_SERVICES_ORDER_SERVICE: http://order-service:8083

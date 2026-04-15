@@ -223,6 +223,13 @@
 - **Scheduler thread blocked during health sweep**: `HealthPushScheduler.pushHealthUpdate()` runs on Spring's default single-thread scheduler. With 7 services × 3s timeout, worst-case sweep takes ~6s, blocking other `@Scheduled` tasks for that duration. `fixedDelay` prevents overlap but doesn't eliminate thread starvation. Mitigate with a dedicated `TaskExecutor` if more scheduled tasks are added to notification-service.
 - **`overallHealth` returns `'healthy'` when services array is empty**: Pre-load state on the dashboard shows green status before any data is fetched. Minor UX false positive; consider returning `'unknown'` when `services.length === 0`.
 
+## Deferred from: code review of 8-3-implement-rate-limiting-graceful-shutdown (2026-04-15)
+
+- **W1 — Order-service Kafka producer has no graceful shutdown / close timeout**: `order-service` is a Kafka producer only; no `KafkaProducerConfig.setCloseTimeout()` is configured. In-flight producer sends on shutdown could be lost. Out of Story 8.3 scope (only Kafka consumers were in scope per Task 7).
+- **W2 — AC5 Kafka offset commit guarantee relies solely on Spring Kafka defaults**: `setShutdownTimeout(25_000L)` waits for in-flight message processing, but no explicit `ackMode` or `commitSync()` is configured. Spring Kafka's default ack mode commits offsets on container stop; adequate by convention but not explicitly enforced.
+- **W3 — `payment-service` missing from `api-gateway` depends_on in docker-compose.yml**: Admin payment routes (`/api/v1/admin/payments/**`) could get 502 during startup if payment-service is slow to start. Pre-existing omission from earlier stories.
+- **W4 — `RateLimitConfigTest` connects to localhost Redis without Testcontainers**: Test uses `spring.data.redis.host=localhost` with `management.health.redis.enabled=false`. Mitigated by disabling Redis health check; KeyResolver tests don't need a live Redis connection. Acceptable for unit-level bean wiring tests.
+
 ## Deferred from: code review of 8-1-implement-circuit-breaker-resilience-patterns (2026-04-13)
 
 - **Blocking gRPC stubs have no explicit deadline**: Neither `InventoryServiceGrpc.InventoryServiceBlockingStub` nor `PaymentServiceGrpc.PaymentServiceBlockingStub` is configured with `.withDeadlineAfter()`. Under retry (3 attempts × gRPC timeout), a hung downstream service can block saga threads indefinitely. Configure per-call deadline via `stub.withDeadlineAfter()` or a global channel deadline in `GrpcClientConfig`.

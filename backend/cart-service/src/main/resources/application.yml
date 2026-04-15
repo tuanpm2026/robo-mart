@@ -11,9 +11,12 @@ spring:
     bootstrap-servers: localhost:29092
     properties:
       schema.registry.url: http://localhost:8085
+  lifecycle:
+    timeout-per-shutdown-phase: 25s
 
 server:
   port: 8082
+  shutdown: graceful
 
 robomart:
   cart:

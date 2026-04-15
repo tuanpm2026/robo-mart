@@ -33,6 +33,12 @@
             <artifactId>security-lib</artifactId>
         </dependency>
 
+        <!-- Redis reactive — required for Spring Cloud Gateway RequestRateLimiter (Token Bucket) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis-reactive</artifactId>
+        </dependency>
+
         <!-- Actuator for health checks -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -48,6 +54,11 @@
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

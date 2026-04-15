@@ -23,9 +23,12 @@ spring:
       payment-service:
         address: 'static://localhost:9095'
         negotiation-type: plaintext
+  lifecycle:
+    timeout-per-shutdown-phase: 25s
 
 server:
   port: 8083
+  shutdown: graceful
 
 resilience4j:
   circuitbreaker:
