@@ -38,6 +38,15 @@ public class SagaAuditLog {
     @Column(columnDefinition = "TEXT")
     private String error;
 
+    @Column(name = "idempotency_key", length = 200)
+    private String idempotencyKey;
+
+    @Column(name = "timeout_at")
+    private Instant timeoutAt;
+
+    @Column(name = "retry_count", nullable = false)
+    private int retryCount = 0;
+
     @Column(name = "executed_at", nullable = false)
     private Instant executedAt;
 
@@ -99,6 +108,30 @@ public class SagaAuditLog {
 
     public void setError(String error) {
         this.error = error;
+    }
+
+    public String getIdempotencyKey() {
+        return idempotencyKey;
+    }
+
+    public void setIdempotencyKey(String idempotencyKey) {
+        this.idempotencyKey = idempotencyKey;
+    }
+
+    public Instant getTimeoutAt() {
+        return timeoutAt;
+    }
+
+    public void setTimeoutAt(Instant timeoutAt) {
+        this.timeoutAt = timeoutAt;
+    }
+
+    public int getRetryCount() {
+        return retryCount;
+    }
+
+    public void setRetryCount(int retryCount) {
+        this.retryCount = retryCount;
     }
 
     public Instant getExecutedAt() {

@@ -11,4 +11,6 @@ public interface SagaAuditLogRepository extends JpaRepository<SagaAuditLog, Long
     List<SagaAuditLog> findBySagaIdOrderByExecutedAtAsc(String sagaId);
 
     List<SagaAuditLog> findByOrderIdOrderByExecutedAtAsc(String orderId);
+
+    boolean existsByIdempotencyKeyAndStatus(String idempotencyKey, String status);
 }

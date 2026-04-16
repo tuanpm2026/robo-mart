@@ -26,6 +26,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.robomart.order.config.SagaProperties;
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderItem;
 import com.robomart.order.entity.OrderStatusHistory;
@@ -88,6 +89,8 @@ class OrderSagaOrchestratorTest {
     void setUp() {
         objectMapper = new ObjectMapper();
 
+        SagaProperties sagaProperties = new SagaProperties();
+
         orchestrator = new OrderSagaOrchestrator(
                 orderRepository,
                 orderStatusHistoryRepository,
@@ -95,6 +98,7 @@ class OrderSagaOrchestratorTest {
                 sagaAuditLogRepository,
                 transactionTemplate,
                 objectMapper,
+                sagaProperties,
                 reserveInventoryStep,
                 processPaymentStep,
                 releaseInventoryStep,
@@ -105,6 +109,10 @@ class OrderSagaOrchestratorTest {
             TransactionCallback<?> callback = invocation.getArgument(0);
             return callback.doInTransaction(null);
         });
+
+        // Idempotency check returns false by default (step not already succeeded)
+        lenient().when(sagaAuditLogRepository.existsByIdempotencyKeyAndStatus(any(), any()))
+                 .thenReturn(false);
 
         lenient().when(sagaAuditLogRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         lenient().when(orderRepository.save(any())).thenAnswer(i -> i.getArgument(0));

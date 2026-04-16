@@ -1,17 +1,28 @@
 package com.robomart.order.saga;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import jakarta.annotation.PreDestroy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.robomart.order.config.SagaProperties;
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderStatusHistory;
 import com.robomart.order.entity.OutboxEvent;
@@ -40,9 +51,12 @@ public class OrderSagaOrchestrator {
     private final SagaAuditLogRepository sagaAuditLogRepository;
     private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
+    private final SagaProperties sagaProperties;
     private final List<SagaStep> forwardSteps;
     private final ReleaseInventoryStep releaseInventoryStep;
     private final RefundPaymentStep refundPaymentStep;
+
+    private final ExecutorService stepExecutor = Executors.newVirtualThreadPerTaskExecutor();
 
     public OrderSagaOrchestrator(
             OrderRepository orderRepository,
@@ -51,6 +65,7 @@ public class OrderSagaOrchestrator {
             SagaAuditLogRepository sagaAuditLogRepository,
             TransactionTemplate transactionTemplate,
             ObjectMapper objectMapper,
+            SagaProperties sagaProperties,
             ReserveInventoryStep reserveInventoryStep,
             ProcessPaymentStep processPaymentStep,
             ReleaseInventoryStep releaseInventoryStep,
@@ -61,9 +76,23 @@ public class OrderSagaOrchestrator {
         this.sagaAuditLogRepository = sagaAuditLogRepository;
         this.transactionTemplate = transactionTemplate;
         this.objectMapper = objectMapper;
+        this.sagaProperties = sagaProperties;
         this.forwardSteps = List.of(reserveInventoryStep, processPaymentStep);
         this.releaseInventoryStep = releaseInventoryStep;
         this.refundPaymentStep = refundPaymentStep;
+    }
+
+    @PreDestroy
+    public void shutdownStepExecutor() {
+        stepExecutor.shutdown();
+        try {
+            if (!stepExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
+                stepExecutor.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            stepExecutor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 
     public void executeSaga(Order order) {
@@ -75,66 +104,125 @@ public class OrderSagaOrchestrator {
         for (int i = 0; i < forwardSteps.size(); i++) {
             SagaStep step = forwardSteps.get(i);
             OrderStatus targetState = stepTargetStates[i];
-            OrderStatus previousStatus = order.getStatus();
 
             updateOrderStatus(order, targetState);
-            logSagaStep(sagaId, sagaId, step.getName(), "STARTED", null, null, null);
 
             try {
-                step.execute(context);
-                logSagaStep(sagaId, sagaId, step.getName(), "SUCCESS", null, null, null);
+                executeStep(step, context, 0);
             } catch (SagaStepException e) {
-                logSagaStep(sagaId, sagaId, step.getName(), "FAILED", null, null, e.getMessage());
-
                 if (e.isShouldHoldAsPending()) {
-                    // Payment circuit open — hold order in PAYMENT_PENDING, keep inventory reserved
                     updateOrderStatus(order, OrderStatus.PAYMENT_PENDING);
                     publishStatusChangedEvent(order, targetState);
                     log.info("Order held as PAYMENT_PENDING for orderId={}", sagaId);
                     return;
                 }
-
                 if (e.isShouldCompensate()) {
                     runCompensation(context, sagaId);
                 }
                 updateOrderStatus(order, OrderStatus.CANCELLED);
                 publishStatusChangedEvent(order, targetState);
-                log.warn("Saga failed at step={} for sagaId={}, cancellationReason={}", step.getName(), sagaId, order.getCancellationReason());
+                log.warn("Saga failed at step={} for sagaId={}, cancellationReason={}",
+                        step.getName(), sagaId, order.getCancellationReason());
                 return;
             }
         }
 
-        // All forward steps succeeded
         updateOrderStatus(order, OrderStatus.CONFIRMED);
         publishStatusChangedEvent(order, OrderStatus.PAYMENT_PROCESSING);
         log.info("Saga completed successfully for sagaId={}", sagaId);
     }
 
+    /**
+     * Executes a saga step with idempotency check and configurable timeout.
+     * Idempotency key: "{orderId}:{stepName}" prevents duplicate execution on retries.
+     */
+    private void executeStep(SagaStep step, SagaContext context, int retryCount) {
+        String sagaId = context.getOrder().getId().toString();
+        String idempotencyKey = sagaId + ":" + step.getName();
+
+        if (sagaAuditLogRepository.existsByIdempotencyKeyAndStatus(idempotencyKey, "SUCCESS")) {
+            log.info("Saga step [{}] idempotent — already succeeded for saga {}, skipping",
+                     step.getName(), sagaId);
+            return;
+        }
+
+        Duration timeout = sagaProperties.getSteps().getTimeouts()
+            .getOrDefault(step.getName(), sagaProperties.getSteps().getDefaultTimeout());
+
+        logSagaStep(context.getOrder(), step.getName(), "STARTED",
+                    idempotencyKey, null, null, retryCount);
+
+        CompletableFuture<Void> future =
+            CompletableFuture.runAsync(() -> step.execute(context), stepExecutor);
+
+        try {
+            future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+            logSagaStep(context.getOrder(), step.getName(), "SUCCESS",
+                        idempotencyKey, null, null, retryCount);
+
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            logSagaStep(context.getOrder(), step.getName(), "TIMED_OUT",
+                        idempotencyKey, Instant.now(),
+                        "Step timed out after " + timeout.toSeconds() + "s", retryCount);
+            throw new SagaStepException(
+                "Saga step " + step.getName() + " timed out after " + timeout.toSeconds() + "s",
+                null, true, false);
+
+        } catch (ExecutionException e) {
+            Throwable cause = e.getCause();
+            logSagaStep(context.getOrder(), step.getName(), "FAILED",
+                        idempotencyKey, null,
+                        cause != null ? cause.getMessage() : e.getMessage(), retryCount);
+            if (cause instanceof SagaStepException sse) {
+                throw sse;
+            }
+            throw new SagaStepException(
+                cause != null ? cause.getMessage() : "Step execution failed",
+                cause, true, false);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SagaStepException("Step execution interrupted", e, true, false);
+        }
+    }
+
     private void runCompensation(SagaContext context, String sagaId) {
         Order order = context.getOrder();
-        logSagaStep(sagaId, sagaId, releaseInventoryStep.getName(), "COMPENSATING", null, null, null);
+        logSagaStep(order, releaseInventoryStep.getName(), "COMPENSATING", null, null, null, 0);
         try {
             releaseInventoryStep.compensate(context);
-            logSagaStep(sagaId, sagaId, releaseInventoryStep.getName(), "COMPENSATED", null, null, null);
+            logSagaStep(order, releaseInventoryStep.getName(), "COMPENSATED", null, null, null, 0);
         } catch (Exception e) {
-            logSagaStep(sagaId, sagaId, releaseInventoryStep.getName(), "COMPENSATION_FAILED", null, null, e.getMessage());
+            logSagaStep(order, releaseInventoryStep.getName(), "COMPENSATION_FAILED",
+                        null, null, e.getMessage(), 0);
             log.error("Compensation failed for sagaId={}: {}", sagaId, e.getMessage(), e);
         }
     }
 
     private void updateOrderStatus(Order order, OrderStatus newStatus) {
-        transactionTemplate.execute(status -> {
-            order.setStatus(newStatus);
-            Order saved = orderRepository.saveAndFlush(order);
-            order.setVersion(saved.getVersion());
+        try {
+            transactionTemplate.execute(status -> {
+                order.setStatus(newStatus);
+                Order saved = orderRepository.saveAndFlush(order);
+                order.setVersion(saved.getVersion());
 
-            OrderStatusHistory history = new OrderStatusHistory();
-            history.setOrder(order);
-            history.setStatus(newStatus);
-            history.setChangedAt(Instant.now());
-            orderStatusHistoryRepository.save(history);
-            return null;
-        });
+                OrderStatusHistory history = new OrderStatusHistory();
+                history.setOrder(order);
+                history.setStatus(newStatus);
+                history.setChangedAt(Instant.now());
+                orderStatusHistoryRepository.save(history);
+                return null;
+            });
+        } catch (ObjectOptimisticLockingFailureException e) {
+            Order reloaded = orderRepository.findById(order.getId())
+                .orElseThrow(() -> new IllegalStateException("Order not found: " + order.getId()));
+            log.warn("Optimistic lock conflict on order {} — current: {}, attempted: {}",
+                     order.getId(), reloaded.getStatus(), newStatus);
+            if (!reloaded.getStatus().isTerminal()) {
+                throw e;
+            }
+        }
     }
 
     private void publishStatusChangedEvent(Order order, OrderStatus previousStatus) {
@@ -152,42 +240,46 @@ public class OrderSagaOrchestrator {
                         objectMapper.writeValueAsString(payload));
                 outboxEventRepository.save(event);
             } catch (Exception e) {
-                log.error("Failed to create outbox event for orderId={}: {}", order.getId(), e.getMessage(), e);
+                log.error("Failed to create outbox event for orderId={}: {}",
+                          order.getId(), e.getMessage(), e);
                 throw new RuntimeException(e);
             }
             return null;
         });
     }
 
-    private void logSagaStep(String sagaId, String orderId, String stepName, String stepStatus,
-            String request, String response, String error) {
+    private void logSagaStep(Order order, String stepName, String status,
+            String idempotencyKey, Instant timeoutAt, String error, int retryCount) {
         try {
+            String sagaId = order.getId().toString();
             SagaAuditLog entry = new SagaAuditLog();
             entry.setSagaId(sagaId);
-            entry.setOrderId(orderId);
+            entry.setOrderId(sagaId);
             entry.setStepName(stepName);
-            entry.setStatus(stepStatus);
-            entry.setRequest(request);
-            entry.setResponse(response);
+            entry.setStatus(status);
+            entry.setIdempotencyKey(idempotencyKey);
+            entry.setTimeoutAt(timeoutAt);
             entry.setError(error);
+            entry.setRetryCount(retryCount);
             entry.setExecutedAt(Instant.now());
             sagaAuditLogRepository.save(entry);
         } catch (Exception e) {
-            log.error("Failed to write saga audit log for sagaId={}, step={}: {}", sagaId, stepName, e.getMessage());
+            log.error("Failed to write saga audit log for orderId={}, step={}: {}",
+                      order.getId(), stepName, e.getMessage());
         }
     }
 
     public void cancelPendingSaga(Order order, String reason, String cancelledBy) {
-        String sagaId = order.getId().toString();
-
         if (order.getReservationId() != null) {
-            logSagaStep(sagaId, sagaId, releaseInventoryStep.getName(), "STARTED", null, null, null);
+            logSagaStep(order, releaseInventoryStep.getName(), "STARTED", null, null, null, 0);
             try {
                 releaseInventoryStep.compensate(new SagaContext(order));
-                logSagaStep(sagaId, sagaId, releaseInventoryStep.getName(), "COMPENSATED", null, null, null);
+                logSagaStep(order, releaseInventoryStep.getName(), "COMPENSATED", null, null, null, 0);
             } catch (Exception e) {
-                logSagaStep(sagaId, sagaId, releaseInventoryStep.getName(), "COMPENSATION_FAILED", null, null, e.getMessage());
-                log.error("Failed to release inventory during pending cancellation for orderId={}: {}", order.getId(), e.getMessage(), e);
+                logSagaStep(order, releaseInventoryStep.getName(), "COMPENSATION_FAILED",
+                            null, null, e.getMessage(), 0);
+                log.error("Failed to release inventory during pending cancellation for orderId={}: {}",
+                          order.getId(), e.getMessage(), e);
             }
         }
 
@@ -196,32 +288,29 @@ public class OrderSagaOrchestrator {
     }
 
     public void cancelConfirmedSaga(Order order, String reason, String cancelledBy) {
-        String sagaId = order.getId().toString();
-
-        // Step 1: Refund payment
         updateOrderStatus(order, OrderStatus.PAYMENT_REFUNDING);
-        logSagaStep(sagaId, sagaId, refundPaymentStep.getName(), "STARTED", null, null, null);
+        logSagaStep(order, refundPaymentStep.getName(), "STARTED", null, null, null, 0);
         try {
             refundPaymentStep.execute(new SagaContext(order));
-            logSagaStep(sagaId, sagaId, refundPaymentStep.getName(), "SUCCESS", null, null, null);
+            logSagaStep(order, refundPaymentStep.getName(), "SUCCESS", null, null, null, 0);
         } catch (SagaStepException e) {
-            logSagaStep(sagaId, sagaId, refundPaymentStep.getName(), "FAILED", null, null, e.getMessage());
-            log.error("Refund failed for orderId={}, continuing with cancellation: {}", order.getId(), e.getMessage());
-            // Best-effort — continue to release inventory and cancel regardless
+            logSagaStep(order, refundPaymentStep.getName(), "FAILED", null, null, e.getMessage(), 0);
+            log.error("Refund failed for orderId={}, continuing with cancellation: {}",
+                      order.getId(), e.getMessage());
         }
 
-        // Step 2: Release inventory
         updateOrderStatus(order, OrderStatus.INVENTORY_RELEASING);
-        logSagaStep(sagaId, sagaId, releaseInventoryStep.getName(), "STARTED", null, null, null);
+        logSagaStep(order, releaseInventoryStep.getName(), "STARTED", null, null, null, 0);
         try {
             releaseInventoryStep.compensate(new SagaContext(order));
-            logSagaStep(sagaId, sagaId, releaseInventoryStep.getName(), "COMPENSATED", null, null, null);
+            logSagaStep(order, releaseInventoryStep.getName(), "COMPENSATED", null, null, null, 0);
         } catch (Exception e) {
-            logSagaStep(sagaId, sagaId, releaseInventoryStep.getName(), "COMPENSATION_FAILED", null, null, e.getMessage());
-            log.error("Failed to release inventory during confirmed cancellation for orderId={}: {}", order.getId(), e.getMessage(), e);
+            logSagaStep(order, releaseInventoryStep.getName(), "COMPENSATION_FAILED",
+                        null, null, e.getMessage(), 0);
+            log.error("Failed to release inventory during confirmed cancellation for orderId={}: {}",
+                      order.getId(), e.getMessage(), e);
         }
 
-        // Step 3: Atomically mark cancelled + publish outbox event
         finalizeCancellation(order, reason, cancelledBy);
         log.info("Confirmed order cancelled for orderId={}", order.getId());
     }
@@ -251,11 +340,50 @@ public class OrderSagaOrchestrator {
                         objectMapper.writeValueAsString(payload));
                 outboxEventRepository.save(event);
             } catch (Exception e) {
-                log.error("Failed to create order_cancelled outbox event for orderId={}: {}", order.getId(), e.getMessage(), e);
+                log.error("Failed to create order_cancelled outbox event for orderId={}: {}",
+                          order.getId(), e.getMessage(), e);
                 throw new RuntimeException(e);
             }
             return null;
         });
+    }
+
+    /**
+     * Triggers compensation for a stuck/dead saga detected by scheduled job (AC3, AC5).
+     */
+    public void handleDeadSaga(Order order) {
+        log.warn("Dead saga detected: orderId={}, status={}", order.getId(), order.getStatus());
+        logSagaStep(order, "DEAD_SAGA_DETECTION", "RECOVERY",
+                    null, null,
+                    "Stuck in " + order.getStatus() + " — triggering compensation", 0);
+        recoverSingleSaga(order);
+    }
+
+    private void recoverSingleSaga(Order order) {
+        String sagaId = order.getId().toString();
+        String staleStatus = order.getStatus().name();
+        String recoveryReason = "Recovered from stale state: " + staleStatus;
+
+        if (order.getStatus() == OrderStatus.PAYMENT_REFUNDING) {
+            logSagaStep(order, refundPaymentStep.getName(), "STARTED", null, null, null, 0);
+            try {
+                refundPaymentStep.execute(new SagaContext(order));
+                logSagaStep(order, refundPaymentStep.getName(), "SUCCESS", null, null, null, 0);
+            } catch (SagaStepException e) {
+                logSagaStep(order, refundPaymentStep.getName(), "FAILED", null, null, e.getMessage(), 0);
+                log.error("Refund failed during stale saga recovery for orderId={}: {}",
+                          order.getId(), e.getMessage());
+            }
+            runCompensation(new SagaContext(order), sagaId);
+            finalizeCancellation(order, recoveryReason, "system");
+        } else if (order.getStatus() == OrderStatus.INVENTORY_RELEASING) {
+            runCompensation(new SagaContext(order), sagaId);
+            finalizeCancellation(order, recoveryReason, "system");
+        } else {
+            order.setCancellationReason(recoveryReason);
+            runCompensation(new SagaContext(order), sagaId);
+            finalizeCancellation(order, recoveryReason, "system");
+        }
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -272,43 +400,14 @@ public class OrderSagaOrchestrator {
 
         log.warn("Found {} stale saga(s) to recover", staleOrders.size());
         for (Order order : staleOrders) {
-            String sagaId = order.getId().toString();
             log.warn("Recovering stale saga for orderId={}, status={}", order.getId(), order.getStatus());
-            logSagaStep(sagaId, sagaId, "RECOVERY", "STARTED", null, null, null);
+            logSagaStep(order, "RECOVERY", "STARTED", null, null, null, 0);
             try {
-                String staleStatus = order.getStatus().name();
-                String recoveryReason = "Recovered from stale state: " + staleStatus;
-
-                if (order.getStatus() == OrderStatus.PAYMENT_REFUNDING) {
-                    // Resume cancellation: attempt refund (best-effort), release, cancel
-                    logSagaStep(sagaId, sagaId, refundPaymentStep.getName(), "STARTED", null, null, null);
-                    try {
-                        refundPaymentStep.execute(new SagaContext(order));
-                        logSagaStep(sagaId, sagaId, refundPaymentStep.getName(), "SUCCESS", null, null, null);
-                    } catch (SagaStepException e) {
-                        logSagaStep(sagaId, sagaId, refundPaymentStep.getName(), "FAILED", null, null, e.getMessage());
-                        log.error("Refund failed during stale saga recovery for orderId={}: {}", order.getId(), e.getMessage());
-                    }
-                    runCompensation(new SagaContext(order), sagaId);
-                    finalizeCancellation(order, recoveryReason, "system");
-                } else if (order.getStatus() == OrderStatus.INVENTORY_RELEASING) {
-                    // Refund already attempted; resume from inventory release
-                    runCompensation(new SagaContext(order), sagaId);
-                    finalizeCancellation(order, recoveryReason, "system");
-                } else {
-                    // Forward saga recovery (INVENTORY_RESERVING, PAYMENT_PROCESSING)
-                    OrderStatus previousStatus = order.getStatus();
-                    SagaContext context = new SagaContext(order);
-                    order.setCancellationReason(recoveryReason);
-                    runCompensation(context, sagaId);
-                    updateOrderStatus(order, OrderStatus.CANCELLED);
-                    publishStatusChangedEvent(order, previousStatus);
-                }
-
-                logSagaStep(sagaId, sagaId, "RECOVERY", "COMPENSATED", null, null, null);
+                recoverSingleSaga(order);
+                logSagaStep(order, "RECOVERY", "COMPENSATED", null, null, null, 0);
             } catch (Exception e) {
                 log.error("Recovery failed for orderId={}: {}", order.getId(), e.getMessage(), e);
-                logSagaStep(sagaId, sagaId, "RECOVERY", "FAILED", null, null, e.getMessage());
+                logSagaStep(order, "RECOVERY", "FAILED", null, null, e.getMessage(), 0);
             }
         }
     }

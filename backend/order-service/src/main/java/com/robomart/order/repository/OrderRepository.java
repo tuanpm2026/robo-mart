@@ -33,4 +33,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                    "GROUP BY DATE(o.created_at), o.status ORDER BY date",
            nativeQuery = true)
     List<Object[]> findOrderTrends(@Param("from") Instant from, @Param("to") Instant to);
+
+    @Query("SELECT o FROM Order o WHERE o.status IN :statuses AND o.updatedAt < :cutoff")
+    List<Order> findStuckSagas(
+            @Param("statuses") List<OrderStatus> statuses,
+            @Param("cutoff") Instant cutoff
+    );
 }

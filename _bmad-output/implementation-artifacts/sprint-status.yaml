@@ -35,7 +35,10 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-27
-last_updated: "2026-04-15"
+last_updated: "2026-04-16"
+# Story 8.4 in-progress (code review patches applied): 2026-04-16
+# Story 8.4 review: 2026-04-16
+# Story 8.4 created: 2026-04-16
 # Story 8.3 done: 2026-04-15
 # Story 8.3 review: 2026-04-15
 # Story 8.3 created: 2026-04-15
@@ -171,7 +174,7 @@ development_status:
   8-1-implement-circuit-breaker-resilience-patterns: done
   8-2-implement-graceful-degradation-3-tiers: in-progress
   8-3-implement-rate-limiting-graceful-shutdown: done
-  8-4-implement-saga-phase-b-hardened-orchestration: backlog
+  8-4-implement-saga-phase-b-hardened-orchestration: in-progress
   epic-8-retrospective: optional
 
   # Epic 9: Observability & Operations

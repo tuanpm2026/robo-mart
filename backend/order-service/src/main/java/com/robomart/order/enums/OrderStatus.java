@@ -10,5 +10,9 @@ public enum OrderStatus {
     DELIVERED,
     CANCELLED,
     PAYMENT_REFUNDING,
-    INVENTORY_RELEASING
+    INVENTORY_RELEASING;
+
+    public boolean isTerminal() {
+        return this == CONFIRMED || this == CANCELLED || this == DELIVERED;
+    }
 }

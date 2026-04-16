@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.robomart.order.config.SagaProperties;
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderItem;
 import com.robomart.order.entity.OutboxEvent;
@@ -64,10 +65,12 @@ class OrderSagaOrchestratorCancelTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
+        SagaProperties sagaProperties = new SagaProperties();
         orchestrator = new OrderSagaOrchestrator(
                 orderRepository, orderStatusHistoryRepository, outboxEventRepository,
                 sagaAuditLogRepository, transactionTemplate, objectMapper,
-                reserveInventoryStep, processPaymentStep, releaseInventoryStep, refundPaymentStep);
+                sagaProperties, reserveInventoryStep, processPaymentStep,
+                releaseInventoryStep, refundPaymentStep);
 
         lenient().when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
             TransactionCallback<?> callback = invocation.getArgument(0);

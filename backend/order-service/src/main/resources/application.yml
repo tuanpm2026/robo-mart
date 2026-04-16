@@ -26,6 +26,21 @@ spring:
   lifecycle:
     timeout-per-shutdown-phase: 25s
 
+saga:
+  steps:
+    default-timeout: 10s
+    timeouts:
+      # Keys must exactly match SagaStep.getName() return values
+      ReserveInventory: 10s
+      ProcessPayment: 10s
+      ReleaseInventory: 10s
+      RefundPaymentStep: 10s
+  dead-saga-detection:
+    enabled: true
+    stuck-threshold: 5m
+    check-interval-ms: 60000
+    initial-delay-ms: 30000
+
 server:
   port: 8083
   shutdown: graceful
