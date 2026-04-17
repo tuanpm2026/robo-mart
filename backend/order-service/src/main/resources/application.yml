@@ -13,6 +13,15 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        interceptor.classes: com.robomart.common.kafka.CorrelationIdKafkaProducerInterceptor
+    consumer:
+      properties:
+        interceptor.classes: com.robomart.common.kafka.CorrelationIdKafkaConsumerInterceptor
+    template:
+      observation-enabled: true
+    listener:
+      observation-enabled: true
   grpc:
     server:
       port: 9093
@@ -44,6 +53,18 @@ saga:
 server:
   port: 8083
   shutdown: graceful
+
+management:
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLE_RATE:1.0}
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
 
 resilience4j:
   circuitbreaker:

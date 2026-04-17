@@ -1,0 +1,161 @@
+networks:
+  robomart-network:
+    driver: bridge
+
+volumes:
+  tempo-data:
+
+# App service overrides — env vars only injected when running with --profile full
+services:
+  product-service:
+    environment:
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces
+
+  cart-service:
+    environment:
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces
+
+  order-service:
+    environment:
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces
+
+  inventory-service:
+    environment:
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces
+
+  payment-service:
+    environment:
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces
+
+  notification-service:
+    environment:
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces
+
+  api-gateway:
+    environment:
+      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://tempo:4318/v1/traces
+
+  tempo:
+    image: grafana/tempo:latest
+    container_name: robomart-tempo
+    profiles: ["full"]
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - ./tempo/tempo.yml:/etc/tempo/tempo.yml
+      - tempo-data:/tmp/tempo/traces
+    ports:
+      - "3200:3200"
+      - "4317:4317"
+      - "4318:4318"
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: robomart-loki
+    profiles: ["full"]
+    ports:
+      - "3100:3100"
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: robomart-alloy
+    profiles: ["full"]
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: ["run", "/etc/alloy/config.alloy"]
+    ports:
+      - "12345:12345"
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  prometheus:
+    image: prom/prometheus:v3.9.0
+    container_name: robomart-prometheus
+    profiles: ["full"]
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9091:9091"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --web.listen-address=:9091
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  grafana:
+    image: grafana/grafana:12.3.0
+    container_name: robomart-grafana
+    profiles: ["full"]
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-admin}
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    ports:
+      - "3000:3000"
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  postgres-pact:
+    image: postgres:16-alpine
+    container_name: robomart-postgres-pact
+    profiles: ["full"]
+    environment:
+      POSTGRES_USER: pact
+      POSTGRES_PASSWORD: pact
+      POSTGRES_DB: pact_broker
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  pact-broker:
+    image: pactfoundation/pact-broker:latest
+    container_name: robomart-pact-broker
+    profiles: ["full"]
+    depends_on:
+      - postgres-pact
+    environment:
+      PACT_BROKER_DATABASE_ADAPTER: postgres
+      PACT_BROKER_DATABASE_HOST: postgres-pact
+      PACT_BROKER_DATABASE_NAME: pact_broker
+      PACT_BROKER_DATABASE_USERNAME: pact
+      PACT_BROKER_DATABASE_PASSWORD: pact
+    ports:
+      - "9292:9292"
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M

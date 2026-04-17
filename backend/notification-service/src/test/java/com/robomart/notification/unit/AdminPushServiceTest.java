@@ -2,6 +2,7 @@ package com.robomart.notification.unit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -10,12 +11,14 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+import io.micrometer.tracing.Tracer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import com.robomart.events.inventory.StockLowAlertEvent;
@@ -37,6 +40,9 @@ class AdminPushServiceTest {
     @Mock
     private ProductServiceClient productServiceClient;
 
+    @Mock
+    private Tracer tracer;
+
     @InjectMocks
     private AdminPushService adminPushService;
 
@@ -55,7 +61,7 @@ class AdminPushServiceTest {
 
         ArgumentCaptor<AdminPushService.OrderEventPayload> captor =
                 ArgumentCaptor.forClass(AdminPushService.OrderEventPayload.class);
-        verify(messagingTemplate).convertAndSend(eq("/topic/orders"), captor.capture());
+        verify(messagingTemplate).convertAndSend(eq("/topic/orders"), captor.capture(), any(MessageHeaders.class));
 
         AdminPushService.OrderEventPayload payload = captor.getValue();
         assertThat(payload.eventType()).isEqualTo("ORDER_STATUS_CHANGED");
@@ -77,7 +83,7 @@ class AdminPushServiceTest {
 
         ArgumentCaptor<AdminPushService.InventoryAlertPayload> captor =
                 ArgumentCaptor.forClass(AdminPushService.InventoryAlertPayload.class);
-        verify(messagingTemplate).convertAndSend(eq("/topic/inventory-alerts"), captor.capture());
+        verify(messagingTemplate).convertAndSend(eq("/topic/inventory-alerts"), captor.capture(), any(MessageHeaders.class));
 
         AdminPushService.InventoryAlertPayload payload = captor.getValue();
         assertThat(payload.eventType()).isEqualTo("INVENTORY_ALERT");

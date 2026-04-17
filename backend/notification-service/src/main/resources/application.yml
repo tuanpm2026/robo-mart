@@ -12,6 +12,13 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
     properties:
       schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8085}
+    consumer:
+      properties:
+        interceptor.classes: com.robomart.common.kafka.CorrelationIdKafkaConsumerInterceptor
+    template:
+      observation-enabled: true
+    listener:
+      observation-enabled: true
   security:
     oauth2:
       resourceserver:
@@ -23,6 +30,18 @@ spring:
 server:
   port: 8087
   shutdown: graceful
+
+management:
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLE_RATE:1.0}
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
 
 notification:
   order-service:

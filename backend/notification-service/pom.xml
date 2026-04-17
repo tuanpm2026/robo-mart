@@ -70,10 +70,10 @@
             <artifactId>kafka-avro-serializer</artifactId>
         </dependency>
 
-        <!-- Tracing -->
+        <!-- OpenTelemetry Tracing -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-micrometer-tracing-brave</artifactId>
+            <artifactId>spring-boot-starter-opentelemetry</artifactId>
         </dependency>
 
         <!-- Test -->

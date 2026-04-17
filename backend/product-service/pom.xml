@@ -95,6 +95,12 @@
             <artifactId>mapstruct</artifactId>
         </dependency>
 
+        <!-- OpenTelemetry Tracing -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-opentelemetry</artifactId>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

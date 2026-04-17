@@ -1,7 +1,13 @@
 package com.robomart.notification.service;
 
+import io.micrometer.tracing.Span;
+import io.micrometer.tracing.TraceContext;
+import io.micrometer.tracing.Tracer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessageType;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -24,13 +30,16 @@ public class AdminPushService {
     private final SimpMessagingTemplate messagingTemplate;
     private final OrderServiceClient orderServiceClient;
     private final ProductServiceClient productServiceClient;
+    private final Tracer tracer;
 
     public AdminPushService(SimpMessagingTemplate messagingTemplate,
                             OrderServiceClient orderServiceClient,
-                            ProductServiceClient productServiceClient) {
+                            ProductServiceClient productServiceClient,
+                            Tracer tracer) {
         this.messagingTemplate = messagingTemplate;
         this.orderServiceClient = orderServiceClient;
         this.productServiceClient = productServiceClient;
+        this.tracer = tracer;
     }
 
     public void pushOrderEvent(OrderStatusChangedEvent event) {
@@ -49,7 +58,7 @@ public class AdminPushService {
 
             OrderEventPayload payload = new OrderEventPayload(
                     "ORDER_STATUS_CHANGED", orderId, status, userId, total, timestamp);
-            messagingTemplate.convertAndSend(TOPIC_ORDERS, payload);
+            messagingTemplate.convertAndSend(TOPIC_ORDERS, payload, buildHeaders());
             log.debug("Pushed order event to {}: orderId={}, status={}", TOPIC_ORDERS, orderId, status);
         } catch (Exception e) {
             log.warn("Failed to push order event to WebSocket: {}", e.getMessage());
@@ -67,7 +76,7 @@ public class AdminPushService {
 
             InventoryAlertPayload payload = new InventoryAlertPayload(
                     "INVENTORY_ALERT", productId, productName, currentStock, threshold, timestamp);
-            messagingTemplate.convertAndSend(TOPIC_INVENTORY_ALERTS, payload);
+            messagingTemplate.convertAndSend(TOPIC_INVENTORY_ALERTS, payload, buildHeaders());
             log.debug("Pushed inventory alert to {}: productId={}, stock={}", TOPIC_INVENTORY_ALERTS, productId, currentStock);
         } catch (Exception e) {
             log.warn("Failed to push inventory alert to WebSocket: {}", e.getMessage());
@@ -76,11 +85,32 @@ public class AdminPushService {
 
     public void pushSystemHealth(SystemHealthResponse health) {
         try {
-            messagingTemplate.convertAndSend(TOPIC_SYSTEM_HEALTH, health);
+            messagingTemplate.convertAndSend(TOPIC_SYSTEM_HEALTH, health, buildHeaders());
             log.debug("Pushed system health update: {} services", health.services().size());
         } catch (Exception e) {
             log.warn("Failed to push system health to WebSocket: {}", e.getMessage());
         }
+    }
+
+    private MessageHeaders buildHeaders() {
+        SimpMessageHeaderAccessor accessor =
+            SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE);
+        String traceId = getTraceId();
+        if (traceId != null) {
+            accessor.setNativeHeader("x-trace-id", traceId);
+        }
+        return accessor.getMessageHeaders();
+    }
+
+    private String getTraceId() {
+        Span span = tracer.currentSpan();
+        if (span != null) {
+            TraceContext ctx = span.context();
+            if (ctx != null) {
+                return ctx.traceId();
+            }
+        }
+        return null;
     }
 
     public record OrderEventPayload(

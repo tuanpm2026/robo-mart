@@ -20,12 +20,31 @@ spring:
     bootstrap-servers: localhost:29092
     properties:
       schema.registry.url: http://localhost:8085
+    producer:
+      properties:
+        interceptor.classes: com.robomart.common.kafka.CorrelationIdKafkaProducerInterceptor
+    template:
+      observation-enabled: true
+    listener:
+      observation-enabled: true
   lifecycle:
     timeout-per-shutdown-phase: 25s
 
 server:
   port: 8081
   shutdown: graceful
+
+management:
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLE_RATE:1.0}
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
 
 robomart:
   product:

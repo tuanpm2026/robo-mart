@@ -1,5 +1,6 @@
 package com.robomart.payment.controller;
 
+import io.micrometer.tracing.Tracer;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,9 +18,11 @@ import com.robomart.payment.web.PaymentStatusResponse;
 public class PaymentAdminRestController {
 
     private final PaymentRepository paymentRepository;
+    private final Tracer tracer;
 
-    public PaymentAdminRestController(PaymentRepository paymentRepository) {
+    public PaymentAdminRestController(PaymentRepository paymentRepository, Tracer tracer) {
         this.paymentRepository = paymentRepository;
+        this.tracer = tracer;
     }
 
     @GetMapping("/order/{orderId}")
@@ -35,6 +38,17 @@ public class PaymentAdminRestController {
                 payment.getStatus().name(),
                 payment.getTransactionId(),
                 payment.getCreatedAt());
-        return ResponseEntity.ok(new ApiResponse<>(response, null));
+        return ResponseEntity.ok(new ApiResponse<>(response, getTraceId()));
+    }
+
+    private String getTraceId() {
+        io.micrometer.tracing.Span span = tracer.currentSpan();
+        if (span != null) {
+            io.micrometer.tracing.TraceContext ctx = span.context();
+            if (ctx != null) {
+                return ctx.traceId();
+            }
+        }
+        return null;
     }
 }
