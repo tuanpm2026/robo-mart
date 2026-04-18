@@ -48,7 +48,7 @@ public class RateLimitingFilter implements GlobalFilter, Ordered {
                     return limiter.isAllowed(routeId, key);
                 })
                 .flatMap(response -> {
-                    exchange.getResponse().getHeaders().addAll(response.getHeadersToAdd());
+                    response.getHeaders().forEach((k, v) -> exchange.getResponse().getHeaders().set(k, v));
                     if (response.isAllowed()) {
                         return chain.filter(exchange);
                     }

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: robomart
+spec:
+  selector:
+    app: notification-service
+  ports:
+  - port: 8087
+    targetPort: 8087
+    protocol: TCP
+    name: http
+  type: ClusterIP

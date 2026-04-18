@@ -35,7 +35,15 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-27
-last_updated: "2026-04-17"
+last_updated: "2026-04-18"
+# Story 9.2 in-progress (code review patches applied): 2026-04-18
+# Story 9.2 review: 2026-04-18
+# Story 9.2 in-progress: 2026-04-18
+# Story 9.1 done: 2026-04-18
+# Story 8.4 done: 2026-04-18
+# Story 8.2 done: 2026-04-18
+# Epic 8 done: 2026-04-18
+# Story 9.2 created: 2026-04-17
 # Story 9.1 in-progress (code review patches applied): 2026-04-17
 # Story 9.1 review: 2026-04-17
 # Story 9.1 created: 2026-04-17
@@ -173,17 +181,17 @@ development_status:
   epic-7-retrospective: optional
 
   # Epic 8: System Resilience & Graceful Degradation
-  epic-8: in-progress
+  epic-8: done
   8-1-implement-circuit-breaker-resilience-patterns: done
-  8-2-implement-graceful-degradation-3-tiers: in-progress
+  8-2-implement-graceful-degradation-3-tiers: done
   8-3-implement-rate-limiting-graceful-shutdown: done
-  8-4-implement-saga-phase-b-hardened-orchestration: in-progress
+  8-4-implement-saga-phase-b-hardened-orchestration: done
   epic-8-retrospective: optional
 
   # Epic 9: Observability & Operations
   epic-9: in-progress
-  9-1-implement-distributed-tracing-correlation-id-propagation: in-progress
-  9-2-implement-health-checks-centralized-configuration: backlog
+  9-1-implement-distributed-tracing-correlation-id-propagation: done
+  9-2-implement-health-checks-centralized-configuration: in-progress
   9-3-implement-service-discovery-reconciliation-audit-trail: backlog
   epic-9-retrospective: optional
 

@@ -62,12 +62,22 @@ management:
     web:
       exposure:
         include: health,info,gateway,metrics,prometheus
+  health:
+    probes:
+      enabled: true
   endpoint:
     health:
       show-details: when-authorized
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,redis
     gateway:
       enabled: true
   metrics:
     distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
       percentiles:
-        "[http.server.requests]": 0.95
+        "[http.server.requests]": 0.5,0.95,0.99

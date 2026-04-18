@@ -27,10 +27,10 @@ spring:
       port: 9093
     client:
       inventory-service:
-        address: 'static://localhost:9094'
+        address: '${GRPC_CLIENT_INVENTORY_SERVICE_ADDRESS:static://localhost:9094}'
         negotiation-type: plaintext
       payment-service:
-        address: 'static://localhost:9095'
+        address: '${GRPC_CLIENT_PAYMENT_SERVICE_ADDRESS:static://localhost:9095}'
         negotiation-type: plaintext
   lifecycle:
     timeout-per-shutdown-phase: 25s
@@ -65,6 +65,23 @@ management:
     web:
       exposure:
         include: health,info,metrics,prometheus
+  health:
+    probes:
+      enabled: true
+  endpoint:
+    health:
+      show-details: always
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,db,kafka
+  metrics:
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+      percentiles:
+        "[http.server.requests]": 0.5,0.95,0.99
 
 resilience4j:
   circuitbreaker:
