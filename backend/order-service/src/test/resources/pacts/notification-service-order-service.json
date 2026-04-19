@@ -1,0 +1,105 @@
+{
+  "consumer": {
+    "name": "notification-service"
+  },
+  "provider": {
+    "name": "order-service"
+  },
+  "interactions": [
+    {
+      "description": "a GET request for order 4 admin detail",
+      "providerStates": [
+        {
+          "name": "order 4 exists in CONFIRMED status"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/admin/orders/4"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "data": {
+            "id": 4,
+            "userId": "user-002",
+            "totalAmount": 79.99,
+            "status": "CONFIRMED"
+          },
+          "traceId": "pact-trace-001"
+        },
+        "matchingRules": {
+          "body": {
+            "$.data.id": {
+              "matchers": [{"match": "type"}],
+              "combine": "AND"
+            },
+            "$.data.userId": {
+              "matchers": [{"match": "type"}],
+              "combine": "AND"
+            },
+            "$.data.totalAmount": {
+              "matchers": [{"match": "type"}],
+              "combine": "AND"
+            },
+            "$.data.status": {
+              "matchers": [{"match": "type"}],
+              "combine": "AND"
+            },
+            "$.traceId": {
+              "matchers": [{"match": "type"}],
+              "combine": "AND"
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "a GET request for non-existent order 99999",
+      "providerStates": [
+        {
+          "name": "order 99999 does not exist"
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "path": "/api/v1/admin/orders/99999"
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "error": {
+            "code": "RESOURCE_NOT_FOUND"
+          },
+          "traceId": "pact-trace-404"
+        },
+        "matchingRules": {
+          "body": {
+            "$.error.code": {
+              "matchers": [{"match": "type"}],
+              "combine": "AND"
+            },
+            "$.traceId": {
+              "matchers": [{"match": "type"}],
+              "combine": "AND"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "metadata": {
+    "pactSpecification": {
+      "version": "3.0.0"
+    },
+    "pact-jvm": {
+      "version": "4.6.17"
+    }
+  }
+}

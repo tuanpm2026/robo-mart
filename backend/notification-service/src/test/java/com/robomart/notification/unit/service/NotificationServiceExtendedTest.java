@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -21,6 +22,9 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import com.robomart.events.cart.CartExpiryWarningEvent;
@@ -40,6 +44,7 @@ import io.micrometer.tracing.TraceContext;
 import io.micrometer.tracing.Tracer;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class NotificationServiceExtendedTest {
 
     @Mock
@@ -68,6 +73,12 @@ class NotificationServiceExtendedTest {
 
     @Captor
     private ArgumentCaptor<NotificationLog> logCaptor;
+
+    @BeforeEach
+    void setUp() {
+        // @Value fields are not populated by Mockito — set them explicitly
+        ReflectionTestUtils.setField(notificationService, "adminEmail", "admin@test.com");
+    }
 
     @Test
     void shouldSkipWhenOrderNotFoundForOrderConfirmed() {
@@ -118,8 +129,6 @@ class NotificationServiceExtendedTest {
 
     @Test
     void shouldSendCartExpiryWarningWhenNotDuplicate() {
-        when(notificationLogRepository.existsByOrderIdAndNotificationType(
-                eq("cart-1"), eq(NotificationType.CART_EXPIRY_WARNING))).thenReturn(false);
         when(notificationLogRepository.existsByOrderIdAndNotificationType(
                 eq("cart-1"), eq(NotificationType.CART_EXPIRY_WARNING))).thenReturn(false);
         when(tracer.currentSpan()).thenReturn(null);

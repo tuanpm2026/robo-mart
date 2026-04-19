@@ -92,6 +92,12 @@
             <artifactId>spring-kafka-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>au.com.dius.pact.consumer</groupId>
+            <artifactId>junit5</artifactId>
+            <version>4.6.17</version>
+            <scope>test</scope>
+        </dependency>
         <!-- WebSocket -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -123,6 +129,11 @@
                             <goal>integration-test</goal>
                             <goal>verify</goal>
                         </goals>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <pact.rootDir>${project.build.directory}/pacts</pact.rootDir>
+                            </systemPropertyVariables>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

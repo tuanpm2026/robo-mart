@@ -19,6 +19,18 @@
             <groupId>io.grpc</groupId>
             <artifactId>grpc-protobuf</artifactId>
         </dependency>
+        <!-- Test dependencies for ProtoSchemaValidationTest -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- gRPC transport required by ManagedChannelBuilder in tests -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty-shaded</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-stub</artifactId>
@@ -49,6 +61,31 @@
             </extension>
         </extensions>
         <plugins>
+            <!-- buf lint: validates proto backward compatibility.
+                 Run manually: cd backend/proto && buf lint
+                 Requires buf binary: https://buf.build/docs/installation
+                 Skipped by default (skipBufLint=true in parent pom).
+                 Enable in CI: mvn verify -DskipBufLint=false -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.4.1</version>
+                <executions>
+                    <execution>
+                        <id>buf-lint</id>
+                        <phase>verify</phase>
+                        <goals><goal>exec</goal></goals>
+                        <configuration>
+                            <executable>buf</executable>
+                            <arguments>
+                                <argument>lint</argument>
+                            </arguments>
+                            <workingDirectory>${project.basedir}</workingDirectory>
+                            <skip>${skipBufLint}</skip>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.xolstice.maven.plugins</groupId>
                 <artifactId>protobuf-maven-plugin</artifactId>

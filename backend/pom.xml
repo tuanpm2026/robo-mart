@@ -33,6 +33,8 @@
         <error-prone.version>2.41.0</error-prone.version>
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
         <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
+        <!-- buf lint is disabled by default; enable in CI with -DskipBufLint=false -->
+        <skipBufLint>true</skipBufLint>
     </properties>
 
     <repositories>
