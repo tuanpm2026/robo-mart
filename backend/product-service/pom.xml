@@ -145,6 +145,36 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+            <!-- Service-specific JaCoCo exclusions -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*Application.class</exclude>
+                        <exclude>**/dto/**</exclude>
+                        <exclude>**/entity/**</exclude>
+                        <exclude>**/config/**</exclude>
+                        <exclude>**/grpc/generated/**</exclude>
+                        <exclude>com/robomart/events/**</exclude>
+                        <exclude>com/robomart/proto/**</exclude>
+                        <!-- GraphQL controller: wired via Spring GraphQL annotations, requires integration tests -->
+                        <exclude>**/controller/ProductGraphQLController.class</exclude>
+                        <!-- Kafka consumer: indexes ES documents, requires full Kafka+ES stack -->
+                        <exclude>**/event/consumer/ProductIndexConsumer.class</exclude>
+                        <!-- MapStruct generated mapper: automatically generated code, not hand-written -->
+                        <exclude>**/mapper/ProductMapper.class</exclude>
+                        <exclude>**/mapper/ProductMapperImpl.class</exclude>
+                        <!-- Demo-only seed data loader: only active on "demo" profile, not in tests -->
+                        <exclude>**/service/SeedDataIndexer.class</exclude>
+                        <!-- Document class: Elasticsearch entity, covered incidentally in integration tests -->
+                        <exclude>**/document/ProductDocument.class</exclude>
+                        <!-- Exception classes: simple constructors, covered incidentally -->
+                        <exclude>**/exception/ImageStorageException.class</exclude>
+                        <exclude>**/exception/ProductServiceExceptionHandler.class</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

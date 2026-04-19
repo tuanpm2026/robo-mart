@@ -11,7 +11,8 @@ public class ElasticsearchContainerConfig {
     private static final ElasticsearchContainer ELASTICSEARCH =
             new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:9.1.2")
                     .withEnv("xpack.security.enabled", "false")
-                    .withEnv("discovery.type", "single-node");
+                    .withEnv("discovery.type", "single-node")
+                    .withReuse(true);
 
     static {
         ELASTICSEARCH.start();

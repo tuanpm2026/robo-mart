@@ -9,7 +9,8 @@ import org.testcontainers.kafka.ConfluentKafkaContainer;
 public class KafkaContainerConfig {
 
     private static final ConfluentKafkaContainer KAFKA =
-            new ConfluentKafkaContainer("confluentinc/cp-kafka:7.8.0");
+            new ConfluentKafkaContainer("confluentinc/cp-kafka:7.8.0")
+                    .withReuse(true);
 
     static {
         KAFKA.start();

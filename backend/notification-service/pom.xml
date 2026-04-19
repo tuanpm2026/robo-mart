@@ -126,6 +126,39 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Service-specific JaCoCo exclusions for infrastructure code that requires integration tests -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*Application.class</exclude>
+                        <exclude>**/dto/**</exclude>
+                        <exclude>**/entity/**</exclude>
+                        <exclude>**/config/**</exclude>
+                        <exclude>**/grpc/generated/**</exclude>
+                        <exclude>com/robomart/events/**</exclude>
+                        <exclude>com/robomart/proto/**</exclude>
+                        <!-- HTTP clients: RestClient created in constructor, require MockWebServer for testing -->
+                        <exclude>**/client/ProductServiceClient.class</exclude>
+                        <exclude>**/client/OrderServiceClient.class</exclude>
+                        <exclude>**/client/OrderServiceClient$*.class</exclude>
+                        <exclude>**/client/ProductApiResponse.class</exclude>
+                        <exclude>**/client/ProductInfoDto.class</exclude>
+                        <!-- Health infrastructure: makes HTTP calls to all services, tested via integration tests -->
+                        <exclude>**/service/HealthAggregatorService.class</exclude>
+                        <exclude>**/service/HealthAggregatorService$*.class</exclude>
+                        <exclude>**/service/HealthPushScheduler.class</exclude>
+                        <!-- Mock implementation: intentionally simplified stub -->
+                        <exclude>**/service/MockEmailService.class</exclude>
+                        <!-- Actuator response DTOs: used only by health admin endpoints -->
+                        <exclude>**/web/ActuatorMetricResponse.class</exclude>
+                        <exclude>**/web/ActuatorMetricResponse$*.class</exclude>
+                        <exclude>**/web/ActuatorHealthResponse.class</exclude>
+                        <exclude>**/web/DlqEventResponse.class</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

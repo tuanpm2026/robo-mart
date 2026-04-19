@@ -21,6 +21,18 @@ public final class TestData {
         return new ProductImageBuilder();
     }
 
+    public static OrderBuilder order() {
+        return new OrderBuilder();
+    }
+
+    public static CartItemBuilder cartItem() {
+        return new CartItemBuilder();
+    }
+
+    public static InventoryItemBuilder inventoryItem() {
+        return new InventoryItemBuilder();
+    }
+
     public static class CategoryBuilder {
         private String name = "Test Category";
         private String description = "Test category description";
@@ -115,5 +127,97 @@ public final class TestData {
         public String getImageUrl() { return imageUrl; }
         public String getAltText() { return altText; }
         public Integer getDisplayOrder() { return displayOrder; }
+    }
+
+    public static class OrderBuilder {
+        private String userId = "user-001";
+        private String status = "PENDING";
+        private BigDecimal totalAmount = BigDecimal.valueOf(99.99);
+        private List<OrderItemBuilder> items = new ArrayList<>();
+
+        public OrderBuilder withUserId(String userId) { this.userId = userId; return this; }
+        public OrderBuilder withStatus(String status) { this.status = status; return this; }
+        public OrderBuilder withTotalAmount(BigDecimal totalAmount) {
+            this.totalAmount = totalAmount;
+            return this;
+        }
+        public OrderBuilder withItem(OrderItemBuilder item) { this.items.add(item); return this; }
+
+        public String getUserId() { return userId; }
+        public String getStatus() { return status; }
+        public BigDecimal getTotalAmount() { return totalAmount; }
+        public List<OrderItemBuilder> getItems() { return items; }
+    }
+
+    public static class OrderItemBuilder {
+        private String productId = "prod-001";
+        private String sku = "TEST-001";
+        private int quantity = 1;
+        private BigDecimal unitPrice = BigDecimal.valueOf(29.99);
+
+        public OrderItemBuilder withProductId(String productId) {
+            this.productId = productId;
+            return this;
+        }
+        public OrderItemBuilder withSku(String sku) { this.sku = sku; return this; }
+        public OrderItemBuilder withQuantity(int quantity) { this.quantity = quantity; return this; }
+        public OrderItemBuilder withUnitPrice(BigDecimal unitPrice) {
+            this.unitPrice = unitPrice;
+            return this;
+        }
+
+        public String getProductId() { return productId; }
+        public String getSku() { return sku; }
+        public int getQuantity() { return quantity; }
+        public BigDecimal getUnitPrice() { return unitPrice; }
+    }
+
+    public static class CartItemBuilder {
+        private String productId = "prod-001";
+        private String sku = "TEST-001";
+        private String name = "Test Product";
+        private int quantity = 1;
+        private BigDecimal price = BigDecimal.valueOf(29.99);
+
+        public CartItemBuilder withProductId(String productId) {
+            this.productId = productId;
+            return this;
+        }
+        public CartItemBuilder withSku(String sku) { this.sku = sku; return this; }
+        public CartItemBuilder withName(String name) { this.name = name; return this; }
+        public CartItemBuilder withQuantity(int quantity) { this.quantity = quantity; return this; }
+        public CartItemBuilder withPrice(BigDecimal price) { this.price = price; return this; }
+
+        public String getProductId() { return productId; }
+        public String getSku() { return sku; }
+        public String getName() { return name; }
+        public int getQuantity() { return quantity; }
+        public BigDecimal getPrice() { return price; }
+    }
+
+    public static class InventoryItemBuilder {
+        private String productId = "prod-001";
+        private String sku = "TEST-001";
+        private int quantity = 100;
+        private int reservedQuantity = 0;
+
+        public InventoryItemBuilder withProductId(String productId) {
+            this.productId = productId;
+            return this;
+        }
+        public InventoryItemBuilder withSku(String sku) { this.sku = sku; return this; }
+        public InventoryItemBuilder withQuantity(int quantity) {
+            this.quantity = quantity;
+            return this;
+        }
+        public InventoryItemBuilder withReservedQuantity(int reservedQuantity) {
+            this.reservedQuantity = reservedQuantity;
+            return this;
+        }
+
+        public String getProductId() { return productId; }
+        public String getSku() { return sku; }
+        public int getQuantity() { return quantity; }
+        public int getReservedQuantity() { return reservedQuantity; }
     }
 }

@@ -12,7 +12,8 @@ public class PostgresContainerConfig {
             new PostgreSQLContainer<>("postgres:17-alpine")
                     .withDatabaseName("product_db_test")
                     .withUsername("test")
-                    .withPassword("test");
+                    .withPassword("test")
+                    .withReuse(true);
 
     static {
         POSTGRES.start();

@@ -142,4 +142,36 @@ class DistributedLockServiceTest {
         assertThat(value2).isNotNull();
         assertThat(value1).isNotEqualTo(value2);
     }
+
+    @Test
+    @DisplayName("acquireLock - should return false when Redis throws exception")
+    void shouldReturnFalseWhenAcquireLockThrowsException() {
+        when(stringRedisTemplate.opsForValue()).thenThrow(new RuntimeException("Redis unavailable"));
+
+        boolean result = distributedLockService.acquireLock(LOCK_KEY, LOCK_VALUE, LOCK_TTL);
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("releaseLock - should return false when Redis execute throws exception")
+    @SuppressWarnings("unchecked")
+    void shouldReturnFalseWhenReleaseLockThrowsException() {
+        when(stringRedisTemplate.execute(any(RedisScript.class), any(), anyString()))
+                .thenThrow(new RuntimeException("Redis unavailable"));
+
+        boolean result = distributedLockService.releaseLock(LOCK_KEY, LOCK_VALUE);
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("isLockHeld - should return false when Redis throws exception")
+    void shouldReturnFalseWhenIsLockHeldThrowsException() {
+        when(stringRedisTemplate.opsForValue()).thenThrow(new RuntimeException("Redis unavailable"));
+
+        boolean result = distributedLockService.isLockHeld(LOCK_KEY, LOCK_VALUE);
+
+        assertThat(result).isFalse();
+    }
 }

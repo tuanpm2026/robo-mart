@@ -147,6 +147,27 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+            <!-- Service-specific JaCoCo exclusions for infrastructure-heavy controllers -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*Application.class</exclude>
+                        <exclude>**/dto/**</exclude>
+                        <exclude>**/entity/**</exclude>
+                        <exclude>**/config/**</exclude>
+                        <exclude>**/grpc/generated/**</exclude>
+                        <exclude>com/robomart/events/**</exclude>
+                        <exclude>com/robomart/proto/**</exclude>
+                        <!-- Admin REST controllers: ADMIN-role glue using many repos, tested via integration tests -->
+                        <exclude>**/controller/OrderAdminRestController.class</exclude>
+                        <exclude>**/controller/ReportAdminRestController.class</exclude>
+                        <!-- Outbox poller: uses KafkaTemplate.send().get() blocking call, tested via integration tests -->
+                        <exclude>**/service/OutboxPollingService.class</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
