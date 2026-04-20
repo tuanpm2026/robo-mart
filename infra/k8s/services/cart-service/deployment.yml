@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: cart-service
-        image: ghcr.io/robomart/cart-service:latest
+        image: ghcr.io/tuanpm/robomart/cart-service:latest
         ports:
         - containerPort: 8082
           name: http

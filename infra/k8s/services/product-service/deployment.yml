@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: product-service
-        image: ghcr.io/robomart/product-service:latest
+        image: ghcr.io/tuanpm/robomart/product-service:latest
         ports:
         - containerPort: 8081
           name: http

@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: payment-service
-        image: ghcr.io/robomart/payment-service:latest
+        image: ghcr.io/tuanpm/robomart/payment-service:latest
         ports:
         - containerPort: 8086
           name: http

@@ -5,18 +5,18 @@ metadata:
   namespace: robomart
 data:
   # Kafka
-  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka:29092"
-  KAFKA_BOOTSTRAP_SERVERS: "kafka:29092"
-  SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: "http://schema-registry:8085"
-  SCHEMA_REGISTRY_URL: "http://schema-registry:8085"
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka.robomart.svc.cluster.local:9092"
+  KAFKA_BOOTSTRAP_SERVERS: "kafka.robomart.svc.cluster.local:9092"
+  SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: "http://schema-registry.robomart.svc.cluster.local:8081"
+  SCHEMA_REGISTRY_URL: "http://schema-registry.robomart.svc.cluster.local:8081"
   # Redis
-  SPRING_DATA_REDIS_HOST: "redis"
+  SPRING_DATA_REDIS_HOST: "redis-master.robomart.svc.cluster.local"
   SPRING_DATA_REDIS_PORT: "6379"
   # Elasticsearch
-  SPRING_ELASTICSEARCH_URIS: "http://elasticsearch:9200"
+  SPRING_ELASTICSEARCH_URIS: "http://elasticsearch.robomart.svc.cluster.local:9200"
   # Keycloak / JWT
-  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://keycloak:8180/realms/robomart"
-  KEYCLOAK_JWK_SET_URI: "http://keycloak:8180/realms/robomart/protocol/openid-connect/certs"
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://keycloak.robomart.svc.cluster.local/realms/robomart"
+  KEYCLOAK_JWK_SET_URI: "http://keycloak.robomart.svc.cluster.local/realms/robomart/protocol/openid-connect/certs"
   # Tracing
   MANAGEMENT_OTLP_TRACING_ENDPOINT: "http://tempo:4318/v1/traces"
   TRACING_SAMPLE_RATE: "0.1"

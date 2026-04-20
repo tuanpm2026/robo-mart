@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: api-gateway
-        image: ghcr.io/robomart/api-gateway:latest
+        image: ghcr.io/tuanpm/robomart/api-gateway:latest
         ports:
         - containerPort: 8080
           name: http
