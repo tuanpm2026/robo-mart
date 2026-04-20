@@ -7,6 +7,9 @@ resources:
 # Image tags are updated automatically by CD workflow after each successful build.
 # Do not edit the newTag values manually — they are managed by:
 #   kustomize edit set image ghcr.io/tuanpm2026/robomart/<service>:<tag>
+patches:
+  - path: patches/single-node-replicas.yaml
+
 images:
   - name: ghcr.io/robomart/api-gateway
     newName: ghcr.io/tuanpm2026/robomart/api-gateway

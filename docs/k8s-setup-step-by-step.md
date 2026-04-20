@@ -1,56 +1,49 @@
-# K8s Setup — Production (kubeadm)
+# K8s Setup — Single Node Production (kubeadm)
 
-Hướng dẫn này setup cluster K8s production-grade bằng kubeadm trên bare-metal hoặc cloud VMs.
-Tất cả version được chọn là stable mới nhất tại thời điểm viết (2026-04).
+1 máy chủ duy nhất đóng vai trò vừa control plane vừa worker.
+Phù hợp cho staging / demo / small production.
 
 ---
 
-## Phần 1 — Chuẩn bị máy chủ
+## Yêu cầu phần cứng tối thiểu
 
-### Yêu cầu phần cứng tối thiểu
+| | Tối thiểu | Khuyến nghị |
+|---|---|---|
+| CPU | 8 vCPU | 16 vCPU |
+| RAM | 16 GB | 32 GB |
+| Disk | 100 GB SSD | 200 GB SSD |
+| OS | Ubuntu 24.04 LTS | Ubuntu 24.04 LTS |
 
-| Node | Vai trò | CPU | RAM | Disk |
-|---|---|---|---|---|
-| `ctrl-01` | Control plane | 4 vCPU | 8 GB | 50 GB SSD |
-| `worker-01` | Worker | 8 vCPU | 16 GB | 100 GB SSD |
-| `worker-02` | Worker | 8 vCPU | 16 GB | 100 GB SSD |
-| `worker-03` | Worker | 8 vCPU | 16 GB | 100 GB SSD |
+> Stack này chạy: 7 app services + PostgreSQL×5 + Kafka×1 + Redis + Elasticsearch + Keycloak + ArgoCD.
+> Ước tính RAM cần: ~14 GB khi full load. 16 GB là minimum, 32 GB thoải mái hơn.
 
-> 3 worker nodes để HPA có chỗ scale, Elasticsearch và Kafka có chỗ phân tán.
-> OS: **Ubuntu 24.04 LTS** trên tất cả nodes.
+---
 
-### Versions sử dụng
+## Versions
 
 | Component | Version |
 |---|---|
 | Kubernetes | 1.33 |
 | containerd | 2.1 |
-| runc | 1.2 |
-| CNI plugin (Cilium) | 1.17 |
+| Cilium CNI | 1.17 |
 | Helm | 3.17 |
 | ArgoCD | 2.14 |
-| PostgreSQL (Bitnami) | 17.x |
-| Kafka (Bitnami) | 3.9 |
-| Elasticsearch (Bitnami) | 8.x |
-| Redis (Bitnami) | 7.x |
-| Keycloak (Bitnami) | 26.x |
+| PostgreSQL | 17 |
+| Kafka | 3.9 (KRaft) |
+| Elasticsearch | 8.17 |
+| Redis | 7.4 |
+| Keycloak | 26.1.4 |
 
 ---
 
-## Phần 2 — Setup tất cả nodes (chạy trên MỌI node)
-
-SSH vào từng node và chạy toàn bộ block này.
-
-### 2.1 — Tắt swap (K8s bắt buộc)
+## Phần 1 — Chuẩn bị hệ thống
 
 ```bash
+# Tắt swap — K8s bắt buộc
 swapoff -a
 sed -i '/swap/d' /etc/fstab
-```
 
-### 2.2 — Kernel modules và sysctl
-
-```bash
+# Kernel modules
 cat <<EOF | tee /etc/modules-load.d/k8s.conf
 overlay
 br_netfilter
@@ -68,13 +61,13 @@ EOF
 sysctl --system
 ```
 
-### 2.3 — Cài containerd 2.1
+---
+
+## Phần 2 — Cài containerd
 
 ```bash
-# Cài dependencies
 apt-get update && apt-get install -y apt-transport-https ca-certificates curl gpg
 
-# Docker GPG key (containerd nằm trong Docker repo)
 install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
   -o /etc/apt/keyrings/docker.asc
@@ -89,20 +82,19 @@ echo \
 apt-get update
 apt-get install -y containerd.io
 
-# Config containerd với SystemdCgroup (bắt buộc cho K8s)
+# SystemdCgroup = true — bắt buộc cho K8s
 mkdir -p /etc/containerd
 containerd config default | tee /etc/containerd/config.toml
 sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
 
 systemctl restart containerd
 systemctl enable containerd
-
-# Verify
 containerd --version
-# containerd containerd.io 2.1.x
 ```
 
-### 2.4 — Cài kubeadm, kubelet, kubectl 1.33
+---
+
+## Phần 3 — Cài kubeadm, kubelet, kubectl
 
 ```bash
 curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key \
@@ -114,123 +106,90 @@ echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] \
 
 apt-get update
 apt-get install -y kubelet kubeadm kubectl
-apt-mark hold kubelet kubeadm kubectl   # ngăn auto-upgrade
+apt-mark hold kubelet kubeadm kubectl
 
 systemctl enable kubelet
-
-# Verify
 kubeadm version
-kubectl version --client
 ```
 
 ---
 
-## Phần 3 — Khởi tạo Control Plane (chỉ chạy trên ctrl-01)
+## Phần 4 — Khởi tạo cluster
 
 ```bash
-# Pod CIDR dùng cho Cilium (không overlap với node/service network)
+# Lấy IP của máy
+SERVER_IP=$(hostname -I | awk '{print $1}')
+echo "Server IP: $SERVER_IP"
+
 kubeadm init \
   --kubernetes-version=v1.33.0 \
   --pod-network-cidr=10.244.0.0/16 \
   --service-cidr=10.96.0.0/12 \
-  --control-plane-endpoint=$(hostname -I | awk '{print $1}') \
-  --upload-certs
+  --control-plane-endpoint=$SERVER_IP
 
-# Lưu lại output — có join command cho worker nodes
-```
-
-Setup kubectl cho user hiện tại:
-```bash
+# Setup kubectl
 mkdir -p $HOME/.kube
 cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 chown $(id -u):$(id -g) $HOME/.kube/config
 ```
 
-Verify control plane:
+### Untaint control plane — cho phép pod chạy trên node này
+
+Mặc định K8s không schedule workload lên control plane node.
+Single-node cần bỏ taint này:
+
 ```bash
-kubectl get nodes
-# ctrl-01   NotReady   control-plane   ...
-# NotReady là đúng — chưa có CNI
+kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+# node/<hostname> untainted
+
+# Verify node sẵn sàng nhận workload
+kubectl describe node $(hostname) | grep Taint
+# Taints: <none>
 ```
 
 ---
 
-## Phần 4 — Cài Cilium CNI (trên ctrl-01)
-
-Cilium thay thế Flannel/Calico — eBPF-based, hiệu năng cao hơn, có network policy và observability tốt hơn.
+## Phần 5 — Cài Cilium CNI
 
 ```bash
-# Cài Helm trước
+# Helm
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-helm version
-# version.BuildInfo{Version:"v3.17.x"}
 
-# Cài Cilium CLI
+# Cilium CLI
 CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
-curl -L --fail --remote-name-all \
+curl -L --remote-name \
   https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-amd64.tar.gz
-tar xzvf cilium-linux-amd64.tar.gz
-mv cilium /usr/local/bin/
+tar xzvf cilium-linux-amd64.tar.gz && mv cilium /usr/local/bin/
 
-# Deploy Cilium 1.17
+# Deploy Cilium
 helm repo add cilium https://helm.cilium.io/
 helm install cilium cilium/cilium \
   --version 1.17.0 \
   --namespace kube-system \
   --set kubeProxyReplacement=true \
-  --set k8sServiceHost=$(hostname -I | awk '{print $1}') \
-  --set k8sServicePort=6443 \
-  --set hubble.relay.enabled=true \
-  --set hubble.ui.enabled=true
+  --set k8sServiceHost=$SERVER_IP \
+  --set k8sServicePort=6443
 
-# Chờ Cilium ready (~2 phút)
+# Chờ ready (~2 phút)
 cilium status --wait
 
-# Nodes phải chuyển sang Ready
 kubectl get nodes
-# ctrl-01   Ready   control-plane   ...
+# NAME       STATUS   ROLES           VERSION
+# <host>     Ready    control-plane   v1.33.0
 ```
 
 ---
 
-## Phần 5 — Join Worker Nodes (chạy trên worker-01, worker-02, worker-03)
-
-Copy lệnh `kubeadm join` từ output của `kubeadm init` ở Phần 3, dạng:
-
-```bash
-kubeadm join <ctrl-01-ip>:6443 \
-  --token <token> \
-  --discovery-token-ca-cert-hash sha256:<hash>
-```
-
-Nếu token hết hạn (24h), tạo lại trên ctrl-01:
-```bash
-kubeadm token create --print-join-command
-```
-
-Verify trên ctrl-01:
-```bash
-kubectl get nodes -o wide
-# NAME        STATUS   ROLES           AGE   VERSION
-# ctrl-01     Ready    control-plane   10m   v1.33.0
-# worker-01   Ready    <none>          2m    v1.33.0
-# worker-02   Ready    <none>          2m    v1.33.0
-# worker-03   Ready    <none>          2m    v1.33.0
-```
-
----
-
-## Phần 6 — Metrics Server (bắt buộc cho HPA)
+## Phần 6 — Metrics Server
 
 ```bash
 helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/
 helm install metrics-server metrics-server/metrics-server \
   --namespace kube-system \
-  --set args[0]="--kubelet-insecure-tls"  # cần nếu node dùng self-signed cert
+  --set args[0]="--kubelet-insecure-tls"
 
-# Verify
+# Verify (chờ ~30s)
 kubectl top nodes
-kubectl top pods -A
 ```
 
 ---
@@ -238,105 +197,61 @@ kubectl top pods -A
 ## Phần 7 — Namespace & Helm repos
 
 ```bash
-# Tạo namespace
 kubectl apply -f infra/k8s/base/namespace.yml
 
-# Thêm repos
 helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo update
-
-# Verify
-helm repo list
 ```
 
 ---
 
 ## Phần 8 — Infrastructure Services
 
-Deploy theo đúng thứ tự. Chờ từng nhóm ready trước khi chuyển nhóm tiếp theo.
+Single node nên giảm replicas xuống 1, resource requests thấp hơn để tiết kiệm RAM.
 
 ### 8.1 — PostgreSQL 17 (5 instances)
 
 ```bash
-# product_db — user: robomart
-helm install product-postgres bitnami/postgresql \
-  --namespace robomart \
-  --version 16.x \
-  --set image.tag=17 \
-  --set auth.database=product_db \
-  --set auth.username=robomart \
-  --set auth.password=<STRONG_PASSWORD> \
-  --set primary.persistence.size=20Gi \
-  --set primary.persistence.storageClass=standard \
-  --set primary.resources.requests.memory=256Mi \
-  --set primary.resources.requests.cpu=250m \
-  --set primary.resources.limits.memory=512Mi \
-  --set primary.resources.limits.cpu=500m
+for DB_CONFIG in \
+  "product-postgres:product_db:robomart" \
+  "order-postgres:order_db:robomart" \
+  "inventory-postgres:inventory_db:robomart" \
+  "payment-postgres:payment_db:robomart"; do
 
-# order_db — user: robomart
-helm install order-postgres bitnami/postgresql \
-  --namespace robomart \
-  --version 16.x \
-  --set image.tag=17 \
-  --set auth.database=order_db \
-  --set auth.username=robomart \
-  --set auth.password=<STRONG_PASSWORD> \
-  --set primary.persistence.size=20Gi \
-  --set primary.resources.requests.memory=256Mi \
-  --set primary.resources.requests.cpu=250m \
-  --set primary.resources.limits.memory=512Mi \
-  --set primary.resources.limits.cpu=500m
+  RELEASE=$(echo $DB_CONFIG | cut -d: -f1)
+  DATABASE=$(echo $DB_CONFIG | cut -d: -f2)
+  USERNAME=$(echo $DB_CONFIG | cut -d: -f3)
 
-# inventory_db — user: robomart
-helm install inventory-postgres bitnami/postgresql \
-  --namespace robomart \
-  --version 16.x \
-  --set image.tag=17 \
-  --set auth.database=inventory_db \
-  --set auth.username=robomart \
-  --set auth.password=<STRONG_PASSWORD> \
-  --set primary.persistence.size=20Gi \
-  --set primary.resources.requests.memory=256Mi \
-  --set primary.resources.requests.cpu=250m \
-  --set primary.resources.limits.memory=512Mi \
-  --set primary.resources.limits.cpu=500m
+  helm install $RELEASE bitnami/postgresql \
+    --namespace robomart \
+    --set image.tag=17 \
+    --set auth.database=$DATABASE \
+    --set auth.username=$USERNAME \
+    --set auth.password=<STRONG_PASSWORD> \
+    --set primary.persistence.size=10Gi \
+    --set primary.resources.requests.memory=128Mi \
+    --set primary.resources.requests.cpu=100m \
+    --set primary.resources.limits.memory=256Mi \
+    --set primary.resources.limits.cpu=300m
+done
 
-# payment_db — user: robomart
-helm install payment-postgres bitnami/postgresql \
-  --namespace robomart \
-  --version 16.x \
-  --set image.tag=17 \
-  --set auth.database=payment_db \
-  --set auth.username=robomart \
-  --set auth.password=<STRONG_PASSWORD> \
-  --set primary.persistence.size=20Gi \
-  --set primary.resources.requests.memory=256Mi \
-  --set primary.resources.requests.cpu=250m \
-  --set primary.resources.limits.memory=512Mi \
-  --set primary.resources.limits.cpu=500m
-
-# notification_db — user: postgres (khác các service còn lại!)
+# notification_db — username khác: postgres
 helm install notification-postgres bitnami/postgresql \
   --namespace robomart \
-  --version 16.x \
   --set image.tag=17 \
   --set auth.database=notification_db \
   --set auth.username=postgres \
   --set auth.password=<STRONG_PASSWORD> \
-  --set primary.persistence.size=10Gi \
-  --set primary.resources.requests.memory=256Mi \
-  --set primary.resources.requests.cpu=250m \
-  --set primary.resources.limits.memory=512Mi \
-  --set primary.resources.limits.cpu=500m
-```
+  --set primary.persistence.size=5Gi \
+  --set primary.resources.requests.memory=128Mi \
+  --set primary.resources.requests.cpu=100m \
+  --set primary.resources.limits.memory=256Mi \
+  --set primary.resources.limits.cpu=300m
 
-Chờ tất cả PostgreSQL ready:
-```bash
+# Chờ tất cả PostgreSQL ready
 kubectl wait pod \
   -l app.kubernetes.io/name=postgresql \
-  --for=condition=Ready \
-  --timeout=300s \
-  -n robomart
+  --for=condition=Ready --timeout=300s -n robomart
 ```
 
 ### 8.2 — Redis 7
@@ -346,46 +261,45 @@ helm install redis bitnami/redis \
   --namespace robomart \
   --set image.tag=7.4 \
   --set auth.enabled=false \
-  --set replica.replicaCount=1 \
-  --set master.persistence.size=8Gi \
-  --set master.resources.requests.memory=256Mi \
-  --set master.resources.requests.cpu=250m \
-  --set master.resources.limits.memory=512Mi \
-  --set master.resources.limits.cpu=500m
+  --set replica.replicaCount=0 \
+  --set master.persistence.size=5Gi \
+  --set master.resources.requests.memory=128Mi \
+  --set master.resources.requests.cpu=100m \
+  --set master.resources.limits.memory=256Mi \
+  --set master.resources.limits.cpu=300m
 ```
 
-### 8.3 — Kafka 3.9 (KRaft — không cần Zookeeper)
+> `replica.replicaCount=0` — single node không cần replica Redis.
+
+### 8.3 — Kafka 3.9 (KRaft, single broker)
 
 ```bash
 helm install kafka bitnami/kafka \
   --namespace robomart \
   --set image.tag=3.9 \
   --set kraft.enabled=true \
-  --set replicaCount=3 \
-  --set controller.replicaCount=3 \
+  --set replicaCount=1 \
+  --set controller.replicaCount=1 \
   --set listeners.client.protocol=PLAINTEXT \
   --set listeners.interbroker.protocol=PLAINTEXT \
-  --set persistence.size=20Gi \
-  --set resources.requests.memory=1Gi \
-  --set resources.requests.cpu=500m \
-  --set resources.limits.memory=2Gi \
-  --set resources.limits.cpu=1000m
+  --set persistence.size=10Gi \
+  --set resources.requests.memory=512Mi \
+  --set resources.requests.cpu=250m \
+  --set resources.limits.memory=1Gi \
+  --set resources.limits.cpu=500m
 ```
 
 ### 8.4 — Schema Registry
 
 ```bash
-# Lấy tên service Kafka thật
-kubectl get svc -n robomart | grep kafka
-
 helm install schema-registry bitnami/schema-registry \
   --namespace robomart \
   --set kafka.enabled=false \
   --set externalKafka.brokers=kafka.robomart.svc.cluster.local:9092 \
-  --set resources.requests.memory=256Mi \
-  --set resources.requests.cpu=250m \
-  --set resources.limits.memory=512Mi \
-  --set resources.limits.cpu=500m
+  --set resources.requests.memory=128Mi \
+  --set resources.requests.cpu=100m \
+  --set resources.limits.memory=256Mi \
+  --set resources.limits.cpu=300m
 ```
 
 ### 8.5 — Elasticsearch 8
@@ -395,74 +309,82 @@ helm install elasticsearch bitnami/elasticsearch \
   --namespace robomart \
   --set image.tag=8.17.0 \
   --set master.replicaCount=1 \
-  --set data.replicaCount=2 \
-  --set coordinating.replicaCount=1 \
+  --set data.replicaCount=1 \
+  --set coordinating.replicaCount=0 \
+  --set ingest.enabled=false \
   --set security.enabled=false \
   --set master.persistence.size=10Gi \
-  --set data.persistence.size=30Gi \
+  --set data.persistence.size=20Gi \
   --set data.resources.requests.memory=1Gi \
   --set data.resources.requests.cpu=500m \
   --set data.resources.limits.memory=2Gi \
-  --set data.resources.limits.cpu=1000m
+  --set data.resources.limits.cpu=1000m \
+  --set master.resources.requests.memory=512Mi \
+  --set master.resources.requests.cpu=250m \
+  --set master.resources.limits.memory=1Gi \
+  --set master.resources.limits.cpu=500m
 ```
 
 ### 8.6 — Keycloak 26
 
 ```bash
-# DB riêng cho Keycloak
+# Keycloak DB
 helm install keycloak-db bitnami/postgresql \
   --namespace robomart \
   --set image.tag=17 \
   --set auth.database=keycloak \
   --set auth.username=keycloak \
   --set auth.password=<STRONG_PASSWORD> \
-  --set primary.persistence.size=10Gi
+  --set primary.persistence.size=5Gi \
+  --set primary.resources.requests.memory=128Mi \
+  --set primary.resources.requests.cpu=100m \
+  --set primary.resources.limits.memory=256Mi \
+  --set primary.resources.limits.cpu=300m
 
-# Chờ DB ready
 kubectl wait pod -l app.kubernetes.io/instance=keycloak-db \
   --for=condition=Ready --timeout=120s -n robomart
 
-# Keycloak 26.x
+# Keycloak — single replica
 helm install keycloak bitnami/keycloak \
   --namespace robomart \
   --set image.tag=26.1.4 \
   --set auth.adminUser=admin \
   --set auth.adminPassword=<STRONG_PASSWORD> \
+  --set replicaCount=1 \
   --set postgresql.enabled=false \
   --set externalDatabase.host=keycloak-db-postgresql.robomart.svc.cluster.local \
   --set externalDatabase.database=keycloak \
   --set externalDatabase.user=keycloak \
   --set externalDatabase.password=<STRONG_PASSWORD> \
-  --set replicaCount=2 \
   --set resources.requests.memory=512Mi \
-  --set resources.requests.cpu=500m \
+  --set resources.requests.cpu=250m \
   --set resources.limits.memory=1Gi \
-  --set resources.limits.cpu=1000m
+  --set resources.limits.cpu=500m
 ```
 
-Import realm robomart vào Keycloak:
+Import realm:
 ```bash
-# Port-forward tạm để import
 kubectl port-forward svc/keycloak -n robomart 8180:80 &
 
-# Dùng Keycloak Admin CLI
-curl -s http://localhost:8180/realms/master/protocol/openid-connect/token \
+# Lấy token
+TOKEN=$(curl -s http://localhost:8180/realms/master/protocol/openid-connect/token \
   -d "client_id=admin-cli&grant_type=password&username=admin&password=<STRONG_PASSWORD>" \
-  | jq -r .access_token > /tmp/kc-token.txt
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
+# Import realm
 curl -X POST http://localhost:8180/admin/realms \
-  -H "Authorization: Bearer $(cat /tmp/kc-token.txt)" \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d @infra/docker/keycloak/robomart-realm.json
 
-rm /tmp/kc-token.txt
-kill %1   # dừng port-forward
+echo "Realm imported"
+kill %1
 ```
 
 Verify toàn bộ infra:
 ```bash
 kubectl get pods -n robomart
-# Tất cả STATUS = Running
+# Tất cả Running — mất khoảng 5-10 phút từ đầu đến đây
 ```
 
 ---
@@ -475,37 +397,19 @@ kubectl get pods -n robomart
 kubectl get svc -n robomart
 ```
 
-Output mẫu:
-```
-NAME                              TYPE        CLUSTER-IP    PORT(S)
-elasticsearch                     ClusterIP   10.96.x.x     9200/TCP
-kafka                             ClusterIP   10.96.x.x     9092/TCP
-keycloak                          ClusterIP   10.96.x.x     80/TCP
-keycloak-db-postgresql            ClusterIP   10.96.x.x     5432/TCP
-notification-postgres-postgresql  ClusterIP   10.96.x.x     5432/TCP
-order-postgres-postgresql         ClusterIP   10.96.x.x     5432/TCP
-...
-redis-master                      ClusterIP   10.96.x.x     6379/TCP
-schema-registry                   ClusterIP   10.96.x.x     8081/TCP
-```
-
 ### 9.2 — Cập nhật configmap.yml
 
-Sửa [infra/k8s/base/configmap.yml](../infra/k8s/base/configmap.yml) với địa chỉ thật từ bước trên:
+Sửa [infra/k8s/base/configmap.yml](../infra/k8s/base/configmap.yml):
 
 ```yaml
 data:
-  SPRING_KAFKA_BOOTSTRAP_SERVERS: "kafka.robomart.svc.cluster.local:9092"
-  KAFKA_BOOTSTRAP_SERVERS:        "kafka.robomart.svc.cluster.local:9092"
-
+  SPRING_KAFKA_BOOTSTRAP_SERVERS:              "kafka.robomart.svc.cluster.local:9092"
+  KAFKA_BOOTSTRAP_SERVERS:                     "kafka.robomart.svc.cluster.local:9092"
   SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: "http://schema-registry.robomart.svc.cluster.local:8081"
   SCHEMA_REGISTRY_URL:                         "http://schema-registry.robomart.svc.cluster.local:8081"
-
-  SPRING_DATA_REDIS_HOST: "redis-master.robomart.svc.cluster.local"
-  SPRING_DATA_REDIS_PORT: "6379"
-
-  SPRING_ELASTICSEARCH_URIS: "http://elasticsearch.robomart.svc.cluster.local:9200"
-
+  SPRING_DATA_REDIS_HOST:                      "redis-master.robomart.svc.cluster.local"
+  SPRING_DATA_REDIS_PORT:                      "6379"
+  SPRING_ELASTICSEARCH_URIS:                   "http://elasticsearch.robomart.svc.cluster.local:9200"
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://keycloak.robomart.svc.cluster.local/realms/robomart"
   KEYCLOAK_JWK_SET_URI: "http://keycloak.robomart.svc.cluster.local/realms/robomart/protocol/openid-connect/certs"
 ```
@@ -520,216 +424,274 @@ kubectl apply -f infra/k8s/base/configmap.yml
 cp infra/k8s/base/secrets-template.yml /tmp/robomart-secrets.yml
 ```
 
-Mở file, sửa từng giá trị:
+Sửa URLs và passwords trong file:
 
-| Field | Giá trị |
+| Secret | `SPRING_DATASOURCE_URL` |
 |---|---|
-| `SPRING_DATASOURCE_URL` (product) | `jdbc:postgresql://product-postgres-postgresql.robomart.svc.cluster.local:5432/product_db` |
-| `SPRING_DATASOURCE_URL` (order) | `jdbc:postgresql://order-postgres-postgresql.robomart.svc.cluster.local:5432/order_db` |
-| `SPRING_DATASOURCE_URL` (inventory) | `jdbc:postgresql://inventory-postgres-postgresql.robomart.svc.cluster.local:5432/inventory_db` |
-| `SPRING_DATASOURCE_URL` (payment) | `jdbc:postgresql://payment-postgres-postgresql.robomart.svc.cluster.local:5432/payment_db` |
-| `SPRING_DATASOURCE_URL` (notification) | `jdbc:postgresql://notification-postgres-postgresql.robomart.svc.cluster.local:5432/notification_db` |
-| Tất cả `REPLACE_ME` | Password đã đặt ở Phần 8 |
+| product-db-secret | `jdbc:postgresql://product-postgres-postgresql.robomart.svc.cluster.local:5432/product_db` |
+| order-db-secret | `jdbc:postgresql://order-postgres-postgresql.robomart.svc.cluster.local:5432/order_db` |
+| inventory-db-secret | `jdbc:postgresql://inventory-postgres-postgresql.robomart.svc.cluster.local:5432/inventory_db` |
+| payment-db-secret | `jdbc:postgresql://payment-postgres-postgresql.robomart.svc.cluster.local:5432/payment_db` |
+| notification-db-secret | `jdbc:postgresql://notification-postgres-postgresql.robomart.svc.cluster.local:5432/notification_db` |
 
 ```bash
 kubectl apply -f /tmp/robomart-secrets.yml -n robomart
-rm /tmp/robomart-secrets.yml   # xóa ngay, không để lại
-
-kubectl get secrets -n robomart
+rm /tmp/robomart-secrets.yml
 ```
 
 ---
 
-## Phần 10 — ArgoCD 2.14
+## Phần 10 — Giảm replicas app services xuống 1
 
-### 10.1 — Cài ArgoCD
+Deployment files mặc định `replicas: 2`. Single node với RAM hạn chế nên chạy 1 replica mỗi service.
+Thêm patch vào Kustomize overlay:
+
+```bash
+cat <<EOF > infra/k8s/overlays/production/patches/replicas.yaml
+- op: replace
+  path: /spec/replicas
+  value: 1
+EOF
+```
+
+Tạo file patch dạng strategic merge thay thế, đơn giản hơn:
+
+```bash
+mkdir -p infra/k8s/overlays/production/patches
+
+cat <<'EOF' > infra/k8s/overlays/production/patches/single-node-replicas.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: robomart
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: robomart
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart-service
+  namespace: robomart
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: robomart
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-service
+  namespace: robomart
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: robomart
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: robomart
+spec:
+  replicas: 1
+EOF
+```
+
+Thêm patch vào `overlays/production/kustomization.yaml`:
+
+```bash
+cat >> infra/k8s/overlays/production/kustomization.yaml <<'EOF'
+
+patches:
+  - path: patches/single-node-replicas.yaml
+EOF
+```
+
+Commit và push để ArgoCD nhận:
+```bash
+git add infra/k8s/overlays/production/patches/single-node-replicas.yaml
+git add infra/k8s/overlays/production/kustomization.yaml
+git commit -m "chore: set replicas=1 for single-node cluster"
+git push
+```
+
+---
+
+## Phần 11 — ArgoCD 2.14
 
 ```bash
 kubectl create namespace argocd
-
 kubectl apply -n argocd \
   -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.14.0/manifests/install.yaml
 
 kubectl wait --for=condition=available deployment/argocd-server \
   -n argocd --timeout=300s
-```
 
-### 10.2 — Cài ArgoCD CLI
-
-```bash
+# ArgoCD CLI
 curl -sSL -o /usr/local/bin/argocd \
   https://github.com/argoproj/argo-cd/releases/download/v2.14.0/argocd-linux-amd64
 chmod +x /usr/local/bin/argocd
 
-argocd version --client
-```
-
-### 10.3 — Login và đổi password
-
-```bash
+# Login
 ARGOCD_PASS=$(kubectl get secret argocd-initial-admin-secret \
   -n argocd -o jsonpath="{.data.password}" | base64 -d)
 
 kubectl port-forward svc/argocd-server -n argocd 8090:443 &
 
 argocd login localhost:8090 \
-  --username admin \
-  --password "$ARGOCD_PASS" \
-  --insecure
+  --username admin --password "$ARGOCD_PASS" --insecure
 
-# Đổi ngay
 argocd account update-password \
   --current-password "$ARGOCD_PASS" \
   --new-password "<NEW_STRONG_PASSWORD>"
 
 kill %1
-```
 
-### 10.4 — Kết nối GitHub repo
-
-```bash
+# Kết nối repo
+argocd login localhost:8090 --username admin \
+  --password "<NEW_STRONG_PASSWORD>" --insecure &
 argocd repo add https://github.com/tuanpm2026/robo-mart \
   --username tuanpm2026 \
   --password <GITHUB_PAT>
-# GitHub PAT cần scope: repo (read)
-```
 
-### 10.5 — Deploy Application
-
-```bash
+# Deploy
 kubectl apply -f infra/k8s/argocd/robomart-app.yaml
-
-# Xem trạng thái
-argocd app get robomart-production
-
-# Force sync lần đầu không cần chờ poll 3 phút
 argocd app sync robomart-production
 ```
 
 ---
 
-## Phần 11 — Verify toàn bộ stack
+## Phần 12 — Truy cập từ bên ngoài
+
+`api-gateway` service type `LoadBalancer` sẽ **pending** trên bare-metal vì không có cloud load balancer.
+Dùng **NodePort** hoặc **MetalLB** thay thế:
+
+### Option A — NodePort (đơn giản nhất)
+
+```bash
+kubectl patch svc api-gateway -n robomart \
+  -p '{"spec": {"type": "NodePort", "ports": [{"port": 8080, "nodePort": 30080}]}}'
+
+# Truy cập qua IP máy chủ
+curl http://<SERVER_IP>:30080/actuator/health
+```
+
+### Option B — MetalLB (recommended, giữ được type LoadBalancer)
+
+```bash
+helm repo add metallb https://metallb.github.io/metallb
+helm install metallb metallb/metallb --namespace metallb-system --create-namespace
+
+# Cấp 1 IP từ dải IP của server cho LoadBalancer
+cat <<EOF | kubectl apply -f -
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: robomart-pool
+  namespace: metallb-system
+spec:
+  addresses:
+  - <SERVER_IP>/32          # IP của máy chủ
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: robomart-l2
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - robomart-pool
+EOF
+
+# api-gateway sẽ nhận EXTERNAL-IP = SERVER_IP
+kubectl get svc api-gateway -n robomart
+curl http://<SERVER_IP>:8080/actuator/health
+```
+
+---
+
+## Phần 13 — Verify và trigger CD lần đầu
 
 ```bash
 # Tất cả pods Running
 kubectl get pods -n robomart
 
-# Deployments đủ replicas
-kubectl get deployments -n robomart
-
-# HPA đang đọc metrics
-kubectl get hpa -n robomart
-# NAME                TARGETS    MINPODS  MAXPODS  REPLICAS
-# api-gateway         15%/70%    2        5        2
-# product-service     22%/70%    2        5        2
-# ...
-
-# ArgoCD status
+# ArgoCD sync thành công
 argocd app list
-# NAME                  CLUSTER    NAMESPACE  STATUS  HEALTH
-# robomart-production   in-cluster robomart   Synced  Healthy
 
-# External IP api-gateway
-kubectl get svc api-gateway -n robomart
-GATEWAY_IP=$(kubectl get svc api-gateway -n robomart \
-  -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+# HPA
+kubectl get hpa -n robomart
 
-curl http://${GATEWAY_IP}:8080/actuator/health
-# {"status":"UP","groups":["liveness","readiness"]}
-```
-
----
-
-## Phần 12 — Trigger CD lần đầu
-
-```bash
+# Trigger CD
 git commit --allow-empty -m "chore: trigger initial CD deploy"
 git push
-```
 
-Theo dõi:
-```bash
-# GitHub Actions: build + push images + commit kustomization.yaml
 gh run watch
-
-# ArgoCD tự phát hiện commit mới (3 phút) hoặc force:
 argocd app sync robomart-production --force
-
-# Xem rolling update
-kubectl rollout status deployment/api-gateway -n robomart
-kubectl rollout status deployment/product-service -n robomart
 ```
 
 ---
 
-## Phần 13 — Thứ tự dependency
+## Ước tính tài nguyên sử dụng (single node, replicas=1)
 
-```
-[ctrl-01] Control plane + Cilium CNI
-      │
-      └── [worker-01/02/03] join cluster
-                │
-                ├── Metrics Server
-                ├── Namespace: robomart
-                │
-                ├── Phase A — Storage (không phụ thuộc nhau, deploy song song)
-                │   ├── product-postgres
-                │   ├── order-postgres
-                │   ├── inventory-postgres
-                │   ├── payment-postgres
-                │   ├── notification-postgres
-                │   ├── keycloak-db
-                │   ├── redis
-                │   └── elasticsearch
-                │
-                ├── Phase B — Messaging (cần Phase A xong trước)
-                │   ├── kafka
-                │   └── schema-registry (cần kafka)
-                │
-                ├── Phase C — Auth (cần keycloak-db xong)
-                │   └── keycloak → import robomart-realm.json
-                │
-                ├── Phase D — Config (cần biết địa chỉ service thật)
-                │   ├── kubectl apply configmap.yml
-                │   └── kubectl apply secrets (từ template)
-                │
-                ├── Phase E — ArgoCD
-                │   └── kubectl apply robomart-app.yaml
-                │         └── ArgoCD sync → deploy 7 app services
-                │               (cart, product, order, inventory,
-                │                payment, notification, api-gateway)
-                │
-                └── Phase F — Verify + trigger CD lần đầu
-```
+| Component | RAM |
+|---|---|
+| 7 app services × 256Mi | ~1.8 GB |
+| PostgreSQL × 6 × 256Mi | ~1.5 GB |
+| Kafka | ~1 GB |
+| Elasticsearch | ~3 GB |
+| Redis | ~256 MB |
+| Keycloak | ~1 GB |
+| ArgoCD + system pods | ~1 GB |
+| **Tổng** | **~10-11 GB** |
+
+→ **16 GB RAM là đủ**, 32 GB thoải mái có buffer để scale.
 
 ---
 
 ## Troubleshooting
 
 ```bash
-# Pod không start
-kubectl describe pod <name> -n robomart
-kubectl logs <name> -n robomart --previous
+# Xem resource usage thực tế
+kubectl top pods -n robomart --sort-by=memory
 
-# Test DNS nội bộ cluster
+# Pod bị OOMKilled (hết RAM)
+kubectl describe pod <name> -n robomart | grep -A5 "OOM\|Limits\|Requests"
+# Tăng limits trong deployment hoặc giảm service khác
+
+# Pod Pending — không đủ CPU/RAM trên node
+kubectl describe pod <name> -n robomart | grep -A10 "Events:"
+
+# Test DNS nội bộ
 kubectl run -it --rm debug --image=busybox:1.36 \
   --restart=Never -n robomart -- \
   nslookup kafka.robomart.svc.cluster.local
 
-# Kiểm tra service endpoint thật
-kubectl get endpoints -n robomart
-
-# ArgoCD diff trước khi sync
+# ArgoCD out of sync
 argocd app diff robomart-production
-
-# HPA không đọc được metrics
-kubectl describe hpa api-gateway -n robomart
-kubectl top nodes
-
-# Xem log ArgoCD application controller
-kubectl logs -n argocd \
-  deployment/argocd-application-controller --tail=50
-
-# Reset về trạng thái git nếu ai đó sửa tay cluster
 argocd app sync robomart-production --force
+
+# Xem log app service
+kubectl logs -f deployment/product-service -n robomart
 ```
