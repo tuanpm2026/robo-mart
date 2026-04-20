@@ -27,8 +27,6 @@ import com.robomart.common.dto.PaginationMeta;
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderStatusHistory;
 import com.robomart.order.enums.OrderStatus;
-import com.robomart.order.repository.OrderItemRepository;
-import com.robomart.order.repository.OrderStatusHistoryRepository;
 import com.robomart.order.service.OrderService;
 import com.robomart.order.web.AdminOrderDetailResponse;
 import com.robomart.order.web.AdminOrderSummaryResponse;
@@ -44,15 +42,10 @@ import com.robomart.order.web.UpdateOrderStatusRequest;
 public class OrderAdminRestController {
 
     private final OrderService orderService;
-    private final OrderItemRepository orderItemRepository;
-    private final OrderStatusHistoryRepository orderStatusHistoryRepository;
     private final Tracer tracer;
 
-    public OrderAdminRestController(OrderService orderService, OrderItemRepository orderItemRepository,
-                                    OrderStatusHistoryRepository orderStatusHistoryRepository, Tracer tracer) {
+    public OrderAdminRestController(OrderService orderService, Tracer tracer) {
         this.orderService = orderService;
-        this.orderItemRepository = orderItemRepository;
-        this.orderStatusHistoryRepository = orderStatusHistoryRepository;
         this.tracer = tracer;
     }
 
@@ -90,7 +83,7 @@ public class OrderAdminRestController {
             @PathVariable Long orderId,
             @RequestBody @Valid UpdateOrderStatusRequest request) {
         Order order = orderService.updateOrderStatus(orderId, request.status());
-        int itemCount = orderItemRepository.findByOrderId(orderId).size();
+        int itemCount = orderService.getOrderItemCount(orderId);
         AdminOrderSummaryResponse summary = new AdminOrderSummaryResponse(
                 order.getId(),
                 order.getUserId(),
@@ -104,8 +97,7 @@ public class OrderAdminRestController {
 
     @GetMapping("/{orderId}/events")
     public ResponseEntity<ApiResponse<List<OrderEventResponse>>> getOrderEvents(@PathVariable Long orderId) {
-        List<OrderStatusHistory> history =
-                orderStatusHistoryRepository.findByOrderIdOrderByChangedAtAsc(orderId);
+        List<OrderStatusHistory> history = orderService.getOrderStatusHistory(orderId);
         if (history.isEmpty()) {
             return ResponseEntity.notFound().build();
         }

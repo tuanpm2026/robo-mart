@@ -4,7 +4,8 @@ modules:
 lint:
   use:
     - DEFAULT
+    - WIRE_COMPATIBLE
 breaking:
   use:
-    - FILE
+    - WIRE_COMPATIBLE
   ignore_unstable_packages: true

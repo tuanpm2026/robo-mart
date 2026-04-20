@@ -88,5 +88,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <!-- No scope restriction: test-support itself is declared scope=test by consumers,
+                 so ArchUnit classes in src/main/java are available on the test classpath. -->
+        </dependency>
     </dependencies>
 </project>

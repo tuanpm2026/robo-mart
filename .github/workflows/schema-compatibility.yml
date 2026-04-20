@@ -1,0 +1,115 @@
+name: Schema Compatibility
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/proto/**'
+      - 'backend/events/**'
+      - '.github/workflows/schema-compatibility.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'backend/proto/**'
+      - 'backend/events/**'
+      - '.github/workflows/schema-compatibility.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  proto-compatibility:
+    name: Protobuf Backward Compatibility (buf lint)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Install buf
+        uses: bufbuild/buf-setup-action@v1
+
+      - name: buf lint (style + WIRE_COMPATIBLE rules)
+        working-directory: backend/proto
+        run: buf lint
+
+      - name: buf breaking (backward compatibility check against main)
+        if: github.event_name == 'pull_request'
+        working-directory: backend/proto
+        run: buf breaking --against '.git#branch=main'
+        # Only runs on PRs — comparing HEAD against main catches breaking changes before merge.
+        # Running on push to main would compare HEAD against itself (no-op).
+
+      - name: Maven build proto module
+        working-directory: backend
+        run: ./mvnw install -pl :proto -DskipBufLint=false -DskipTests
+
+  avro-compatibility:
+    name: Avro Schema Backward Compatibility (Schema Registry)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    services:
+      zookeeper:
+        image: confluentinc/cp-zookeeper:7.7.0
+        env:
+          ZOOKEEPER_CLIENT_PORT: 2181
+          ZOOKEEPER_TICK_TIME: 2000
+        options: >-
+          --health-cmd="echo srvr | nc localhost 2181"
+          --health-interval=10s
+          --health-retries=5
+
+      kafka:
+        image: confluentinc/cp-kafka:7.7.0
+        env:
+          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+        options: >-
+          --health-cmd="kafka-topics --bootstrap-server localhost:9092 --list"
+          --health-interval=15s
+          --health-retries=10
+
+      schema-registry:
+        image: confluentinc/cp-schema-registry:7.7.0
+        env:
+          SCHEMA_REGISTRY_HOST_NAME: schema-registry
+          SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
+          SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8085
+        ports:
+          - 8085:8085
+        options: >-
+          --health-cmd="curl -sf http://localhost:8085/subjects"
+          --health-interval=10s
+          --health-retries=10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Build events module and validate Avro schemas
+        working-directory: backend
+        run: |
+          ./mvnw install -pl :events -am -DskipTests
+          ./mvnw test -pl :events -Dtest=*SchemaCompatibility* -DfailIfNoTests=false
+        env:
+          SCHEMA_REGISTRY_URL: http://localhost:8085
+          SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://localhost:8085

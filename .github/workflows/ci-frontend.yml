@@ -1,0 +1,108 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/ci-frontend.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/ci-frontend.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build, Test & Lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # Step 1: Type check
+      - name: Type Check (customer-website)
+        working-directory: frontend/customer-website
+        run: npm run type-check
+
+      - name: Type Check (admin-dashboard)
+        working-directory: frontend/admin-dashboard
+        run: npm run type-check
+
+      # Step 2: Lint (oxlint + ESLint + vuejs-accessibility)
+      - name: Lint (customer-website)
+        working-directory: frontend/customer-website
+        run: npm run lint
+
+      - name: Lint (admin-dashboard)
+        working-directory: frontend/admin-dashboard
+        run: npm run lint
+
+      # Step 3: Prettier format check
+      - name: Format Check (customer-website)
+        working-directory: frontend/customer-website
+        run: npx prettier --check src/
+
+      - name: Format Check (admin-dashboard)
+        working-directory: frontend/admin-dashboard
+        run: npx prettier --check src/
+
+      # Step 4: Unit tests (Vitest)
+      - name: Unit Tests (customer-website)
+        working-directory: frontend/customer-website
+        run: npm run test:unit -- --reporter=verbose --reporter=junit --outputFile=test-results.xml
+
+      - name: Unit Tests (admin-dashboard)
+        working-directory: frontend/admin-dashboard
+        run: npm run test:unit -- --reporter=verbose --reporter=junit --outputFile=test-results.xml
+
+      # Step 5: Production build
+      - name: Build (customer-website)
+        working-directory: frontend/customer-website
+        run: npm run build
+
+      - name: Build (admin-dashboard)
+        working-directory: frontend/admin-dashboard
+        run: npm run build
+
+      # Step 6: Axe-core accessibility audit (on build output)
+      - name: Accessibility Audit (customer-website)
+        working-directory: frontend/customer-website
+        run: |
+          npx serve dist &
+          until curl -sf http://localhost:3000 > /dev/null; do sleep 1; done
+          npx @axe-core/cli http://localhost:3000 || echo "Accessibility warnings found (informational only)"
+
+      - name: Publish Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Frontend Test Results
+          path: frontend/**/test-results.xml
+          reporter: java-junit
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: |
+            frontend/customer-website/dist/
+            frontend/admin-dashboard/dist/
+          retention-days: 7

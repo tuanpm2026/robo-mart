@@ -17,7 +17,7 @@ import com.robomart.common.exception.ResourceNotFoundException;
 import com.robomart.payment.controller.PaymentAdminRestController;
 import com.robomart.payment.entity.Payment;
 import com.robomart.payment.enums.PaymentStatus;
-import com.robomart.payment.repository.PaymentRepository;
+import com.robomart.payment.service.PaymentService;
 import com.robomart.payment.web.PaymentStatusResponse;
 import io.micrometer.tracing.Tracer;
 
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
 class PaymentControllerTest {
 
     @Mock
-    private PaymentRepository paymentRepository;
+    private PaymentService paymentService;
 
     @Mock
     private Tracer tracer;
@@ -38,13 +38,13 @@ class PaymentControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new PaymentAdminRestController(paymentRepository, tracer);
+        controller = new PaymentAdminRestController(paymentService, tracer);
     }
 
     @Test
     void shouldReturnPaymentStatusWhenValidOrderIdProvided() {
         Payment payment = buildPayment("order-123", PaymentStatus.COMPLETED);
-        when(paymentRepository.findByOrderId("order-123")).thenReturn(Optional.of(payment));
+        when(paymentService.findByOrderId("order-123")).thenReturn(Optional.of(payment));
 
         ResponseEntity<ApiResponse<PaymentStatusResponse>> response =
                 controller.getPaymentByOrderId("order-123");
@@ -57,7 +57,7 @@ class PaymentControllerTest {
 
     @Test
     void shouldThrowNotFoundWhenOrderIdDoesNotExist() {
-        when(paymentRepository.findByOrderId("no-such-order")).thenReturn(Optional.empty());
+        when(paymentService.findByOrderId("no-such-order")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> controller.getPaymentByOrderId("no-such-order"))
                 .isInstanceOf(ResourceNotFoundException.class);
@@ -66,7 +66,7 @@ class PaymentControllerTest {
     @Test
     void shouldReturnPaymentAmountAndCurrencyWhenFound() {
         Payment payment = buildPayment("order-456", PaymentStatus.PENDING);
-        when(paymentRepository.findByOrderId("order-456")).thenReturn(Optional.of(payment));
+        when(paymentService.findByOrderId("order-456")).thenReturn(Optional.of(payment));
 
         ResponseEntity<ApiResponse<PaymentStatusResponse>> response =
                 controller.getPaymentByOrderId("order-456");

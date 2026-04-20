@@ -1,0 +1,125 @@
+name: CD Deploy
+
+on:
+  workflow_run:
+    workflows: [ "Backend CI" ]
+    types: [ completed ]
+    branches: [ main ]
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false  # Never cancel an in-progress deploy
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ${{ github.repository_owner }}/robomart
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    if: github.event.workflow_run.conclusion == 'success'
+
+    permissions:
+      contents: read
+      packages: write  # Required for ghcr.io push
+
+    strategy:
+      matrix:
+        service:
+          - name: product-service
+            port: 8081
+          - name: cart-service
+            port: 8082
+          - name: order-service
+            port: 8083
+          - name: inventory-service
+            port: 8084
+          - name: payment-service
+            port: 8086
+          - name: notification-service
+            port: 8087
+          - name: api-gateway
+            port: 8080
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}
+          tags: |
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and Push ${{ matrix.service.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/${{ matrix.service.name }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-k8s:
+    name: Deploy to Kubernetes
+    needs: build-and-push
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Configure K8s credentials
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+        # Requires: KUBECONFIG secret (base64-encoded kubeconfig for target cluster)
+
+      - name: Apply K8s namespace and base config
+        run: |
+          kubectl apply -f infra/k8s/base/namespace.yml
+          kubectl apply -f infra/k8s/base/configmap.yml
+          # Note: secrets are pre-applied externally — do NOT commit secrets to git
+
+      - name: Deploy all services (rolling update)
+        run: |
+          SHA_TAG="${{ github.sha }}"
+          SHORT_SHA="${SHA_TAG:0:7}"
+          IMAGE_TAG="main-${SHORT_SHA}"
+          REGISTRY="ghcr.io/${{ github.repository_owner }}/robomart"
+
+          kubectl apply -f infra/k8s/services/ --recursive -n robomart
+
+          # Update each deployment's image to the new tag, then wait for rollout
+          for SERVICE in product-service cart-service order-service inventory-service payment-service notification-service api-gateway; do
+            kubectl set image deployment/${SERVICE} ${SERVICE}=${REGISTRY}/${SERVICE}:${IMAGE_TAG} -n robomart
+            kubectl rollout status deployment/${SERVICE} -n robomart --timeout=5m
+          done
+
+      - name: Verify deployment health
+        run: |
+          echo "Deployment complete — verifying pod status"
+          kubectl get pods -n robomart
+          kubectl get deployments -n robomart

@@ -125,6 +125,11 @@
             <version>4.0.0</version>
             <scope>runtime</scope>
         </dependency>
+        <!-- OpenAPI spec generation via springdoc -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

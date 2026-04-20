@@ -272,6 +272,10 @@ public class PaymentService {
         }
     }
 
+    public Optional<Payment> findByOrderId(String orderId) {
+        return paymentRepository.findByOrderId(orderId);
+    }
+
     public record PaymentResult(boolean success, String message, String paymentId, String transactionId) {
     }
 }

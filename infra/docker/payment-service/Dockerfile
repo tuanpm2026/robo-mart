@@ -1,0 +1,46 @@
+# Stage 1: Build
+FROM eclipse-temurin:21-jdk-alpine AS builder
+WORKDIR /workspace
+
+COPY backend/mvnw backend/mvnw
+COPY backend/.mvn backend/.mvn
+COPY backend/pom.xml backend/pom.xml
+
+COPY backend/common-lib/pom.xml backend/common-lib/pom.xml
+COPY backend/security-lib/pom.xml backend/security-lib/pom.xml
+COPY backend/proto/pom.xml backend/proto/pom.xml
+COPY backend/events/pom.xml backend/events/pom.xml
+COPY backend/test-support/pom.xml backend/test-support/pom.xml
+COPY backend/payment-service/pom.xml backend/payment-service/pom.xml
+
+WORKDIR /workspace/backend
+RUN ./mvnw dependency:go-offline -pl :payment-service -am -DskipTests -q
+
+COPY backend/common-lib/src backend/common-lib/src
+COPY backend/security-lib/src backend/security-lib/src
+COPY backend/proto/src backend/proto/src
+COPY backend/events/src backend/events/src
+COPY backend/payment-service/src backend/payment-service/src
+
+RUN ./mvnw package -pl :payment-service -am -DskipTests -DskipITs -q
+
+RUN find /workspace/backend/payment-service/target -name '*.jar' ! -name '*-plain.jar' -exec cp {} /workspace/app.jar \;
+
+# Stage 2: Runtime
+FROM eclipse-temurin:21-jre-alpine AS runtime
+WORKDIR /app
+
+RUN addgroup -g 1001 -S robomart && adduser -u 1001 -S robomart -G robomart
+USER robomart
+
+COPY --from=builder /workspace/app.jar app.jar
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD wget -qO- http://localhost:8086/actuator/health/liveness || exit 1
+
+EXPOSE 8086
+ENTRYPOINT ["java", \
+  "-XX:+UseContainerSupport", \
+  "-XX:MaxRAMPercentage=75.0", \
+  "-Djava.security.egd=file:/dev/./urandom", \
+  "-jar", "app.jar"]

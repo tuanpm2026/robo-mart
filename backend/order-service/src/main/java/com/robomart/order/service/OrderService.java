@@ -290,6 +290,14 @@ public class OrderService {
         }
     }
 
+    public int getOrderItemCount(Long orderId) {
+        return orderItemRepository.countByOrderId(orderId);
+    }
+
+    public List<OrderStatusHistory> getOrderStatusHistory(Long orderId) {
+        return orderStatusHistoryRepository.findByOrderIdOrderByChangedAtAsc(orderId);
+    }
+
     public record OrderItemRequest(String productId, String productName, int quantity, BigDecimal unitPrice) {
     }
 }

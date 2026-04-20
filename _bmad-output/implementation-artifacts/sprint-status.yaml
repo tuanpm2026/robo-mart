@@ -36,6 +36,10 @@
 
 generated: 2026-03-27
 last_updated: "2026-04-20"
+# Story 10.4 done (code review patches applied): 2026-04-20
+# Story 10.4 review: 2026-04-20
+# Story 10.4 in-progress: 2026-04-20
+# Story 10.4 created: 2026-04-20
 # Story 10.3 done (code review patches applied): 2026-04-20
 # Story 10.3 review: 2026-04-20
 # Story 10.3 in-progress: 2026-04-20
@@ -211,5 +215,5 @@ development_status:
   10-1-implement-test-support-module-unit-test-foundation: done
   10-2-implement-integration-contract-tests: done
   10-3-implement-e2e-performance-chaos-tests: done
-  10-4-implement-ci-cd-pipelines-quality-gates: backlog
+  10-4-implement-ci-cd-pipelines-quality-gates: done
   epic-10-retrospective: optional

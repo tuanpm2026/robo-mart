@@ -14,6 +14,11 @@
 - **W2 — Circuit Breaker state and DLQ capture not explicitly verified in AC4** — Test only checks order status (PENDING/CANCELLED), not that CB transitioned to OPEN or that DLQ has a message. Adding CB state assertion requires querying Resilience4j actuator endpoint and Kafka admin API — architectural investment beyond current story scope.
 - **W3 — Chaos Monkey injects at Spring service layer, not gRPC transport (AC5)** — `chaos.monkey.watcher.service=true` intercepts Spring `@Service` beans, not the gRPC Netty transport layer. True gRPC-path latency injection requires a gRPC interceptor or Toxiproxy. Pre-existing Chaos Monkey limitation.
 
+## Deferred from: code review of 10-4-implement-ci-cd-pipelines-quality-gates (2026-04-20)
+
+- **W1 — ArchUnit @BatchMapping exclusion uses string annotation matching** — `CONTROLLERS_MUST_NOT_ACCESS_REPOSITORIES` predicate checks for `"org.springframework.graphql.data.method.annotation.BatchMapping"` via string comparison in ArchUnit's API. If class loading behavior changes or annotation scanning differs, the GraphQL controller exclusion may silently fail and cause false ArchUnit violations. Documented in Dev Notes; monitor for false positives in CI runs.
+- **W2 — Backend CI timeout (20 min) leaves no margin for 15-min SLA (AC5/NFR49)** — Spec's performance table shows ~14 min expected for backend CI on warm cache; with 20 min timeout, any cache miss or slow Testcontainers startup can breach AC5. Defer until actual CI timing data is available to tune timeout and identify bottlenecks.
+
 ## Deferred from: code review of 8-4-implement-saga-phase-b-hardened-orchestration (2026-04-16)
 
 - **Multi-instance deployment racing on dead saga recovery** — `DeadSagaDetectionJob` has no distributed claim/lock before calling `handleDeadSaga()`; in multi-pod deployments all instances process the same stuck orders concurrently. Optimistic locking provides partial protection but compensation gRPC calls run before any status update. Fix requires distributed lock (Redis SETNX / Zookeeper) or DB-level advisory lock. Deferred: architectural change beyond story 8.4 scope.
