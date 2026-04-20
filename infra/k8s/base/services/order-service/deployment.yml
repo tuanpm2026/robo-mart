@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cart-service
+  name: order-service
   namespace: robomart
   labels:
-    app: cart-service
+    app: order-service
 spec:
   replicas: 2
   strategy:
@@ -14,18 +14,20 @@ spec:
       maxUnavailable: 0  # Zero-downtime: never kill a pod before new one is ready
   selector:
     matchLabels:
-      app: cart-service
+      app: order-service
   template:
     metadata:
       labels:
-        app: cart-service
+        app: order-service
     spec:
       containers:
-      - name: cart-service
-        image: ghcr.io/tuanpm/robomart/cart-service:latest
+      - name: order-service
+        image: ghcr.io/robomart/order-service:latest
         ports:
-        - containerPort: 8082
+        - containerPort: 8083
           name: http
+        - containerPort: 9093
+          name: grpc
         resources:
           requests:
             memory: "256Mi"
@@ -36,19 +38,24 @@ spec:
         envFrom:
         - configMapRef:
             name: robomart-config
+        - secretRef:
+            name: order-db-secret
+        env:
+        - name: GRPC_SERVER_PORT
+          value: "9093"
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
-            port: 8082
-          initialDelaySeconds: 30
+            port: 8083
+          initialDelaySeconds: 45
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
-            port: 8082
-          initialDelaySeconds: 20
+            port: 8083
+          initialDelaySeconds: 30
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3

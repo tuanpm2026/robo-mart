@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api-gateway
+  name: payment-service
   namespace: robomart
   labels:
-    app: api-gateway
+    app: payment-service
 spec:
   replicas: 2
   strategy:
@@ -14,18 +14,20 @@ spec:
       maxUnavailable: 0  # Zero-downtime: never kill a pod before new one is ready
   selector:
     matchLabels:
-      app: api-gateway
+      app: payment-service
   template:
     metadata:
       labels:
-        app: api-gateway
+        app: payment-service
     spec:
       containers:
-      - name: api-gateway
-        image: ghcr.io/tuanpm/robomart/api-gateway:latest
+      - name: payment-service
+        image: ghcr.io/robomart/payment-service:latest
         ports:
-        - containerPort: 8080
+        - containerPort: 8086
           name: http
+        - containerPort: 9095
+          name: grpc
         resources:
           requests:
             memory: "256Mi"
@@ -36,18 +38,23 @@ spec:
         envFrom:
         - configMapRef:
             name: robomart-config
+        - secretRef:
+            name: payment-db-secret
+        env:
+        - name: GRPC_SERVER_PORT
+          value: "9095"
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
-            port: 8080
-          initialDelaySeconds: 30
+            port: 8086
+          initialDelaySeconds: 35
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 3
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
-            port: 8080
+            port: 8086
           initialDelaySeconds: 20
           periodSeconds: 5
           timeoutSeconds: 3

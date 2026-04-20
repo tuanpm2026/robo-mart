@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
       - name: notification-service
-        image: ghcr.io/tuanpm/robomart/notification-service:latest
+        image: ghcr.io/robomart/notification-service:latest
         ports:
         - containerPort: 8087
           name: http
