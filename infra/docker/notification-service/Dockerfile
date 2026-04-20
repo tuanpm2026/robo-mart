@@ -11,7 +11,14 @@ COPY backend/security-lib/pom.xml backend/security-lib/pom.xml
 COPY backend/proto/pom.xml backend/proto/pom.xml
 COPY backend/events/pom.xml backend/events/pom.xml
 COPY backend/test-support/pom.xml backend/test-support/pom.xml
+COPY backend/product-service/pom.xml backend/product-service/pom.xml
+COPY backend/cart-service/pom.xml backend/cart-service/pom.xml
+COPY backend/api-gateway/pom.xml backend/api-gateway/pom.xml
+COPY backend/order-service/pom.xml backend/order-service/pom.xml
+COPY backend/inventory-service/pom.xml backend/inventory-service/pom.xml
+COPY backend/payment-service/pom.xml backend/payment-service/pom.xml
 COPY backend/notification-service/pom.xml backend/notification-service/pom.xml
+COPY backend/e2e-tests/pom.xml backend/e2e-tests/pom.xml
 
 WORKDIR /workspace/backend
 RUN ./mvnw dependency:go-offline -pl :notification-service -am -DskipTests -q
