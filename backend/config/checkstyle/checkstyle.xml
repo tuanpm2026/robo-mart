@@ -26,6 +26,12 @@
     <!-- Newline at end of file -->
     <module name="NewlineAtEndOfFile"/>
 
+    <!-- Line length (Google style: 100, relaxed to 120) -->
+    <module name="LineLength">
+        <property name="max" value="120"/>
+        <property name="ignorePattern" value="^package.*|^import.*|a]* href|href|http://|https://|ftp://"/>
+    </module>
+
     <module name="TreeWalker">
         <!-- Naming conventions -->
         <module name="PackageName">
@@ -84,12 +90,6 @@
         <module name="MissingSwitchDefault"/>
         <module name="FallThrough"/>
         <module name="UpperEll"/>
-
-        <!-- Line length (Google style: 100, relaxed to 120) -->
-        <module name="LineLength">
-            <property name="max" value="120"/>
-            <property name="ignorePattern" value="^package.*|^import.*|a]* href|href|http://|https://|ftp://"/>
-        </module>
 
         <!-- Method length -->
         <module name="MethodLength">
