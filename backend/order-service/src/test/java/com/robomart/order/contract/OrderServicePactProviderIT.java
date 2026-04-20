@@ -36,7 +36,10 @@ import com.robomart.test.PostgresContainerConfig;
  * then order-service provider tests verify. When using committed pact files,
  * order doesn't matter.
  */
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "management.endpoint.health.validate-group-membership=false"
+)
 @ActiveProfiles("test")
 @Import(PostgresContainerConfig.class)
 @Provider("order-service")
