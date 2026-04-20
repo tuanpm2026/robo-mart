@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: robomart-production
+  namespace: argocd
+  # Cascade-delete all managed resources when this Application is deleted
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/tuanpm2026/robo-mart
+    targetRevision: main
+    # ArgoCD renders this path with Kustomize automatically (detects kustomization.yaml)
+    path: infra/k8s/overlays/production
+
+  destination:
+    server: https://kubernetes.default.svc  # in-cluster (ArgoCD runs in same cluster)
+    namespace: robomart
+
+  syncPolicy:
+    automated:
+      prune: true      # delete K8s resources removed from git
+      selfHeal: true   # revert manual kubectl changes back to git state
+    syncOptions:
+      - CreateNamespace=true           # create namespace if it doesn't exist
+      - PrunePropagationPolicy=foreground  # wait for child resources to delete first
+      - ServerSideApply=true           # use server-side apply to avoid annotation bloat
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
