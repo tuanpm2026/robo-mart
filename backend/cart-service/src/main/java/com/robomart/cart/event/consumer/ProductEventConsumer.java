@@ -44,6 +44,9 @@ public class ProductEventConsumer {
 
         int updatedCarts = 0;
         for (Cart cart : cartRepository.findAll()) {
+            if (cart == null || cart.getItems() == null) {
+                continue;
+            }
             boolean modified = false;
             for (CartItem item : cart.getItems()) {
                 if (item.getProductId().equals(productId)) {

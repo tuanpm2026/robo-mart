@@ -180,9 +180,7 @@
                         <exclude>**/controller/ProductGraphQLController.class</exclude>
                         <!-- Kafka consumer: indexes ES documents, requires full Kafka+ES stack -->
                         <exclude>**/event/consumer/ProductIndexConsumer.class</exclude>
-                        <!-- MapStruct generated mapper: automatically generated code, not hand-written -->
-                        <exclude>**/mapper/ProductMapper.class</exclude>
-                        <exclude>**/mapper/ProductMapperImpl.class</exclude>
+
                         <!-- Demo-only seed data loader: only active on "demo" profile, not in tests -->
                         <exclude>**/service/SeedDataIndexer.class</exclude>
                         <!-- Document class: Elasticsearch entity, covered incidentally in integration tests -->
