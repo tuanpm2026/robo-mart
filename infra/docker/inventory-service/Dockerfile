@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM eclipse-temurin:21-jdk-alpine AS builder
+FROM eclipse-temurin:21-jdk AS builder
 WORKDIR /workspace
 
 COPY backend/mvnw backend/mvnw
@@ -23,12 +23,15 @@ COPY backend/e2e-tests/pom.xml backend/e2e-tests/pom.xml
 
 # Download dependencies (cached layer — only invalidated when pom.xml changes)
 RUN cd backend && ./mvnw dependency:go-offline -pl :inventory-service -am -DskipTests -q
+# protobuf-maven-plugin downloads protoc binaries without execute permission on Linux
+RUN find /workspace/backend/proto/target/protoc-plugins -type f \( -name "*.exe" -o -name "protoc" \) -exec chmod +x {} + 2>/dev/null || true
 
 # Copy source (including avro schemas and proto files for codegen modules)
 COPY backend/common-lib/src backend/common-lib/src
 COPY backend/security-lib/src backend/security-lib/src
 COPY backend/proto/src backend/proto/src
 COPY backend/events/src backend/events/src
+COPY backend/test-support/src backend/test-support/src
 COPY backend/inventory-service/src backend/inventory-service/src
 
 RUN cd backend && ./mvnw package -pl :inventory-service -am -DskipTests -DskipITs -q
