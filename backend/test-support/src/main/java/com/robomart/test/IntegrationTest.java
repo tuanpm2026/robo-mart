@@ -11,7 +11,10 @@ import org.springframework.test.context.ActiveProfiles;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = "management.endpoint.health.validate-group-membership=false"
+)
 @ActiveProfiles("test")
 @Import({PostgresContainerConfig.class, KafkaContainerConfig.class, ElasticsearchContainerConfig.class, RedisContainerConfig.class})
 public @interface IntegrationTest {
