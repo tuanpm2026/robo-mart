@@ -41,6 +41,15 @@ class ProductSearchIT {
                 })
                 .build();
 
+        // Ensure the index exists with the correct field mappings (brand as keyword, etc.)
+        // Recreate the index each time to avoid stale mappings from a previous test run
+        // (e.g., dynamic mapping creates 'brand' as text, breaking term queries).
+        var indexOps = elasticsearchOperations.indexOps(ProductDocument.class);
+        if (indexOps.exists()) {
+            indexOps.delete();
+        }
+        indexOps.createWithMapping();
+
         productSearchRepository.saveAll(java.util.List.of(
                 createDoc(1L, "ELEC-001", "Wireless Bluetooth Headphone", "Premium noise-cancelling headphone",
                         1L, "Electronics", "Sony", BigDecimal.valueOf(149.99), BigDecimal.valueOf(4.5), 50),
@@ -60,6 +69,7 @@ class ProductSearchIT {
     @AfterEach
     void tearDown() {
         productSearchRepository.deleteAll();
+        elasticsearchOperations.indexOps(ProductDocument.class).refresh();
     }
 
     @Test

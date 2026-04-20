@@ -80,7 +80,7 @@ jobs:
         if: always()
         with:
           name: Backend Test Results
-          path: backend/**/target/surefire-reports/*.xml,backend/**/target/failsafe-reports/*.xml
+          path: backend/**/target/surefire-reports/TEST-*.xml,backend/**/target/failsafe-reports/TEST-*.xml
           reporter: java-junit
 
       - name: Upload Test Reports
