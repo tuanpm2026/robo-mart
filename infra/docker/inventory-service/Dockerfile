@@ -6,6 +6,7 @@ COPY backend/mvnw backend/mvnw
 COPY backend/.mvn backend/.mvn
 COPY backend/pom.xml backend/pom.xml
 
+# Copy ALL module pom.xml files so Maven can resolve the full reactor
 COPY backend/common-lib/pom.xml backend/common-lib/pom.xml
 COPY backend/security-lib/pom.xml backend/security-lib/pom.xml
 COPY backend/proto/pom.xml backend/proto/pom.xml
@@ -20,16 +21,17 @@ COPY backend/payment-service/pom.xml backend/payment-service/pom.xml
 COPY backend/notification-service/pom.xml backend/notification-service/pom.xml
 COPY backend/e2e-tests/pom.xml backend/e2e-tests/pom.xml
 
-WORKDIR /workspace/backend
-RUN ./mvnw dependency:go-offline -pl :inventory-service -am -DskipTests -q
+# Download dependencies (cached layer — only invalidated when pom.xml changes)
+RUN cd backend && ./mvnw dependency:go-offline -pl :inventory-service -am -DskipTests -q
 
+# Copy source (including avro schemas and proto files for codegen modules)
 COPY backend/common-lib/src backend/common-lib/src
 COPY backend/security-lib/src backend/security-lib/src
 COPY backend/proto/src backend/proto/src
 COPY backend/events/src backend/events/src
 COPY backend/inventory-service/src backend/inventory-service/src
 
-RUN ./mvnw package -pl :inventory-service -am -DskipTests -DskipITs -q
+RUN cd backend && ./mvnw package -pl :inventory-service -am -DskipTests -DskipITs -q
 
 RUN find /workspace/backend/inventory-service/target -name '*.jar' ! -name '*-plain.jar' -exec cp {} /workspace/app.jar \;
 
