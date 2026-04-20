@@ -35,6 +35,9 @@
         <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
         <!-- buf lint is disabled by default; enable in CI with -DskipBufLint=false -->
         <skipBufLint>true</skipBufLint>
+        <!-- E2E tests require full Docker stack — skipped by default -->
+        <!-- Run with -DskipE2ETests=false when full stack is up -->
+        <skipE2ETests>true</skipE2ETests>
     </properties>
 
     <repositories>
@@ -57,6 +60,7 @@
         <module>inventory-service</module>
         <module>payment-service</module>
         <module>notification-service</module>
+        <module>e2e-tests</module>
     </modules>
 
     <dependencyManagement>

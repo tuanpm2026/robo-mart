@@ -1,0 +1,7 @@
+# E2E test profile - no Spring context needed (pure HTTP tests)
+# All configuration is read from system properties in test classes:
+#   e2e.base-url (default: http://localhost:8080)
+#   e2e.keycloak-url (default: http://localhost:8180)
+spring:
+  autoconfigure:
+    exclude: []

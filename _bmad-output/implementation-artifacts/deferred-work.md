@@ -8,6 +8,12 @@
 - **W4 — OrderGrpcServiceTest missing assertions on orderId/status in CreateOrder success** — Improvement to add, not a correctness bug.
 - **W5 — NotificationServiceExtendedTest cart expiry warning tests don't verify emailService.sendEmail()** — Improvement to add in Story 10.2 extended tests.
 
+## Deferred from: code review of 10-3-implement-e2e-performance-chaos-tests (2026-04-20)
+
+- **W1 — K8s liveness probe restart not exercised in chaos tests** — `ServiceKillChaosIT` uses `docker stop/start` instead of K8s pod restart via liveness probe. Docker Compose environment does not support K8s behavior. Revisit if project migrates to kind/minikube for E2E testing.
+- **W2 — Circuit Breaker state and DLQ capture not explicitly verified in AC4** — Test only checks order status (PENDING/CANCELLED), not that CB transitioned to OPEN or that DLQ has a message. Adding CB state assertion requires querying Resilience4j actuator endpoint and Kafka admin API — architectural investment beyond current story scope.
+- **W3 — Chaos Monkey injects at Spring service layer, not gRPC transport (AC5)** — `chaos.monkey.watcher.service=true` intercepts Spring `@Service` beans, not the gRPC Netty transport layer. True gRPC-path latency injection requires a gRPC interceptor or Toxiproxy. Pre-existing Chaos Monkey limitation.
+
 ## Deferred from: code review of 8-4-implement-saga-phase-b-hardened-orchestration (2026-04-16)
 
 - **Multi-instance deployment racing on dead saga recovery** — `DeadSagaDetectionJob` has no distributed claim/lock before calling `handleDeadSaga()`; in multi-pod deployments all instances process the same stuck orders concurrently. Optimistic locking provides partial protection but compensation gRPC calls run before any status update. Fix requires distributed lock (Redis SETNX / Zookeeper) or DB-level advisory lock. Deferred: architectural change beyond story 8.4 scope.

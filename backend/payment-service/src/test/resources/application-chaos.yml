@@ -1,0 +1,22 @@
+chaos:
+  monkey:
+    enabled: true
+    watcher:
+      rest-controller: true
+      service: true
+      repository: false  # Avoid DB corruption in tests
+    assaults:
+      level: 5           # ~50% request chance
+      latency-active: true
+      latency-range-start: 100
+      latency-range-end: 500   # 100-500ms latency injection
+      exceptions-active: false
+      kill-application-active: false  # Controlled via test programmatically
+management:
+  endpoint:
+    chaosmonkey:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: chaosmonkey,health,info,metrics,prometheus
