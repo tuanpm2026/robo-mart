@@ -18,7 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
 @TestPropertySource(properties = "robomart.cart.ttl-minutes=1")
-class CartIntegrationTest {
+class CartIntegrationIT {
 
     @LocalServerPort
     private int port;
