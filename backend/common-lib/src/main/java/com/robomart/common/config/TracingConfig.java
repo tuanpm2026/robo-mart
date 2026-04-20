@@ -1,14 +1,17 @@
 package com.robomart.common.config;
 
+import io.grpc.ServerInterceptor;
 import io.micrometer.core.instrument.binder.grpc.ObservationGrpcClientInterceptor;
 import io.micrometer.core.instrument.binder.grpc.ObservationGrpcServerInterceptor;
 import io.micrometer.observation.ObservationRegistry;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.grpc.client.GlobalClientInterceptor;
 import org.springframework.grpc.server.GlobalServerInterceptor;
 
 @Configuration
+@ConditionalOnClass(ServerInterceptor.class)
 public class TracingConfig {
 
     @Bean

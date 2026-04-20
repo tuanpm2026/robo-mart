@@ -12,7 +12,8 @@ import org.springframework.test.web.reactive.server.WebTestClient;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
             "spring.security.oauth2.resourceserver.jwt.issuer-uri=",
-            "management.health.redis.enabled=false"
+            "management.health.redis.enabled=false",
+            "management.endpoint.health.group.readiness.include=readinessState"
         }
 )
 class ApiGatewayApplicationTests {

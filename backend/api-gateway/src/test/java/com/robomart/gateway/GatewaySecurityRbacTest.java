@@ -23,7 +23,8 @@ import static org.mockito.Mockito.when;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
             "spring.security.oauth2.resourceserver.jwt.issuer-uri=",
-            "management.health.redis.enabled=false"
+            "management.health.redis.enabled=false",
+            "management.endpoint.health.group.readiness.include=readinessState"
         }
 )
 class GatewaySecurityRbacTest {

@@ -26,7 +26,8 @@ import static org.assertj.core.api.Assertions.assertThat;
         properties = {
             "spring.security.oauth2.resourceserver.jwt.issuer-uri=",
             "spring.data.redis.host=localhost",
-            "management.health.redis.enabled=false"
+            "management.health.redis.enabled=false",
+            "management.endpoint.health.group.readiness.include=readinessState"
         }
 )
 class RateLimitConfigTest {
