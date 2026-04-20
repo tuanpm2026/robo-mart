@@ -21,6 +21,10 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    permissions:
+      contents: read
+      checks: write        # required by dorny/test-reporter to create check runs
+      pull-requests: write # required by dorny/test-reporter to annotate PRs
 
     steps:
       - name: Checkout
