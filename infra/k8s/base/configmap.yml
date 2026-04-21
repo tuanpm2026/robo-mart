@@ -20,7 +20,7 @@ data:
   # Tracing
   MANAGEMENT_OTLP_TRACING_ENDPOINT: "http://tempo.monitoring.svc.cluster.local:4318/v1/traces"
   MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED: "false"
-  TRACING_SAMPLE_RATE: "0.1"
+  TRACING_SAMPLE_RATE: "1.0"
   # Actuator — ensure prometheus endpoint is exposed even when dev profile reduces it
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
   MANAGEMENT_ENDPOINT_HEALTH_VALIDATE_GROUP_MEMBERSHIP: "false"
