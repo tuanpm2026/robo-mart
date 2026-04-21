@@ -28,6 +28,7 @@ data:
   # Actuator
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
   MANAGEMENT_ENDPOINT_HEALTH_VALIDATE_GROUP_MEMBERSHIP: "false"
+  MANAGEMENT_HEALTH_ELASTICSEARCH_ENABLED: "false"
   # Service-to-service URLs (used by notification-service and api-gateway routing)
   ORDER_SERVICE_URL: "http://order-service:8083"
   PRODUCT_SERVICE_URL: "http://product-service:8081"
