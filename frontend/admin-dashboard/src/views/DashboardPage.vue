@@ -89,7 +89,13 @@ function orderStatusSeverity(status: string): string {
               label="System Health"
               :value="systemHealthStore.overallHealth"
               format="label"
-              :color="systemHealthStore.overallHealth === 'healthy' ? 'green' : systemHealthStore.overallHealth === 'degraded' ? 'yellow' : 'red'"
+              :color="
+                systemHealthStore.overallHealth === 'healthy'
+                  ? 'green'
+                  : systemHealthStore.overallHealth === 'degraded'
+                    ? 'yellow'
+                    : 'red'
+              "
               :loading="systemHealthStore.isLoading"
             />
           </div>
@@ -106,11 +112,7 @@ function orderStatusSeverity(status: string): string {
             </section>
             <section class="orders-panel">
               <h2 class="section-title">Recent Orders</h2>
-              <DataTable
-                :value="orderStore.orders"
-                :loading="orderStore.isLoading"
-                size="small"
-              >
+              <DataTable :value="orderStore.orders" :loading="orderStore.isLoading" size="small">
                 <Column field="id" header="Order ID" />
                 <Column field="createdAt" header="Date">
                   <template #body="{ data }">
@@ -119,7 +121,11 @@ function orderStatusSeverity(status: string): string {
                 </Column>
                 <Column field="totalAmount" header="Amount">
                   <template #body="{ data }">
-                    {{ new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(data.totalAmount) }}
+                    {{
+                      new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(
+                        data.totalAmount,
+                      )
+                    }}
                   </template>
                 </Column>
                 <Column field="status" header="Status">

@@ -5,7 +5,7 @@ import { useUiStore } from '@/stores/useUiStore'
 const uiStore = useUiStore()
 
 const showPartialBanner = computed(
-  () => uiStore.degradationTier === 'partial' && !uiStore.isBannerDismissed
+  () => uiStore.degradationTier === 'partial' && !uiStore.isBannerDismissed,
 )
 const showMaintenanceOverlay = computed(() => uiStore.degradationTier === 'maintenance')
 </script>
@@ -22,7 +22,8 @@ const showMaintenanceOverlay = computed(() => uiStore.degradationTier === 'maint
     <div class="degradation-banner__inner">
       <i class="pi pi-exclamation-triangle degradation-banner__icon" aria-hidden="true" />
       <span class="degradation-banner__message">
-        Some features are temporarily limited. You can browse and add to cart — checkout will be available shortly.
+        Some features are temporarily limited. You can browse and add to cart — checkout will be
+        available shortly.
       </span>
       <button
         class="degradation-banner__dismiss"

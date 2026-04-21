@@ -40,7 +40,11 @@ function loadMore() {
 
     <div v-else-if="productStore.error" class="home__error" role="alert">
       <p>{{ productStore.error }}</p>
-      <Button label="Try Again" severity="secondary" @click="productStore.fetchProducts(getCategoryId())" />
+      <Button
+        label="Try Again"
+        severity="secondary"
+        @click="productStore.fetchProducts(getCategoryId())"
+      />
     </div>
 
     <template v-else>

@@ -35,9 +35,22 @@ function onQuantityChange(productId: number, event: { value: number | null }) {
     <div class="cart-item__image-wrapper">
       <div class="cart-item__image-placeholder" aria-hidden="true">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-          <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5" />
+          <rect
+            x="3"
+            y="3"
+            width="18"
+            height="18"
+            rx="2"
+            stroke="currentColor"
+            stroke-width="1.5"
+          />
           <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
-          <path d="M21 15L16 10L5 21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          <path
+            d="M21 15L16 10L5 21"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          />
         </svg>
       </div>
     </div>
@@ -60,7 +73,9 @@ function onQuantityChange(productId: number, event: { value: number | null }) {
         incrementButtonIcon="pi pi-plus"
         decrementButtonIcon="pi pi-minus"
         class="cart-item__quantity-input"
-        @update:modelValue="(val: number | null) => onQuantityChange(item.productId, { value: val })"
+        @update:modelValue="
+          (val: number | null) => onQuantityChange(item.productId, { value: val })
+        "
       />
     </div>
 

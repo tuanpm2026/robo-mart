@@ -11,9 +11,7 @@ vi.mock('@/api/cartApi', () => ({
   getCart: vi.fn().mockResolvedValue({
     data: {
       cartId: 'cart-123',
-      items: [
-        { productId: 1, productName: 'Product 1', price: 10.0, quantity: 2, subtotal: 20.0 },
-      ],
+      items: [{ productId: 1, productName: 'Product 1', price: 10.0, quantity: 2, subtotal: 20.0 }],
       totalItems: 2,
       totalPrice: 20.0,
     },

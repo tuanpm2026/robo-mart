@@ -35,7 +35,8 @@ watch(
 )
 
 const remainingSlots = computed(() => {
-  const used = localImages.value.length + (props.productId === null ? localPreviews.value.length : 0)
+  const used =
+    localImages.value.length + (props.productId === null ? localPreviews.value.length : 0)
   return Math.max(0, 10 - used)
 })
 
@@ -103,11 +104,11 @@ async function onFilesSelected(event: { files: File[] }) {
     }
   } else {
     // Create mode — accumulate pending files, show local previews
-    localPreviews.value.forEach(url => URL.revokeObjectURL(url))
+    localPreviews.value.forEach((url) => URL.revokeObjectURL(url))
     const accumulated = [...pendingFiles.value, ...files]
     pendingFiles.value = accumulated
     emit('pendingFiles', accumulated)
-    localPreviews.value = accumulated.map(f => URL.createObjectURL(f))
+    localPreviews.value = accumulated.map((f) => URL.createObjectURL(f))
   }
 }
 
@@ -122,7 +123,7 @@ async function removeImage(image: ProductImage) {
     }
   }
   // Update localImages immediately before any subsequent drag to prevent ghost state
-  localImages.value = localImages.value.filter(i => i.id !== image.id)
+  localImages.value = localImages.value.filter((i) => i.id !== image.id)
   emit('update:existingImages', localImages.value)
   if (props.productId !== null) {
     emit('imagesChanged')
@@ -130,13 +131,15 @@ async function removeImage(image: ProductImage) {
 }
 
 onUnmounted(() => {
-  localPreviews.value.forEach(url => URL.revokeObjectURL(url))
+  localPreviews.value.forEach((url) => URL.revokeObjectURL(url))
 })
 </script>
 
 <template>
   <div class="image-upload-section">
-    <label class="field-label">Product Images <span class="text-gray-400 text-xs">(optional)</span></label>
+    <label class="field-label"
+      >Product Images <span class="text-gray-400 text-xs">(optional)</span></label
+    >
 
     <!-- Existing images grid -->
     <div v-if="localImages.length > 0" class="images-grid">
@@ -196,16 +199,15 @@ onUnmounted(() => {
               class="pi pi-spinner pi-spin"
               style="font-size: 2rem; color: var(--color-primary-500)"
             />
-            <i
-              v-else
-              class="pi pi-image"
-              style="font-size: 2rem; color: var(--color-gray-400)"
-            />
+            <i v-else class="pi pi-image" style="font-size: 2rem; color: var(--color-gray-400)" />
             <p v-if="isUploading">Uploading…</p>
             <p v-else-if="atImageLimit" class="text-warning">10 image limit reached</p>
             <p v-else>Drag and drop images here, or click Select Images</p>
             <p v-if="!atImageLimit && !isUploading" class="upload-hint">
-              JPEG, PNG, WebP · max 5MB per file · {{ remainingSlots }} slot{{ remainingSlots === 1 ? '' : 's' }} remaining
+              JPEG, PNG, WebP · max 5MB per file · {{ remainingSlots }} slot{{
+                remainingSlots === 1 ? '' : 's'
+              }}
+              remaining
             </p>
           </div>
         </template>

@@ -249,7 +249,10 @@ function formatCurrency(amount: number): string {
     </DataTable>
 
     <!-- Order Detail Slide-Over -->
-    <SlideOverPanel v-model:visible="showDetailPanel" :title="`Order #${orderStore.selectedOrder?.id ?? ''}`">
+    <SlideOverPanel
+      v-model:visible="showDetailPanel"
+      :title="`Order #${orderStore.selectedOrder?.id ?? ''}`"
+    >
       <div v-if="orderStore.selectedOrder" class="flex flex-col gap-6">
         <!-- Order Info -->
         <div class="grid grid-cols-2 gap-4">
@@ -257,7 +260,9 @@ function formatCurrency(amount: number): string {
             <span class="text-xs text-gray-500 uppercase tracking-wider">Status</span>
             <div class="mt-1">
               <Tag
-                :value="statusLabels[orderStore.selectedOrder.status] || orderStore.selectedOrder.status"
+                :value="
+                  statusLabels[orderStore.selectedOrder.status] || orderStore.selectedOrder.status
+                "
                 :severity="(statusSeverity[orderStore.selectedOrder.status] as any) || 'info'"
               />
             </div>
@@ -280,7 +285,14 @@ function formatCurrency(amount: number): string {
           </div>
           <div>
             <span class="text-xs text-gray-500 uppercase tracking-wider">Payment Status</span>
-            <p class="mt-1 text-sm font-medium" :class="PAID_STATUSES.has(orderStore.selectedOrder.status) ? 'text-green-700' : 'text-gray-600'">
+            <p
+              class="mt-1 text-sm font-medium"
+              :class="
+                PAID_STATUSES.has(orderStore.selectedOrder.status)
+                  ? 'text-green-700'
+                  : 'text-gray-600'
+              "
+            >
               {{ getPaymentStatus(orderStore.selectedOrder.status) }}
             </p>
           </div>
@@ -330,16 +342,10 @@ function formatCurrency(amount: number): string {
         <!-- Order Timeline -->
         <div>
           <h3 class="text-sm font-semibold text-gray-900 mb-2">Order Timeline</h3>
-          <Timeline
-            :value="orderStore.selectedOrder.statusHistory"
-            class="order-timeline"
-          >
+          <Timeline :value="orderStore.selectedOrder.statusHistory" class="order-timeline">
             <template #content="{ item }">
               <div class="flex flex-col">
-                <span
-                  class="text-sm font-medium text-gray-800"
-                  v-tooltip.top="item.status"
-                >
+                <span class="text-sm font-medium text-gray-800" v-tooltip.top="item.status">
                   {{ statusLabels[item.status] || item.status }}
                 </span>
                 <span class="text-xs text-gray-500">{{ formatDate(item.changedAt) }}</span>

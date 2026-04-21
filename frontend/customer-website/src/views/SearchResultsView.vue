@@ -31,7 +31,6 @@ const brands = computed(() => {
   return Array.from(unique).sort()
 })
 
-
 function performSearch(extraParams: ProductSearchParams = {}) {
   const params: ProductSearchParams = {
     keyword: keyword.value || undefined,
@@ -97,11 +96,7 @@ function loadMore() {
     </div>
 
     <div class="search-results__content">
-      <FilterSidebar
-        ref="filterSidebarRef"
-        :brands="brands"
-        @filter="onFilterChange"
-      />
+      <FilterSidebar ref="filterSidebarRef" :brands="brands" @filter="onFilterChange" />
 
       <div class="search-results__main">
         <div

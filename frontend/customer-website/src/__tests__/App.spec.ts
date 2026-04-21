@@ -7,7 +7,11 @@ import ToastService from 'primevue/toastservice'
 import App from '../App.vue'
 
 vi.mock('@/api/productApi', () => ({
-  searchProducts: vi.fn().mockResolvedValue({ data: [], pagination: { page: 0, size: 5, totalElements: 0, totalPages: 0 }, traceId: '' }),
+  searchProducts: vi.fn().mockResolvedValue({
+    data: [],
+    pagination: { page: 0, size: 5, totalElements: 0, totalPages: 0 },
+    traceId: '',
+  }),
 }))
 
 function createTestRouter() {

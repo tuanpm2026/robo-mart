@@ -5,9 +5,7 @@ export type DegradationTier = 'normal' | 'partial' | 'maintenance'
 
 export const useUiStore = defineStore('ui', () => {
   const degradationTier = ref<DegradationTier>('normal')
-  const isBannerDismissed = ref(
-    sessionStorage.getItem('degradation-banner-dismissed') === 'true'
-  )
+  const isBannerDismissed = ref(sessionStorage.getItem('degradation-banner-dismissed') === 'true')
 
   function setDegradationTier(tier: DegradationTier) {
     // Once maintenance is set, it cannot be downgraded by partial signals

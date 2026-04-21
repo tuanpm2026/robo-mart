@@ -39,7 +39,14 @@ const mockProduct = {
 function createGlobalConfig() {
   const pinia = createPinia()
   return {
-    plugins: [pinia, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]], ToastService],
+    plugins: [
+      pinia,
+      [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [
+        typeof PrimeVue,
+        ...unknown[],
+      ],
+      ToastService,
+    ],
     stubs: {
       SlideOverPanel: {
         template: '<div data-testid="slide-over-panel"><slot /></div>',

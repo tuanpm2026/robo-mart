@@ -54,13 +54,17 @@ const isCancellable = computed(() => {
   return status === 'PENDING' || status === 'CONFIRMED'
 })
 
-const isPendingPayment = computed(() =>
-  orderStore.currentOrder?.status === 'PAYMENT_PROCESSING'
-)
+const isPendingPayment = computed(() => orderStore.currentOrder?.status === 'PAYMENT_PROCESSING')
 
 function formatDate(isoString: string): string {
   const date = new Date(isoString)
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 function formatPrice(amount: number): string {
@@ -140,7 +144,9 @@ onMounted(async () => {
             :severity="STATUS_SEVERITY[orderStore.currentOrder.status]"
           />
         </div>
-        <p class="order-detail__date">Placed on {{ formatDate(orderStore.currentOrder.createdAt) }}</p>
+        <p class="order-detail__date">
+          Placed on {{ formatDate(orderStore.currentOrder.createdAt) }}
+        </p>
       </div>
 
       <!-- Payment pending reassurance message -->
@@ -177,15 +183,23 @@ onMounted(async () => {
               class="order-detail__items-row"
             >
               <td class="order-detail__items-td">{{ item.productName }}</td>
-              <td class="order-detail__items-td order-detail__items-td--right">{{ item.quantity }}</td>
-              <td class="order-detail__items-td order-detail__items-td--right">{{ formatPrice(item.unitPrice) }}</td>
-              <td class="order-detail__items-td order-detail__items-td--right">{{ formatPrice(item.subtotal) }}</td>
+              <td class="order-detail__items-td order-detail__items-td--right">
+                {{ item.quantity }}
+              </td>
+              <td class="order-detail__items-td order-detail__items-td--right">
+                {{ formatPrice(item.unitPrice) }}
+              </td>
+              <td class="order-detail__items-td order-detail__items-td--right">
+                {{ formatPrice(item.subtotal) }}
+              </td>
             </tr>
           </tbody>
           <tfoot>
             <tr>
               <td colspan="3" class="order-detail__total-label">Total</td>
-              <td class="order-detail__total-value">{{ formatPrice(orderStore.currentOrder.totalAmount) }}</td>
+              <td class="order-detail__total-value">
+                {{ formatPrice(orderStore.currentOrder.totalAmount) }}
+              </td>
             </tr>
           </tfoot>
         </table>
@@ -209,7 +223,9 @@ onMounted(async () => {
           </div>
           <div v-if="orderStore.currentOrder.cancellationReason" class="order-detail__summary-item">
             <span class="order-detail__summary-label">Cancellation Reason</span>
-            <span class="order-detail__summary-value">{{ orderStore.currentOrder.cancellationReason }}</span>
+            <span class="order-detail__summary-value">{{
+              orderStore.currentOrder.cancellationReason
+            }}</span>
           </div>
         </div>
       </div>

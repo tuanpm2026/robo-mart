@@ -24,16 +24,30 @@ export function getAnonymousUserId(): string {
 }
 
 // Auth store accessor — set by main.ts after store initialization to avoid circular imports
-let getAuthState: (() => { accessToken: string | null; userId: string | null; refreshToken: () => Promise<boolean>; logout: () => Promise<void> }) | null = null
+let getAuthState:
+  | (() => {
+      accessToken: string | null
+      userId: string | null
+      refreshToken: () => Promise<boolean>
+      logout: () => Promise<void>
+    })
+  | null = null
 
 export function setAuthAccessor(
-  accessor: () => { accessToken: string | null; userId: string | null; refreshToken: () => Promise<boolean>; logout: () => Promise<void> },
+  accessor: () => {
+    accessToken: string | null
+    userId: string | null
+    refreshToken: () => Promise<boolean>
+    logout: () => Promise<void>
+  },
 ): void {
   getAuthState = accessor
 }
 
 // UI store accessor — set by main.ts after store initialization
-let getUiState: (() => { setDegradationTier: (tier: 'normal' | 'partial' | 'maintenance') => void }) | null = null
+let getUiState:
+  | (() => { setDegradationTier: (tier: 'normal' | 'partial' | 'maintenance') => void })
+  | null = null
 
 export function setUiAccessor(
   accessor: () => { setDegradationTier: (tier: 'normal' | 'partial' | 'maintenance') => void },
@@ -106,7 +120,9 @@ apiClient.interceptors.response.use(
         // Refresh failed — log out (with mutex to prevent concurrent logouts)
         if (!logoutInProgress) {
           logoutInProgress = true
-          await auth.logout().finally(() => { logoutInProgress = false })
+          await auth.logout().finally(() => {
+            logoutInProgress = false
+          })
         }
         return Promise.reject(new Error('Session expired. Please log in again.'))
       }

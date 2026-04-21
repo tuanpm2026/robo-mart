@@ -95,7 +95,12 @@ export function useWebSocket() {
       reconnectTimer = setTimeout(() => {
         if (store.connectionStatus !== 'connected') {
           store.setConnectionStatus('reconnecting')
-          toast.add({ severity: 'warn', summary: 'Reconnecting...', detail: 'Connection lost. Attempting to reconnect.', life: 5000 })
+          toast.add({
+            severity: 'warn',
+            summary: 'Reconnecting...',
+            detail: 'Connection lost. Attempting to reconnect.',
+            life: 5000,
+          })
         }
       }, 5000)
     }

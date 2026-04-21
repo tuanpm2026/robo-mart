@@ -31,14 +31,19 @@ const schema = object({
       const now = new Date()
       return expiry >= new Date(now.getFullYear(), now.getMonth(), 1)
     }),
-  cvv: string().required('CVV is required').matches(/^\d{3,4}$/, 'Enter a valid CVV'),
+  cvv: string()
+    .required('CVV is required')
+    .matches(/^\d{3,4}$/, 'Enter a valid CVV'),
 })
 
 const { handleSubmit } = useForm<PaymentFormData>({
   validationSchema: schema,
   validateOnMount: false,
   initialValues: checkoutStore.paymentData ?? {
-    cardholderName: '', cardNumber: '', expiry: '', cvv: '',
+    cardholderName: '',
+    cardNumber: '',
+    expiry: '',
+    cvv: '',
   },
 })
 
@@ -80,7 +85,7 @@ const onSubmit = handleSubmit((values) => {
 })
 
 const paymentError = computed(() =>
-  checkoutStore.error?.type === 'PAYMENT_FAILED' ? checkoutStore.error.message : null
+  checkoutStore.error?.type === 'PAYMENT_FAILED' ? checkoutStore.error.message : null,
 )
 </script>
 

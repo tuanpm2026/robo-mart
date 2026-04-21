@@ -98,9 +98,15 @@ const maskedCard = computed(() => {
   font-size: 14px;
   color: var(--color-gray-700, #374151);
 }
-.sco__item-name { flex: 1; }
-.sco__item-qty { color: var(--color-gray-500, #6b7280); }
-.sco__item-price { font-weight: 500; }
+.sco__item-name {
+  flex: 1;
+}
+.sco__item-qty {
+  color: var(--color-gray-500, #6b7280);
+}
+.sco__item-price {
+  font-weight: 500;
+}
 .sco__total {
   font-size: 15px;
   color: var(--color-gray-900, #111827);
@@ -121,5 +127,7 @@ const maskedCard = computed(() => {
   padding-top: 16px;
   gap: 12px;
 }
-.sco__place-order { min-width: 160px; }
+.sco__place-order {
+  min-width: 160px;
+}
 </style>

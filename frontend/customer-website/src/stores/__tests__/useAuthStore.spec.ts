@@ -256,7 +256,10 @@ describe('useAuthStore', () => {
       const store = useAuthStore()
       await store.login('google', 'user@example.com')
 
-      expect(mockLogin).toHaveBeenCalledWith({ kc_idp_hint: 'google', login_hint: 'user@example.com' })
+      expect(mockLogin).toHaveBeenCalledWith({
+        kc_idp_hint: 'google',
+        login_hint: 'user@example.com',
+      })
     })
 
     it('should clear error before login', async () => {
@@ -354,7 +357,13 @@ describe('useAuthStore', () => {
       mockLogout.mockResolvedValue(undefined)
 
       const store = useAuthStore()
-      store.user = { id: 'test', email: 'test@test.com', firstName: 'Test', lastName: '', roles: [] }
+      store.user = {
+        id: 'test',
+        email: 'test@test.com',
+        firstName: 'Test',
+        lastName: '',
+        roles: [],
+      }
       store.accessToken = 'token'
 
       await store.logout()
@@ -381,7 +390,13 @@ describe('useAuthStore', () => {
   describe('displayName', () => {
     it('should return firstName when available', () => {
       const store = useAuthStore()
-      store.user = { id: 'test', email: 'test@test.com', firstName: 'John', lastName: 'Doe', roles: [] }
+      store.user = {
+        id: 'test',
+        email: 'test@test.com',
+        firstName: 'John',
+        lastName: 'Doe',
+        roles: [],
+      }
 
       expect(store.displayName).toBe('John')
     })

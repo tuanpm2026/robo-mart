@@ -20,10 +20,7 @@ interface PagedResponse<T> {
   traceId: string
 }
 
-export async function fetchDlqEvents(
-  page: number,
-  size: number,
-): Promise<PagedResponse<DlqEvent>> {
+export async function fetchDlqEvents(page: number, size: number): Promise<PagedResponse<DlqEvent>> {
   const { data } = await adminClient.get<PagedResponse<DlqEvent>>('/api/v1/admin/dlq', {
     params: { page, size },
   })

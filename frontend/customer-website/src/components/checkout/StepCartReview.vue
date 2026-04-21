@@ -17,7 +17,12 @@ async function onUpdateQuantity(productId: number, quantity: number) {
   try {
     await cartStore.updateItemQuantity(productId, quantity)
   } catch {
-    toast.add({ severity: 'error', summary: 'Update failed', detail: 'Could not update quantity.', life: 5000 })
+    toast.add({
+      severity: 'error',
+      summary: 'Update failed',
+      detail: 'Could not update quantity.',
+      life: 5000,
+    })
   } finally {
     loadingItems.delete(productId)
   }
@@ -30,7 +35,12 @@ async function onRemoveItem(productId: number) {
     await cartStore.removeCartItem(productId)
     toast.add({ severity: 'success', summary: 'Item removed', life: 3000 })
   } catch {
-    toast.add({ severity: 'error', summary: 'Remove failed', detail: 'Could not remove item.', life: 5000 })
+    toast.add({
+      severity: 'error',
+      summary: 'Remove failed',
+      detail: 'Could not remove item.',
+      life: 5000,
+    })
   } finally {
     loadingItems.delete(productId)
   }

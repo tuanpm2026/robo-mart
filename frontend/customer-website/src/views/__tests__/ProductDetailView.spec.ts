@@ -9,10 +9,18 @@ import ProductDetailView from '../ProductDetailView.vue'
 vi.mock('@/api/productApi', () => ({
   getProduct: vi.fn().mockResolvedValue({
     data: {
-      id: 1, sku: 'P1', name: 'Wireless Mouse', description: 'A great mouse', price: 29.99, rating: 4.5, brand: 'Logitech', stockQuantity: 50,
+      id: 1,
+      sku: 'P1',
+      name: 'Wireless Mouse',
+      description: 'A great mouse',
+      price: 29.99,
+      rating: 4.5,
+      brand: 'Logitech',
+      stockQuantity: 50,
       category: { id: 1, name: 'Electronics', description: 'Electronic devices' },
       images: [{ id: 1, imageUrl: '/mouse.jpg', altText: 'Mouse image', displayOrder: 1 }],
-      createdAt: '2026-01-01', updatedAt: '2026-01-01',
+      createdAt: '2026-01-01',
+      updatedAt: '2026-01-01',
     },
     traceId: '',
   }),
@@ -29,7 +37,14 @@ vi.mock('@/api/cartApi', () => ({
     traceId: '',
   }),
   addToCart: vi.fn().mockResolvedValue({
-    data: { cartId: 'c1', items: [{ productId: 1, productName: 'Wireless Mouse', price: 29.99, quantity: 1, subtotal: 29.99 }], totalItems: 1, totalPrice: 29.99 },
+    data: {
+      cartId: 'c1',
+      items: [
+        { productId: 1, productName: 'Wireless Mouse', price: 29.99, quantity: 1, subtotal: 29.99 },
+      ],
+      totalItems: 1,
+      totalPrice: 29.99,
+    },
     traceId: '',
   }),
   updateQuantity: vi.fn(),

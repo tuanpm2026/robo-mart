@@ -9,8 +9,28 @@ import HomeView from '../HomeView.vue'
 vi.mock('@/api/productApi', () => ({
   getProducts: vi.fn().mockResolvedValue({
     data: [
-      { id: 1, sku: 'P1', name: 'Product 1', price: 10, rating: 4, brand: 'B', stockQuantity: 50, categoryName: 'C', primaryImageUrl: '/1.jpg' },
-      { id: 2, sku: 'P2', name: 'Product 2', price: 20, rating: 3, brand: 'B', stockQuantity: 5, categoryName: 'C', primaryImageUrl: '/2.jpg' },
+      {
+        id: 1,
+        sku: 'P1',
+        name: 'Product 1',
+        price: 10,
+        rating: 4,
+        brand: 'B',
+        stockQuantity: 50,
+        categoryName: 'C',
+        primaryImageUrl: '/1.jpg',
+      },
+      {
+        id: 2,
+        sku: 'P2',
+        name: 'Product 2',
+        price: 20,
+        rating: 3,
+        brand: 'B',
+        stockQuantity: 5,
+        categoryName: 'C',
+        primaryImageUrl: '/2.jpg',
+      },
     ],
     pagination: { page: 0, size: 20, totalElements: 2, totalPages: 1 },
     traceId: '',

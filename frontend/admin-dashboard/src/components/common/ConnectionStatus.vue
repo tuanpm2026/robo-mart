@@ -6,14 +6,14 @@ const store = useWebSocketStore()
 
 <template>
   <div class="ws-status" aria-live="polite" :aria-label="`WebSocket: ${store.connectionStatus}`">
-    <span
-      class="ws-status-dot"
-      :class="`ws-status-dot--${store.connectionStatus}`"
-    />
+    <span class="ws-status-dot" :class="`ws-status-dot--${store.connectionStatus}`" />
     <span v-if="store.connectionStatus === 'reconnecting'" class="ws-status-label">
       Reconnecting...
     </span>
-    <span v-else-if="store.connectionStatus === 'disconnected'" class="ws-status-label ws-status-label--error">
+    <span
+      v-else-if="store.connectionStatus === 'disconnected'"
+      class="ws-status-label ws-status-label--error"
+    >
       Disconnected
     </span>
   </div>
@@ -61,7 +61,12 @@ const store = useWebSocketStore()
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 </style>

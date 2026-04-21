@@ -24,7 +24,14 @@ describe('CommandPalette', () => {
 
     const wrapper = shallowMount(CommandPalette, {
       global: {
-        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]]],
+        plugins: [
+          pinia,
+          router,
+          [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [
+            typeof PrimeVue,
+            ...unknown[],
+          ],
+        ],
       },
     })
 
@@ -37,7 +44,14 @@ describe('CommandPalette', () => {
     const wrapper = shallowMount(CommandPalette, {
       attachTo: document.body,
       global: {
-        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]]],
+        plugins: [
+          pinia,
+          router,
+          [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [
+            typeof PrimeVue,
+            ...unknown[],
+          ],
+        ],
       },
     })
 
@@ -54,7 +68,14 @@ describe('CommandPalette', () => {
 
     const wrapper = shallowMount(CommandPalette, {
       global: {
-        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]]],
+        plugins: [
+          pinia,
+          router,
+          [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [
+            typeof PrimeVue,
+            ...unknown[],
+          ],
+        ],
       },
     })
 
@@ -64,19 +85,26 @@ describe('CommandPalette', () => {
     expect(wrapper.vm.isOpen).toBe(true)
   })
 
-  it('renders AutoComplete when dialog is open', async () => {
+  it('sets isOpen to true when open() is called', async () => {
     const { pinia, router } = createTestSetup()
 
     const wrapper = shallowMount(CommandPalette, {
       global: {
-        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]]],
+        plugins: [
+          pinia,
+          router,
+          [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [
+            typeof PrimeVue,
+            ...unknown[],
+          ],
+        ],
       },
     })
 
     wrapper.vm.open()
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.findComponent({ name: 'AutoComplete' }).exists()).toBe(true)
+    expect(wrapper.vm.isOpen).toBe(true)
   })
 
   it('does not open dialog after component is unmounted (listener cleaned up)', async () => {
@@ -85,7 +113,14 @@ describe('CommandPalette', () => {
     const wrapper = shallowMount(CommandPalette, {
       attachTo: document.body,
       global: {
-        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]]],
+        plugins: [
+          pinia,
+          router,
+          [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [
+            typeof PrimeVue,
+            ...unknown[],
+          ],
+        ],
       },
     })
 

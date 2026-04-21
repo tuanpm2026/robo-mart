@@ -118,7 +118,7 @@ const userMenuItems = [
           </button>
           <div class="admin-notification-btn">
             <Badge :value="notificationCount > 0 ? notificationCount : undefined" severity="danger">
-              <i class="pi pi-bell" style="font-size: 1.1rem;" />
+              <i class="pi pi-bell" style="font-size: 1.1rem" />
             </Badge>
           </div>
           <button class="admin-user-btn" @click="(e) => userMenuRef?.toggle(e)">

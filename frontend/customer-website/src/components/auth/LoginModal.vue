@@ -177,7 +177,12 @@ function closeModal() {
 
       <p class="login-modal__register">
         Don't have an account?
-        <button type="button" class="login-modal__register-link" :disabled="isSubmitting" @click="handleRegister">
+        <button
+          type="button"
+          class="login-modal__register-link"
+          :disabled="isSubmitting"
+          @click="handleRegister"
+        >
           Register
         </button>
       </p>

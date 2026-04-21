@@ -17,8 +17,22 @@ interface Product {
 
 const products: Product[] = [
   { id: 1, name: 'RoboKit Pro', category: 'Robotics', price: 299.99, stock: 42, status: 'Active' },
-  { id: 2, name: 'TechWheels X1', category: 'Components', price: 49.99, stock: 120, status: 'Active' },
-  { id: 3, name: 'SensorPack v2', category: 'Sensors', price: 89.99, stock: 0, status: 'Out of Stock' },
+  {
+    id: 2,
+    name: 'TechWheels X1',
+    category: 'Components',
+    price: 49.99,
+    stock: 120,
+    status: 'Active',
+  },
+  {
+    id: 3,
+    name: 'SensorPack v2',
+    category: 'Sensors',
+    price: 89.99,
+    stock: 0,
+    status: 'Out of Stock',
+  },
   { id: 4, name: 'AI Brain Module', category: 'AI', price: 199.99, stock: 15, status: 'Low Stock' },
   { id: 5, name: 'PowerCell 5000', category: 'Power', price: 34.99, stock: 300, status: 'Active' },
 ]
@@ -78,9 +92,7 @@ function viewProduct(product: Product) {
       <Column field="name" header="Name" :sortable="true" />
       <Column field="category" header="Category" :sortable="true" />
       <Column field="price" header="Price" :sortable="true">
-        <template #body="{ data }">
-          ${{ data.price.toFixed(2) }}
-        </template>
+        <template #body="{ data }"> ${{ data.price.toFixed(2) }} </template>
       </Column>
       <Column field="stock" header="Stock" :sortable="true" />
       <Column field="status" header="Status" :sortable="true" />

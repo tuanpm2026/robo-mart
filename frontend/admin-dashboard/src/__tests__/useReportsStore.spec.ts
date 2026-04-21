@@ -44,7 +44,9 @@ describe('useReportsStore', () => {
   })
 
   it('rebuild triggers reload of summary', async () => {
-    vi.mocked(reportsApi.triggerRebuild).mockResolvedValue('Rebuild initiated at 2026-04-10T00:00:00Z')
+    vi.mocked(reportsApi.triggerRebuild).mockResolvedValue(
+      'Rebuild initiated at 2026-04-10T00:00:00Z',
+    )
     vi.mocked(reportsApi.fetchReportSummary).mockResolvedValue(mockSummary)
 
     const store = useReportsStore()

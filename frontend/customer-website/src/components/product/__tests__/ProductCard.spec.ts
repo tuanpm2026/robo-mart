@@ -13,7 +13,14 @@ vi.mock('@/api/cartApi', () => ({
     traceId: '',
   }),
   addToCart: vi.fn().mockResolvedValue({
-    data: { cartId: 'c1', items: [{ productId: 1, productName: 'Test Product', price: 29.99, quantity: 1, subtotal: 29.99 }], totalItems: 1, totalPrice: 29.99 },
+    data: {
+      cartId: 'c1',
+      items: [
+        { productId: 1, productName: 'Test Product', price: 29.99, quantity: 1, subtotal: 29.99 },
+      ],
+      totalItems: 1,
+      totalPrice: 29.99,
+    },
     traceId: '',
   }),
   updateQuantity: vi.fn(),

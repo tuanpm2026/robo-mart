@@ -162,7 +162,12 @@ async function handleSubmit() {
     emit('saved')
     isVisible.value = false
   } catch {
-    toast.add({ severity: 'error', summary: 'Save failed', detail: 'Could not save product', life: 0 })
+    toast.add({
+      severity: 'error',
+      summary: 'Save failed',
+      detail: 'Could not save product',
+      life: 0,
+    })
   } finally {
     isSaving.value = false
   }
@@ -170,10 +175,7 @@ async function handleSubmit() {
 </script>
 
 <template>
-  <SlideOverPanel
-    v-model:visible="isVisible"
-    :title="product ? 'Edit Product' : 'Add Product'"
-  >
+  <SlideOverPanel v-model:visible="isVisible" :title="product ? 'Edit Product' : 'Add Product'">
     <form class="product-form" @submit.prevent="handleSubmit">
       <!-- Two-column grid for admin efficiency -->
       <div class="form-grid">
@@ -223,20 +225,32 @@ async function handleSubmit() {
 
         <!-- Brand (left) -->
         <div class="field">
-          <label class="field-label">Brand <span class="text-gray-400 text-xs">(optional)</span></label>
+          <label class="field-label"
+            >Brand <span class="text-gray-400 text-xs">(optional)</span></label
+          >
           <InputText v-model="brand" class="w-full" placeholder="Brand name" />
         </div>
 
         <!-- SKU (right, create mode only) -->
         <div v-if="!product" class="field">
-          <label class="field-label">SKU <span class="text-gray-400 text-xs">(optional)</span></label>
+          <label class="field-label"
+            >SKU <span class="text-gray-400 text-xs">(optional)</span></label
+          >
           <InputText v-model="sku" class="w-full" placeholder="Auto-generated if empty" />
         </div>
 
         <!-- Description (full width) -->
         <div class="field col-span-2">
-          <label class="field-label">Description <span class="text-gray-400 text-xs">(optional)</span></label>
-          <Textarea v-model="description" :rows="3" class="w-full" placeholder="Product description" auto-resize />
+          <label class="field-label"
+            >Description <span class="text-gray-400 text-xs">(optional)</span></label
+          >
+          <Textarea
+            v-model="description"
+            :rows="3"
+            class="w-full"
+            placeholder="Product description"
+            auto-resize
+          />
         </div>
 
         <!-- Product Images (full width) -->
@@ -255,7 +269,7 @@ async function handleSubmit() {
       <div class="form-actions">
         <Button
           type="submit"
-          :label="isSaving ? 'Saving...' : (product ? 'Save Changes' : 'Create Product')"
+          :label="isSaving ? 'Saving...' : product ? 'Save Changes' : 'Create Product'"
           :icon="isSaving ? 'pi pi-spinner pi-spin' : 'pi pi-check'"
           :disabled="isSaving"
         />

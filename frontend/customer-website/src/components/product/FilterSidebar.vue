@@ -65,11 +65,7 @@ defineExpose({ clearAll })
       <div v-if="brands.length > 0" class="filter-sidebar__section">
         <h3 class="filter-sidebar__section-title">Brand</h3>
         <div v-for="brand in brands" :key="brand" class="filter-sidebar__option">
-          <Checkbox
-            v-model="selectedBrands"
-            :inputId="`brand-${brand}`"
-            :value="brand"
-          />
+          <Checkbox v-model="selectedBrands" :inputId="`brand-${brand}`" :value="brand" />
           <label :for="`brand-${brand}`" class="filter-sidebar__label">{{ brand }}</label>
         </div>
       </div>
@@ -78,7 +74,14 @@ defineExpose({ clearAll })
         <h3 class="filter-sidebar__section-title">
           Price: ${{ priceRange[0] }} – ${{ priceRange[1] }}
         </h3>
-        <Slider v-model="priceRange" range :min="0" :max="1000" :step="10" class="filter-sidebar__slider" />
+        <Slider
+          v-model="priceRange"
+          range
+          :min="0"
+          :max="1000"
+          :step="10"
+          class="filter-sidebar__slider"
+        />
       </div>
 
       <div class="filter-sidebar__section">

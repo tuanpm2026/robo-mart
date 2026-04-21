@@ -18,9 +18,9 @@ export const useSystemHealthStore = defineStore('systemHealth', () => {
 
   const overallHealth = computed((): 'healthy' | 'degraded' | 'down' => {
     if (services.value.length === 0) return 'healthy'
-    const statuses = services.value.map(s => computeVisualStatus(s))
-    if (statuses.some(s => s === 'down')) return 'down'
-    if (statuses.some(s => s === 'degraded')) return 'degraded'
+    const statuses = services.value.map((s) => computeVisualStatus(s))
+    if (statuses.some((s) => s === 'down')) return 'down'
+    if (statuses.some((s) => s === 'degraded')) return 'degraded'
     return 'healthy'
   })
 

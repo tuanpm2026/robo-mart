@@ -86,7 +86,12 @@ async function saveCellEdit(row: AdminProductListItem) {
     }
     toast.add({ severity: 'success', summary: 'Product updated', life: 3000 })
   } catch {
-    toast.add({ severity: 'error', summary: 'Update failed', detail: 'Could not save changes', life: 0 })
+    toast.add({
+      severity: 'error',
+      summary: 'Update failed',
+      detail: 'Could not save changes',
+      life: 0,
+    })
   }
 }
 
@@ -110,7 +115,12 @@ async function handleDelete(row: AdminProductListItem) {
     products.value = products.value.filter((p) => p.id !== row.id)
     toast.add({ severity: 'success', summary: 'Product deleted', life: 3000 })
   } catch {
-    toast.add({ severity: 'error', summary: 'Delete failed', detail: 'Could not delete product', life: 0 })
+    toast.add({
+      severity: 'error',
+      summary: 'Delete failed',
+      detail: 'Could not delete product',
+      life: 0,
+    })
   }
 }
 
@@ -258,7 +268,11 @@ async function executeBulkDelete(toDelete: typeof selectedRows.value) {
             :min="0.01"
             :input-style="{ width: '110px' }"
             autofocus
-            @update:model-value="(v) => { if (editingCell) editingCell.value = v ?? 0 }"
+            @update:model-value="
+              (v) => {
+                if (editingCell) editingCell.value = v ?? 0
+              }
+            "
             @keydown.enter="saveCellEdit(data)"
             @keydown.escape="cancelCellEdit"
           />

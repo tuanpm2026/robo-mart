@@ -38,10 +38,7 @@ const stockLabel = computed(() => {
 
 const breadcrumbItems = computed(() => {
   if (!product.value) return []
-  return [
-    { label: product.value.category.name },
-    { label: product.value.name },
-  ]
+  return [{ label: product.value.category.name }, { label: product.value.name }]
 })
 
 const breadcrumbHome = { icon: 'pi pi-home', to: '/' }
@@ -134,7 +131,11 @@ async function addToCart() {
 
     <!-- Product content -->
     <template v-else-if="product">
-      <Breadcrumb :model="breadcrumbItems" :home="breadcrumbHome" class="product-detail__breadcrumb" />
+      <Breadcrumb
+        :model="breadcrumbItems"
+        :home="breadcrumbHome"
+        class="product-detail__breadcrumb"
+      />
 
       <div class="product-detail__content">
         <div class="product-detail__gallery">

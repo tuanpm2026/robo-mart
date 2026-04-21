@@ -55,7 +55,8 @@ async function saveCellEdit(item: InventoryItemEnriched) {
     toast.add({
       severity: 'warn',
       summary: 'Invalid quantity',
-      detail: 'Restock quantity must be greater than current stock. To reduce stock, contact a system admin.',
+      detail:
+        'Restock quantity must be greater than current stock. To reduce stock, contact a system admin.',
       life: 5000,
     })
     return
@@ -123,15 +124,27 @@ async function confirmBulkRestock() {
     <!-- Page Header -->
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-xl font-semibold text-gray-900">Inventory</h1>
-      <span v-if="inventoryStore.lowStockItems.length > 0" class="text-sm text-yellow-700 font-medium">
+      <span
+        v-if="inventoryStore.lowStockItems.length > 0"
+        class="text-sm text-yellow-700 font-medium"
+      >
         ⚠ {{ inventoryStore.lowStockItems.length }} low-stock item(s)
       </span>
     </div>
 
     <!-- Error State -->
-    <div v-if="inventoryStore.error" class="mb-4 p-3 bg-red-50 text-red-700 rounded border border-red-200 text-sm">
+    <div
+      v-if="inventoryStore.error"
+      class="mb-4 p-3 bg-red-50 text-red-700 rounded border border-red-200 text-sm"
+    >
       {{ inventoryStore.error }}
-      <Button label="Retry" text size="small" class="ml-2" @click="inventoryStore.loadInventory()" />
+      <Button
+        label="Retry"
+        text
+        size="small"
+        class="ml-2"
+        @click="inventoryStore.loadInventory()"
+      />
     </div>
 
     <!-- Bulk Action Toolbar -->
@@ -205,8 +218,20 @@ async function confirmBulkRestock() {
               @keydown.enter="saveCellEdit(data)"
               @keydown.escape="cancelCellEdit"
             />
-            <Button icon="pi pi-check" text size="small" severity="success" @click="saveCellEdit(data)" />
-            <Button icon="pi pi-times" text size="small" severity="secondary" @click="cancelCellEdit" />
+            <Button
+              icon="pi pi-check"
+              text
+              size="small"
+              severity="success"
+              @click="saveCellEdit(data)"
+            />
+            <Button
+              icon="pi pi-times"
+              text
+              size="small"
+              severity="secondary"
+              @click="cancelCellEdit"
+            />
           </div>
           <!-- Display mode — click to edit -->
           <button
@@ -215,7 +240,10 @@ async function confirmBulkRestock() {
             :title="'Click to restock'"
             @click="startCellEdit(data)"
           >
-            <span class="font-semibold" :class="isLowStock(data) ? 'text-yellow-700' : 'text-gray-900'">
+            <span
+              class="font-semibold"
+              :class="isLowStock(data) ? 'text-yellow-700' : 'text-gray-900'"
+            >
               {{ data.availableQuantity }}
             </span>
           </button>

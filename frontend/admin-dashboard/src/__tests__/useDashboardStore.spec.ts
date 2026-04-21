@@ -12,7 +12,10 @@ describe('useDashboardStore', () => {
   })
 
   it('loads metrics in parallel and sets state', async () => {
-    vi.mocked(dashboardApi.fetchOrderMetrics).mockResolvedValue({ ordersToday: 10, revenueToday: 500 })
+    vi.mocked(dashboardApi.fetchOrderMetrics).mockResolvedValue({
+      ordersToday: 10,
+      revenueToday: 500,
+    })
     vi.mocked(dashboardApi.fetchInventoryMetrics).mockResolvedValue({ lowStockCount: 3 })
 
     const store = useDashboardStore()
@@ -28,7 +31,9 @@ describe('useDashboardStore', () => {
   it('sets isLoading true during fetch and false after', async () => {
     let resolveOrder!: (v: { ordersToday: number; revenueToday: number }) => void
     vi.mocked(dashboardApi.fetchOrderMetrics).mockReturnValue(
-      new Promise((r) => { resolveOrder = r }),
+      new Promise((r) => {
+        resolveOrder = r
+      }),
     )
     vi.mocked(dashboardApi.fetchInventoryMetrics).mockResolvedValue({ lowStockCount: 0 })
 

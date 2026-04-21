@@ -7,11 +7,7 @@ import { useCartStore } from '@/stores/useCartStore'
 import type { ShippingFormData, PaymentFormData, CheckoutError } from '@/types/checkout'
 import { formatShippingAddress } from '@/types/checkout'
 
-const SAGA_MESSAGES = [
-  'Creating your order...',
-  'Reserving items...',
-  'Processing payment...',
-]
+const SAGA_MESSAGES = ['Creating your order...', 'Reserving items...', 'Processing payment...']
 
 interface ApiErrorBody {
   error?: {
@@ -92,7 +88,8 @@ export const useCheckoutStore = defineStore('checkout', () => {
       } else if (errorCode === 'ORDER_PAYMENT_FAILED') {
         error.value = {
           type: 'PAYMENT_FAILED',
-          message: "Payment couldn't be processed. Your order is saved — try again or use a different method.",
+          message:
+            "Payment couldn't be processed. Your order is saved — try again or use a different method.",
         }
         currentStep.value = 3
       } else {

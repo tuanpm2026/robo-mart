@@ -65,14 +65,20 @@ describe('AlertCard', () => {
   it('emits dismissed and shows success toast after successful restock', async () => {
     const wrapper = mountCard(defaultProps)
 
-    const restockBtn = wrapper.findAllComponents({ name: 'Button' }).find((b) => b.props('label') === 'Quick Restock')
+    const restockBtn = wrapper
+      .findAllComponents({ name: 'Button' })
+      .find((b) => b.props('label') === 'Quick Restock')
     await restockBtn!.trigger('click')
 
-    const updateBtn = wrapper.findAllComponents({ name: 'Button' }).find((b) => b.props('label') === 'Update')
+    const updateBtn = wrapper
+      .findAllComponents({ name: 'Button' })
+      .find((b) => b.props('label') === 'Update')
     await updateBtn!.trigger('click')
     await wrapper.vm.$nextTick()
 
-    expect(mockToastAdd).toHaveBeenCalledWith(expect.objectContaining({ severity: 'success', summary: 'Stock updated' }))
+    expect(mockToastAdd).toHaveBeenCalledWith(
+      expect.objectContaining({ severity: 'success', summary: 'Stock updated' }),
+    )
     expect(wrapper.emitted('dismissed')).toBeTruthy()
   })
 })

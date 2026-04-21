@@ -66,18 +66,44 @@ describe('useCheckoutStore', () => {
 
   it('setShippingData stores shipping form data', () => {
     const store = useCheckoutStore()
-    const data = { fullName: 'Jane', street: '123 St', city: 'SF', state: 'CA', postalCode: '12345', country: 'US' }
+    const data = {
+      fullName: 'Jane',
+      street: '123 St',
+      city: 'SF',
+      state: 'CA',
+      postalCode: '12345',
+      country: 'US',
+    }
     store.setShippingData(data)
     expect(store.shippingData).toEqual(data)
   })
 
   it('placeOrder succeeds: navigates to confirmation and resets cart', async () => {
     const store = useCheckoutStore()
-    store.setShippingData({ fullName: 'Jane', street: '123 St', city: 'SF', state: 'CA', postalCode: '12345', country: 'US' })
-    store.setPaymentData({ cardholderName: 'Jane', cardNumber: '4242424242424242', expiry: '12/99', cvv: '123' })
+    store.setShippingData({
+      fullName: 'Jane',
+      street: '123 St',
+      city: 'SF',
+      state: 'CA',
+      postalCode: '12345',
+      country: 'US',
+    })
+    store.setPaymentData({
+      cardholderName: 'Jane',
+      cardNumber: '4242424242424242',
+      expiry: '12/99',
+      cvv: '123',
+    })
 
     vi.mocked(mockPlaceOrder).mockResolvedValue({
-      data: { id: 42, status: 'CONFIRMED', createdAt: '', totalAmount: 20, itemCount: 1, cancellationReason: null },
+      data: {
+        id: 42,
+        status: 'CONFIRMED',
+        createdAt: '',
+        totalAmount: 20,
+        itemCount: 1,
+        cancellationReason: null,
+      },
       traceId: 'trace-1',
     })
 
@@ -91,8 +117,20 @@ describe('useCheckoutStore', () => {
 
   it('placeOrder sets PAYMENT_FAILED and goes to step 3 on payment error', async () => {
     const store = useCheckoutStore()
-    store.setShippingData({ fullName: 'Jane', street: '123 St', city: 'SF', state: 'CA', postalCode: '12345', country: 'US' })
-    store.setPaymentData({ cardholderName: 'Jane', cardNumber: '4242424242424242', expiry: '12/99', cvv: '123' })
+    store.setShippingData({
+      fullName: 'Jane',
+      street: '123 St',
+      city: 'SF',
+      state: 'CA',
+      postalCode: '12345',
+      country: 'US',
+    })
+    store.setPaymentData({
+      cardholderName: 'Jane',
+      cardNumber: '4242424242424242',
+      expiry: '12/99',
+      cvv: '123',
+    })
 
     vi.mocked(mockPlaceOrder).mockRejectedValue({
       response: { data: { error: { code: 'ORDER_PAYMENT_FAILED', message: 'Payment declined' } } },
@@ -108,11 +146,25 @@ describe('useCheckoutStore', () => {
 
   it('placeOrder sets INVENTORY_FAILED on inventory error', async () => {
     const store = useCheckoutStore()
-    store.setShippingData({ fullName: 'Jane', street: '123 St', city: 'SF', state: 'CA', postalCode: '12345', country: 'US' })
-    store.setPaymentData({ cardholderName: 'Jane', cardNumber: '4242424242424242', expiry: '12/99', cvv: '123' })
+    store.setShippingData({
+      fullName: 'Jane',
+      street: '123 St',
+      city: 'SF',
+      state: 'CA',
+      postalCode: '12345',
+      country: 'US',
+    })
+    store.setPaymentData({
+      cardholderName: 'Jane',
+      cardNumber: '4242424242424242',
+      expiry: '12/99',
+      cvv: '123',
+    })
 
     vi.mocked(mockPlaceOrder).mockRejectedValue({
-      response: { data: { error: { code: 'ORDER_INVENTORY_FAILED', message: 'Insufficient stock' } } },
+      response: {
+        data: { error: { code: 'ORDER_INVENTORY_FAILED', message: 'Insufficient stock' } },
+      },
     })
 
     await store.placeOrder()
@@ -123,8 +175,20 @@ describe('useCheckoutStore', () => {
 
   it('placeOrder sets UNKNOWN error on unexpected failure', async () => {
     const store = useCheckoutStore()
-    store.setShippingData({ fullName: 'Jane', street: '123 St', city: 'SF', state: 'CA', postalCode: '12345', country: 'US' })
-    store.setPaymentData({ cardholderName: 'Jane', cardNumber: '4242424242424242', expiry: '12/99', cvv: '123' })
+    store.setShippingData({
+      fullName: 'Jane',
+      street: '123 St',
+      city: 'SF',
+      state: 'CA',
+      postalCode: '12345',
+      country: 'US',
+    })
+    store.setPaymentData({
+      cardholderName: 'Jane',
+      cardNumber: '4242424242424242',
+      expiry: '12/99',
+      cvv: '123',
+    })
 
     vi.mocked(mockPlaceOrder).mockRejectedValue(new Error('Network error'))
 
@@ -138,7 +202,14 @@ describe('useCheckoutStore', () => {
     const store = useCheckoutStore()
     store.nextStep()
     store.nextStep()
-    store.setShippingData({ fullName: 'Jane', street: '123 St', city: 'SF', state: 'CA', postalCode: '12345', country: 'US' })
+    store.setShippingData({
+      fullName: 'Jane',
+      street: '123 St',
+      city: 'SF',
+      state: 'CA',
+      postalCode: '12345',
+      country: 'US',
+    })
     store.$reset()
     expect(store.currentStep).toBe(1)
     expect(store.shippingData).toBeNull()

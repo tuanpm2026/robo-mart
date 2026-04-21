@@ -75,7 +75,10 @@ interface ApiResponse<T> {
   traceId: string
 }
 
-export async function listProducts(page = 0, size = 25): Promise<PagedResponse<AdminProductListItem>> {
+export async function listProducts(
+  page = 0,
+  size = 25,
+): Promise<PagedResponse<AdminProductListItem>> {
   const { data } = await adminClient.get<PagedResponse<AdminProductListItem>>(
     `/api/v1/products?page=${page}&size=${size}`,
   )
@@ -90,7 +93,10 @@ export async function createProduct(payload: CreateProductPayload): Promise<Admi
   return data.data
 }
 
-export async function updateProduct(id: number, payload: UpdateProductPayload): Promise<AdminProduct> {
+export async function updateProduct(
+  id: number,
+  payload: UpdateProductPayload,
+): Promise<AdminProduct> {
   const { data } = await adminClient.put<ApiResponse<AdminProduct>>(
     `/api/v1/admin/products/${id}`,
     payload,
@@ -114,7 +120,7 @@ export async function getProductDetail(id: number): Promise<AdminProduct> {
 
 export async function uploadImages(productId: number, files: File[]): Promise<ProductImage[]> {
   const formData = new FormData()
-  files.forEach(f => formData.append('files', f))
+  files.forEach((f) => formData.append('files', f))
   const { data } = await adminClient.post<ProductImage[]>(
     `/api/v1/admin/products/${productId}/images`,
     formData,

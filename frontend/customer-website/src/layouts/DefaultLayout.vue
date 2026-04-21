@@ -74,7 +74,7 @@ async function handleLogout() {
 
 <template>
   <div class="layout">
-    <header class="header">
+    <header class="header" role="banner">
       <div class="header__inner">
         <div class="header__logo">
           <RouterLink to="/" aria-label="RoboMart Home">
@@ -90,13 +90,7 @@ async function handleLogout() {
             class="header__cart-btn"
             :aria-label="`Shopping cart, ${cartStore.totalItems} items`"
           >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              aria-hidden="true"
-            >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path
                 d="M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z"
                 stroke="currentColor"
@@ -132,13 +126,7 @@ async function handleLogout() {
               <i class="pi pi-chevron-down header__user-chevron" />
             </template>
             <template v-else>
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-              >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path
                   d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
                   stroke="currentColor"
@@ -192,7 +180,7 @@ async function handleLogout() {
       <RouterView />
     </main>
 
-    <footer class="footer">
+    <footer class="footer" role="contentinfo">
       <div class="footer__inner">
         <p>&copy; {{ new Date().getFullYear() }} RoboMart. All rights reserved.</p>
       </div>
@@ -259,7 +247,9 @@ async function handleLogout() {
   color: var(--color-gray-600);
   cursor: pointer;
   text-decoration: none;
-  transition: background-color 200ms, color 200ms;
+  transition:
+    background-color 200ms,
+    color 200ms;
 }
 
 .header__cart-badge {
@@ -270,9 +260,15 @@ async function handleLogout() {
 }
 
 @keyframes badge-pop {
-  0% { transform: scale(0.5); }
-  70% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(0.5);
+  }
+  70% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .header__cart-btn:hover,
@@ -320,7 +316,9 @@ async function handleLogout() {
   text-decoration: none;
   border-radius: 20px;
   white-space: nowrap;
-  transition: background-color 200ms, color 200ms;
+  transition:
+    background-color 200ms,
+    color 200ms;
 }
 
 .category-nav__link:hover {

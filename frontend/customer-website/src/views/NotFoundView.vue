@@ -7,10 +7,10 @@ const router = useRouter()
 <template>
   <div class="not-found" role="status">
     <h1 class="not-found__title">Page not found</h1>
-    <p class="not-found__description">The page you're looking for doesn't exist or has been moved.</p>
-    <button class="not-found__cta" type="button" @click="router.push('/')">
-      Go Home
-    </button>
+    <p class="not-found__description">
+      The page you're looking for doesn't exist or has been moved.
+    </p>
+    <button class="not-found__cta" type="button" @click="router.push('/')">Go Home</button>
   </div>
 </template>
 

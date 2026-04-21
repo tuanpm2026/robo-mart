@@ -37,9 +37,7 @@ describe('CartItem', () => {
 
   it('should have accessible aria-label', () => {
     const wrapper = mountCartItem()
-    expect(wrapper.find('.cart-item').attributes('aria-label')).toBe(
-      'Test Product, quantity 2',
-    )
+    expect(wrapper.find('.cart-item').attributes('aria-label')).toBe('Test Product, quantity 2')
   })
 
   it('should have remove button with aria-label', () => {

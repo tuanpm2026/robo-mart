@@ -17,17 +17,61 @@ import { listProducts } from '@/api/productAdminApi'
 import ProductsPage from '../views/ProductsPage.vue'
 
 const mockProducts = [
-  { id: 1, sku: 'SKU-001', name: 'Product A', description: null, price: 29.99, brand: 'BrandA', rating: 4.5, stockQuantity: 100, categoryId: 1, categoryName: 'Electronics', primaryImageUrl: null },
-  { id: 2, sku: 'SKU-002', name: 'Product B', description: null, price: 49.99, brand: 'BrandB', rating: 3.8, stockQuantity: 0, categoryId: 2, categoryName: 'Toys', primaryImageUrl: null },
-  { id: 3, sku: 'SKU-003', name: 'Product C', description: null, price: 9.99, brand: null, rating: null, stockQuantity: 50, categoryId: 1, categoryName: 'Electronics', primaryImageUrl: null },
+  {
+    id: 1,
+    sku: 'SKU-001',
+    name: 'Product A',
+    description: null,
+    price: 29.99,
+    brand: 'BrandA',
+    rating: 4.5,
+    stockQuantity: 100,
+    categoryId: 1,
+    categoryName: 'Electronics',
+    primaryImageUrl: null,
+  },
+  {
+    id: 2,
+    sku: 'SKU-002',
+    name: 'Product B',
+    description: null,
+    price: 49.99,
+    brand: 'BrandB',
+    rating: 3.8,
+    stockQuantity: 0,
+    categoryId: 2,
+    categoryName: 'Toys',
+    primaryImageUrl: null,
+  },
+  {
+    id: 3,
+    sku: 'SKU-003',
+    name: 'Product C',
+    description: null,
+    price: 9.99,
+    brand: null,
+    rating: null,
+    stockQuantity: 50,
+    categoryId: 1,
+    categoryName: 'Electronics',
+    primaryImageUrl: null,
+  },
 ]
 
 function createGlobalConfig() {
   const pinia = createPinia()
   return {
-    plugins: [pinia, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]], ToastService, ConfirmationService],
+    plugins: [
+      pinia,
+      [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]],
+      ToastService,
+      ConfirmationService,
+    ],
     stubs: {
-      DataTable: { template: '<div data-testid="datatable"><slot name="loading" /><slot name="empty" /><slot /></div>' },
+      DataTable: {
+        template:
+          '<div data-testid="datatable"><slot name="loading" /><slot name="empty" /><slot /></div>',
+      },
       Column: { template: '<div><slot name="body" :data="{}" /></div>' },
       Button: { template: '<button @click="$emit(\'click\')"><slot /></button>' },
       ProductFormSlideOver: { template: '<div />' },

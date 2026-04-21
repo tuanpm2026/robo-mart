@@ -107,7 +107,8 @@ export const useAuthStore = defineStore('auth', () => {
     if (loginHint) {
       params.login_hint = loginHint
     }
-    const path = redirectTo ?? (window.location.pathname + window.location.search + window.location.hash)
+    const path =
+      redirectTo ?? window.location.pathname + window.location.search + window.location.hash
     saveRedirectPath(path)
     await authLogin(Object.keys(params).length > 0 ? params : undefined)
   }

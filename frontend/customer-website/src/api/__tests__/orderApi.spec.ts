@@ -29,7 +29,9 @@ describe('orderApi', () => {
       const { getOrders } = await import('../orderApi')
       const result = await getOrders({ page: 0, size: 10 })
 
-      expect(apiClient.get).toHaveBeenCalledWith('/api/v1/orders', { params: { page: 0, size: 10 } })
+      expect(apiClient.get).toHaveBeenCalledWith('/api/v1/orders', {
+        params: { page: 0, size: 10 },
+      })
       expect(result.data).toEqual([])
       expect(result.pagination.totalElements).toBe(0)
     })
@@ -67,7 +69,9 @@ describe('orderApi', () => {
         items: [],
         statusHistory: [],
       }
-      vi.mocked(apiClient.get).mockResolvedValueOnce({ data: { data: orderDetail, traceId: 'trace-1' } })
+      vi.mocked(apiClient.get).mockResolvedValueOnce({
+        data: { data: orderDetail, traceId: 'trace-1' },
+      })
 
       const { getOrder } = await import('../orderApi')
       const result = await getOrder(123)
@@ -119,7 +123,9 @@ describe('orderApi', () => {
       const { cancelOrder } = await import('../orderApi')
       await cancelOrder(123, 'Changed my mind')
 
-      expect(apiClient.post).toHaveBeenCalledWith('/api/v1/orders/123/cancel', { reason: 'Changed my mind' })
+      expect(apiClient.post).toHaveBeenCalledWith('/api/v1/orders/123/cancel', {
+        reason: 'Changed my mind',
+      })
     })
 
     it('calls POST /api/v1/orders/456/cancel with undefined reason', async () => {
@@ -129,7 +135,9 @@ describe('orderApi', () => {
       const { cancelOrder } = await import('../orderApi')
       await cancelOrder(456, undefined)
 
-      expect(apiClient.post).toHaveBeenCalledWith('/api/v1/orders/456/cancel', { reason: undefined })
+      expect(apiClient.post).toHaveBeenCalledWith('/api/v1/orders/456/cancel', {
+        reason: undefined,
+      })
     })
   })
 })

@@ -9,7 +9,9 @@ const inventoryStore = useInventoryStore()
 const hasLoaded = ref(false)
 watch(
   () => inventoryStore.isLoading,
-  (loading) => { if (!loading) hasLoaded.value = true },
+  (loading) => {
+    if (!loading) hasLoaded.value = true
+  },
 )
 
 const dismissedIds = ref<Set<number>>(new Set())

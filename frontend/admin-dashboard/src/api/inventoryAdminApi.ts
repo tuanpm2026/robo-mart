@@ -50,9 +50,10 @@ export async function bulkRestock(
   quantity: number,
   reason?: string,
 ): Promise<InventoryItem[]> {
-  const { data } = await adminClient.post<InventoryItem[]>(
-    `/api/v1/admin/inventory/bulk-restock`,
-    { productIds, quantity, reason },
-  )
+  const { data } = await adminClient.post<InventoryItem[]>(`/api/v1/admin/inventory/bulk-restock`, {
+    productIds,
+    quantity,
+    reason,
+  })
   return data
 }

@@ -11,7 +11,9 @@ onMounted(() => {
   if (store.services.length === 0) {
     store.loadHealth()
   }
-  tickerInterval = setInterval(() => { tick.value++ }, 1000)
+  tickerInterval = setInterval(() => {
+    tick.value++
+  }, 1000)
 })
 
 onUnmounted(() => {

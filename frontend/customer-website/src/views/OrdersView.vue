@@ -120,12 +120,11 @@ onMounted(async () => {
             <td class="orders__td orders__td--id">#{{ order.id }}</td>
             <td class="orders__td">{{ formatDate(order.createdAt) }}</td>
             <td class="orders__td orders__td--right">{{ formatPrice(order.totalAmount) }}</td>
-            <td class="orders__td orders__td--right">{{ order.itemCount }} {{ order.itemCount === 1 ? 'item' : 'items' }}</td>
+            <td class="orders__td orders__td--right">
+              {{ order.itemCount }} {{ order.itemCount === 1 ? 'item' : 'items' }}
+            </td>
             <td class="orders__td">
-              <Tag
-                :value="STATUS_LABEL[order.status]"
-                :severity="STATUS_SEVERITY[order.status]"
-              />
+              <Tag :value="STATUS_LABEL[order.status]" :severity="STATUS_SEVERITY[order.status]" />
             </td>
           </tr>
         </tbody>

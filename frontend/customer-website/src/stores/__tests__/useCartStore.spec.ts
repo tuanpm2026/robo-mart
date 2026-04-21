@@ -129,9 +129,7 @@ describe('useCartStore', () => {
     vi.mocked(addToCart).mockRejectedValueOnce(new Error('Server error'))
 
     const store = useCartStore()
-    store.items = [
-      { productId: 1, productName: 'Existing', price: 10, quantity: 1, subtotal: 10 },
-    ]
+    store.items = [{ productId: 1, productName: 'Existing', price: 10, quantity: 1, subtotal: 10 }]
 
     await expect(
       store.addItem({ productId: 2, productName: 'New', price: 20, quantity: 1 }),
@@ -155,9 +153,7 @@ describe('useCartStore', () => {
     vi.mocked(updateQuantity).mockRejectedValueOnce(new Error('Server error'))
 
     const store = useCartStore()
-    store.items = [
-      { productId: 1, productName: 'Product', price: 10, quantity: 2, subtotal: 20 },
-    ]
+    store.items = [{ productId: 1, productName: 'Product', price: 10, quantity: 2, subtotal: 20 }]
 
     await expect(store.updateItemQuantity(1, 5)).rejects.toThrow('Server error')
 
@@ -182,9 +178,7 @@ describe('useCartStore', () => {
     vi.mocked(removeItem).mockRejectedValueOnce(new Error('Server error'))
 
     const store = useCartStore()
-    store.items = [
-      { productId: 1, productName: 'Product', price: 10, quantity: 1, subtotal: 10 },
-    ]
+    store.items = [{ productId: 1, productName: 'Product', price: 10, quantity: 1, subtotal: 10 }]
 
     await expect(store.removeCartItem(1)).rejects.toThrow('Server error')
     expect(store.items).toHaveLength(1)
@@ -192,9 +186,7 @@ describe('useCartStore', () => {
 
   it('should increment existing item quantity on addItem', async () => {
     const store = useCartStore()
-    store.items = [
-      { productId: 1, productName: 'Product', price: 10, quantity: 1, subtotal: 10 },
-    ]
+    store.items = [{ productId: 1, productName: 'Product', price: 10, quantity: 1, subtotal: 10 }]
 
     // Optimistic update should increment
     const addPromise = store.addItem({

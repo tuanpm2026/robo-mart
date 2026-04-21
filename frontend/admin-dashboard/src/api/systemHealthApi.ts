@@ -21,7 +21,7 @@ export interface SystemHealthResponse {
 
 export async function fetchSystemHealth(): Promise<SystemHealthResponse> {
   const { data } = await adminClient.get<{ data: SystemHealthResponse; traceId: string }>(
-    '/api/v1/admin/system/health'
+    '/api/v1/admin/system/health',
   )
   return data.data
 }

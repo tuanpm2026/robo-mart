@@ -52,17 +52,8 @@ async function submitRestock() {
         <span class="stock-info">{{ currentStock }} / {{ threshold }} units</span>
       </div>
       <div class="alert-card-actions">
-        <Button
-          label="View"
-          variant="text"
-          size="small"
-          @click="router.push('/admin/inventory')"
-        />
-        <Button
-          label="Quick Restock"
-          size="small"
-          @click="showRestockForm = !showRestockForm"
-        />
+        <Button label="View" variant="text" size="small" @click="router.push('/admin/inventory')" />
+        <Button label="Quick Restock" size="small" @click="showRestockForm = !showRestockForm" />
       </div>
     </div>
     <div v-if="showRestockForm" class="restock-form">

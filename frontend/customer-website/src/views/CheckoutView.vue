@@ -75,10 +75,7 @@ watch(
               />
             </StepPanel>
             <StepPanel :value="3">
-              <StepPayment
-                @continue="checkoutStore.nextStep()"
-                @back="checkoutStore.prevStep()"
-              />
+              <StepPayment @continue="checkoutStore.nextStep()" @back="checkoutStore.prevStep()" />
             </StepPanel>
             <StepPanel :value="4">
               <StepConfirm @back="checkoutStore.prevStep()" />
@@ -88,10 +85,7 @@ watch(
       </div>
 
       <div class="checkout__sidebar">
-        <CheckoutOrderSummary
-          :items="cartStore.items"
-          :total-price="cartStore.totalPrice"
-        />
+        <CheckoutOrderSummary :items="cartStore.items" :total-price="cartStore.totalPrice" />
       </div>
     </div>
 

@@ -37,7 +37,10 @@ describe('useSystemHealthStore', () => {
   })
 
   it('loadHealth sets services from API response', async () => {
-    const mockServices = [makeService(), makeService({ service: 'cart-service', displayName: 'Cart Service' })]
+    const mockServices = [
+      makeService(),
+      makeService({ service: 'cart-service', displayName: 'Cart Service' }),
+    ]
     vi.mocked(systemHealthApi.fetchSystemHealth).mockResolvedValue(makeHealthResponse(mockServices))
 
     const store = useSystemHealthStore()

@@ -4,12 +4,14 @@ import type { AxiosInstance } from 'axios'
 // We need to test the client module in isolation, so we re-import it fresh
 describe('apiClient', () => {
   let apiClient: AxiosInstance
-  let setAuthAccessor: (accessor: () => {
-    accessToken: string | null
-    userId: string | null
-    refreshToken: () => Promise<boolean>
-    logout: () => Promise<void>
-  }) => void
+  let setAuthAccessor: (
+    accessor: () => {
+      accessToken: string | null
+      userId: string | null
+      refreshToken: () => Promise<boolean>
+      logout: () => Promise<void>
+    },
+  ) => void
   let getAnonymousUserId: () => string
 
   beforeEach(async () => {
@@ -17,7 +19,9 @@ describe('apiClient', () => {
     // Mock localStorage
     const store: Record<string, string> = {}
     vi.spyOn(Storage.prototype, 'getItem').mockImplementation((key) => store[key] || null)
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key, value) => { store[key] = value })
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key, value) => {
+      store[key] = value
+    })
 
     const clientModule = await import('../client')
     apiClient = clientModule.default
@@ -40,7 +44,9 @@ describe('apiClient', () => {
   })
 
   it('should attach X-User-Id header for anonymous users', async () => {
-    const adapter = vi.fn().mockResolvedValue({ data: {}, status: 200, headers: {}, config: {}, statusText: 'OK' })
+    const adapter = vi
+      .fn()
+      .mockResolvedValue({ data: {}, status: 200, headers: {}, config: {}, statusText: 'OK' })
     apiClient.defaults.adapter = adapter
 
     await apiClient.get('/test')
@@ -58,7 +64,9 @@ describe('apiClient', () => {
       logout: vi.fn(),
     }))
 
-    const adapter = vi.fn().mockResolvedValue({ data: {}, status: 200, headers: {}, config: {}, statusText: 'OK' })
+    const adapter = vi
+      .fn()
+      .mockResolvedValue({ data: {}, status: 200, headers: {}, config: {}, statusText: 'OK' })
     apiClient.defaults.adapter = adapter
 
     await apiClient.get('/test')
@@ -76,7 +84,9 @@ describe('apiClient', () => {
       logout: vi.fn(),
     }))
 
-    const adapter = vi.fn().mockResolvedValue({ data: {}, status: 200, headers: {}, config: {}, statusText: 'OK' })
+    const adapter = vi
+      .fn()
+      .mockResolvedValue({ data: {}, status: 200, headers: {}, config: {}, statusText: 'OK' })
     apiClient.defaults.adapter = adapter
 
     await apiClient.get('/test')
@@ -107,7 +117,13 @@ describe('apiClient', () => {
           isAxiosError: true,
         })
       }
-      return Promise.resolve({ data: { ok: true }, status: 200, headers: {}, config, statusText: 'OK' })
+      return Promise.resolve({
+        data: { ok: true },
+        status: 200,
+        headers: {},
+        config,
+        statusText: 'OK',
+      })
     })
     apiClient.defaults.adapter = adapter
 

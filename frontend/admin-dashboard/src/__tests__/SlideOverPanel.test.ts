@@ -13,7 +13,10 @@ const DrawerStub = {
 }
 
 function globalPlugins() {
-  return [createPinia(), [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]]]
+  return [
+    createPinia(),
+    [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]],
+  ]
 }
 
 describe('SlideOverPanel', () => {

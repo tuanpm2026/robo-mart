@@ -32,15 +32,15 @@ const statusIcon = computed(() => {
 })
 
 const p95Label = computed(() =>
-  props.service.p95ResponseTimeMs !== null ? props.service.p95ResponseTimeMs + 'ms' : 'N/A'
+  props.service.p95ResponseTimeMs !== null ? props.service.p95ResponseTimeMs + 'ms' : 'N/A',
 )
 
 const cpuLabel = computed(() =>
-  props.service.cpuPercent !== null ? props.service.cpuPercent.toFixed(1) + '%' : 'N/A'
+  props.service.cpuPercent !== null ? props.service.cpuPercent.toFixed(1) + '%' : 'N/A',
 )
 
 const memoryLabel = computed(() =>
-  props.service.memoryPercent !== null ? props.service.memoryPercent.toFixed(1) + '%' : 'N/A'
+  props.service.memoryPercent !== null ? props.service.memoryPercent.toFixed(1) + '%' : 'N/A',
 )
 </script>
 
@@ -186,7 +186,9 @@ const memoryLabel = computed(() =>
 /* Expand/collapse transition */
 .expand-enter-active,
 .expand-leave-active {
-  transition: max-height 0.2s ease, opacity 0.2s ease;
+  transition:
+    max-height 0.2s ease,
+    opacity 0.2s ease;
   max-height: 300px;
   overflow: hidden;
 }

@@ -9,7 +9,17 @@ import SearchResultsView from '../SearchResultsView.vue'
 vi.mock('@/api/productApi', () => ({
   searchProducts: vi.fn().mockResolvedValue({
     data: [
-      { id: 1, sku: 'P1', name: 'Mouse', price: 29, rating: 4, brand: 'Logitech', stockQuantity: 50, categoryName: 'Electronics', primaryImageUrl: '/1.jpg' },
+      {
+        id: 1,
+        sku: 'P1',
+        name: 'Mouse',
+        price: 29,
+        rating: 4,
+        brand: 'Logitech',
+        stockQuantity: 50,
+        categoryName: 'Electronics',
+        primaryImageUrl: '/1.jpg',
+      },
     ],
     pagination: { page: 0, size: 20, totalElements: 1, totalPages: 1 },
     traceId: '',

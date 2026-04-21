@@ -8,7 +8,11 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import DefaultLayout from '../DefaultLayout.vue'
 
 vi.mock('@/api/productApi', () => ({
-  searchProducts: vi.fn().mockResolvedValue({ data: [], pagination: { page: 0, size: 5, totalElements: 0, totalPages: 0 }, traceId: '' }),
+  searchProducts: vi.fn().mockResolvedValue({
+    data: [],
+    pagination: { page: 0, size: 5, totalElements: 0, totalPages: 0 },
+    traceId: '',
+  }),
 }))
 
 vi.mock('@/auth/authService', () => ({
@@ -33,13 +37,17 @@ function createTestRouter() {
 function mountLayout() {
   const router = createTestRouter()
   const pinia = createPinia()
-  return { router, pinia, mount: async () => {
-    await router.push('/')
-    await router.isReady()
-    return mount(DefaultLayout, {
-      global: { plugins: [router, pinia, PrimeVue, ToastService] },
-    })
-  }}
+  return {
+    router,
+    pinia,
+    mount: async () => {
+      await router.push('/')
+      await router.isReady()
+      return mount(DefaultLayout, {
+        global: { plugins: [router, pinia, PrimeVue, ToastService] },
+      })
+    },
+  }
 }
 
 describe('DefaultLayout', () => {
@@ -99,7 +107,13 @@ describe('DefaultLayout', () => {
   it('should show user name and menu button when authenticated', async () => {
     const { mount: m, pinia } = mountLayout()
     const store = useAuthStore(pinia)
-    store.user = { id: 'u1', email: 'john@test.com', firstName: 'John', lastName: 'Doe', roles: ['CUSTOMER'] }
+    store.user = {
+      id: 'u1',
+      email: 'john@test.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      roles: ['CUSTOMER'],
+    }
     store.accessToken = 'token-123'
 
     const wrapper = await m()

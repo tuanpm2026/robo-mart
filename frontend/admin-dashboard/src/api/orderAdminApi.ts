@@ -58,10 +58,9 @@ export async function listOrders(
   if (statuses && statuses.length > 0) {
     statuses.forEach((s) => params.append('statuses', s))
   }
-  const { data } = await adminClient.get<PagedResponse<AdminOrderSummary>>(
-    '/api/v1/admin/orders',
-    { params },
-  )
+  const { data } = await adminClient.get<PagedResponse<AdminOrderSummary>>('/api/v1/admin/orders', {
+    params,
+  })
   return data
 }
 

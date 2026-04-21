@@ -24,7 +24,14 @@ const mockImages: ProductImage[] = [
 function createGlobalConfig() {
   const pinia = createPinia()
   return {
-    plugins: [pinia, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]], ToastService],
+    plugins: [
+      pinia,
+      [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [
+        typeof PrimeVue,
+        ...unknown[],
+      ],
+      ToastService,
+    ],
     stubs: {
       FileUpload: {
         template: '<div data-testid="file-upload"><slot name="empty" /></div>',
@@ -106,7 +113,12 @@ describe('ProductImageUpload', () => {
   })
 
   it('file selection in edit mode (productId=1) calls uploadImages() immediately', async () => {
-    const newImage: ProductImage = { id: 3, imageUrl: 'http://localhost:8081/images/1/new.jpg', altText: null, displayOrder: 0 }
+    const newImage: ProductImage = {
+      id: 3,
+      imageUrl: 'http://localhost:8081/images/1/new.jpg',
+      altText: null,
+      displayOrder: 0,
+    }
     vi.mocked(uploadImages).mockResolvedValue([newImage])
 
     const wrapper = shallowMount(ProductImageUpload, {

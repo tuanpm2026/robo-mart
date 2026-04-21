@@ -23,7 +23,13 @@ describe('MetricCard', () => {
 
   it('formats value as currency when format is currency', async () => {
     const wrapper = mount(MetricCard, {
-      props: { label: 'Revenue', value: 1234.5, format: 'currency', color: 'green', loading: false },
+      props: {
+        label: 'Revenue',
+        value: 1234.5,
+        format: 'currency',
+        color: 'green',
+        loading: false,
+      },
     })
     await wrapper.vm.$nextTick()
     // The display value animates from 0 to 1234, so after animation it shows currency format

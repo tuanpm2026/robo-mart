@@ -79,7 +79,14 @@ function createGlobalConfig() {
   const pinia = createPinia()
   setActivePinia(pinia)
   return {
-    plugins: [pinia, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]], ToastService],
+    plugins: [
+      pinia,
+      [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [
+        typeof PrimeVue,
+        ...unknown[],
+      ],
+      ToastService,
+    ],
     stubs: {
       DataTable: {
         template:
@@ -88,10 +95,12 @@ function createGlobalConfig() {
       },
       Column: {
         template:
-          '<div><slot name="body" :data="{ id: 1, userId: \'user-1\', createdAt: \'2026-04-07T10:00:00Z\', totalAmount: 149.99, status: \'CONFIRMED\', itemCount: 3, cancellationReason: null }" /></div>',
+          "<div><slot name=\"body\" :data=\"{ id: 1, userId: 'user-1', createdAt: '2026-04-07T10:00:00Z', totalAmount: 149.99, status: 'CONFIRMED', itemCount: 3, cancellationReason: null }\" /></div>",
       },
       Button: { template: '<button @click="$emit(\'click\')"><slot /></button>' },
-      Tag: { template: '<span class="tag" :data-severity="$attrs.severity">{{ $attrs.value }}</span>' },
+      Tag: {
+        template: '<span class="tag" :data-severity="$attrs.severity">{{ $attrs.value }}</span>',
+      },
       Select: {
         template: '<select data-testid="status-select"><slot /></select>',
         props: ['modelValue', 'options'],
@@ -102,7 +111,8 @@ function createGlobalConfig() {
       },
       Skeleton: { template: '<div class="skeleton" />' },
       Timeline: {
-        template: '<div data-testid="timeline"><slot name="content" :item="{ status: \'PENDING\', changedAt: \'2026-04-07T10:00:00Z\' }" /></div>',
+        template:
+          '<div data-testid="timeline"><slot name="content" :item="{ status: \'PENDING\', changedAt: \'2026-04-07T10:00:00Z\' }" /></div>',
         props: ['value'],
       },
       SlideOverPanel: {

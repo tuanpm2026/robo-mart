@@ -12,7 +12,9 @@ const orderStore = useOrderStore()
 const checkoutStore = useCheckoutStore()
 
 onMounted(async () => {
-  const rawParam = Array.isArray(route.params.orderId) ? route.params.orderId[0] : route.params.orderId
+  const rawParam = Array.isArray(route.params.orderId)
+    ? route.params.orderId[0]
+    : route.params.orderId
   const raw = rawParam ?? ''
   const orderId = parseInt(raw, 10)
   if (isNaN(orderId)) {
@@ -62,11 +64,7 @@ onMounted(async () => {
       <div class="ocv__summary">
         <h2 class="ocv__summary-title">Order Summary</h2>
         <ul class="ocv__items">
-          <li
-            v-for="item in orderStore.currentOrder.items"
-            :key="item.productId"
-            class="ocv__item"
-          >
+          <li v-for="item in orderStore.currentOrder.items" :key="item.productId" class="ocv__item">
             <span class="ocv__item-name">{{ item.productName }}</span>
             <span class="ocv__item-qty">× {{ item.quantity }}</span>
             <span class="ocv__item-price">${{ item.subtotal.toFixed(2) }}</span>
@@ -84,12 +82,7 @@ onMounted(async () => {
           class="ocv__track-btn"
           @click="router.push(`/orders/${orderStore.currentOrder!.id}`)"
         />
-        <Button
-          label="Continue Shopping"
-          severity="secondary"
-          outlined
-          @click="router.push('/')"
-        />
+        <Button label="Continue Shopping" severity="secondary" outlined @click="router.push('/')" />
       </div>
     </div>
 
@@ -207,9 +200,15 @@ onMounted(async () => {
   font-size: 14px;
   color: var(--color-gray-700, #374151);
 }
-.ocv__item-name { flex: 1; }
-.ocv__item-qty { color: var(--color-gray-500, #6b7280); }
-.ocv__item-price { font-weight: 500; }
+.ocv__item-name {
+  flex: 1;
+}
+.ocv__item-qty {
+  color: var(--color-gray-500, #6b7280);
+}
+.ocv__item-price {
+  font-weight: 500;
+}
 .ocv__total {
   font-size: 16px;
   text-align: right;
@@ -223,7 +222,9 @@ onMounted(async () => {
   gap: 16px;
   flex-wrap: wrap;
 }
-.ocv__track-btn { min-width: 160px; }
+.ocv__track-btn {
+  min-width: 160px;
+}
 .ocv__error {
   display: flex;
   flex-direction: column;
@@ -232,7 +233,13 @@ onMounted(async () => {
   color: var(--color-gray-600, #4b5563);
 }
 @keyframes ocv-pop {
-  from { transform: scale(0.5); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 </style>

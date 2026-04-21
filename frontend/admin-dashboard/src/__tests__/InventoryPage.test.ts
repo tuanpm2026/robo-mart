@@ -22,38 +22,88 @@ import InventoryPage from '../views/InventoryPage.vue'
 
 const mockInventoryItems = [
   {
-    id: 1, productId: 1, availableQuantity: 5, reservedQuantity: 2, totalQuantity: 7,
-    lowStockThreshold: 10, updatedAt: '2026-04-07T10:00:00Z',
-    productName: 'Product A', sku: 'SKU-001',
+    id: 1,
+    productId: 1,
+    availableQuantity: 5,
+    reservedQuantity: 2,
+    totalQuantity: 7,
+    lowStockThreshold: 10,
+    updatedAt: '2026-04-07T10:00:00Z',
+    productName: 'Product A',
+    sku: 'SKU-001',
   },
   {
-    id: 2, productId: 2, availableQuantity: 100, reservedQuantity: 5, totalQuantity: 105,
-    lowStockThreshold: 10, updatedAt: '2026-04-07T10:00:00Z',
-    productName: 'Product B', sku: 'SKU-002',
+    id: 2,
+    productId: 2,
+    availableQuantity: 100,
+    reservedQuantity: 5,
+    totalQuantity: 105,
+    lowStockThreshold: 10,
+    updatedAt: '2026-04-07T10:00:00Z',
+    productName: 'Product B',
+    sku: 'SKU-002',
   },
 ]
 
 const mockProducts = [
-  { id: 1, sku: 'SKU-001', name: 'Product A', price: 29.99, brand: 'BrandA', rating: 4.5, stockQuantity: 100, categoryId: 1, categoryName: 'Electronics', primaryImageUrl: null, description: null },
-  { id: 2, sku: 'SKU-002', name: 'Product B', price: 49.99, brand: 'BrandB', rating: 3.8, stockQuantity: 0, categoryId: 2, categoryName: 'Toys', primaryImageUrl: null, description: null },
+  {
+    id: 1,
+    sku: 'SKU-001',
+    name: 'Product A',
+    price: 29.99,
+    brand: 'BrandA',
+    rating: 4.5,
+    stockQuantity: 100,
+    categoryId: 1,
+    categoryName: 'Electronics',
+    primaryImageUrl: null,
+    description: null,
+  },
+  {
+    id: 2,
+    sku: 'SKU-002',
+    name: 'Product B',
+    price: 49.99,
+    brand: 'BrandB',
+    rating: 3.8,
+    stockQuantity: 0,
+    categoryId: 2,
+    categoryName: 'Toys',
+    primaryImageUrl: null,
+    description: null,
+  },
 ]
 
 function createGlobalConfig() {
   const pinia = createPinia()
   setActivePinia(pinia)
   return {
-    plugins: [pinia, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]], ToastService],
+    plugins: [
+      pinia,
+      [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [
+        typeof PrimeVue,
+        ...unknown[],
+      ],
+      ToastService,
+    ],
     stubs: {
       DataTable: {
-        template: '<div data-testid="datatable"><slot name="loading" /><slot name="empty" /><slot /></div>',
+        template:
+          '<div data-testid="datatable"><slot name="loading" /><slot name="empty" /><slot /></div>',
         props: ['value', 'loading', 'rowClass'],
       },
-      Column: { template: '<div><slot name="body" :data="{ productId: 1, availableQuantity: 5, lowStockThreshold: 10, productName: \'Product A\', sku: \'SKU-001\' }" /></div>' },
+      Column: {
+        template:
+          '<div><slot name="body" :data="{ productId: 1, availableQuantity: 5, lowStockThreshold: 10, productName: \'Product A\', sku: \'SKU-001\' }" /></div>',
+      },
       Button: { template: '<button @click="$emit(\'click\')"><slot /></button>' },
       InputNumber: { template: '<input type="number" />' },
       Tag: { template: '<span class="tag"><slot /></span>' },
       Skeleton: { template: '<div class="skeleton" />' },
-      Dialog: { template: '<div data-testid="dialog" v-if="visible"><slot /><slot name="footer" /></div>', props: ['visible'] },
+      Dialog: {
+        template: '<div data-testid="dialog" v-if="visible"><slot /><slot name="footer" /></div>',
+        props: ['visible'],
+      },
       EmptyState: { template: '<div data-testid="empty-state" />' },
     },
   }

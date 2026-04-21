@@ -7,7 +7,17 @@ import SearchBar from '../SearchBar.vue'
 vi.mock('@/api/productApi', () => ({
   searchProducts: vi.fn().mockResolvedValue({
     data: [
-      { id: 1, name: 'Wireless Mouse', price: 29.99, primaryImageUrl: '/img.jpg', sku: 'M1', rating: 4, brand: 'B', stockQuantity: 10, categoryName: 'Electronics' },
+      {
+        id: 1,
+        name: 'Wireless Mouse',
+        price: 29.99,
+        primaryImageUrl: '/img.jpg',
+        sku: 'M1',
+        rating: 4,
+        brand: 'B',
+        stockQuantity: 10,
+        categoryName: 'Electronics',
+      },
     ],
     pagination: { page: 0, size: 5, totalElements: 1, totalPages: 1 },
     traceId: '',

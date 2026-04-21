@@ -46,7 +46,10 @@ const checkoutStore = useCheckoutStore()
   align-items: center;
   gap: 20px;
 }
-.spo__spinner { width: 52px; height: 52px; }
+.spo__spinner {
+  width: 52px;
+  height: 52px;
+}
 .spo__svg {
   width: 100%;
   height: 100%;
@@ -65,10 +68,31 @@ const checkoutStore = useCheckoutStore()
   margin: 0;
   text-align: center;
 }
-@keyframes spo-rotate { to { transform: rotate(360deg); } }
-.fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-.msg-enter-active, .msg-leave-active { transition: opacity 0.25s, transform 0.25s; }
-.msg-enter-from { opacity: 0; transform: translateY(6px); }
-.msg-leave-to { opacity: 0; transform: translateY(-6px); }
+@keyframes spo-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+.msg-enter-active,
+.msg-leave-active {
+  transition:
+    opacity 0.25s,
+    transform 0.25s;
+}
+.msg-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.msg-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
 </style>

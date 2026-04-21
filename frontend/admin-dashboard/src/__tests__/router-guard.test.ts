@@ -51,7 +51,11 @@ describe('Admin role guard', () => {
     const adminAuthStore = useAdminAuthStore()
 
     // Simulate admin token in localStorage
-    const payload = { sub: 'user-1', preferred_username: 'admin', realm_access: { roles: ['ADMIN'] } }
+    const payload = {
+      sub: 'user-1',
+      preferred_username: 'admin',
+      realm_access: { roles: ['ADMIN'] },
+    }
     const token = `header.${btoa(JSON.stringify(payload))}.signature`
     localStorage.setItem('admin_access_token', token)
 
@@ -78,7 +82,11 @@ describe('Admin role guard', () => {
 
   it('isAdmin is true when store user has ADMIN role', async () => {
     const adminAuthStore = useAdminAuthStore()
-    const payload = { sub: 'user-1', preferred_username: 'admin', realm_access: { roles: ['ADMIN'] } }
+    const payload = {
+      sub: 'user-1',
+      preferred_username: 'admin',
+      realm_access: { roles: ['ADMIN'] },
+    }
     const token = `header.${btoa(JSON.stringify(payload))}.signature`
     localStorage.setItem('admin_access_token', token)
 
@@ -92,7 +100,11 @@ describe('Admin role guard', () => {
     const router = createTestRouter()
     const adminAuthStore = useAdminAuthStore()
 
-    const payload = { sub: 'user-2', preferred_username: 'editor', realm_access: { roles: ['EDITOR'] } }
+    const payload = {
+      sub: 'user-2',
+      preferred_username: 'editor',
+      realm_access: { roles: ['EDITOR'] },
+    }
     const token = `header.${btoa(JSON.stringify(payload))}.signature`
     localStorage.setItem('admin_access_token', token)
 

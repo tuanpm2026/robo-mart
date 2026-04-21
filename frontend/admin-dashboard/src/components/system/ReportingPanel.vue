@@ -143,38 +143,21 @@ const lineOptions = {
       <div class="reporting-panel__chart-card">
         <h3>Top Selling Products</h3>
         <Skeleton v-if="store.isLoading" height="300px" />
-        <Chart
-          v-else
-          type="bar"
-          :data="barData"
-          :options="barOptions"
-          style="height: 300px"
-        />
+        <Chart v-else type="bar" :data="barData" :options="barOptions" style="height: 300px" />
       </div>
 
       <!-- Revenue by Product Doughnut Chart -->
       <div class="reporting-panel__chart-card">
         <h3>Revenue by Product</h3>
         <Skeleton v-if="store.isLoading" height="300px" />
-        <Chart
-          v-else
-          type="doughnut"
-          :data="doughnutData"
-          style="height: 300px"
-        />
+        <Chart v-else type="doughnut" :data="doughnutData" style="height: 300px" />
       </div>
 
       <!-- Order Trends Line Chart -->
       <div class="reporting-panel__chart-card reporting-panel__chart-card--wide">
         <h3>Order Trends</h3>
         <Skeleton v-if="store.isLoading" height="300px" />
-        <Chart
-          v-else
-          type="line"
-          :data="lineData"
-          :options="lineOptions"
-          style="height: 300px"
-        />
+        <Chart v-else type="line" :data="lineData" :options="lineOptions" style="height: 300px" />
       </div>
     </div>
   </div>
