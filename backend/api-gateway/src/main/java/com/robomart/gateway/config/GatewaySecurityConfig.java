@@ -24,7 +24,7 @@ public class GatewaySecurityConfig {
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         http
                 .authorizeExchange(exchanges -> exchanges
-                        .pathMatchers("/actuator/health/**").permitAll()
+                        .pathMatchers("/actuator/**").permitAll()
                         .pathMatchers("/api/v1/products/**").permitAll()
                         .pathMatchers("/graphql").permitAll()
                         .pathMatchers(HttpMethod.POST, "/api/v1/cart/merge").authenticated()

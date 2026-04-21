@@ -13,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import com.robomart.common.dto.ApiErrorResponse;
 import com.robomart.common.dto.ErrorDetail;
@@ -86,6 +87,13 @@ public class GlobalExceptionHandler {
         var error = new ErrorDetail("METHOD_NOT_ALLOWED", ex.getMessage(), null);
         var response = new ApiErrorResponse(error, getTraceId(), Instant.now());
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(response);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleNoResourceFound(NoResourceFoundException ex) {
+        var error = new ErrorDetail("NOT_FOUND", ex.getMessage(), null);
+        var response = new ApiErrorResponse(error, getTraceId(), Instant.now());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
     @ExceptionHandler(Exception.class)
