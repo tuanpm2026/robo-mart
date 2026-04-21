@@ -14,8 +14,8 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
   let initPromise: Promise<void> | null = null
 
   const isAuthenticated = computed(() => !!accessToken.value)
-  const isAdmin = computed(() =>
-    user.value?.roles.some((r) => r.toLowerCase() === 'admin') ?? false,
+  const isAdmin = computed(
+    () => user.value?.roles.some((r) => r.toLowerCase() === 'admin') ?? false,
   )
 
   function initAuth(): Promise<void> {
