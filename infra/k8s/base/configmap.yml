@@ -15,8 +15,8 @@ data:
   # Elasticsearch
   SPRING_ELASTICSEARCH_URIS: "http://elasticsearch.robomart.svc.cluster.local:9200"
   # Keycloak / JWT
-  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://keycloak.robomart.svc.cluster.local/realms/robomart"
-  KEYCLOAK_JWK_SET_URI: "http://keycloak.robomart.svc.cluster.local/realms/robomart/protocol/openid-connect/certs"
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "https://auth.tuanpm.xyz/realms/robomart"
+  KEYCLOAK_JWK_SET_URI: "https://auth.tuanpm.xyz/realms/robomart/protocol/openid-connect/certs"
   # Tracing
   MANAGEMENT_OTLP_TRACING_ENDPOINT: "http://tempo.monitoring.svc.cluster.local:4318/v1/traces"
   MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED: "false"
@@ -45,4 +45,4 @@ data:
   # CORS allowed origins
   CORS_CUSTOMER_ORIGIN: "https://app.tuanpm.xyz"
   CORS_ADMIN_ORIGIN: "https://admin.tuanpm.xyz"
-  CORS_KEYCLOAK_ORIGIN: "http://keycloak.robomart.svc.cluster.local"
+  CORS_KEYCLOAK_ORIGIN: "https://auth.tuanpm.xyz"
