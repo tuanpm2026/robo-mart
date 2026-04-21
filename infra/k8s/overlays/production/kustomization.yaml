@@ -13,7 +13,7 @@ patches:
 images:
 - name: ghcr.io/robomart/admin-dashboard
   newName: ghcr.io/tuanpm2026/robomart/admin-dashboard
-  newTag: main-8e94048
+  newTag: main-b02eb79
 - name: ghcr.io/robomart/api-gateway
   newName: ghcr.io/tuanpm2026/robomart/api-gateway
   newTag: main-3d0ac23
@@ -22,7 +22,7 @@ images:
   newTag: main-3d0ac23
 - name: ghcr.io/robomart/customer-website
   newName: ghcr.io/tuanpm2026/robomart/customer-website
-  newTag: main-8e94048
+  newTag: main-b02eb79
 - name: ghcr.io/robomart/inventory-service
   newName: ghcr.io/tuanpm2026/robomart/inventory-service
   newTag: main-3d0ac23
