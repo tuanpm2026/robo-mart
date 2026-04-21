@@ -18,7 +18,7 @@ data:
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://keycloak.robomart.svc.cluster.local/realms/robomart"
   KEYCLOAK_JWK_SET_URI: "http://keycloak.robomart.svc.cluster.local/realms/robomart/protocol/openid-connect/certs"
   # Tracing
-  MANAGEMENT_OTLP_TRACING_ENDPOINT: "http://tempo:4318/v1/traces"
+  MANAGEMENT_OTLP_TRACING_ENDPOINT: "http://tempo.monitoring.svc.cluster.local:4318/v1/traces"
   TRACING_SAMPLE_RATE: "0.1"
   # Actuator — ensure prometheus endpoint is exposed even when dev profile reduces it
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"

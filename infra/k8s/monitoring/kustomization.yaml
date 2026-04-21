@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespace.yml
+  - kafka-ui/deployment.yml
+  - kafka-ui/service.yml
+  - prometheus/configmap.yml
+  - prometheus/deployment.yml
+  - prometheus/service.yml
+  - loki/deployment.yml
+  - loki/service.yml
+  - tempo/configmap.yml
+  - tempo/deployment.yml
+  - tempo/service.yml
+  - grafana/configmap-datasources.yml
+  - grafana/deployment.yml
+  - grafana/service.yml
+  - alloy/rbac.yml
+  - alloy/configmap.yml
+  - alloy/deployment.yml
