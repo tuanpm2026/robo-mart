@@ -47,7 +47,7 @@ spec:
           httpGet:
             path: /actuator/health/liveness
             port: 8083
-          initialDelaySeconds: 45
+          initialDelaySeconds: 120
           periodSeconds: 10
           timeoutSeconds: 5
           failureThreshold: 6
