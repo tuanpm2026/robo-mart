@@ -11,12 +11,18 @@ patches:
 - path: patches/single-node-replicas.yaml
 
 images:
+- name: ghcr.io/robomart/admin-dashboard
+  newName: ghcr.io/tuanpm2026/robomart/admin-dashboard
+  newTag: main-8e94048
 - name: ghcr.io/robomart/api-gateway
   newName: ghcr.io/tuanpm2026/robomart/api-gateway
   newTag: main-98616bb
 - name: ghcr.io/robomart/cart-service
   newName: ghcr.io/tuanpm2026/robomart/cart-service
   newTag: main-98616bb
+- name: ghcr.io/robomart/customer-website
+  newName: ghcr.io/tuanpm2026/robomart/customer-website
+  newTag: main-8e94048
 - name: ghcr.io/robomart/inventory-service
   newName: ghcr.io/tuanpm2026/robomart/inventory-service
   newTag: main-98616bb
@@ -32,9 +38,3 @@ images:
 - name: ghcr.io/robomart/product-service
   newName: ghcr.io/tuanpm2026/robomart/product-service
   newTag: main-98616bb
-- name: ghcr.io/robomart/customer-website
-  newName: ghcr.io/tuanpm2026/robomart/customer-website
-  newTag: main-latest
-- name: ghcr.io/robomart/admin-dashboard
-  newName: ghcr.io/tuanpm2026/robomart/admin-dashboard
-  newTag: main-latest
