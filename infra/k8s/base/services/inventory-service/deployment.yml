@@ -50,7 +50,7 @@ spec:
           initialDelaySeconds: 40
           periodSeconds: 10
           timeoutSeconds: 5
-          failureThreshold: 3
+          failureThreshold: 6
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
@@ -58,4 +58,4 @@ spec:
           initialDelaySeconds: 25
           periodSeconds: 5
           timeoutSeconds: 3
-          failureThreshold: 3
+          failureThreshold: 6
