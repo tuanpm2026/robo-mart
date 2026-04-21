@@ -57,6 +57,30 @@
       }
     },
     {
+      "clientId": "robo-mart-admin",
+      "name": "RoboMart Admin Dashboard SPA",
+      "description": "Public client for Admin Dashboard",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:5174/*",
+        "https://admin.tuanpm.xyz/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5174",
+        "https://admin.tuanpm.xyz"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5174/*##https://admin.tuanpm.xyz/*"
+      }
+    },
+    {
       "clientId": "robo-mart-gateway",
       "name": "RoboMart API Gateway",
       "description": "Confidential client for API Gateway (server-side)",
