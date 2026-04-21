@@ -31,9 +31,15 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
         const b64 = parts[1]!.replace(/-/g, '+').replace(/_/g, '/')
         const padded = b64.padEnd(b64.length + ((4 - (b64.length % 4)) % 4), '=')
         const payload = JSON.parse(atob(padded))
-        const roles: string[] = Array.isArray(payload.realm_access?.roles)
+        const realmRoles: string[] = Array.isArray(payload.realm_access?.roles)
           ? payload.realm_access.roles
           : []
+        const clientRoles: string[] = Array.isArray(
+          payload.resource_access?.['robo-mart-frontend']?.roles,
+        )
+          ? payload.resource_access['robo-mart-frontend'].roles
+          : []
+        const roles = [...realmRoles, ...clientRoles]
         user.value = {
           id: payload.sub ?? '',
           username: payload.preferred_username ?? payload.sub ?? '',
@@ -70,13 +76,18 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
       const b64 = parts[1]!.replace(/-/g, '+').replace(/_/g, '/')
       const padded = b64.padEnd(b64.length + ((4 - (b64.length % 4)) % 4), '=')
       const payload = JSON.parse(atob(padded))
-      const roles: string[] = Array.isArray(payload.realm_access?.roles)
+      const realmRoles: string[] = Array.isArray(payload.realm_access?.roles)
         ? payload.realm_access.roles
+        : []
+      const clientRoles: string[] = Array.isArray(
+        payload.resource_access?.['robo-mart-frontend']?.roles,
+      )
+        ? payload.resource_access['robo-mart-frontend'].roles
         : []
       user.value = {
         id: payload.sub ?? '',
         username: payload.preferred_username ?? payload.sub ?? '',
-        roles,
+        roles: [...realmRoles, ...clientRoles],
       }
       accessToken.value = token
     } catch {
