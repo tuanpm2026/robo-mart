@@ -16,7 +16,7 @@ vi.mock('@/api/productAdminApi', () => ({
   listProducts: vi.fn(),
 }))
 
-import { listInventory, restockItem, bulkRestock } from '@/api/inventoryAdminApi'
+import { listInventory, restockItem } from '@/api/inventoryAdminApi'
 import { listProducts } from '@/api/productAdminApi'
 import InventoryPage from '../views/InventoryPage.vue'
 

@@ -31,5 +31,27 @@ export default defineConfigWithVueTs(
 
   ...vueA11y.configs['flat/recommended'],
 
+  {
+    rules: {
+      // PrimeVue components wrap native inputs and don't expose id on the root element,
+      // so label-has-for and form-control-has-label produce false positives.
+      'vuejs-accessibility/label-has-for': 'off',
+      'vuejs-accessibility/form-control-has-label': 'off',
+      // autofocus is used intentionally in command palette for UX.
+      'vuejs-accessibility/no-autofocus': 'off',
+      // Admin UI has intentional click handlers on non-interactive elements (e.g. table rows).
+      'vuejs-accessibility/click-events-have-key-events': 'off',
+      'vuejs-accessibility/no-static-element-interactions': 'off',
+    },
+  },
+
+  {
+    files: ['src/**/__tests__/**', 'src/**/*.spec.ts', 'src/**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-function-type': 'off',
+    },
+  },
+
   skipFormatting,
 )

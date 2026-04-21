@@ -31,5 +31,20 @@ export default defineConfigWithVueTs(
 
   ...vueA11y.configs['flat/recommended'],
 
+  {
+    rules: {
+      // PrimeVue components wrap native inputs and don't expose id on the root element,
+      // so label-has-for produces false positives throughout the app.
+      'vuejs-accessibility/label-has-for': 'off',
+    },
+  },
+
+  {
+    files: ['src/**/__tests__/**', 'src/**/*.spec.ts', 'src/**/*.test.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-function-type': 'off',
+    },
+  },
+
   skipFormatting,
 )

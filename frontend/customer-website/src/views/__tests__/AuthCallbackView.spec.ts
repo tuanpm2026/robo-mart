@@ -63,7 +63,7 @@ describe('AuthCallbackView', () => {
     })
 
     // Simulate callback failure by setting store error
-    const store = useAuthStore(pinia)
+    useAuthStore(pinia)
     const { loginCallback } = await import('@/auth/authService')
     vi.mocked(loginCallback).mockRejectedValueOnce(new Error('Invalid state'))
 

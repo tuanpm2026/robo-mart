@@ -12,7 +12,7 @@ vi.mock('@/api/productAdminApi', () => ({
   reorderImages: vi.fn(),
 }))
 
-import { uploadImages, deleteImage, reorderImages } from '@/api/productAdminApi'
+import { uploadImages, deleteImage } from '@/api/productAdminApi'
 import ProductImageUpload from '../components/products/ProductImageUpload.vue'
 import type { ProductImage } from '@/api/productAdminApi'
 

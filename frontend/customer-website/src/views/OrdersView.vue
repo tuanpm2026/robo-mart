@@ -96,7 +96,7 @@ onMounted(async () => {
 
     <!-- Order list -->
     <div v-else class="orders__content">
-      <table class="orders__table" role="table" aria-label="My orders">
+      <table class="orders__table" aria-label="My orders">
         <thead class="orders__thead">
           <tr>
             <th class="orders__th">Order</th>
@@ -111,7 +111,6 @@ onMounted(async () => {
             v-for="order in orderStore.orders"
             :key="order.id"
             class="orders__row"
-            role="row"
             tabindex="0"
             :aria-label="`Order #${order.id}, ${formatDate(order.createdAt)}, ${formatPrice(order.totalAmount)}, ${STATUS_LABEL[order.status]}`"
             @click="onOrderClick(order.id)"

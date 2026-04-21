@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import axios from 'axios'
 import type { AxiosInstance } from 'axios'
 
 // We need to test the client module in isolation, so we re-import it fresh

@@ -74,7 +74,7 @@ async function handleLogout() {
 
 <template>
   <div class="layout">
-    <header class="header" role="banner">
+    <header class="header">
       <div class="header__inner">
         <div class="header__logo">
           <RouterLink to="/" aria-label="RoboMart Home">
@@ -192,7 +192,7 @@ async function handleLogout() {
       <RouterView />
     </main>
 
-    <footer class="footer" role="contentinfo">
+    <footer class="footer">
       <div class="footer__inner">
         <p>&copy; {{ new Date().getFullYear() }} RoboMart. All rights reserved.</p>
       </div>

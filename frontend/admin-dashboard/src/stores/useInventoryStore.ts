@@ -43,7 +43,7 @@ export const useInventoryStore = defineStore('inventory', () => {
 
       totalElements.value = inventoryPage.pagination.totalElements
       currentPage.value = page
-    } catch (e) {
+    } catch {
       error.value = 'Failed to load inventory data'
     } finally {
       isLoading.value = false

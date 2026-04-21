@@ -161,7 +161,7 @@ onMounted(async () => {
       <!-- Order items -->
       <div class="order-detail__section">
         <h2 class="order-detail__section-title">Order Items</h2>
-        <table class="order-detail__items-table" role="table" aria-label="Order items">
+        <table class="order-detail__items-table" aria-label="Order items">
           <thead>
             <tr>
               <th class="order-detail__items-th">Product</th>

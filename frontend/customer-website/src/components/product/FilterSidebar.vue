@@ -6,7 +6,7 @@ import Rating from 'primevue/rating'
 import Button from 'primevue/button'
 import type { ProductSearchParams } from '@/types/product'
 
-const props = defineProps<{
+defineProps<{
   brands: string[]
 }>()
 
