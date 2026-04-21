@@ -72,6 +72,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             VITE_API_URL=${{ vars.VITE_API_URL }}
+            VITE_KEYCLOAK_URL=${{ vars.VITE_KEYCLOAK_URL }}
+            VITE_KEYCLOAK_REALM=${{ vars.VITE_KEYCLOAK_REALM }}
+            VITE_KEYCLOAK_CLIENT_ID=${{ vars.VITE_KEYCLOAK_CLIENT_ID }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
