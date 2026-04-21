@@ -22,6 +22,7 @@ data:
   TRACING_SAMPLE_RATE: "0.1"
   # Actuator — ensure prometheus endpoint is exposed even when dev profile reduces it
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
+  MANAGEMENT_ENDPOINT_HEALTH_VALIDATE_GROUP_MEMBERSHIP: "false"
   # Service-to-service URLs (used by notification-service and api-gateway routing)
   ORDER_SERVICE_URL: "http://order-service:8083"
   PRODUCT_SERVICE_URL: "http://product-service:8081"
