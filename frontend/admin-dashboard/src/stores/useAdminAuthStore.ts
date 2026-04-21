@@ -14,7 +14,9 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
   let initPromise: Promise<void> | null = null
 
   const isAuthenticated = computed(() => !!accessToken.value)
-  const isAdmin = computed(() => user.value?.roles.includes('ADMIN') ?? false)
+  const isAdmin = computed(() =>
+    user.value?.roles.some((r) => r.toLowerCase() === 'admin') ?? false,
+  )
 
   function initAuth(): Promise<void> {
     if (initPromise !== null) return initPromise
@@ -49,10 +51,14 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
     await userManager.signinRedirect()
   }
 
-  async function logout(): Promise<void> {
+  function resetAuth(): void {
     accessToken.value = null
     user.value = null
     initPromise = null
+  }
+
+  async function logout(): Promise<void> {
+    resetAuth()
     await userManager.signoutRedirect()
   }
 
@@ -84,5 +90,5 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
     initPromise = null
   })
 
-  return { accessToken, user, isAuthenticated, isAdmin, initAuth, login, logout }
+  return { accessToken, user, isAuthenticated, isAdmin, initAuth, resetAuth, login, logout }
 })
