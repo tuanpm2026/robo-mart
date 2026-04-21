@@ -22,6 +22,11 @@ npm run format    # Prettier
 npm run type-check
 ```
 
+**Git hooks (run once after clone):**
+```bash
+frontend/setup-hooks.sh   # Installs pre-push hook → format, lint, type-check
+```
+
 **Infrastructure:**
 ```bash
 cd infra/docker && docker-compose --profile core up -d   # Start all infra

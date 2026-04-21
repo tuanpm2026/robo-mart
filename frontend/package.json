@@ -6,5 +6,15 @@
     "shared",
     "customer-website",
     "admin-dashboard"
-  ]
+  ],
+  "lint-staged": {
+    "frontend/{customer-website,admin-dashboard}/src/**/*.{ts,vue}": [
+      "prettier --write",
+      "oxlint --fix"
+    ]
+  },
+  "devDependencies": {
+    "lint-staged": "^16.4.0",
+    "simple-git-hooks": "^2.13.1"
+  }
 }
