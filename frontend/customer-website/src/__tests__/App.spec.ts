@@ -67,8 +67,8 @@ describe('App', () => {
       },
     })
 
-    expect(wrapper.find('header[role="banner"]').exists()).toBe(true)
+    expect(wrapper.find('header.header').exists()).toBe(true)
     expect(wrapper.find('main#main-content').exists()).toBe(true)
-    expect(wrapper.find('footer[role="contentinfo"]').exists()).toBe(true)
+    expect(wrapper.find('footer.footer').exists()).toBe(true)
   })
 })

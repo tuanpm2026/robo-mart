@@ -51,10 +51,10 @@ function mountLayout() {
 }
 
 describe('DefaultLayout', () => {
-  it('should render header with banner role', async () => {
+  it('should render header element', async () => {
     const { mount: m } = mountLayout()
     const wrapper = await m()
-    expect(wrapper.find('header[role="banner"]').exists()).toBe(true)
+    expect(wrapper.find('header.header').exists()).toBe(true)
   })
 
   it('should render category nav with aria-label', async () => {
@@ -69,10 +69,10 @@ describe('DefaultLayout', () => {
     expect(wrapper.find('main#main-content').exists()).toBe(true)
   })
 
-  it('should render footer with contentinfo role', async () => {
+  it('should render footer element', async () => {
     const { mount: m } = mountLayout()
     const wrapper = await m()
-    expect(wrapper.find('footer[role="contentinfo"]').exists()).toBe(true)
+    expect(wrapper.find('footer.footer').exists()).toBe(true)
   })
 
   it('should render logo linking to home', async () => {
