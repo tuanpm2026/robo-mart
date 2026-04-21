@@ -17,11 +17,15 @@ data:
   # Keycloak / JWT
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "https://auth.tuanpm.xyz/realms/robomart"
   KEYCLOAK_JWK_SET_URI: "https://auth.tuanpm.xyz/realms/robomart/protocol/openid-connect/certs"
-  # Tracing
+  # Spring profile — override 'dev' hardcoded in application.yml
+  SPRING_PROFILES_ACTIVE: "k8s"
+  # Tracing — both Spring Boot property and standard OTel SDK env var
   MANAGEMENT_OTLP_TRACING_ENDPOINT: "http://tempo.monitoring.svc.cluster.local:4318/v1/traces"
+  OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://tempo.monitoring.svc.cluster.local:4318/v1/traces"
+  OTEL_EXPORTER_OTLP_TRACES_PROTOCOL: "http/protobuf"
   MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED: "false"
   TRACING_SAMPLE_RATE: "1.0"
-  # Actuator — ensure prometheus endpoint is exposed even when dev profile reduces it
+  # Actuator
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
   MANAGEMENT_ENDPOINT_HEALTH_VALIDATE_GROUP_MEMBERSHIP: "false"
   # Service-to-service URLs (used by notification-service and api-gateway routing)
