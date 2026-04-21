@@ -21,6 +21,9 @@ jobs:
     name: Build, Test & Lint
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    permissions:
+      checks: write
+      contents: read
 
     steps:
       - name: Checkout
