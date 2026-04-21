@@ -37,9 +37,9 @@ gateway:
     payment-service: http://localhost:8086
     notification-service: http://localhost:8087
   cors:
-    customer-origin: http://localhost:5173
-    admin-origin: http://localhost:5174
-    keycloak-origin: http://localhost:8180
+    customer-origin: ${CORS_CUSTOMER_ORIGIN:http://localhost:5173}
+    admin-origin: ${CORS_ADMIN_ORIGIN:http://localhost:5174}
+    keycloak-origin: ${CORS_KEYCLOAK_ORIGIN:http://localhost:8180}
   # Rate limit configuration (AC3: configurable per endpoint)
   rate-limit:
     authenticated:

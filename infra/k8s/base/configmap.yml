@@ -41,3 +41,7 @@ data:
   GATEWAY_SERVICES_INVENTORY_SERVICE: "http://inventory-service:8084"
   GATEWAY_SERVICES_PAYMENT_SERVICE: "http://payment-service:8086"
   GATEWAY_SERVICES_NOTIFICATION_SERVICE: "http://notification-service:8087"
+  # CORS allowed origins
+  CORS_CUSTOMER_ORIGIN: "https://app.tuanpm.xyz"
+  CORS_ADMIN_ORIGIN: "https://admin.tuanpm.xyz"
+  CORS_KEYCLOAK_ORIGIN: "http://keycloak.robomart.svc.cluster.local"
