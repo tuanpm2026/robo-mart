@@ -16,25 +16,25 @@ images:
   newTag: main-b02eb79
 - name: ghcr.io/robomart/api-gateway
   newName: ghcr.io/tuanpm2026/robomart/api-gateway
-  newTag: main-3d0ac23
+  newTag: main-6c0e491
 - name: ghcr.io/robomart/cart-service
   newName: ghcr.io/tuanpm2026/robomart/cart-service
-  newTag: main-3d0ac23
+  newTag: main-6c0e491
 - name: ghcr.io/robomart/customer-website
   newName: ghcr.io/tuanpm2026/robomart/customer-website
   newTag: main-b02eb79
 - name: ghcr.io/robomart/inventory-service
   newName: ghcr.io/tuanpm2026/robomart/inventory-service
-  newTag: main-3d0ac23
+  newTag: main-6c0e491
 - name: ghcr.io/robomart/notification-service
   newName: ghcr.io/tuanpm2026/robomart/notification-service
-  newTag: main-3d0ac23
+  newTag: main-6c0e491
 - name: ghcr.io/robomart/order-service
   newName: ghcr.io/tuanpm2026/robomart/order-service
-  newTag: main-3d0ac23
+  newTag: main-6c0e491
 - name: ghcr.io/robomart/payment-service
   newName: ghcr.io/tuanpm2026/robomart/payment-service
-  newTag: main-3d0ac23
+  newTag: main-6c0e491
 - name: ghcr.io/robomart/product-service
   newName: ghcr.io/tuanpm2026/robomart/product-service
-  newTag: main-3d0ac23
+  newTag: main-6c0e491
