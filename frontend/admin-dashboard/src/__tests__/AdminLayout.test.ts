@@ -30,7 +30,7 @@ describe('AdminLayout', () => {
 
     const wrapper = mount(AdminLayout, {
       global: {
-        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }], ToastService],
+        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]], ToastService],
       },
     })
 
@@ -44,7 +44,7 @@ describe('AdminLayout', () => {
 
     const wrapper = mount(AdminLayout, {
       global: {
-        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }], ToastService],
+        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]], ToastService],
       },
     })
 
@@ -62,7 +62,7 @@ describe('AdminLayout', () => {
 
     const wrapper = mount(AdminLayout, {
       global: {
-        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }], ToastService],
+        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]], ToastService],
       },
     })
 
@@ -76,7 +76,7 @@ describe('AdminLayout', () => {
 
     const wrapper = mount(AdminLayout, {
       global: {
-        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }], ToastService],
+        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]], ToastService],
       },
     })
 
@@ -91,7 +91,7 @@ describe('AdminLayout', () => {
 
     const wrapper = mount(AdminLayout, {
       global: {
-        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }], ToastService],
+        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]], ToastService],
       },
     })
 

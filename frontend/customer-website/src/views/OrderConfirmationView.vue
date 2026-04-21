@@ -12,7 +12,8 @@ const orderStore = useOrderStore()
 const checkoutStore = useCheckoutStore()
 
 onMounted(async () => {
-  const raw = Array.isArray(route.params.orderId) ? route.params.orderId[0] : route.params.orderId
+  const rawParam = Array.isArray(route.params.orderId) ? route.params.orderId[0] : route.params.orderId
+  const raw = rawParam ?? ''
   const orderId = parseInt(raw, 10)
   if (isNaN(orderId)) {
     router.replace('/orders')

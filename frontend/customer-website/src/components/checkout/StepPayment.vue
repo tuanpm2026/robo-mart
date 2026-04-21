@@ -25,8 +25,8 @@ const schema = object({
       if (!value) return true
       const parts = value.split('/')
       if (parts.length !== 2) return false
-      const month = parseInt(parts[0], 10)
-      const year = parseInt(parts[1], 10)
+      const month = parseInt(parts[0]!, 10)
+      const year = parseInt(parts[1]!, 10)
       const expiry = new Date(2000 + year, month - 1, 1)
       const now = new Date()
       return expiry >= new Date(now.getFullYear(), now.getMonth(), 1)

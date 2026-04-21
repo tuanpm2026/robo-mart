@@ -23,6 +23,7 @@ const orderId = computed(() => Number(route.params.id))
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   PENDING: 'Order received',
+  PAYMENT_PENDING: 'Awaiting payment',
   INVENTORY_RESERVING: 'Processing order',
   PAYMENT_PROCESSING: 'Processing payment',
   CONFIRMED: 'Order confirmed',
@@ -35,6 +36,7 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
 
 const STATUS_SEVERITY: Record<OrderStatus, 'success' | 'warn' | 'danger' | 'info' | 'secondary'> = {
   PENDING: 'warn',
+  PAYMENT_PENDING: 'warn',
   INVENTORY_RESERVING: 'warn',
   PAYMENT_PROCESSING: 'warn',
   CONFIRMED: 'success',

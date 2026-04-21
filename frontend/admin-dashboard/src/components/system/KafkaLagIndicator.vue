@@ -17,7 +17,7 @@ const lagStatus = computed((): 'healthy' | 'elevated' | 'critical' => {
 })
 
 const tagSeverity = computed((): 'success' | 'warn' | 'danger' => {
-  const map: Record<string, 'success' | 'warn' | 'danger'> = {
+  const map: Record<'healthy' | 'elevated' | 'critical', 'success' | 'warn' | 'danger'> = {
     healthy: 'success',
     elevated: 'warn',
     critical: 'danger',

@@ -82,7 +82,7 @@ async function saveCellEdit(row: AdminProductListItem) {
     await updateProduct(row.id, payload)
     const idx = products.value.findIndex((p) => p.id === row.id)
     if (idx !== -1) {
-      products.value[idx] = { ...products.value[idx], price: cell.value }
+      products.value[idx] = { ...products.value[idx]!, price: cell.value }
     }
     toast.add({ severity: 'success', summary: 'Product updated', life: 3000 })
   } catch {

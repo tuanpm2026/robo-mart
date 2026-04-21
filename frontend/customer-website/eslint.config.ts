@@ -29,7 +29,7 @@ export default defineConfigWithVueTs(
 
   ...pluginOxlint.buildFromOxlintConfigFile('.oxlintrc.json'),
 
-  ...vueA11y.flatConfigs.recommended,
+  ...vueA11y.configs['flat/recommended'],
 
   skipFormatting,
 )

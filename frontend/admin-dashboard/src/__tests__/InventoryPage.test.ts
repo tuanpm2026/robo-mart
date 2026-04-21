@@ -42,7 +42,7 @@ function createGlobalConfig() {
   const pinia = createPinia()
   setActivePinia(pinia)
   return {
-    plugins: [pinia, [PrimeVue, { theme: { preset: adminTheme } }], ToastService],
+    plugins: [pinia, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]], ToastService],
     stubs: {
       DataTable: {
         template: '<div data-testid="datatable"><slot name="loading" /><slot name="empty" /><slot /></div>',

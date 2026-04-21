@@ -24,7 +24,7 @@ describe('CommandPalette', () => {
 
     const wrapper = shallowMount(CommandPalette, {
       global: {
-        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }]],
+        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]]],
       },
     })
 
@@ -37,7 +37,7 @@ describe('CommandPalette', () => {
     const wrapper = shallowMount(CommandPalette, {
       attachTo: document.body,
       global: {
-        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }]],
+        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]]],
       },
     })
 
@@ -54,7 +54,7 @@ describe('CommandPalette', () => {
 
     const wrapper = shallowMount(CommandPalette, {
       global: {
-        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }]],
+        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]]],
       },
     })
 
@@ -69,7 +69,7 @@ describe('CommandPalette', () => {
 
     const wrapper = shallowMount(CommandPalette, {
       global: {
-        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }]],
+        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]]],
       },
     })
 
@@ -85,7 +85,7 @@ describe('CommandPalette', () => {
     const wrapper = shallowMount(CommandPalette, {
       attachTo: document.body,
       global: {
-        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }]],
+        plugins: [pinia, router, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]]],
       },
     })
 

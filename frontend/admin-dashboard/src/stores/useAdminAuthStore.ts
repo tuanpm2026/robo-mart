@@ -25,7 +25,7 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
         const parts = token.split('.')
         if (parts.length !== 3) return
         // Handle URL-safe base64 (RFC 4648 §5) used by Keycloak JWTs
-        const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+        const b64 = parts[1]!.replace(/-/g, '+').replace(/_/g, '/')
         const padded = b64.padEnd(b64.length + (4 - (b64.length % 4)) % 4, '=')
         const payload = JSON.parse(atob(padded))
         // Reject expired tokens

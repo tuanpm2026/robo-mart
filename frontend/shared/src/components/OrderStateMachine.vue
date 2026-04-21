@@ -3,6 +3,7 @@ import { computed } from 'vue'
 
 export type OrderStatus =
   | 'PENDING'
+  | 'PAYMENT_PENDING'
   | 'INVENTORY_RESERVING'
   | 'PAYMENT_PROCESSING'
   | 'CONFIRMED'
@@ -26,7 +27,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const STEPS: { label: string; statuses: OrderStatus[] }[] = [
-  { label: 'Order received', statuses: ['PENDING', 'INVENTORY_RESERVING'] },
+  { label: 'Order received', statuses: ['PENDING', 'PAYMENT_PENDING', 'INVENTORY_RESERVING'] },
   { label: 'Processing payment', statuses: ['PAYMENT_PROCESSING', 'PAYMENT_REFUNDING', 'INVENTORY_RELEASING'] },
   { label: 'Order confirmed', statuses: ['CONFIRMED'] },
   { label: 'Shipped', statuses: ['SHIPPED'] },
@@ -36,6 +37,7 @@ const STEPS: { label: string; statuses: OrderStatus[] }[] = [
 function statusToStepIndex(s: OrderStatus): number {
   switch (s) {
     case 'PENDING':
+    case 'PAYMENT_PENDING':
     case 'INVENTORY_RESERVING':
       return 0
     case 'PAYMENT_PROCESSING':

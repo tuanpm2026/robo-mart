@@ -46,7 +46,7 @@ describe('apiClient', () => {
 
     await apiClient.get('/test')
 
-    const config = adapter.mock.calls[0][0]
+    const config = adapter.mock.calls[0]![0]
     expect(config.headers['X-User-Id']).toBeTruthy()
     expect(config.headers['Authorization']).toBeUndefined()
   })
@@ -64,7 +64,7 @@ describe('apiClient', () => {
 
     await apiClient.get('/test')
 
-    const config = adapter.mock.calls[0][0]
+    const config = adapter.mock.calls[0]![0]
     expect(config.headers['Authorization']).toBe('Bearer jwt-token-123')
     expect(config.headers['X-User-Id']).toBe('user-uuid-456')
   })
@@ -82,7 +82,7 @@ describe('apiClient', () => {
 
     await apiClient.get('/test')
 
-    const config = adapter.mock.calls[0][0]
+    const config = adapter.mock.calls[0]![0]
     expect(config.headers['Authorization']).toBe('Bearer jwt-token')
     expect(config.headers['X-User-Id']).toBeTruthy()
   })

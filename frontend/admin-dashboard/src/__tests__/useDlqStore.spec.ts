@@ -38,7 +38,7 @@ describe('useDlqStore', () => {
     await store.loadEvents()
 
     expect(store.events).toHaveLength(1)
-    expect(store.events[0].eventType).toBe('order.created')
+    expect(store.events[0]!.eventType).toBe('order.created')
     expect(store.totalElements).toBe(1)
     expect(store.isLoading).toBe(false)
     expect(store.error).toBeNull()

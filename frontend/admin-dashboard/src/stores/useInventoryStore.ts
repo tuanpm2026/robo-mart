@@ -32,11 +32,14 @@ export const useInventoryStore = defineStore('inventory', () => {
 
       const productMap = new Map(productsPage.data.map((p) => [p.id, p]))
 
-      items.value = inventoryPage.data.map((item) => ({
-        ...item,
-        productName: productMap.get(item.productId)?.name ?? `Product #${item.productId}`,
-        sku: productMap.get(item.productId)?.sku ?? '—',
-      }))
+      items.value = inventoryPage.data.map((item) => {
+        const product = productMap.get(item.productId)
+        return {
+          ...item,
+          productName: (product?.name ?? `Product #${item.productId}`) as string,
+          sku: (product?.sku ?? '—') as string,
+        } as unknown as InventoryItemEnriched
+      })
 
       totalElements.value = inventoryPage.pagination.totalElements
       currentPage.value = page
@@ -51,7 +54,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     const updated = await apiRestockItem(productId, quantity, 'Admin restock')
     const idx = items.value.findIndex((i) => i.productId === productId)
     if (idx !== -1) {
-      items.value[idx] = { ...items.value[idx], ...updated }
+      items.value[idx] = { ...items.value[idx]!, ...updated }
     }
   }
 

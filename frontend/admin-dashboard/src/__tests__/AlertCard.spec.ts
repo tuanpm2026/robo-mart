@@ -24,8 +24,8 @@ describe('AlertCard', () => {
 
   function mountCard(props: Record<string, unknown>) {
     return mount(AlertCard, {
-      props,
-      global: { plugins: [PrimeVue] },
+      props: props as unknown as InstanceType<typeof AlertCard>['$props'],
+      global: { plugins: [PrimeVue] as [typeof PrimeVue] },
     })
   }
 

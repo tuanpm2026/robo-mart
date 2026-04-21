@@ -57,6 +57,7 @@ async function onDrop(index: number) {
 
   const items = [...localImages.value]
   const [moved] = items.splice(fromIndex, 1)
+  if (!moved) return
   items.splice(index, 0, moved)
   // Update localImages immediately to avoid ghost visual state
   localImages.value = items.map((img, i) => ({ ...img, displayOrder: i }))

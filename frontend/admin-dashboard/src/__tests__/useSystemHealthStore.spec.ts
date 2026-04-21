@@ -44,7 +44,7 @@ describe('useSystemHealthStore', () => {
     await store.loadHealth()
 
     expect(store.services).toHaveLength(2)
-    expect(store.services[0].service).toBe('product-service')
+    expect(store.services[0]!.service).toBe('product-service')
     expect(store.isLoading).toBe(false)
     expect(store.error).toBeNull()
   })
@@ -80,7 +80,7 @@ describe('useSystemHealthStore', () => {
       store.updateFromWebSocket(makeHealthResponse([{ ...svc, kafkaConsumerLag: i }]))
     }
 
-    expect(store.services[0].kafkaConsumerLag).toBe(31)
+    expect(store.services[0]!.kafkaConsumerLag).toBe(31)
     expect(store.lagHistory['product-service']).toHaveLength(30)
   })
 })

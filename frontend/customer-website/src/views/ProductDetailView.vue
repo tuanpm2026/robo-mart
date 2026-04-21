@@ -94,8 +94,6 @@ async function addToCart() {
       summary: 'Added to cart',
       detail: `${product.value.name} has been added to your cart.`,
       life: 3000,
-      actionRoute: '/cart',
-      actionLabel: 'Go to Cart',
     })
   } catch {
     toast.add({

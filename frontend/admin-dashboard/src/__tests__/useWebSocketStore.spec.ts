@@ -16,8 +16,8 @@ describe('useWebSocketStore', () => {
     const store = useWebSocketStore()
     store.addEvent(makeEvent('1'))
     store.addEvent(makeEvent('2'))
-    expect(store.events[0].id).toBe('2')
-    expect(store.events[1].id).toBe('1')
+    expect(store.events[0]!.id).toBe('2')
+    expect(store.events[1]!.id).toBe('1')
   })
 
   it('caps events array at 100 entries', () => {

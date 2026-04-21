@@ -11,7 +11,7 @@ const inputRef = ref()
 
 interface CommandItem {
   label: string
-  action: () => void | Promise<void>
+  action: () => unknown
 }
 
 const allCommands: CommandItem[] = [

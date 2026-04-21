@@ -26,6 +26,7 @@ const mockProduct = {
   id: 1,
   sku: 'SKU-001',
   name: 'Product A',
+  description: null,
   price: 29.99,
   brand: 'BrandA',
   rating: 4.5,
@@ -38,7 +39,7 @@ const mockProduct = {
 function createGlobalConfig() {
   const pinia = createPinia()
   return {
-    plugins: [pinia, [PrimeVue, { theme: { preset: adminTheme } }], ToastService],
+    plugins: [pinia, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]], ToastService],
     stubs: {
       SlideOverPanel: {
         template: '<div data-testid="slide-over-panel"><slot /></div>',

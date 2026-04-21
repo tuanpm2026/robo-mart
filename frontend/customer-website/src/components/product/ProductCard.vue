@@ -51,8 +51,6 @@ async function addToCart(event: Event) {
       summary: 'Added to cart',
       detail: `${props.product.name} has been added to your cart.`,
       life: 3000,
-      actionRoute: '/cart',
-      actionLabel: 'Go to Cart',
     })
   } catch {
     toast.add({

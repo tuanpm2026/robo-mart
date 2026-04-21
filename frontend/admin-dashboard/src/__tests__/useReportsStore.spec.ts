@@ -27,7 +27,7 @@ describe('useReportsStore', () => {
     await store.loadSummary()
 
     expect(store.summary?.topProducts).toHaveLength(1)
-    expect(store.summary?.topProducts[0].productName).toBe('Widget A')
+    expect(store.summary?.topProducts[0]!.productName).toBe('Widget A')
     expect(store.isLoading).toBe(false)
     expect(store.error).toBeNull()
   })

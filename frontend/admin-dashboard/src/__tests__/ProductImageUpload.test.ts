@@ -24,7 +24,7 @@ const mockImages: ProductImage[] = [
 function createGlobalConfig() {
   const pinia = createPinia()
   return {
-    plugins: [pinia, [PrimeVue, { theme: { preset: adminTheme } }], ToastService],
+    plugins: [pinia, [PrimeVue, { theme: { preset: adminTheme } }] as [typeof PrimeVue, ...unknown[]] as [typeof PrimeVue, ...unknown[]], ToastService],
     stubs: {
       FileUpload: {
         template: '<div data-testid="file-upload"><slot name="empty" /></div>',
@@ -54,8 +54,8 @@ describe('ProductImageUpload', () => {
 
     const imgs = wrapper.findAll('img.image-thumb')
     expect(imgs).toHaveLength(2)
-    expect(imgs[0].attributes('src')).toBe('http://localhost:8081/images/1/abc.jpg')
-    expect(imgs[1].attributes('src')).toBe('http://localhost:8081/images/1/def.jpg')
+    expect(imgs[0]!.attributes('src')).toBe('http://localhost:8081/images/1/abc.jpg')
+    expect(imgs[1]!.attributes('src')).toBe('http://localhost:8081/images/1/def.jpg')
   })
 
   it('shows "Primary" badge on first image (displayOrder = 0)', () => {
@@ -67,7 +67,7 @@ describe('ProductImageUpload', () => {
     const primaryBadges = wrapper.findAll('.primary-badge')
     expect(primaryBadges).toHaveLength(1)
     // Only the first card should have the primary badge
-    const firstCard = wrapper.findAll('.image-card')[0]
+    const firstCard = wrapper.findAll('.image-card')[0]!
     expect(firstCard.find('.primary-badge').exists()).toBe(true)
   })
 
@@ -86,7 +86,7 @@ describe('ProductImageUpload', () => {
     expect(deleteImage).toHaveBeenCalledWith(1, 1)
     const emitted = wrapper.emitted('update:existingImages')
     expect(emitted).toBeTruthy()
-    expect(emitted![0][0]).toEqual([mockImages[1]]) // only second image remains
+    expect(emitted![0]![0]).toEqual([mockImages[1]]) // only second image remains
   })
 
   it('file selection in create mode (productId=null) emits pendingFiles without calling API', async () => {
@@ -102,7 +102,7 @@ describe('ProductImageUpload', () => {
     expect(uploadImages).not.toHaveBeenCalled()
     const emitted = wrapper.emitted('pendingFiles')
     expect(emitted).toBeTruthy()
-    expect(emitted![0][0]).toEqual(files)
+    expect(emitted![0]![0]).toEqual(files)
   })
 
   it('file selection in edit mode (productId=1) calls uploadImages() immediately', async () => {
@@ -121,6 +121,6 @@ describe('ProductImageUpload', () => {
     expect(uploadImages).toHaveBeenCalledWith(1, files)
     const emitted = wrapper.emitted('update:existingImages')
     expect(emitted).toBeTruthy()
-    expect(emitted![0][0]).toEqual([newImage])
+    expect(emitted![0]![0]).toEqual([newImage])
   })
 })

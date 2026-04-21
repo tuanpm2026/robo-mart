@@ -217,7 +217,7 @@ function formatCurrency(amount: number): string {
             :model-value="data.status"
             :options="[
               { label: statusLabels[data.status], value: data.status },
-              ...adminTransitions[data.status],
+              ...(adminTransitions[data.status] ?? []),
             ]"
             option-label="label"
             option-value="value"

@@ -184,7 +184,7 @@ describe('useAuthStore', () => {
       const store = useAuthStore()
       await store.initAuth()
 
-      capturedCallbacks.onUserLoaded(mockOidcUser)
+      capturedCallbacks.onUserLoaded!(mockOidcUser)
 
       expect(store.isAuthenticated).toBe(true)
       expect(store.user?.id).toBe('user-uuid-123')
@@ -204,7 +204,7 @@ describe('useAuthStore', () => {
       await store.initAuth()
       expect(store.isAuthenticated).toBe(true)
 
-      capturedCallbacks.onUserUnloaded()
+      capturedCallbacks.onUserUnloaded!()
 
       expect(store.isAuthenticated).toBe(false)
       expect(store.user).toBeNull()
@@ -222,7 +222,7 @@ describe('useAuthStore', () => {
       const store = useAuthStore()
       await store.initAuth()
 
-      capturedCallbacks.onSilentRenewError(new Error('renewal failed'))
+      capturedCallbacks.onSilentRenewError!(new Error('renewal failed'))
 
       expect(store.isAuthenticated).toBe(false)
       expect(store.user).toBeNull()
