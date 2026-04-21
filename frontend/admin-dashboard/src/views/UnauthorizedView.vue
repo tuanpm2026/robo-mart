@@ -1,4 +1,8 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { useAdminAuthStore } from '@/stores/useAdminAuthStore'
+
+const authStore = useAdminAuthStore()
+</script>
 
 <template>
   <div class="unauthorized-page">
@@ -6,7 +10,7 @@
       <i class="pi pi-lock unauthorized-icon" />
       <h1 class="unauthorized-title">Access Denied</h1>
       <p class="unauthorized-message">You need admin permissions to view this page.</p>
-      <a href="/" class="unauthorized-btn">Go to Login</a>
+      <button class="unauthorized-btn" @click="authStore.login()">Go to Login</button>
     </div>
   </div>
 </template>
@@ -58,6 +62,8 @@
   font-size: 14px;
   font-weight: 500;
   transition: background 150ms ease;
+  border: none;
+  cursor: pointer;
 }
 
 .unauthorized-btn:hover {

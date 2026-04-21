@@ -49,6 +49,12 @@ const router = createRouter({
       meta: { requiresAdmin: true },
     },
     {
+      path: '/admin/auth/callback',
+      name: 'admin-auth-callback',
+      component: () => import('../views/AuthCallbackView.vue'),
+      meta: { noLayout: true },
+    },
+    {
       path: '/admin/unauthorized',
       name: 'admin-unauthorized',
       component: () => import('../views/UnauthorizedView.vue'),
@@ -67,6 +73,10 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAdmin) {
     const adminAuthStore = useAdminAuthStore()
     await adminAuthStore.initAuth()
+    if (!adminAuthStore.isAuthenticated) {
+      await adminAuthStore.login()
+      return false
+    }
     if (!adminAuthStore.isAdmin) {
       return { name: 'admin-unauthorized' }
     }
