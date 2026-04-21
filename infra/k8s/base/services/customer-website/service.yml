@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-website
+  namespace: robomart
+spec:
+  selector:
+    app: customer-website
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30173
+    protocol: TCP
+    name: http
+  type: NodePort

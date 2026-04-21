@@ -12,6 +12,8 @@ RUN npm ci
 COPY admin-dashboard/ admin-dashboard/
 
 WORKDIR /app/admin-dashboard
+ARG VITE_API_URL=http://localhost:8080
+ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build-only
 
 FROM nginx:alpine

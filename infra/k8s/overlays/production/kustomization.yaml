@@ -32,3 +32,9 @@ images:
 - name: ghcr.io/robomart/product-service
   newName: ghcr.io/tuanpm2026/robomart/product-service
   newTag: main-98616bb
+- name: ghcr.io/robomart/customer-website
+  newName: ghcr.io/tuanpm2026/robomart/customer-website
+  newTag: main-latest
+- name: ghcr.io/robomart/admin-dashboard
+  newName: ghcr.io/tuanpm2026/robomart/admin-dashboard
+  newTag: main-latest

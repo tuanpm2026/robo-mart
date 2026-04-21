@@ -57,3 +57,19 @@ metadata:
   namespace: robomart
 spec:
   replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-website
+  namespace: robomart
+spec:
+  replicas: 1
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-dashboard
+  namespace: robomart
+spec:
+  replicas: 1

@@ -24,3 +24,9 @@ resources:
   - services/notification-service/deployment.yml
   - services/notification-service/service.yml
   - services/notification-service/hpa.yml
+  - services/customer-website/deployment.yml
+  - services/customer-website/service.yml
+  - services/customer-website/hpa.yml
+  - services/admin-dashboard/deployment.yml
+  - services/admin-dashboard/service.yml
+  - services/admin-dashboard/hpa.yml

@@ -12,6 +12,8 @@ RUN npm ci
 COPY customer-website/ customer-website/
 
 WORKDIR /app/customer-website
+ARG VITE_API_URL=http://localhost:8080
+ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build-only
 
 FROM nginx:alpine
