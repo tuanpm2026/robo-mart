@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -17,13 +18,20 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
 
 import com.robomart.product.controller.AdminProductRestController;
+import com.robomart.product.dto.AuditLogDto;
 import com.robomart.product.dto.CategoryResponse;
 import com.robomart.product.dto.CreateProductRequest;
+import com.robomart.product.dto.ImageOrderItem;
 import com.robomart.product.dto.ProductDetailResponse;
+import com.robomart.product.dto.ProductImageResponse;
+import com.robomart.product.dto.ReorderImagesRequest;
 import com.robomart.product.dto.UpdateProductRequest;
 import com.robomart.product.service.AuditLogService;
 import com.robomart.product.service.ProductImageService;
@@ -99,6 +107,55 @@ class AdminProductRestControllerTest {
         when(productService.getAllCategories()).thenReturn(categories);
 
         ResponseEntity<?> response = controller.getCategories();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+    }
+
+    @Test
+    void shouldUploadImagesAndReturn201() {
+        MockMultipartFile file = new MockMultipartFile("files", "img.png", "image/png", new byte[]{1});
+        ProductImageResponse img = new ProductImageResponse(1L, "http://cdn/img.png", null, 0);
+        when(productImageService.uploadImages(eq(1L), any())).thenReturn(List.of(img));
+
+        ResponseEntity<?> response = controller.uploadImages(1L, List.of(file));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).isNotNull();
+    }
+
+    @Test
+    void shouldDeleteImageAndReturn204() {
+        doNothing().when(productImageService).deleteImage(1L, 10L);
+
+        ResponseEntity<?> response = controller.deleteImage(1L, 10L);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        verify(productImageService).deleteImage(1L, 10L);
+    }
+
+    @Test
+    void shouldReorderImagesAndReturn200() {
+        ReorderImagesRequest request = new ReorderImagesRequest(
+                List.of(new ImageOrderItem(10L, 0), new ImageOrderItem(20L, 1)));
+        ProductImageResponse img1 = new ProductImageResponse(10L, "http://cdn/a.png", null, 0);
+        ProductImageResponse img2 = new ProductImageResponse(20L, "http://cdn/b.png", null, 1);
+        when(productImageService.reorderImages(eq(1L), any())).thenReturn(List.of(img1, img2));
+
+        ResponseEntity<?> response = controller.reorderImages(1L, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void shouldSearchAuditLogsAndReturnPagedResponse() {
+        AuditLogDto dto = new AuditLogDto(1L, "admin", "CREATE", "Product", "42",
+                null, null, Instant.now());
+        when(auditLogService.search(any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(new PageImpl<>(List.of(dto), PageRequest.of(0, 20), 1));
+
+        ResponseEntity<?> response = controller.searchAuditLogs(
+                null, null, null, null, null, null, null, 0, 20);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
