@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -13,7 +14,10 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.robomart.common.audit.AuditAction;
+import com.robomart.common.audit.Auditable;
 import com.robomart.common.exception.ResourceNotFoundException;
+import com.robomart.payment.dto.ReconciliationSummaryResponse;
 import com.robomart.payment.entity.IdempotencyKey;
 import com.robomart.payment.entity.OutboxEvent;
 import com.robomart.payment.entity.Payment;
@@ -55,6 +59,7 @@ public class PaymentService {
         this.objectMapper = objectMapper;
     }
 
+    @Auditable(action = AuditAction.CREATE, entityType = "Payment", entityIdExpression = "#result?.paymentId?.toString()")
     public PaymentResult processPayment(String orderId, String userId, BigDecimal amount,
                                         String currency, String idempotencyKey) {
         log.info("Processing payment: orderId={}, amount={} {}, idempotencyKey={}",
@@ -172,6 +177,7 @@ public class PaymentService {
         }
     }
 
+    @Auditable(action = AuditAction.UPDATE, entityType = "PAYMENT", entityIdExpression = "#result?.paymentId?.toString()")
     public PaymentResult refundPayment(Long paymentId, String orderId, BigDecimal amount, String reason) {
         log.info("Processing refund: paymentId={}, orderId={}, amount={}, reason={}",
                 paymentId, orderId, amount, reason);
@@ -274,6 +280,16 @@ public class PaymentService {
 
     public Optional<Payment> findByOrderId(String orderId) {
         return paymentRepository.findByOrderId(orderId);
+    }
+
+    public ReconciliationSummaryResponse getReconciliationSummary() {
+        List<ReconciliationSummaryResponse.OrderPaymentSummary> payments = paymentRepository.findAll().stream()
+                .map(p -> new ReconciliationSummaryResponse.OrderPaymentSummary(
+                        p.getOrderId(),
+                        p.getStatus().name(),
+                        p.getAmount() != null ? p.getAmount().toPlainString() : null))
+                .toList();
+        return new ReconciliationSummaryResponse(payments, java.time.Instant.now());
     }
 
     public record PaymentResult(boolean success, String message, String paymentId, String transactionId) {

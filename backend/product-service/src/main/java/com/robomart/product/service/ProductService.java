@@ -15,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.robomart.common.audit.AuditAction;
+import com.robomart.common.audit.Auditable;
 import com.robomart.common.dto.PagedResponse;
 import com.robomart.common.dto.PaginationMeta;
 import com.robomart.common.exception.BusinessRuleException;
@@ -95,6 +97,7 @@ public class ProductService {
         return productMapper.toDetailResponse(product);
     }
 
+    @Auditable(action = AuditAction.CREATE, entityType = "Product", entityIdExpression = "#result?.id?.toString()")
     @Transactional
     public ProductDetailResponse createProduct(CreateProductRequest request) {
         Category category = categoryRepository.findById(request.categoryId())
@@ -124,6 +127,7 @@ public class ProductService {
         return productMapper.toDetailResponse(saved);
     }
 
+    @Auditable(action = AuditAction.UPDATE, entityType = "Product", entityIdExpression = "#result?.id?.toString()")
     @Transactional
     @CacheEvict(value = "productDetail", key = "#productId")
     public ProductDetailResponse updateProduct(Long productId, UpdateProductRequest request) {
@@ -146,6 +150,7 @@ public class ProductService {
         return productMapper.toDetailResponse(saved);
     }
 
+    @Auditable(action = AuditAction.DELETE, entityType = "Product", entityIdExpression = "#productId?.toString()")
     @Transactional
     @CacheEvict(value = "productDetail", key = "#productId")
     public void deleteProduct(Long productId) {

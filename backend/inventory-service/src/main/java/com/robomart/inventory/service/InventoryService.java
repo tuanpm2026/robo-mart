@@ -1,8 +1,11 @@
 package com.robomart.inventory.service;
 
+import com.robomart.common.audit.AuditAction;
+import com.robomart.common.audit.Auditable;
 import com.robomart.common.exception.ResourceNotFoundException;
 import com.robomart.inventory.config.RedisLockConfig;
 import com.robomart.inventory.dto.InventoryMetricsResponse;
+import com.robomart.inventory.dto.ReconciliationSummaryResponse;
 import com.robomart.inventory.entity.InventoryItem;
 import com.robomart.inventory.entity.OutboxEvent;
 import com.robomart.inventory.entity.StockMovement;
@@ -85,6 +88,7 @@ public class InventoryService {
      * @throws ResourceNotFoundException if product not found
      * @throws InsufficientStockException if not enough stock available
      */
+    @Auditable(action = AuditAction.UPDATE, entityType = "INVENTORY", entityIdExpression = "#result?.productId?.toString()")
     public InventoryItem reserveStock(Long productId, int quantity, String orderId) {
         String lockKey = RedisLockConfig.LOCK_KEY_PREFIX + productId;
         String lockValue = distributedLockService.generateLockValue();
@@ -386,6 +390,7 @@ public class InventoryService {
      * @throws ResourceNotFoundException  if product not found
      * @throws IllegalArgumentException   if quantity <= 0
      */
+    @Auditable(action = AuditAction.UPDATE, entityType = "InventoryItem", entityIdExpression = "#result?.id?.toString()")
     @Transactional
     public InventoryItem restockItem(Long productId, int quantity, String reason) {
         if (quantity <= 0) {
@@ -429,6 +434,23 @@ public class InventoryService {
                 productId, quantity, saved.getAvailableQuantity(), saved.getTotalQuantity());
 
         return saved;
+    }
+
+    /**
+     * Returns a reconciliation summary of all inventory items.
+     *
+     * @return ReconciliationSummaryResponse with all inventory items
+     */
+    @Transactional(readOnly = true)
+    public ReconciliationSummaryResponse getReconciliationSummary() {
+        List<ReconciliationSummaryResponse.ProductInventorySummary> items = inventoryItemRepository.findAll().stream()
+                .map(i -> new ReconciliationSummaryResponse.ProductInventorySummary(
+                        i.getProductId(),
+                        i.getAvailableQuantity(),
+                        i.getReservedQuantity(),
+                        i.getTotalQuantity()))
+                .toList();
+        return new ReconciliationSummaryResponse(items, java.time.Instant.now());
     }
 
     /**

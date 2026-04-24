@@ -25,6 +25,7 @@ import com.robomart.product.dto.CategoryResponse;
 import com.robomart.product.dto.CreateProductRequest;
 import com.robomart.product.dto.ProductDetailResponse;
 import com.robomart.product.dto.UpdateProductRequest;
+import com.robomart.product.service.AuditLogService;
 import com.robomart.product.service.ProductImageService;
 import com.robomart.product.service.ProductService;
 
@@ -41,13 +42,16 @@ class AdminProductRestControllerTest {
     private ProductImageService productImageService;
 
     @Mock
+    private AuditLogService auditLogService;
+
+    @Mock
     private Tracer tracer;
 
     private AdminProductRestController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new AdminProductRestController(productService, productImageService, tracer);
+        controller = new AdminProductRestController(productService, productImageService, auditLogService, tracer);
         when(tracer.currentSpan()).thenReturn(null);
     }
 

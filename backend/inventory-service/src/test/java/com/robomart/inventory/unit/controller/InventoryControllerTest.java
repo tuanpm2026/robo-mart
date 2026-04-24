@@ -20,6 +20,7 @@ import com.robomart.inventory.dto.InventoryMetricsResponse;
 import com.robomart.inventory.dto.PagedInventoryResponse;
 import com.robomart.inventory.dto.RestockRequest;
 import com.robomart.inventory.entity.InventoryItem;
+import com.robomart.inventory.service.AuditLogService;
 import com.robomart.inventory.service.InventoryService;
 import io.micrometer.tracing.Tracer;
 
@@ -35,13 +36,16 @@ class InventoryControllerTest {
     private InventoryService inventoryService;
 
     @Mock
+    private AuditLogService auditLogService;
+
+    @Mock
     private Tracer tracer;
 
     private InventoryAdminRestController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new InventoryAdminRestController(inventoryService, tracer);
+        controller = new InventoryAdminRestController(inventoryService, auditLogService, tracer);
     }
 
     @Test

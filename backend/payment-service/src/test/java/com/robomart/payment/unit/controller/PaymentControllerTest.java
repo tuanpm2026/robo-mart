@@ -17,6 +17,7 @@ import com.robomart.common.exception.ResourceNotFoundException;
 import com.robomart.payment.controller.PaymentAdminRestController;
 import com.robomart.payment.entity.Payment;
 import com.robomart.payment.enums.PaymentStatus;
+import com.robomart.payment.service.AuditLogService;
 import com.robomart.payment.service.PaymentService;
 import com.robomart.payment.web.PaymentStatusResponse;
 import io.micrometer.tracing.Tracer;
@@ -32,13 +33,16 @@ class PaymentControllerTest {
     private PaymentService paymentService;
 
     @Mock
+    private AuditLogService auditLogService;
+
+    @Mock
     private Tracer tracer;
 
     private PaymentAdminRestController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new PaymentAdminRestController(paymentService, tracer);
+        controller = new PaymentAdminRestController(paymentService, auditLogService, tracer);
     }
 
     @Test

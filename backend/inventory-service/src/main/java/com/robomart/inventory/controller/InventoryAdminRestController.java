@@ -1,12 +1,17 @@
 package com.robomart.inventory.controller;
 
 import com.robomart.common.dto.ApiResponse;
+import com.robomart.common.dto.PagedResponse;
+import com.robomart.common.dto.PaginationMeta;
+import com.robomart.inventory.dto.AuditLogDto;
 import com.robomart.inventory.dto.BulkRestockRequest;
 import com.robomart.inventory.dto.InventoryItemResponse;
 import com.robomart.inventory.dto.InventoryMetricsResponse;
 import com.robomart.inventory.dto.PagedInventoryResponse;
+import com.robomart.inventory.dto.ReconciliationSummaryResponse;
 import com.robomart.inventory.dto.RestockRequest;
 import com.robomart.inventory.entity.InventoryItem;
+import com.robomart.inventory.service.AuditLogService;
 import com.robomart.inventory.service.InventoryService;
 import io.micrometer.tracing.Tracer;
 import jakarta.validation.Valid;
@@ -39,16 +44,25 @@ import java.util.Map;
 public class InventoryAdminRestController {
 
     private final InventoryService inventoryService;
+    private final AuditLogService auditLogService;
     private final Tracer tracer;
 
-    public InventoryAdminRestController(InventoryService inventoryService, Tracer tracer) {
+    public InventoryAdminRestController(InventoryService inventoryService,
+                                        AuditLogService auditLogService,
+                                        Tracer tracer) {
         this.inventoryService = inventoryService;
+        this.auditLogService = auditLogService;
         this.tracer = tracer;
     }
 
     @GetMapping("/metrics")
     public ResponseEntity<ApiResponse<InventoryMetricsResponse>> getMetrics() {
         return ResponseEntity.ok(new ApiResponse<>(inventoryService.getMetrics(), getTraceId()));
+    }
+
+    @GetMapping("/reconciliation-summary")
+    public ResponseEntity<ApiResponse<ReconciliationSummaryResponse>> getReconciliationSummary() {
+        return ResponseEntity.ok(new ApiResponse<>(inventoryService.getReconciliationSummary(), getTraceId()));
     }
 
     @GetMapping
@@ -78,6 +92,27 @@ public class InventoryAdminRestController {
         List<InventoryItem> items = inventoryService.bulkRestock(
                 request.productIds(), request.quantity(), request.reason());
         return ResponseEntity.ok(items.stream().map(this::toResponse).toList());
+    }
+
+    @GetMapping("/audit-logs")
+    public ResponseEntity<PagedResponse<AuditLogDto>> searchAuditLogs(
+            @RequestParam(required = false) String actor,
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) String entityId,
+            @RequestParam(required = false) String traceId,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") @Max(100) int size) {
+        java.time.Instant fromInstant = from != null ? java.time.Instant.parse(from) : null;
+        java.time.Instant toInstant = to != null ? java.time.Instant.parse(to) : null;
+        Page<AuditLogDto> result = auditLogService.search(actor, action, entityType, entityId, traceId,
+                fromInstant, toInstant, PageRequest.of(page, size));
+        return ResponseEntity.ok(new PagedResponse<>(result.getContent(),
+                new PaginationMeta(result.getNumber(), result.getSize(),
+                        result.getTotalElements(), result.getTotalPages()),
+                getTraceId()));
     }
 
     private InventoryItemResponse toResponse(InventoryItem item) {

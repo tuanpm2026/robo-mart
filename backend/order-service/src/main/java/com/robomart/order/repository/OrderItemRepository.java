@@ -14,6 +14,8 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
 
     List<OrderItem> findByOrderId(Long orderId);
 
+    List<OrderItem> findByOrderIdIn(List<Long> orderIds);
+
     int countByOrderId(Long orderId);
 
     @Query("SELECT i.order.id, COUNT(i) FROM OrderItem i WHERE i.order.id IN :orderIds GROUP BY i.order.id")

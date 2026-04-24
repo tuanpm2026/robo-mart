@@ -78,6 +78,12 @@ notification:
   api-gateway:
     url: ${API_GATEWAY_URL:http://localhost:8080}
   admin-email: ${ADMIN_EMAIL:admin@robomart.local}
+  reconciliation:
+    cron: "0 0 2 * * *"
+    payment-cron: "0 30 2 * * *"
+    inventory-threshold-percent: 1.0
+    inventory-threshold-absolute: 5
+    payment-threshold-percent: 1.0
 
 ---
 spring:

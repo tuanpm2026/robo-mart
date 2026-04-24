@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -238,7 +237,8 @@ class OrderGrpcServiceTest {
 
         @Test
         void shouldReturnSuccessWhenOrderCancelled() {
-            doNothing().when(orderService).cancelOrder(eq(1L), anyString(), anyString());
+            when(orderService.cancelOrder(eq(1L), anyString(), anyString()))
+                    .thenReturn(org.mockito.Mockito.mock(Order.class));
 
             CancelOrderRequest request = CancelOrderRequest.newBuilder()
                     .setOrderId("1")

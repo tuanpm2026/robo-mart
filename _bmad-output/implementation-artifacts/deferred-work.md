@@ -34,3 +34,7 @@
 - **W5**: No `imagePullSecrets` for ghcr.io — pods fail `ErrImagePull` if packages are private without cluster-level pull secret configuration.
 - **W6**: Readiness probe `timeoutSeconds: 3` tight for DB health checks under restart load — validate under load test.
 - **W7**: RateLimitingFilter fail-open on Redis error — all requests bypass rate limiting during Redis outage. Pre-existing Story 8.3 pattern.
+
+## Deferred from: code review of 9-3-implement-service-discovery-reconciliation-audit-trail (2026-04-24)
+
+- **W8**: `findAll()` full table scan trong reconciliation summary endpoints (inventory-service, payment-service, order-service) — không có pagination. Chấp nhận được ở scale hiện tại nhưng cần thêm pagination khi tables grow. Địa chỉ: InventoryService.getReconciliationSummary(), PaymentService.getReconciliationSummary(), OrderService.getOrderReconciliationSummary().

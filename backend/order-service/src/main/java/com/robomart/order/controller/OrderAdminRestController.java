@@ -1,9 +1,11 @@
 package com.robomart.order.controller;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
@@ -24,14 +26,17 @@ import jakarta.validation.constraints.Max;
 import com.robomart.common.dto.ApiResponse;
 import com.robomart.common.dto.PagedResponse;
 import com.robomart.common.dto.PaginationMeta;
+import com.robomart.order.dto.AuditLogDto;
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderStatusHistory;
 import com.robomart.order.enums.OrderStatus;
+import com.robomart.order.service.AuditLogService;
 import com.robomart.order.service.OrderService;
 import com.robomart.order.web.AdminOrderDetailResponse;
 import com.robomart.order.web.AdminOrderSummaryResponse;
 import com.robomart.order.web.OrderDashboardMetricsResponse;
 import com.robomart.order.web.OrderEventResponse;
+import com.robomart.order.web.OrderReconciliationSummary;
 import com.robomart.order.web.UpdateOrderStatusRequest;
 
 // No @PreAuthorize needed — ADMIN role enforced at API Gateway level
@@ -42,10 +47,14 @@ import com.robomart.order.web.UpdateOrderStatusRequest;
 public class OrderAdminRestController {
 
     private final OrderService orderService;
+    private final AuditLogService auditLogService;
     private final Tracer tracer;
 
-    public OrderAdminRestController(OrderService orderService, Tracer tracer) {
+    public OrderAdminRestController(OrderService orderService,
+                                    AuditLogService auditLogService,
+                                    Tracer tracer) {
         this.orderService = orderService;
+        this.auditLogService = auditLogService;
         this.tracer = tracer;
     }
 
@@ -53,6 +62,11 @@ public class OrderAdminRestController {
     public ResponseEntity<ApiResponse<OrderDashboardMetricsResponse>> getDashboardMetrics() {
         OrderDashboardMetricsResponse metrics = orderService.getDashboardMetrics();
         return ResponseEntity.ok(new ApiResponse<>(metrics, getTraceId()));
+    }
+
+    @GetMapping("/reconciliation-summary")
+    public ResponseEntity<ApiResponse<List<OrderReconciliationSummary>>> getReconciliationSummary() {
+        return ResponseEntity.ok(new ApiResponse<>(orderService.getOrderReconciliationSummary(), getTraceId()));
     }
 
     @GetMapping
@@ -105,6 +119,27 @@ public class OrderAdminRestController {
                 .map(h -> new OrderEventResponse(h.getId(), h.getStatus().name(), h.getChangedAt()))
                 .toList();
         return ResponseEntity.ok(new ApiResponse<>(events, getTraceId()));
+    }
+
+    @GetMapping("/audit-logs")
+    public ResponseEntity<PagedResponse<AuditLogDto>> searchAuditLogs(
+            @RequestParam(required = false) String actor,
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) String entityId,
+            @RequestParam(required = false) String traceId,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") @Max(100) int size) {
+        Instant fromInstant = from != null ? Instant.parse(from) : null;
+        Instant toInstant = to != null ? Instant.parse(to) : null;
+        Page<AuditLogDto> result = auditLogService.search(actor, action, entityType, entityId, traceId,
+                fromInstant, toInstant, PageRequest.of(page, size));
+        return ResponseEntity.ok(new PagedResponse<>(result.getContent(),
+                new PaginationMeta(result.getNumber(), result.getSize(),
+                        result.getTotalElements(), result.getTotalPages()),
+                getTraceId()));
     }
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)

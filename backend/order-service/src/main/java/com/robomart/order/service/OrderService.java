@@ -21,6 +21,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
+import com.robomart.common.audit.AuditAction;
+import com.robomart.common.audit.Auditable;
 import com.robomart.common.exception.ResourceNotFoundException;
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderItem;
@@ -36,6 +38,7 @@ import com.robomart.order.web.AdminOrderSummaryResponse;
 import com.robomart.order.web.OrderDashboardMetricsResponse;
 import com.robomart.order.web.OrderDetailResponse;
 import com.robomart.order.web.OrderItemResponse;
+import com.robomart.order.web.OrderReconciliationSummary;
 import com.robomart.order.web.OrderStatusHistoryResponse;
 import com.robomart.order.web.OrderSummaryResponse;
 
@@ -69,6 +72,7 @@ public class OrderService {
         this.transactionTemplate = transactionTemplate;
     }
 
+    @Auditable(action = AuditAction.CREATE, entityType = "Order", entityIdExpression = "#result?.id?.toString()")
     public Order createOrder(String userId, List<OrderItemRequest> items, String shippingAddress) {
         Order order = transactionTemplate.execute(status -> {
             Order newOrder = new Order();
@@ -236,6 +240,7 @@ public class OrderService {
                 historyResponses);
     }
 
+    @Auditable(action = AuditAction.UPDATE, entityType = "Order", entityIdExpression = "#result?.id?.toString()")
     @Transactional
     public Order updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
@@ -260,7 +265,8 @@ public class OrderService {
                         .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
     }
 
-    public void cancelOrder(Long orderId, String reason, String cancelledBy) {
+    @Auditable(action = AuditAction.DELETE, entityType = "ORDER", entityIdExpression = "#result?.id?.toString()")
+    public Order cancelOrder(Long orderId, String reason, String cancelledBy) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
 
@@ -288,6 +294,41 @@ public class OrderService {
                     "Order " + orderId + " cannot be cancelled in state: " + order.getStatus()
                             + " (concurrent modification — please retry)");
         }
+
+        return orderRepository.findById(orderId).orElse(order);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderReconciliationSummary> getOrderReconciliationSummary() {
+        List<OrderStatus> activeStatuses = List.of(
+                OrderStatus.PENDING,
+                OrderStatus.PAYMENT_PENDING,
+                OrderStatus.INVENTORY_RESERVING,
+                OrderStatus.PAYMENT_PROCESSING,
+                OrderStatus.CONFIRMED,
+                OrderStatus.SHIPPED,
+                OrderStatus.DELIVERED,
+                OrderStatus.PAYMENT_REFUNDING,
+                OrderStatus.INVENTORY_RELEASING);
+        List<Order> orders = orderRepository.findByStatusIn(activeStatuses);
+        if (orders.isEmpty()) {
+            return List.of();
+        }
+        List<Long> orderIds = orders.stream().map(Order::getId).toList();
+        Map<Long, List<OrderItem>> itemsByOrderId = orderItemRepository.findByOrderIdIn(orderIds).stream()
+                .collect(Collectors.groupingBy(item -> item.getOrder().getId()));
+        return orders.stream()
+                .map(order -> {
+                    List<OrderItem> items = itemsByOrderId.getOrDefault(order.getId(), List.of());
+                    List<OrderReconciliationSummary.OrderItemSummary> itemSummaries = items.stream()
+                            .map(i -> new OrderReconciliationSummary.OrderItemSummary(i.getProductId(), i.getQuantity()))
+                            .toList();
+                    return new OrderReconciliationSummary(
+                            order.getId().toString(),
+                            order.getStatus().name(),
+                            itemSummaries);
+                })
+                .toList();
     }
 
     public int getOrderItemCount(Long orderId) {

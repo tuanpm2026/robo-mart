@@ -96,6 +96,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
+    @ExceptionHandler(java.time.format.DateTimeParseException.class)
+    public ResponseEntity<ApiErrorResponse> handleDateTimeParse(java.time.format.DateTimeParseException ex) {
+        log.warn("Invalid date format: {}", ex.getMessage());
+        var error = new ErrorDetail("INVALID_DATE_FORMAT",
+                "Invalid date format: use ISO-8601 (e.g. 2026-01-01T00:00:00Z)", null);
+        var response = new ApiErrorResponse(error, getTraceId(), Instant.now());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleUnexpected(Exception ex) {
         log.error("Unexpected error: {}", ex.getMessage(), ex);

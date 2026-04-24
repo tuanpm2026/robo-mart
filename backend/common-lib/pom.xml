@@ -50,6 +50,19 @@
             <artifactId>logstash-logback-encoder</artifactId>
         </dependency>
 
+        <!-- AspectJ weaver for @Auditable aspect (spring-aop is already in spring-context via spring-boot-starter-web) -->
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
+        </dependency>
+
+        <!-- Spring Security core for SecurityContextHolder in AuditAspect (optional — consumers provide it) -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-core</artifactId>
+            <optional>true</optional>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
