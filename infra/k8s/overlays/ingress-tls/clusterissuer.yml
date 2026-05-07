@@ -1,0 +1,23 @@
+# Let's Encrypt ClusterIssuer for cert-manager.
+# Cluster prerequisite: cert-manager v1.x must be installed in the cluster
+# (typically `cert-manager` namespace) before applying this overlay.
+#   helm repo add jetstack https://charts.jetstack.io
+#   helm install cert-manager jetstack/cert-manager -n cert-manager \
+#     --create-namespace --set crds.enabled=true
+#
+# An Ingress controller (e.g. ingress-nginx) must also be installed and exposed
+# externally so the HTTP-01 challenge can complete.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: tuanpmvt@gmail.com
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: nginx

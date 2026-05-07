@@ -1,0 +1,17 @@
+# Ingress + TLS overlay.
+# Layers cert-manager-provisioned TLS termination in front of the cluster
+# (replacing the Cloudflare tunnel + LoadBalancer setup used by overlays/production).
+#
+# To switch ArgoCD to this overlay, update infra/k8s/argocd/robomart-app.yaml
+# `path` from `infra/k8s/overlays/production` to `infra/k8s/overlays/ingress-tls`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: robomart
+
+resources:
+  - ../../base
+  - clusterissuer.yml
+  - ingress.yml
+
+patches:
+  - path: patches/api-gateway-clusterip.yaml

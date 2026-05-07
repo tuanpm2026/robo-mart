@@ -3,6 +3,7 @@ package com.robomart.order.saga;
 import java.time.Instant;
 import java.util.List;
 
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -43,6 +44,11 @@ public class DeadSagaDetectionJob {
     @Scheduled(
         fixedDelayString = "${saga.dead-saga-detection.check-interval-ms:60000}",
         initialDelayString = "${saga.dead-saga-detection.initial-delay-ms:30000}"
+    )
+    @SchedulerLock(
+        name = "DeadSagaDetectionJob",
+        lockAtLeastFor = "PT30S",
+        lockAtMostFor = "PT5M"
     )
     public void detectAndRecoverDeadSagas() {
         if (!sagaProperties.getDeadSagaDetection().isEnabled()) {

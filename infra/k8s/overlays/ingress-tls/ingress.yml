@@ -1,0 +1,55 @@
+# Single Ingress fronting all public hosts. cert-manager auto-provisions a Let's
+# Encrypt cert for each `tls.hosts[]` entry and stores it in `tls.secretName`.
+#
+# Cluster prerequisites:
+#   - ingress-nginx controller installed (or update ingressClassName below)
+#   - cert-manager installed (see clusterissuer.yml)
+#   - DNS for app/admin/api/auth.tuanpm.xyz pointing at the ingress LB external IP
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: robomart-tls
+  namespace: robomart
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - app.tuanpm.xyz
+        - admin.tuanpm.xyz
+        - api.tuanpm.xyz
+      secretName: robomart-tls-cert
+  rules:
+    - host: app.tuanpm.xyz
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: customer-website
+                port:
+                  number: 80
+    - host: admin.tuanpm.xyz
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: admin-dashboard
+                port:
+                  number: 80
+    - host: api.tuanpm.xyz
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 8080

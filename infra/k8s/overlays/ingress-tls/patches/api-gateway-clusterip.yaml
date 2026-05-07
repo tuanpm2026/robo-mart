@@ -1,0 +1,10 @@
+# Front api-gateway via the Ingress instead of an external LoadBalancer.
+# Switching to ClusterIP removes the unencrypted public LB endpoint; all
+# external traffic must come through the TLS-terminating Ingress.
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: robomart
+spec:
+  type: ClusterIP
