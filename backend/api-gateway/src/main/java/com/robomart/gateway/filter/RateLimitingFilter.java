@@ -17,6 +17,7 @@ import reactor.core.publisher.Mono;
 public class RateLimitingFilter implements GlobalFilter, Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(RateLimitingFilter.class);
+    private static final String REMAINING_HEADER = "X-RateLimit-Remaining";
 
     private final RedisRateLimiter authenticatedRateLimiter;
     private final RedisRateLimiter anonymousRateLimiter;
@@ -38,6 +39,10 @@ public class RateLimitingFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
+        // Fail-closed on rate-limiter outage: Spring's RedisRateLimiter swallows Redis
+        // errors and returns allowed=true with X-RateLimit-Remaining=-1 as a marker.
+        // We detect that marker and reject with 503 instead of letting traffic bypass
+        // the rate limit during a Redis outage (DoS exposure).
         return userKeyResolver.resolve(exchange)
                 .flatMap(key -> {
                     boolean isAuthenticated = key.startsWith("user:");
@@ -48,6 +53,12 @@ public class RateLimitingFilter implements GlobalFilter, Ordered {
                     return limiter.isAllowed(routeId, key);
                 })
                 .flatMap(response -> {
+                    if ("-1".equals(response.getHeaders().get(REMAINING_HEADER))) {
+                        log.error("Rate limiter outage (Redis unreachable) for path {} — failing closed (503)", path);
+                        exchange.getResponse().setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
+                        exchange.getResponse().getHeaders().set("Retry-After", "30");
+                        return exchange.getResponse().setComplete();
+                    }
                     response.getHeaders().forEach((k, v) -> exchange.getResponse().getHeaders().set(k, v));
                     if (response.isAllowed()) {
                         return chain.filter(exchange);
@@ -55,10 +66,6 @@ public class RateLimitingFilter implements GlobalFilter, Ordered {
                     exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
                     exchange.getResponse().getHeaders().set("Retry-After", "60");
                     return exchange.getResponse().setComplete();
-                })
-                .onErrorResume(e -> {
-                    log.warn("Rate limiter error for path {} — failing open: {}", path, e.getMessage());
-                    return chain.filter(exchange);
                 });
     }
 

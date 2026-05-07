@@ -6,12 +6,12 @@ Total open items: 19. Grouped by theme and prioritized for post-Epic-10 producti
 
 ### P0 — Block real-prod traffic (do before opening to external users)
 
-| ID | Source | Item | Why P0 |
-| --- | --- | --- | --- |
-| K8S-TLS | 9.2 W4 | No TLS on api-gateway LoadBalancer | Public ingress over plaintext |
-| K8S-PULL | 9.2 W5 | No `imagePullSecrets` for ghcr.io | Pods fail `ErrImagePull` if packages go private |
-| GW-RL-FAIL | 9.2 W7 | RateLimitingFilter fail-open on Redis error | Whole-system DoS exposure during Redis outage |
-| SAGA-LOCK | 8.4 saga-recovery | DeadSagaDetectionJob has no distributed lock | Multi-pod deployments duplicate compensation calls (double refund risk) |
+| ID | Source | Item | Why P0 | Status |
+| --- | --- | --- | --- | --- |
+| K8S-TLS | 9.2 W4 | No TLS on api-gateway LoadBalancer | Public ingress over plaintext | Open |
+| K8S-PULL | 9.2 W5 | No `imagePullSecrets` for ghcr.io | Pods fail `ErrImagePull` if packages go private | ✅ Done 2026-05-07 — `serviceaccount.yml` patches default SA + `ghcr-pull-secret` template |
+| GW-RL-FAIL | 9.2 W7 | RateLimitingFilter fail-open on Redis error | Whole-system DoS exposure during Redis outage | ✅ Done 2026-05-07 — detect `X-RateLimit-Remaining=-1` marker → 503 + Retry-After |
+| SAGA-LOCK | 8.4 saga-recovery | DeadSagaDetectionJob has no distributed lock | Multi-pod deployments duplicate compensation calls (double refund risk) | Open |
 
 ### P1 — Address before scaling load or table growth
 
