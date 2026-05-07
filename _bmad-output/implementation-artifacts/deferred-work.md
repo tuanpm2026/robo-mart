@@ -1,5 +1,62 @@
 # Deferred Work
 
+## Triage Summary (2026-05-07)
+
+Total open items: 19. Grouped by theme and prioritized for post-Epic-10 production hardening.
+
+### P0 — Block real-prod traffic (do before opening to external users)
+
+| ID | Source | Item | Why P0 |
+| --- | --- | --- | --- |
+| K8S-TLS | 9.2 W4 | No TLS on api-gateway LoadBalancer | Public ingress over plaintext |
+| K8S-PULL | 9.2 W5 | No `imagePullSecrets` for ghcr.io | Pods fail `ErrImagePull` if packages go private |
+| GW-RL-FAIL | 9.2 W7 | RateLimitingFilter fail-open on Redis error | Whole-system DoS exposure during Redis outage |
+| SAGA-LOCK | 8.4 saga-recovery | DeadSagaDetectionJob has no distributed lock | Multi-pod deployments duplicate compensation calls (double refund risk) |
+
+### P1 — Address before scaling load or table growth
+
+| ID | Source | Item | Why P1 |
+| --- | --- | --- | --- |
+| K8S-MEM | 9.2 W2 | 512Mi limits tight for product/order | Likely OOM under load — needs load test data |
+| K8S-HPA-MEM | 9.2 W3 | HPA CPU-only — JVM can OOM before CPU spikes | Add Prometheus Adapter + memory metric |
+| K8S-PROBE-TO | 9.2 W6 | Readiness `timeoutSeconds: 3` tight | Validate with restart-storm load test |
+| RECON-PAGE | 9.3 W8 | `findAll()` in reconciliation summaries | Add pagination before tables grow past ~10k rows |
+| CHAOS-CB | 10.3 W2 | CB state + DLQ not asserted in chaos test | Quality gap — chaos test passes without verifying behavior |
+
+### P2 — Hygiene / future-proofing
+
+| ID | Source | Item | Why P2 |
+| --- | --- | --- | --- |
+| TEST-NAME | 10.1 W1 | 80+ test methods break naming convention | Cosmetic, dedicated hygiene PR |
+| TEST-ASSERTJ | 10.1 W2 | JUnit asserts in 3 test files | Cosmetic, hygiene PR |
+| TEST-BUILDER | 10.1 W3 | `new Order()` + setters in 14 test files | Needs cross-module test-data design — architecture decision |
+| TEST-GRPC | 10.1 W4 | OrderGrpcServiceTest missing orderId/status asserts | Improvement, low risk |
+| TEST-NOTIF | 10.1 W5 | NotificationServiceExtendedTest doesn't verify sendEmail | Improvement |
+| CHAOS-K8S | 10.3 W1 | ServiceKillChaosIT uses docker stop, not K8s probe restart | Revisit only if E2E moves to kind/minikube |
+| CHAOS-GRPC | 10.3 W3 | Chaos Monkey at Spring layer, not gRPC transport | Needs Toxiproxy for true gRPC chaos |
+| ARCH-BATCH | 10.4 W1 | ArchUnit `@BatchMapping` exclusion via string match | Monitor for false positives in CI |
+| CI-SLA | 10.4 W2 | Backend CI 20-min timeout vs 14-min expected | Tune after collecting real CI timing data |
+| SAGA-ID | 8.4 saga-id | `orderId == sagaId` always | Pre-existing design choice; revisit only if multi-saga-per-order pattern needed |
+
+### Theme rollup
+
+- **Production hardening (K8s + gateway)** — 7 items: TLS, imagePullSecrets, rate-limit fail-open, memory sizing, HPA memory, probe timeout, distributed saga lock
+- **Test hygiene** — 5 items: naming, AssertJ, builder pattern, grpc test asserts, notification test asserts
+- **Chaos/E2E test fidelity** — 3 items: K8s probe path, CB state assert, gRPC transport injection
+- **CI quality gates** — 2 items: ArchUnit BatchMapping watch, CI timeout SLA tuning
+- **Reconciliation scalability** — 1 item: pagination
+- **Saga design** — 1 item: orderId/sagaId distinction
+
+### Recommended sequencing
+
+1. **Quick wins (P0 batch 1)**: K8S-PULL, GW-RL-FAIL — small focused PRs, no architectural change
+2. **Production gate (P0 batch 2)**: K8S-TLS (Ingress + cert-manager), SAGA-LOCK (Redis SETNX) — bigger but unblocks real traffic
+3. **Load-driven decisions (P1)**: run k6 perf suite from 10.3 → derive K8S-MEM, K8S-HPA-MEM, K8S-PROBE-TO actual values
+4. **Hygiene sweep (P2)**: single PR for TEST-NAME + TEST-ASSERTJ + TEST-GRPC + TEST-NOTIF — bundle to amortize review cost
+5. **Defer indefinitely**: SAGA-ID, CHAOS-K8S, CHAOS-GRPC — revisit only if triggering condition (multi-saga, kind/minikube migration, Toxiproxy investment) materializes
+
+---
+
 ## Deferred from: code review of 10-1-implement-test-support-module-unit-test-foundation (2026-04-19)
 
 - **W1 — Test naming convention violations in pre-existing tests** — 80+ methods across ImageStorageServiceTest, AdminProductServiceTest, JwtStompInterceptorTest, OrderRestControllerTest, etc. don't follow `should{Expected}When{Condition}()`. Pre-existing; address as part of a dedicated test hygiene pass in Story 10.3 or later.

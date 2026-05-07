@@ -1,6 +1,6 @@
 # Story 9.2: Implement Health Checks & Centralized Configuration
 
-Status: in-progress
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -127,7 +127,7 @@ So that K8s can manage pod lifecycle and all services are consistently configure
 #### Task 4: Create `infra/k8s/base/configmap.yml` (AC4, AC5)
 
 - [x] **File**: `infra/k8s/base/configmap.yml`
-- [ ] Contains all non-sensitive shared config overrides. Spring Boot's relaxed binding maps env vars to properties:
+- [x] Contains all non-sensitive shared config overrides. Spring Boot's relaxed binding maps env vars to properties:
   - `SPRING_KAFKA_BOOTSTRAP_SERVERS` → `spring.kafka.bootstrap-servers`
   - `SPRING_DATA_REDIS_HOST` → `spring.data.redis.host`
   - etc.
