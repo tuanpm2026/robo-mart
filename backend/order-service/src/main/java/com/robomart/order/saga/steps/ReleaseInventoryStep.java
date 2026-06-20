@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderItem;
+import com.robomart.order.grpc.InventoryBusinessException;
 import com.robomart.order.grpc.InventoryGrpcClient;
 import com.robomart.order.grpc.InventoryServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
@@ -61,9 +62,11 @@ public class ReleaseInventoryStep implements SagaStep {
         try {
             inventoryClient.releaseInventory(requestBuilder.build());
             log.info("Inventory released for orderId={}", order.getId());
-        } catch (StatusRuntimeException | InventoryServiceUnavailableException e) {
+        } catch (StatusRuntimeException | InventoryServiceUnavailableException | InventoryBusinessException e) {
+            // Best-effort / idempotent — release failures (transient, circuit-open, or a business
+            // rejection such as FAILED_PRECONDITION when the reservation was already released) are
+            // logged but never re-thrown, so the saga can continue cancelling.
             log.error("Failed to release inventory for orderId={}: {}", order.getId(), e.getMessage(), e);
-            // Best-effort — log but do not throw, to allow saga to continue cancelling
         }
     }
 }

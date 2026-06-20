@@ -128,3 +128,11 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: http://localhost:8180/realms/robomart/protocol/openid-connect/certs
+
+management:
+  endpoint:
+    health:
+      # Test context does not register the 'kafka' health contributor referenced by the
+      # readiness group; skip group-membership validation so the context starts (matches
+      # the shared @IntegrationTest meta-annotation used by other services).
+      validate-group-membership: false

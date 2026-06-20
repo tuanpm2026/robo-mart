@@ -1,5 +1,6 @@
 package com.robomart.order.unit.saga.steps;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.robomart.order.entity.Order;
 import com.robomart.order.enums.OrderStatus;
+import com.robomart.order.grpc.PaymentBusinessException;
 import com.robomart.order.grpc.PaymentGrpcClient;
 import com.robomart.order.grpc.PaymentServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
@@ -113,6 +115,24 @@ class RefundPaymentStepTest {
 
         assertThatThrownBy(() -> step.execute(context))
                 .isInstanceOf(SagaStepException.class);
+    }
+
+    @Test
+    @DisplayName("shouldThrowNonCompensatingSagaStepExceptionOnBusinessRejection")
+    void shouldThrowNonCompensatingSagaStepExceptionOnBusinessRejection() {
+        Order order = buildOrder();
+        SagaContext context = new SagaContext(order);
+
+        // gRPC client maps FAILED_PRECONDITION on refund into PaymentBusinessException.
+        when(paymentClient.refundPayment(any(RefundPaymentRequest.class)))
+                .thenThrow(new PaymentBusinessException("Payment cannot be refunded",
+                        new StatusRuntimeException(Status.FAILED_PRECONDITION.withDescription("not refundable"))));
+
+        // Must surface as a SagaStepException (caught by orchestrator) with shouldCompensate=false,
+        // so cancellation/recovery continues to inventory release + finalizeCancellation.
+        assertThatThrownBy(() -> step.execute(context))
+                .isInstanceOf(SagaStepException.class)
+                .satisfies(e -> assertThat(((SagaStepException) e).isShouldCompensate()).isFalse());
     }
 
     @Test

@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderItem;
 import com.robomart.order.enums.OrderStatus;
+import com.robomart.order.grpc.InventoryBusinessException;
 import com.robomart.order.grpc.InventoryGrpcClient;
 import com.robomart.order.grpc.InventoryServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
@@ -94,6 +95,17 @@ class ReleaseInventoryStepTest {
                 .thenThrow(new InventoryServiceUnavailableException("Inventory unavailable", null));
 
         // Should not throw — best-effort compensation
+        step.compensate(context);
+    }
+
+    @Test
+    void shouldLogAndContinueWhenReleaseThrowsInventoryBusinessException() {
+        SagaContext context = buildContext(true);
+        when(inventoryClient.releaseInventory(any(ReleaseInventoryRequest.class)))
+                .thenThrow(new InventoryBusinessException("Already released",
+                        new StatusRuntimeException(Status.FAILED_PRECONDITION)));
+
+        // Should not throw — business rejection on release is best-effort / idempotent
         step.compensate(context);
     }
 

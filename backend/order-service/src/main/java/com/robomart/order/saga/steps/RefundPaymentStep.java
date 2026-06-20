@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.robomart.order.entity.Order;
+import com.robomart.order.grpc.PaymentBusinessException;
 import com.robomart.order.grpc.PaymentGrpcClient;
 import com.robomart.order.grpc.PaymentServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
@@ -71,6 +72,14 @@ public class RefundPaymentStep implements SagaStep {
             }
             log.error("Failed to refund payment for orderId={}: {}", order.getId(), e.getMessage());
             throw new SagaStepException("Refund failed: " + e.getMessage(), false);
+        } catch (PaymentBusinessException e) {
+            // Deterministic business rejection on the refund path (gRPC FAILED_PRECONDITION, e.g. the
+            // payment is in a state that cannot be refunded). Re-throw as a SagaStepException with
+            // shouldCompensate=false: this is a forward-only cancellation step, so a refund rejection
+            // must not trigger further compensation — the orchestrator catches SagaStepException and
+            // continues cancelling (inventory release + finalizeCancellation still run).
+            log.error("Payment refund rejected (business) for orderId={}: {}", order.getId(), e.getMessage());
+            throw new SagaStepException("Refund rejected: " + e.getMessage(), e, false);
         } catch (PaymentServiceUnavailableException e) {
             log.error("Payment service unavailable during refund for orderId={}: {}", order.getId(), e.getMessage());
             throw new SagaStepException("Refund failed — payment service circuit open: " + e.getMessage(), e, false);

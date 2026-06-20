@@ -1,5 +1,17 @@
 # Deferred Work
 
+## ✅ Resolved 2026-06-20 — TEST-IT-COVERAGE + 3 production defects
+
+CI was silently skipping ALL integration tests — the `Integration Tests` step used `-DskipTests`, which (Maven semantics) also skips failsafe — and skipping the JaCoCo gate via `-Djacoco.skip=true`. Re-enabling failsafe locally exposed **4 modules with broken ITs** and, hidden behind them, **3 real production defects**:
+
+- **events** — `AvroSchemaCompatibilityIT` Testcontainers networking: Kafka + Schema Registry were not on a shared Docker `Network`, registry pointed at the host-side bootstrap address. Fixed via shared `Network` + in-network listener (`ConfluentKafkaContainer.withListener`).
+- **order-service + notification-service** — Spring Boot 4 `HealthEndpointGroupMembershipValidator` aborted the test ApplicationContext (readiness group includes `kafka`, but no `kafka` contributor exists in the test context). Fixed by `management.endpoint.health.validate-group-membership: false` in the `test` profile (the shared `@IntegrationTest` meta-annotation already does this).
+- **PROD-1 (order-service)** — `Resilience4jConfig.addConfiguration()` registered config *templates* that were never applied to the YAML-materialised instances, so business gRPC errors (`FAILED_PRECONDITION`) were retried 3× and tripped the circuit breaker → wrong saga outcomes (e.g. "Inventory temporarily unavailable" instead of "Insufficient stock"; PAYMENT_PENDING instead of CANCELLED). Fixed: deleted the dead config; map `FAILED_PRECONDITION` → dedicated `InventoryBusinessException`/`PaymentBusinessException` listed in YAML `ignore-exceptions`; fallbacks re-throw them; compensation steps (`RefundPaymentStep`/`ReleaseInventoryStep`) now catch the new types.
+- **PROD-2 (order-service)** — `V3` placed a table-wide `UNIQUE(idempotency_key)` on `saga_audit_log`, but the orchestrator writes multiple rows per step with the same key (STARTED, then SUCCESS); the SUCCESS insert silently violated the constraint and was swallowed, so the `existsByIdempotencyKeyAndStatus(key,'SUCCESS')` idempotency check could never fire. Fixed by `V6` migration: partial unique index scoped to `status='SUCCESS'`.
+- **PROD-3 (product-service)** — `common-lib`'s `@Auditable` `AuditAspect` uses `SecurityContextHolder`; `common-lib` declares `spring-security-core` as `optional`; product-service had no Spring Security on its runtime classpath → admin create/update/delete threw `NoClassDefFoundError` → **HTTP 500 in production**. Fixed by adding `spring-security-core` to product-service.
+
+CI fixed: the `Integration Tests` step is now a single `./mvnw verify -DskipE2ETests` (surefire + failsafe + JaCoCo check in one reactor). The JaCoCo threshold stays at **0.80** and is now actually enforced; all modules clear it (api-gateway raised 0.60 → 1.00 via `UserIdRelayFilterUnitTest`). Full-reactor `clean verify` is green in ~8 min.
+
 ## Triage Summary (2026-05-07)
 
 Total open items: 19. Grouped by theme and prioritized for post-Epic-10 production hardening.
@@ -38,6 +50,7 @@ Total open items: 19. Grouped by theme and prioritized for post-Epic-10 producti
 | CI-SLA | 10.4 W2 | Backend CI 20-min timeout vs 14-min expected | Tune after collecting real CI timing data |
 | TEST-IT-COVERAGE | CI investigation 2026-05-08 | CI Integration Tests step uses `-DskipTests` (skips both surefire AND failsafe via Maven flag semantics), so failsafe never runs and JaCoCo check fires on stale unit-only data. Workaround: added `-Djacoco.skip=true` to Step 4 — JaCoCo plugin disabled there, no check enforced in CI. Local `mvn verify` reveals broken ITs in `events` module (and likely others); api-gateway unit-only coverage is 0.59 (well below 0.80). | Fix bit-rotted ITs per module (events first), then either gộp Step 3+4 into a single `mvn verify` or run failsafe goals explicitly. Re-enable JaCoCo check once aggregate coverage actually meets 0.80 |
 | SAGA-ID | 8.4 saga-id | `orderId == sagaId` always | Pre-existing design choice; revisit only if multi-saga-per-order pattern needed |
+| RETRY-NOOP | 2026-06-20 review | `@Retry` never retries transient gRPC errors (UNAVAILABLE/DEADLINE_EXCEEDED) — Retry is the outer aspect, CircuitBreaker the inner one, and both share the method's `fallbackMethod` (catches Throwable), so the fallback fires on the first failure before Retry observes it. | Pre-existing; the circuit breaker still records/trips correctly on transient errors, so resilience is "fail-fast to breaker," not "retry then fail." A real fix needs aspect reorder or `retry-exceptions` change + load testing — defer. Misleading code comment corrected 2026-06-20. |
 
 ### Theme rollup
 

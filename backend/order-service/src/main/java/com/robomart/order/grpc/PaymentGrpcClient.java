@@ -12,6 +12,8 @@ import com.robomart.proto.payment.RefundPaymentResponse;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 
 @Component
 public class PaymentGrpcClient {
@@ -28,21 +30,56 @@ public class PaymentGrpcClient {
     @CircuitBreaker(name = INSTANCE, fallbackMethod = "paymentFallback")
     @Retry(name = INSTANCE)
     public ProcessPaymentResponse processPayment(ProcessPaymentRequest request) {
-        return stub.processPayment(request);
+        try {
+            return stub.processPayment(request);
+        } catch (StatusRuntimeException e) {
+            throw mapBusinessError(e);
+        }
     }
 
     @CircuitBreaker(name = INSTANCE, fallbackMethod = "refundFallback")
     @Retry(name = INSTANCE)
     public RefundPaymentResponse refundPayment(RefundPaymentRequest request) {
-        return stub.refundPayment(request);
+        try {
+            return stub.refundPayment(request);
+        } catch (StatusRuntimeException e) {
+            throw mapBusinessError(e);
+        }
+    }
+
+    /**
+     * Re-throws deterministic business rejections (FAILED_PRECONDITION) as
+     * {@link PaymentBusinessException} so Resilience4j ignores them (no retry, no breaker trip).
+     *
+     * <p>Transient gRPC errors (UNAVAILABLE, DEADLINE_EXCEEDED) are re-thrown unchanged. NOTE: the
+     * {@code @Retry} config does NOT currently retry them — Retry is the outer aspect and
+     * CircuitBreaker the inner one, and both share this method's {@code fallbackMethod}. The
+     * fallback (which catches Throwable) fires on the first failure, before Retry ever observes it,
+     * so {@code @Retry} is effectively a no-op for transient gRPC errors here. The circuit breaker
+     * still records and trips on those transient errors.
+     */
+    private static RuntimeException mapBusinessError(StatusRuntimeException e) {
+        if (e.getStatus().getCode() == Status.Code.FAILED_PRECONDITION) {
+            return new PaymentBusinessException(e.getStatus().getDescription(), e);
+        }
+        return e;
     }
 
     public ProcessPaymentResponse paymentFallback(ProcessPaymentRequest request, Throwable t) {
+        // The circuit-breaker fallback is invoked for ALL exceptions, including those marked
+        // ignore-exceptions. Business rejections (payment declined) must propagate unchanged —
+        // they are NOT a service outage and must not be held as PAYMENT_PENDING.
+        if (t instanceof PaymentBusinessException businessError) {
+            throw businessError;
+        }
         log.error("Payment circuit open or retries exhausted for processPayment: {}", t.getMessage());
         throw new PaymentServiceUnavailableException("Payment service unavailable", t);
     }
 
     public RefundPaymentResponse refundFallback(RefundPaymentRequest request, Throwable t) {
+        if (t instanceof PaymentBusinessException businessError) {
+            throw businessError;
+        }
         log.error("Payment circuit open or retries exhausted for refundPayment: {}", t.getMessage());
         throw new PaymentServiceUnavailableException("Payment service unavailable during refund", t);
     }

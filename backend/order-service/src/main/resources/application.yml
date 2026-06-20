@@ -98,6 +98,9 @@ resilience4j:
         record-exceptions:
           - io.grpc.StatusRuntimeException
           - com.robomart.order.grpc.InventoryServiceUnavailableException
+        # Business rejections (insufficient stock) are deterministic — never count them as failures.
+        ignore-exceptions:
+          - com.robomart.order.grpc.InventoryBusinessException
       payment-service:
         sliding-window-type: COUNT_BASED
         sliding-window-size: 5
@@ -108,6 +111,9 @@ resilience4j:
         record-exceptions:
           - io.grpc.StatusRuntimeException
           - com.robomart.order.grpc.PaymentServiceUnavailableException
+        # Business rejections (payment declined) are deterministic — never count them as failures.
+        ignore-exceptions:
+          - com.robomart.order.grpc.PaymentBusinessException
   retry:
     instances:
       inventory-service:
@@ -117,6 +123,9 @@ resilience4j:
         exponential-backoff-multiplier: 2
         retry-exceptions:
           - io.grpc.StatusRuntimeException
+        # Business rejections are deterministic — retrying them wastes time and is pointless.
+        ignore-exceptions:
+          - com.robomart.order.grpc.InventoryBusinessException
       payment-service:
         max-attempts: 3
         wait-duration: 1s
@@ -124,6 +133,9 @@ resilience4j:
         exponential-backoff-multiplier: 2
         retry-exceptions:
           - io.grpc.StatusRuntimeException
+        # Business rejections are deterministic — retrying them wastes time and is pointless.
+        ignore-exceptions:
+          - com.robomart.order.grpc.PaymentBusinessException
 
 ---
 spring:
@@ -171,3 +183,11 @@ spring:
       ddl-auto: validate
   flyway:
     locations: classpath:db/migration,classpath:db/seed
+
+management:
+  endpoint:
+    health:
+      # Test context does not register the 'kafka' health contributor referenced by the
+      # readiness group; skip group-membership validation so the context starts (matches
+      # the shared @IntegrationTest meta-annotation used by other services).
+      validate-group-membership: false

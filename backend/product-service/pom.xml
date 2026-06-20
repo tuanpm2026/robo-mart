@@ -24,6 +24,18 @@
             <artifactId>events</artifactId>
         </dependency>
 
+        <!--
+          Required at runtime by common-lib's @Auditable AuditAspect, which reads the current
+          actor via Spring Security's SecurityContextHolder. common-lib declares spring-security-core
+          as optional ("consumers provide it"), so each service that uses @Auditable must supply it.
+          Without this, every audited admin write (createProduct / updateProduct / deleteProduct)
+          throws NoClassDefFoundError: SecurityContextHolder and returns HTTP 500.
+        -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-core</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>

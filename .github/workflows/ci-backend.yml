@@ -47,19 +47,16 @@ jobs:
         working-directory: backend
         run: ./mvnw checkstyle:check
 
-      # Step 3: Unit tests + ArchUnit validation (all services in parallel)
-      - name: Unit Tests (includes ArchUnit layer validation)
+      # Step 3: Unit + Integration tests + JaCoCo coverage gate (Testcontainers — Docker on ubuntu-24.04)
+      # A single `verify` runs surefire (unit + ArchUnit) and failsafe (IT) in one reactor, so one
+      # jacoco.exec accumulates combined unit+IT coverage before the verify-phase JaCoCo check
+      # (BUNDLE LINE >= 0.80) fires. Previously this step used `-DskipTests` (which ALSO skips
+      # failsafe, so ITs never ran) plus `-Djacoco.skip=true` — both removed now that the ITs are
+      # de-bit-rotted and every module clears 0.80 (TEST-IT-COVERAGE resolved 2026-06-20).
+      # (-DskipE2ETests still gates the heavy full-stack e2e-tests module.)
+      - name: Unit + Integration Tests (with coverage gate)
         working-directory: backend
-        run: ./mvnw test -T 1C -DskipITs -DskipE2ETests
-
-      # Step 4: Integration tests (Testcontainers — Docker available on ubuntu-24.04)
-      # jacoco.skip=true: -DskipTests also skips failsafe, so the verify-phase
-      # JaCoCo check would fire on stale unit-only data and produce misleading
-      # threshold violations. P2 backlog TEST-IT-COVERAGE tracks re-enabling
-      # both failsafe and the check after ITs are de-bit-rotted.
-      - name: Integration Tests
-        working-directory: backend
-        run: ./mvnw verify -DskipTests -DskipE2ETests -Djacoco.skip=true
+        run: ./mvnw verify -DskipE2ETests
         env:
           TESTCONTAINERS_RYUK_DISABLED: "true"
 
