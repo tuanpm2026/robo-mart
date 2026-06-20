@@ -1,8 +1,10 @@
 package com.robomart.product.integration.graphql;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 
 import org.junit.jupiter.api.AfterEach;
@@ -63,6 +65,23 @@ class ProductGraphQLIT {
         ));
 
         elasticsearchOperations.indexOps(ProductDocument.class).refresh();
+
+        // Elasticsearch is near-real-time: a refresh() does not guarantee the freshly-indexed docs are
+        // immediately queryable on a slow/contended CI runner. The products(...) GraphQL query is backed
+        // by the ES search service, so wait until the seeded docs are observable — first that all 3 are
+        // countable, then via an end-to-end products(...) search through the SAME /graphql endpoint —
+        // before any @Test runs. Note: the products(...) response shows JPA-entity names looked up by the
+        // ES-matched ids, so we assert on a non-zero totalElements (proof ES served matches) rather than
+        // on any seeded ES document name. Use >= 3 because count() is itself near-real-time.
+        await().atMost(Duration.ofSeconds(10))
+                .until(() -> productSearchRepository.count() >= 3);
+        await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> {
+            var response = postGraphQL("""
+                    { products(keyword: "headphone") { content { id name } totalElements } }
+                    """);
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).doesNotContain("\"totalElements\":0");
+        });
     }
 
     @AfterEach
@@ -95,25 +114,31 @@ class ProductGraphQLIT {
 
     @Test
     void shouldReturnFilteredProductsWhenKeywordSearch() {
-        var response = postGraphQL("""
-                { products(keyword: "headphone") { content { id name } totalElements } }
-                """);
+        // products(...) is backed by the near-real-time ES search; retry the query until the indexed
+        // docs are served, so the visibility race cannot intermittently fail the assertions.
+        await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> {
+            var response = postGraphQL("""
+                    { products(keyword: "headphone") { content { id name } totalElements } }
+                    """);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).contains("\"products\"");
-        assertThat(response.getBody()).contains("\"content\"");
-        assertThat(response.getBody()).contains("\"totalElements\"");
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).contains("\"products\"");
+            assertThat(response.getBody()).contains("\"content\"");
+            assertThat(response.getBody()).contains("\"totalElements\"");
+        });
     }
 
     @Test
     void shouldReturnProductsWithMultipleFilters() {
-        var response = postGraphQL("""
-                { products(categoryId: 1, minPrice: 100) { content { id name price } totalElements } }
-                """);
+        await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> {
+            var response = postGraphQL("""
+                    { products(categoryId: 1, minPrice: 100) { content { id name price } totalElements } }
+                    """);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).contains("\"products\"");
-        assertThat(response.getBody()).contains("\"content\"");
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).contains("\"products\"");
+            assertThat(response.getBody()).contains("\"content\"");
+        });
     }
 
     @Test
