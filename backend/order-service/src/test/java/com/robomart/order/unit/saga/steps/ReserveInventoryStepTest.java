@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderItem;
 import com.robomart.order.enums.OrderStatus;
+import com.robomart.order.grpc.InventoryBusinessException;
 import com.robomart.order.grpc.InventoryGrpcClient;
 import com.robomart.order.grpc.InventoryServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
@@ -90,8 +91,11 @@ class ReserveInventoryStepTest {
         Order order = buildOrder();
         SagaContext context = new SagaContext(order);
 
+        // The gRPC client wrapper translates FAILED_PRECONDITION into InventoryBusinessException
+        // (so Resilience4j ignores it); the step receives that mapped type.
         when(inventoryClient.reserveInventory(any()))
-                .thenThrow(new StatusRuntimeException(Status.FAILED_PRECONDITION.withDescription("Insufficient stock")));
+                .thenThrow(new InventoryBusinessException("Insufficient stock",
+                        new StatusRuntimeException(Status.FAILED_PRECONDITION.withDescription("Insufficient stock"))));
 
         assertThatThrownBy(() -> step.execute(context))
                 .isInstanceOf(SagaStepException.class)

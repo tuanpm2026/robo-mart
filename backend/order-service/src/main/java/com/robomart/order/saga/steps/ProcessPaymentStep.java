@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.robomart.order.entity.Order;
+import com.robomart.order.grpc.PaymentBusinessException;
 import com.robomart.order.grpc.PaymentGrpcClient;
 import com.robomart.order.grpc.PaymentServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
@@ -13,9 +14,6 @@ import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.proto.common.Money;
 import com.robomart.proto.payment.ProcessPaymentRequest;
 import com.robomart.proto.payment.ProcessPaymentResponse;
-
-import io.grpc.Status;
-import io.grpc.StatusRuntimeException;
 
 @Component
 public class ProcessPaymentStep implements SagaStep {
@@ -52,13 +50,11 @@ public class ProcessPaymentStep implements SagaStep {
             ProcessPaymentResponse response = paymentClient.processPayment(request);
             order.setPaymentId(response.getPaymentId());
             log.info("Payment processed for orderId={}, paymentId={}", order.getId(), response.getPaymentId());
-        } catch (StatusRuntimeException e) {
-            if (e.getStatus().getCode() == Status.Code.FAILED_PRECONDITION) {
-                order.setCancellationReason("Payment declined");
-                throw new SagaStepException("Payment declined for orderId=" + order.getId(), e, true);
-            }
-            order.setCancellationReason("Payment error: " + e.getStatus().getCode());
-            throw new SagaStepException("Payment error for orderId=" + order.getId(), e, true);
+        } catch (PaymentBusinessException e) {
+            // Deterministic business rejection (e.g. payment declined) — cancel and compensate
+            // the already-reserved inventory.
+            order.setCancellationReason("Payment declined");
+            throw new SagaStepException("Payment declined for orderId=" + order.getId(), e, true);
         } catch (PaymentServiceUnavailableException e) {
             // Circuit open — do NOT cancel, do NOT compensate inventory
             // Hold order as PAYMENT_PENDING to allow retry when circuit closes
@@ -68,6 +64,12 @@ public class ProcessPaymentStep implements SagaStep {
                     false,    // shouldCompensate: false — keep inventory reserved
                     true      // shouldHoldAsPending: true — do NOT cancel
             );
+        } catch (RuntimeException e) {
+            // Transient/unexpected gRPC failure that survived retries but did not open the circuit.
+            // Set a clean, user-safe reason — never leak raw exception detail (mirrors
+            // ReserveInventoryStep's equivalent branch).
+            order.setCancellationReason("Payment failed");
+            throw new SagaStepException("Payment error for orderId=" + order.getId(), e, true);
         }
     }
 

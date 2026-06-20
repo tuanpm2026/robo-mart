@@ -15,6 +15,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.ConfluentKafkaContainer;
@@ -43,8 +44,22 @@ import com.robomart.events.product.ProductUpdatedEvent;
 @Testcontainers
 class AvroSchemaCompatibilityIT {
 
+    // Shared Docker network so the Schema Registry container can reach the Kafka
+    // broker by its network alias (not by the host-side mapped port).
+    private static final Network NETWORK = Network.newNetwork();
+
+    // In-network listener: the broker advertises PLAINTEXT://kafka:19092 to peers on
+    // the shared Docker network. withListener(host:port) also registers "kafka" as a
+    // network alias on the Kafka container, so Schema Registry can resolve it by name.
+    private static final String KAFKA_NETWORK_ALIAS = "kafka";
+    private static final int KAFKA_NETWORK_PORT = 19092;
+    private static final String KAFKA_IN_NETWORK_LISTENER =
+            KAFKA_NETWORK_ALIAS + ":" + KAFKA_NETWORK_PORT;
+
     private static final ConfluentKafkaContainer KAFKA =
-            new ConfluentKafkaContainer("confluentinc/cp-kafka:7.8.0");
+            new ConfluentKafkaContainer("confluentinc/cp-kafka:7.8.0")
+                    .withNetwork(NETWORK)
+                    .withListener(KAFKA_IN_NETWORK_LISTENER);
 
     @SuppressWarnings("rawtypes")
     private static GenericContainer schemaRegistry;
@@ -58,10 +73,14 @@ class AvroSchemaCompatibilityIT {
         KAFKA.start();
 
         schemaRegistry = new GenericContainer<>("confluentinc/cp-schema-registry:7.8.0")
+                .withNetwork(NETWORK)
                 .withExposedPorts(8081)
                 .withEnv("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
                 .withEnv("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:8081")
-                .withEnv("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS", KAFKA.getBootstrapServers())
+                // Reach Kafka over the shared network via its alias, NOT KAFKA.getBootstrapServers()
+                // (which is the host-side localhost:<mappedPort> and unreachable from inside the bridge).
+                .withEnv("SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS",
+                        "PLAINTEXT://" + KAFKA_IN_NETWORK_LISTENER)
                 .waitingFor(Wait.forHttp("/subjects").forStatusCode(200));
         schemaRegistry.start();
 
@@ -78,6 +97,7 @@ class AvroSchemaCompatibilityIT {
         if (KAFKA.isRunning()) {
             KAFKA.stop();
         }
+        NETWORK.close();
     }
 
     @Test

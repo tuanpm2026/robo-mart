@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.robomart.order.entity.Order;
 import com.robomart.order.enums.OrderStatus;
+import com.robomart.order.grpc.PaymentBusinessException;
 import com.robomart.order.grpc.PaymentGrpcClient;
 import com.robomart.order.grpc.PaymentServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
@@ -82,8 +83,11 @@ class ProcessPaymentStepTest {
         Order order = buildOrder();
         SagaContext context = new SagaContext(order);
 
+        // The gRPC client wrapper translates FAILED_PRECONDITION into PaymentBusinessException
+        // (so Resilience4j ignores it); the step receives that mapped type.
         when(paymentClient.processPayment(any()))
-                .thenThrow(new StatusRuntimeException(Status.FAILED_PRECONDITION.withDescription("Payment declined")));
+                .thenThrow(new PaymentBusinessException("Payment declined",
+                        new StatusRuntimeException(Status.FAILED_PRECONDITION.withDescription("Payment declined"))));
 
         assertThatThrownBy(() -> step.execute(context))
                 .isInstanceOf(SagaStepException.class)

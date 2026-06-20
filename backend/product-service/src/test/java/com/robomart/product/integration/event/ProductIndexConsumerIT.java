@@ -6,8 +6,10 @@ import static org.awaitility.Awaitility.await;
 import java.time.Duration;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.kafka.core.KafkaTemplate;
 
 import com.robomart.events.product.ProductCreatedEvent;
@@ -15,6 +17,7 @@ import com.robomart.events.product.ProductDeletedEvent;
 import com.robomart.events.product.ProductUpdatedEvent;
 import com.robomart.product.document.ProductDocument;
 import com.robomart.product.repository.ProductSearchRepository;
+import com.robomart.test.ElasticsearchTestSupport;
 import com.robomart.test.IntegrationTest;
 
 import org.apache.avro.specific.SpecificRecord;
@@ -27,6 +30,16 @@ class ProductIndexConsumerIT {
 
     @Autowired
     private ProductSearchRepository productSearchRepository;
+
+    @Autowired
+    private ElasticsearchOperations elasticsearchOperations;
+
+    @BeforeEach
+    void resetIndex() {
+        // Ensure the shared index exists with the correct mapping before the consumer indexes docs,
+        // so a dynamically-mapped index from another class cannot break (or be left for) this one.
+        ElasticsearchTestSupport.resetIndex(elasticsearchOperations, ProductDocument.class);
+    }
 
     @Test
     void shouldIndexProductWhenCreatedEventReceived() {
