@@ -17,6 +17,7 @@ import org.springframework.web.client.RestClient;
 
 import com.robomart.product.document.ProductDocument;
 import com.robomart.product.repository.ProductSearchRepository;
+import com.robomart.test.ElasticsearchTestSupport;
 import com.robomart.test.IntegrationTest;
 
 @IntegrationTest
@@ -41,14 +42,12 @@ class ProductSearchIT {
                 })
                 .build();
 
-        // Ensure the index exists with the correct field mappings (brand as keyword, etc.)
+        // Ensure the index exists with the correct field mappings (brand as keyword, etc.).
         // Recreate the index each time to avoid stale mappings from a previous test run
-        // (e.g., dynamic mapping creates 'brand' as text, breaking term queries).
-        var indexOps = elasticsearchOperations.indexOps(ProductDocument.class);
-        if (indexOps.exists()) {
-            indexOps.delete();
-        }
-        indexOps.createWithMapping();
+        // (e.g., dynamic mapping creates 'brand' as text, breaking term queries). The reset is
+        // race-tolerant: it waits for the delete to propagate and tolerates a concurrent recreate,
+        // so it is safe regardless of which test class ran before against the shared ES container.
+        ElasticsearchTestSupport.resetIndex(elasticsearchOperations, ProductDocument.class);
 
         productSearchRepository.saveAll(java.util.List.of(
                 createDoc(1L, "ELEC-001", "Wireless Bluetooth Headphone", "Premium noise-cancelling headphone",

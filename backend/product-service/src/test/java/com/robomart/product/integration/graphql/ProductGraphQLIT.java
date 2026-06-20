@@ -18,6 +18,7 @@ import org.springframework.web.client.RestClient;
 
 import com.robomart.product.document.ProductDocument;
 import com.robomart.product.repository.ProductSearchRepository;
+import com.robomart.test.ElasticsearchTestSupport;
 import com.robomart.test.IntegrationTest;
 
 @IntegrationTest
@@ -41,6 +42,10 @@ class ProductGraphQLIT {
                 .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> {
                 })
                 .build();
+
+        // Reset the shared ES index with the correct mapping before seeding, so this class does not
+        // depend on (or leave behind) a dynamically-mapped index when sharing the reused container.
+        ElasticsearchTestSupport.resetIndex(elasticsearchOperations, ProductDocument.class);
 
         productSearchRepository.saveAll(java.util.List.of(
                 createDoc(1L, "ELEC-001", "Wireless Bluetooth Headphone",
