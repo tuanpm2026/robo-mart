@@ -8,24 +8,48 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.function.Consumer;
 
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.cache.CacheManager;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
+import org.springframework.data.elasticsearch.core.RefreshPolicy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
 import org.springframework.web.client.RestClient;
 
+import com.robomart.product.config.CacheConfig;
 import com.robomart.product.document.ProductDocument;
 import com.robomart.product.repository.ProductSearchRepository;
 import com.robomart.test.ElasticsearchTestSupport;
 import com.robomart.test.IntegrationTest;
 
+/**
+ * All test methods here are read-only searches over the same immutable 5-document dataset, so the index
+ * is reset and seeded ONCE per class (in {@link #seedOnce()}), not per method. Seeding once is faster
+ * and collapses the per-method reset/reseed race windows down to a single one.
+ *
+ * <p>Critically, the {@code products} Elasticsearch index is <em>shared and reused</em> across all
+ * product-service IT classes (same JVM, same Testcontainer). The live {@link
+ * com.robomart.product.event.consumer.ProductIndexConsumer} Kafka listener indexes products that OTHER
+ * test classes (e.g. AdminProductRestControllerIT) create — and under full-reactor contention those
+ * events arrive asynchronously and late, landing in the middle of THIS class and inflating the document
+ * count (e.g. an exact-count assertion saw {@code totalElements:7} instead of 5). To make the dataset
+ * deterministic, the index-writing consumer is paused for the lifetime of this class and resumed in
+ * {@code @AfterAll}, so the only writer of the shared index here is this test's own seed.
+ */
 @IntegrationTest
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ProductSearchIT {
+
+    /** Consumer group of {@link com.robomart.product.event.consumer.ProductIndexConsumer} (the only ES-index writer). */
+    private static final String INDEX_CONSUMER_GROUP = "product-service-product-index-group";
 
     @LocalServerPort
     private int port;
@@ -36,24 +60,34 @@ class ProductSearchIT {
     @Autowired
     private ElasticsearchOperations elasticsearchOperations;
 
+    @Autowired
+    private CacheManager cacheManager;
+
+    @Autowired
+    private KafkaListenerEndpointRegistry kafkaListenerRegistry;
+
     private RestClient restClient;
 
-    @BeforeEach
-    void setUp() {
-        restClient = RestClient.builder()
-                .baseUrl("http://localhost:" + port)
-                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> {
-                })
-                .build();
+    @BeforeAll
+    void seedOnce() {
+        restClient = restClient();
+
+        // Stop the ProductIndexConsumer first, so async PRODUCT_CREATED/UPDATED/DELETED events emitted by
+        // sibling test classes can no longer index foreign documents into the shared index while this class
+        // runs. This must happen BEFORE the reset+seed so the seeded count stays exactly 5.
+        setIndexConsumerRunning(false);
 
         // Ensure the index exists with the correct field mappings (brand as keyword, etc.).
-        // Recreate the index each time to avoid stale mappings from a previous test run
-        // (e.g., dynamic mapping creates 'brand' as text, breaking term queries). The reset is
-        // race-tolerant: it waits for the delete to propagate and tolerates a concurrent recreate,
-        // so it is safe regardless of which test class ran before against the shared ES container.
+        // Recreate the index to avoid stale mappings from a previous test run (e.g., dynamic mapping
+        // creates 'brand' as text, breaking term queries). The reset is race-tolerant: it waits for the
+        // delete to propagate and tolerates a concurrent recreate, so it is safe regardless of which test
+        // class ran before against the shared ES container.
         ElasticsearchTestSupport.resetIndex(elasticsearchOperations, ProductDocument.class);
 
-        productSearchRepository.saveAll(java.util.List.of(
+        // Save with RefreshPolicy.IMMEDIATE so the bulk index forces a refresh: the documents are
+        // guaranteed queryable the instant save() returns, removing the near-real-time write-side gap
+        // (a plain saveAll + refresh() can still lag the *query* path under CI contention).
+        elasticsearchOperations.withRefreshPolicy(RefreshPolicy.IMMEDIATE).save(java.util.List.of(
                 createDoc(1L, "ELEC-001", "Wireless Bluetooth Headphone", "Premium noise-cancelling headphone",
                         1L, "Electronics", "Sony", BigDecimal.valueOf(149.99), BigDecimal.valueOf(4.5), 50),
                 createDoc(2L, "ELEC-002", "Wired Gaming Headphone", "Professional gaming headphone with mic",
@@ -66,27 +100,77 @@ class ProductSearchIT {
                         2L, "Toys", "Sony", BigDecimal.valueOf(45.99), BigDecimal.valueOf(3.5), 60)
         ));
 
-        elasticsearchOperations.indexOps(ProductDocument.class).refresh();
+        // ProductSearchService.search() is @Cacheable in the shared, reused Redis container. A previous
+        // test class (e.g. ProductGraphQLIT, which searches the same keyword=headphone => identical cache
+        // key) or a transient earlier near-real-time miss can leave a STALE entry — including an empty
+        // {data:[],totalElements:0} page — pinned for the 60s TTL. Without this clear, every query below
+        // is a cache HIT that never re-queries ES, so the search returns empty even though count() (which
+        // is uncached and live) sees all 5 docs. Clearing here guarantees the first query per key is
+        // recomputed against the now-fully-visible index.
+        clearSearchCaches();
 
-        // Elasticsearch is near-real-time: a refresh() does not guarantee the freshly-indexed docs are
-        // immediately visible to a query under a slow/contended CI runner. Wait until the documents are
-        // actually queryable — first that all 5 are countable, then via an end-to-end search through the
-        // SAME endpoint the tests use — before any @Test runs, so the seed is observable rather than
-        // merely written. Use >= 5 (not == 5): count() is itself near-real-time and may transiently lag,
-        // and the reset() in setUp guarantees a clean index, so the count converges to exactly 5.
-        await().atMost(Duration.ofSeconds(10))
+        // Backstop: confirm the documents are observable end-to-end through the SAME endpoint the tests
+        // use before any @Test runs. With IMMEDIATE refresh + cache clear this passes on the first poll;
+        // the wait only absorbs extreme CI slowness. 30s is a generous ceiling, not the primary fix.
+        await().atMost(Duration.ofSeconds(30))
                 .until(() -> productSearchRepository.count() >= 5);
-        await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> {
+        await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> {
             ResponseEntity<String> response = search("/api/v1/products/search?keyword=headphone");
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).contains("Wireless Bluetooth Headphone");
         });
     }
 
-    @AfterEach
-    void tearDown() {
+    @BeforeEach
+    void setUp() {
+        restClient = restClient();
+    }
+
+    @AfterAll
+    void tearDownAll() {
         productSearchRepository.deleteAll();
         elasticsearchOperations.indexOps(ProductDocument.class).refresh();
+        // Don't leave our cached search results behind to poison another class sharing the Redis container.
+        clearSearchCaches();
+        // Resume the index consumer so later classes (e.g. ProductIndexConsumerIT) work normally.
+        setIndexConsumerRunning(true);
+    }
+
+    private RestClient restClient() {
+        return RestClient.builder()
+                .baseUrl("http://localhost:" + port)
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> {
+                })
+                .build();
+    }
+
+    /**
+     * Starts or stops the {@link com.robomart.product.event.consumer.ProductIndexConsumer} listener
+     * containers (matched by consumer group), so this read-only search class can own the shared ES index
+     * for its lifetime without sibling classes' async events mutating it. {@code stop()} is synchronous,
+     * so any in-flight index write completes before we return.
+     */
+    private void setIndexConsumerRunning(boolean running) {
+        kafkaListenerRegistry.getListenerContainers().stream()
+                .filter(c -> INDEX_CONSUMER_GROUP.equals(c.getGroupId()))
+                .forEach(c -> {
+                    if (running) {
+                        c.start();
+                    } else {
+                        c.stop();
+                    }
+                });
+    }
+
+    private void clearSearchCaches() {
+        var searchCache = cacheManager.getCache(CacheConfig.CACHE_PRODUCT_SEARCH);
+        if (searchCache != null) {
+            searchCache.clear();
+        }
+        var detailCache = cacheManager.getCache(CacheConfig.CACHE_PRODUCT_DETAIL);
+        if (detailCache != null) {
+            detailCache.clear();
+        }
     }
 
     private ResponseEntity<String> search(String uri) {
