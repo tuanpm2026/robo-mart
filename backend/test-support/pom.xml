@@ -94,5 +94,11 @@
             <!-- No scope restriction: test-support itself is declared scope=test by consumers,
                  so ArchUnit classes in src/main/java are available on the test classpath. -->
         </dependency>
+        <!-- Resource-server types so TestJwtDecoderConfig can mint test JWTs for secured-service ITs.
+             test-support is consumed at scope=test, so this stays off production classpaths. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
+        </dependency>
     </dependencies>
 </project>
