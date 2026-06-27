@@ -6,6 +6,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,7 +19,8 @@ import com.robomart.common.dto.ApiResponse;
 import com.robomart.order.service.ReportService;
 import com.robomart.order.web.ReportSummaryResponse;
 
-// No @PreAuthorize needed — ADMIN role enforced at API Gateway level
+// ADMIN enforced both at the API Gateway AND here (defense in depth — see ResourceServerSecurityConfig).
+@PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/v1/admin/reports")
 public class ReportAdminRestController {

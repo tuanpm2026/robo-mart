@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -39,8 +40,8 @@ import com.robomart.order.web.OrderEventResponse;
 import com.robomart.order.web.OrderReconciliationSummary;
 import com.robomart.order.web.UpdateOrderStatusRequest;
 
-// No @PreAuthorize needed — ADMIN role enforced at API Gateway level
-// GatewaySecurityConfig: .pathMatchers("/api/v1/admin/**").hasRole("ADMIN")
+// ADMIN enforced both at the API Gateway AND here (defense in depth — see ResourceServerSecurityConfig).
+@PreAuthorize("hasRole('ADMIN')")
 @Validated
 @RestController
 @RequestMapping("/api/v1/admin/orders")

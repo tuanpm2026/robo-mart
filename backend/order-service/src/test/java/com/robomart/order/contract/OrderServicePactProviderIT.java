@@ -18,9 +18,13 @@ import au.com.dius.pact.provider.junitsupport.Provider;
 import au.com.dius.pact.provider.junitsupport.State;
 import au.com.dius.pact.provider.junitsupport.loader.PactFolder;
 
+import org.apache.hc.core5.http.HttpRequest;
+
 import com.robomart.proto.inventory.InventoryServiceGrpc;
 import com.robomart.proto.payment.PaymentServiceGrpc;
 import com.robomart.test.PostgresContainerConfig;
+import com.robomart.test.security.TestJwt;
+import com.robomart.test.security.TestJwtDecoderConfig;
 
 /**
  * Pact provider test: verifies that Order Service satisfies the contract defined by
@@ -41,7 +45,7 @@ import com.robomart.test.PostgresContainerConfig;
         properties = "management.endpoint.health.validate-group-membership=false"
 )
 @ActiveProfiles("test")
-@Import(PostgresContainerConfig.class)
+@Import({PostgresContainerConfig.class, TestJwtDecoderConfig.class})
 @Provider("order-service")
 @PactFolder("src/test/resources/pacts")
 class OrderServicePactProviderIT {
@@ -69,7 +73,11 @@ class OrderServicePactProviderIT {
 
     @TestTemplate
     @ExtendWith(PactVerificationInvocationContextProvider.class)
-    void pactVerificationTestTemplate(PactVerificationContext context) {
+    void pactVerificationTestTemplate(PactVerificationContext context, HttpRequest request) {
+        // The verified interactions hit /api/v1/admin/orders/** which now requires an ADMIN JWT
+        // (service-level security). Inject an ADMIN token so the replayed requests are authorized;
+        // TestJwtDecoderConfig resolves it without a real Keycloak.
+        request.addHeader("Authorization", TestJwt.adminBearer());
         context.verifyInteraction();
     }
 
