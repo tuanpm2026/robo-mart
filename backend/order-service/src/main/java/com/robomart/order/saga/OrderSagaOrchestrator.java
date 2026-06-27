@@ -157,8 +157,7 @@ public class OrderSagaOrchestrator {
 
         try {
             future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-            logSagaStep(context.getOrder(), step.getName(), "SUCCESS",
-                        idempotencyKey, null, null, retryCount);
+            recordStepSuccess(context.getOrder(), step.getName(), idempotencyKey, retryCount);
 
         } catch (TimeoutException e) {
             future.cancel(true);
@@ -248,25 +247,54 @@ public class OrderSagaOrchestrator {
         });
     }
 
+    /**
+     * Records a successful step by persisting the order and the SUCCESS audit log in one
+     * transaction. Persisting the order here durably captures step output (notably the
+     * {@code reservationId} set by {@link ReserveInventoryStep}) the moment the step succeeds, so a
+     * crash before the next status transition cannot lose it. Best-effort: a persistence failure is
+     * logged but does not abort the saga (the next status transition re-persists the order, and the
+     * inventory service can still be released by orderId during compensation).
+     */
+    private void recordStepSuccess(Order order, String stepName, String idempotencyKey, int retryCount) {
+        try {
+            transactionTemplate.execute(status -> {
+                Order saved = orderRepository.saveAndFlush(order);
+                order.setVersion(saved.getVersion());
+                sagaAuditLogRepository.save(
+                        buildSagaAuditLog(order, stepName, "SUCCESS", idempotencyKey, null, null, retryCount));
+                return null;
+            });
+        } catch (Exception e) {
+            log.error("Failed to record step success for orderId={}, step={}: {}",
+                      order.getId(), stepName, e.getMessage(), e);
+        }
+    }
+
     private void logSagaStep(Order order, String stepName, String status,
             String idempotencyKey, Instant timeoutAt, String error, int retryCount) {
         try {
-            String sagaId = order.getId().toString();
-            SagaAuditLog entry = new SagaAuditLog();
-            entry.setSagaId(sagaId);
-            entry.setOrderId(sagaId);
-            entry.setStepName(stepName);
-            entry.setStatus(status);
-            entry.setIdempotencyKey(idempotencyKey);
-            entry.setTimeoutAt(timeoutAt);
-            entry.setError(error);
-            entry.setRetryCount(retryCount);
-            entry.setExecutedAt(Instant.now());
-            sagaAuditLogRepository.save(entry);
+            sagaAuditLogRepository.save(
+                    buildSagaAuditLog(order, stepName, status, idempotencyKey, timeoutAt, error, retryCount));
         } catch (Exception e) {
             log.error("Failed to write saga audit log for orderId={}, step={}: {}",
                       order.getId(), stepName, e.getMessage());
         }
+    }
+
+    private SagaAuditLog buildSagaAuditLog(Order order, String stepName, String status,
+            String idempotencyKey, Instant timeoutAt, String error, int retryCount) {
+        String sagaId = order.getId().toString();
+        SagaAuditLog entry = new SagaAuditLog();
+        entry.setSagaId(sagaId);
+        entry.setOrderId(sagaId);
+        entry.setStepName(stepName);
+        entry.setStatus(status);
+        entry.setIdempotencyKey(idempotencyKey);
+        entry.setTimeoutAt(timeoutAt);
+        entry.setError(error);
+        entry.setRetryCount(retryCount);
+        entry.setExecutedAt(Instant.now());
+        return entry;
     }
 
     public void cancelPendingSaga(Order order, String reason, String cancelledBy) {

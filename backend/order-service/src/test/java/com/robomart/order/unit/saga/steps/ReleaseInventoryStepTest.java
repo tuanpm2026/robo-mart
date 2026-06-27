@@ -3,7 +3,6 @@ package com.robomart.order.unit.saga.steps;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -13,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -59,12 +59,23 @@ class ReleaseInventoryStepTest {
     }
 
     @Test
-    void shouldSkipCompensateWhenNoReservationId() {
+    void shouldReleaseByOrderIdWhenReservationIdMissing() {
+        // A ReserveInventory step timeout leaves reservationId null even though stock may have been
+        // reserved server-side. Compensation must still issue a release keyed by orderId so the
+        // reserved stock is freed (the inventory service dedups by orderId).
         SagaContext context = buildContext(false);
+        ArgumentCaptor<ReleaseInventoryRequest> requestCaptor =
+                ArgumentCaptor.forClass(ReleaseInventoryRequest.class);
+        when(inventoryClient.releaseInventory(requestCaptor.capture()))
+                .thenReturn(ReleaseInventoryResponse.newBuilder().setSuccess(true).build());
 
         step.compensate(context);
 
-        verify(inventoryClient, never()).releaseInventory(any());
+        verify(inventoryClient).releaseInventory(any(ReleaseInventoryRequest.class));
+        ReleaseInventoryRequest request = requestCaptor.getValue();
+        assertThat(request.getOrderId()).isEqualTo("1");
+        assertThat(request.getReservationId()).isEmpty();
+        assertThat(request.getItemsCount()).isEqualTo(1);
     }
 
     @Test

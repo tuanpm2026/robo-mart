@@ -8,12 +8,15 @@ import com.robomart.inventory.dto.InventoryMetricsResponse;
 import com.robomart.inventory.dto.ReconciliationSummaryResponse;
 import com.robomart.inventory.entity.InventoryItem;
 import com.robomart.inventory.entity.OutboxEvent;
+import com.robomart.inventory.entity.Reservation;
 import com.robomart.inventory.entity.StockMovement;
+import com.robomart.inventory.enums.ReservationStatus;
 import com.robomart.inventory.enums.StockMovementType;
 import com.robomart.inventory.exception.InsufficientStockException;
 import com.robomart.inventory.exception.LockAcquisitionException;
 import com.robomart.inventory.repository.InventoryItemRepository;
 import com.robomart.inventory.repository.OutboxEventRepository;
+import com.robomart.inventory.repository.ReservationRepository;
 import com.robomart.inventory.repository.StockMovementRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +30,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Service for managing inventory operations with distributed locking and transactional outbox.
@@ -43,6 +47,7 @@ public class InventoryService {
     private final InventoryItemRepository inventoryItemRepository;
     private final StockMovementRepository stockMovementRepository;
     private final OutboxEventRepository outboxEventRepository;
+    private final ReservationRepository reservationRepository;
     private final DistributedLockService distributedLockService;
     private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
@@ -51,6 +56,7 @@ public class InventoryService {
             InventoryItemRepository inventoryItemRepository,
             StockMovementRepository stockMovementRepository,
             OutboxEventRepository outboxEventRepository,
+            ReservationRepository reservationRepository,
             DistributedLockService distributedLockService,
             TransactionTemplate transactionTemplate,
             ObjectMapper objectMapper
@@ -58,6 +64,7 @@ public class InventoryService {
         this.inventoryItemRepository = inventoryItemRepository;
         this.stockMovementRepository = stockMovementRepository;
         this.outboxEventRepository = outboxEventRepository;
+        this.reservationRepository = reservationRepository;
         this.distributedLockService = distributedLockService;
         this.transactionTemplate = transactionTemplate;
         this.objectMapper = objectMapper;
@@ -318,6 +325,48 @@ public class InventoryService {
         log.debug("Retrieving inventory for productId={}", productId);
         return inventoryItemRepository.findByProductId(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("InventoryItem", productId));
+    }
+
+    /**
+     * Looks up the reservation record for an order, if any. The record is the idempotency anchor for
+     * the gRPC reserve/release calls (keyed by {@code orderId}).
+     *
+     * @param orderId the order ID
+     * @return the reservation record, or empty if no reservation has ever been recorded for the order
+     */
+    @Transactional(readOnly = true)
+    public Optional<Reservation> findReservation(String orderId) {
+        return reservationRepository.findByOrderId(orderId);
+    }
+
+    /**
+     * Records a successful reservation for an order. The {@code order_id} unique constraint makes this
+     * the idempotency guard: a concurrent duplicate reserve for the same order fails with
+     * {@link org.springframework.dao.DataIntegrityViolationException}, which the caller handles by
+     * rolling back its stock decrements and replaying the winning reservation.
+     *
+     * @param orderId       the order ID (idempotency key)
+     * @param reservationId the generated reservation ID returned to the caller
+     * @return the persisted reservation record
+     */
+    @Transactional
+    public Reservation recordReservation(String orderId, String reservationId) {
+        return reservationRepository.saveAndFlush(
+                new Reservation(reservationId, orderId, ReservationStatus.RESERVED));
+    }
+
+    /**
+     * Marks an order's reservation as released so a subsequent release is an idempotent no-op.
+     * No-op if no reservation record exists for the order.
+     *
+     * @param orderId the order ID
+     */
+    @Transactional
+    public void markReservationReleased(String orderId) {
+        reservationRepository.findByOrderId(orderId).ifPresent(reservation -> {
+            reservation.setStatus(ReservationStatus.RELEASED);
+            reservationRepository.save(reservation);
+        });
     }
 
     /**

@@ -167,6 +167,26 @@ class OrderSagaOrchestratorPhaseBTest {
     }
 
     @Test
+    @DisplayName("reservationIdPersistedInStepSuccessTransaction")
+    void reservationIdPersistedInStepSuccessTransaction() {
+        Order order = buildOrder();
+        // Reserve step sets the reservationId on the context's order (as the real step does after
+        // the gRPC call returns).
+        doAnswer(inv -> {
+            SagaContext ctx = inv.getArgument(0);
+            ctx.getOrder().setReservationId("res-persisted-1");
+            return null;
+        }).when(reserveInventoryStep).execute(any(SagaContext.class));
+        doNothing().when(processPaymentStep).execute(any(SagaContext.class));
+
+        orchestrator.executeSaga(order);
+
+        // The order must be flushed carrying the reservationId in the same step-success path.
+        verify(orderRepository, atLeastOnce()).saveAndFlush(
+            argThat(o -> o instanceof Order && "res-persisted-1".equals(((Order) o).getReservationId())));
+    }
+
+    @Test
     @DisplayName("retryCountWrittenToAuditLog")
     void retryCountWrittenToAuditLog() {
         Order order = buildOrder();

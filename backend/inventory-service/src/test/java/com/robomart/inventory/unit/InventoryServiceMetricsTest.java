@@ -14,6 +14,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.robomart.inventory.dto.InventoryMetricsResponse;
 import com.robomart.inventory.repository.InventoryItemRepository;
 import com.robomart.inventory.repository.OutboxEventRepository;
+import com.robomart.inventory.repository.ReservationRepository;
 import com.robomart.inventory.repository.StockMovementRepository;
 import com.robomart.inventory.service.DistributedLockService;
 import com.robomart.inventory.service.InventoryService;
@@ -27,6 +28,7 @@ class InventoryServiceMetricsTest {
     @Mock private InventoryItemRepository inventoryItemRepository;
     @Mock private StockMovementRepository stockMovementRepository;
     @Mock private OutboxEventRepository outboxEventRepository;
+    @Mock private ReservationRepository reservationRepository;
     @Mock private DistributedLockService distributedLockService;
     @Mock private TransactionTemplate transactionTemplate;
     @Mock private ObjectMapper objectMapper;
@@ -37,7 +39,7 @@ class InventoryServiceMetricsTest {
     void setUp() {
         inventoryService = new InventoryService(
                 inventoryItemRepository, stockMovementRepository, outboxEventRepository,
-                distributedLockService, transactionTemplate, objectMapper);
+                reservationRepository, distributedLockService, transactionTemplate, objectMapper);
     }
 
     @Test
