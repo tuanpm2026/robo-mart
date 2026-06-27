@@ -288,15 +288,17 @@ public class OrderSagaOrchestrator {
     }
 
     public void cancelConfirmedSaga(Order order, String reason, String cancelledBy) {
+        order.setCancellationReason(reason);
         updateOrderStatus(order, OrderStatus.PAYMENT_REFUNDING);
-        logSagaStep(order, refundPaymentStep.getName(), "STARTED", null, null, null, 0);
-        try {
-            refundPaymentStep.execute(new SagaContext(order));
-            logSagaStep(order, refundPaymentStep.getName(), "SUCCESS", null, null, null, 0);
-        } catch (SagaStepException e) {
-            logSagaStep(order, refundPaymentStep.getName(), "FAILED", null, null, e.getMessage(), 0);
-            log.error("Refund failed for orderId={}, continuing with cancellation: {}",
-                      order.getId(), e.getMessage());
+
+        if (!attemptRefund(order)) {
+            // Refund failed — do NOT proceed to release/CANCELLED. Marking the order CANCELLED here
+            // would strand the customer's money with no retry path. Hold it in REFUND_FAILED so the
+            // recovery scan retries the refund; inventory stays reserved until the order truly cancels.
+            markRefundFailed(order);
+            log.error("Confirmed-order cancellation halted at refund for orderId={} — customer NOT yet "
+                      + "refunded; held in REFUND_FAILED for retry", order.getId());
+            return;
         }
 
         updateOrderStatus(order, OrderStatus.INVENTORY_RELEASING);
@@ -364,15 +366,13 @@ public class OrderSagaOrchestrator {
         String staleStatus = order.getStatus().name();
         String recoveryReason = "Recovered from stale state: " + staleStatus;
 
-        if (order.getStatus() == OrderStatus.PAYMENT_REFUNDING) {
-            logSagaStep(order, refundPaymentStep.getName(), "STARTED", null, null, null, 0);
-            try {
-                refundPaymentStep.execute(new SagaContext(order));
-                logSagaStep(order, refundPaymentStep.getName(), "SUCCESS", null, null, null, 0);
-            } catch (SagaStepException e) {
-                logSagaStep(order, refundPaymentStep.getName(), "FAILED", null, null, e.getMessage(), 0);
-                log.error("Refund failed during stale saga recovery for orderId={}: {}",
-                          order.getId(), e.getMessage());
+        if (order.getStatus() == OrderStatus.PAYMENT_REFUNDING
+                || order.getStatus() == OrderStatus.REFUND_FAILED) {
+            if (!attemptRefund(order)) {
+                // Still cannot refund — keep the order in REFUND_FAILED (money owed) so the next
+                // recovery cycle retries. Never finalize as CANCELLED while the refund is unresolved.
+                markRefundFailed(order);
+                return;
             }
             runCompensation(new SagaContext(order), sagaId);
             finalizeCancellation(order, recoveryReason, "system");
@@ -386,12 +386,51 @@ public class OrderSagaOrchestrator {
         }
     }
 
+    /**
+     * Attempts to refund the order's payment.
+     *
+     * @return {@code true} if the refund succeeded (or was unnecessary — e.g. no payment, or the
+     *         payment service reports it already refunded); {@code false} if the refund failed and
+     *         the customer may still be owed money.
+     */
+    private boolean attemptRefund(Order order) {
+        logSagaStep(order, refundPaymentStep.getName(), "STARTED", null, null, null, 0);
+        try {
+            refundPaymentStep.execute(new SagaContext(order));
+            logSagaStep(order, refundPaymentStep.getName(), "SUCCESS", null, null, null, 0);
+            return true;
+        } catch (SagaStepException e) {
+            logSagaStep(order, refundPaymentStep.getName(), "FAILED", null, null, e.getMessage(), 0);
+            log.error("Refund FAILED for orderId={} — order will NOT be finalized as CANCELLED. Reason: {}",
+                      order.getId(), e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Holds an order in {@link OrderStatus#REFUND_FAILED} after a failed refund and emits a
+     * status-changed event so the unresolved refund is visible to ops (admin dashboard). Idempotent:
+     * if the order is already REFUND_FAILED it only logs, avoiding repeated no-op events on each
+     * recovery cycle.
+     */
+    private void markRefundFailed(Order order) {
+        if (order.getStatus() == OrderStatus.REFUND_FAILED) {
+            log.error("Refund still failing for orderId={} — remains REFUND_FAILED; manual intervention "
+                      + "may be required", order.getId());
+            return;
+        }
+        OrderStatus previous = order.getStatus();
+        updateOrderStatus(order, OrderStatus.REFUND_FAILED);
+        publishStatusChangedEvent(order, previous);
+    }
+
     @EventListener(ApplicationReadyEvent.class)
     public void recoverStaleSagas() {
         log.info("Checking for stale sagas to recover...");
         List<Order> staleOrders = orderRepository.findByStatusIn(
                 List.of(OrderStatus.INVENTORY_RESERVING, OrderStatus.PAYMENT_PROCESSING,
-                        OrderStatus.PAYMENT_REFUNDING, OrderStatus.INVENTORY_RELEASING));
+                        OrderStatus.PAYMENT_REFUNDING, OrderStatus.INVENTORY_RELEASING,
+                        OrderStatus.REFUND_FAILED));
 
         if (staleOrders.isEmpty()) {
             log.info("No stale sagas found.");

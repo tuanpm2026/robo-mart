@@ -2,6 +2,7 @@ package com.robomart.payment.service;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +20,38 @@ public class MockPaymentGateway {
     private volatile boolean simulatePermanentFailure = false;
     private volatile long simulatedDelayMs = 0;
 
+    /**
+     * Charges already settled, keyed by idempotency key. Models a real gateway's idempotency-key
+     * support (Stripe/Adyen-style): a repeated charge with the same key returns the original
+     * transaction instead of charging again. This is what prevents double-charge when the caller
+     * retries after a crash, or when two requests race concurrently with the same key.
+     */
+    private final ConcurrentHashMap<String, GatewayResult> chargesByKey = new ConcurrentHashMap<>();
+
+    /**
+     * Idempotent charge. Multiple calls with the same {@code idempotencyKey} charge the gateway
+     * exactly once and return the same transaction. Failures are NOT cached, so a transient failure
+     * may be retried.
+     */
+    public GatewayResult processPayment(BigDecimal amount, String currency, String idempotencyKey) {
+        GatewayResult existing = chargesByKey.get(idempotencyKey);
+        if (existing != null) {
+            log.info("Idempotent charge replay for key={} — returning existing transactionId={}",
+                    idempotencyKey, existing.transactionId());
+            return existing;
+        }
+        // computeIfAbsent runs the charge at most once per key even under concurrency; if the
+        // mapping function throws (transient/declined) no entry is stored, allowing a later retry.
+        return chargesByKey.computeIfAbsent(idempotencyKey, key -> charge(amount, currency));
+    }
+
+    /** @deprecated use {@link #processPayment(BigDecimal, String, String)} so charges are idempotent. */
+    @Deprecated
     public GatewayResult processPayment(BigDecimal amount, String currency) {
+        return charge(amount, currency);
+    }
+
+    private GatewayResult charge(BigDecimal amount, String currency) {
         log.info("Processing payment: amount={}, currency={}", amount, currency);
 
         applyDelay();
@@ -75,6 +107,7 @@ public class MockPaymentGateway {
         this.simulateTransientFailure = false;
         this.simulatePermanentFailure = false;
         this.simulatedDelayMs = 0;
+        this.chargesByKey.clear();
     }
 
     private void applyDelay() {

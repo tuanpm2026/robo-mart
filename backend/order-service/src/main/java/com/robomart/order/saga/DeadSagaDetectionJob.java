@@ -26,7 +26,10 @@ public class DeadSagaDetectionJob {
         OrderStatus.INVENTORY_RESERVING,
         OrderStatus.PAYMENT_PROCESSING,
         OrderStatus.PAYMENT_REFUNDING,
-        OrderStatus.INVENTORY_RELEASING
+        OrderStatus.INVENTORY_RELEASING,
+        // A cancellation whose refund failed: keep retrying the refund so the customer is never
+        // left unrefunded with the order silently CANCELLED.
+        OrderStatus.REFUND_FAILED
     );
 
     private final OrderRepository orderRepository;

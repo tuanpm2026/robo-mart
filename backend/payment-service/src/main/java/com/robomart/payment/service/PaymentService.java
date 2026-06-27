@@ -104,9 +104,12 @@ public class PaymentService {
                 });
         payment.setStatus(PaymentStatus.PENDING);
 
-        // Step 3: Call gateway and process within transaction
+        // Step 3: Call gateway and process within transaction.
+        // The idempotency key is passed to the gateway so the charge is idempotent: if this request
+        // previously charged but crashed before persisting (or two requests race with the same key),
+        // the gateway charges ONCE and returns the same transaction — no double-charge.
         try {
-            GatewayResult gatewayResult = paymentGateway.processPayment(amount, currency);
+            GatewayResult gatewayResult = paymentGateway.processPayment(amount, currency, idempotencyKey);
 
             // [Fix #2] Success — save in transaction, catch constraint violation for race condition
             try {

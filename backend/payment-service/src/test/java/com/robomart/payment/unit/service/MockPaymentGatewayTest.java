@@ -66,6 +66,33 @@ class MockPaymentGatewayTest {
 
             assertThat(result1.transactionId()).isNotEqualTo(result2.transactionId());
         }
+
+        @Test
+        @DisplayName("should charge once and return the same transaction for a repeated idempotency key")
+        void shouldChargeOnceForSameIdempotencyKey() {
+            GatewayResult first = gateway.processPayment(new BigDecimal("99.99"), "USD", "key-1");
+            GatewayResult replay = gateway.processPayment(new BigDecimal("99.99"), "USD", "key-1");
+
+            // Same key → same transaction (charged once).
+            assertThat(replay.transactionId()).isEqualTo(first.transactionId());
+
+            // A different key charges independently.
+            GatewayResult other = gateway.processPayment(new BigDecimal("99.99"), "USD", "key-2");
+            assertThat(other.transactionId()).isNotEqualTo(first.transactionId());
+        }
+
+        @Test
+        @DisplayName("should not cache a failed charge — a retry with the same key can succeed")
+        void shouldNotCacheFailedChargeForKey() {
+            gateway.setSimulateTransientFailure(true);
+            assertThatThrownBy(() -> gateway.processPayment(new BigDecimal("99.99"), "USD", "key-retry"))
+                    .isInstanceOf(PaymentTransientException.class);
+
+            // Transient cleared — same key now charges successfully (failure was not cached).
+            gateway.setSimulateTransientFailure(false);
+            GatewayResult result = gateway.processPayment(new BigDecimal("99.99"), "USD", "key-retry");
+            assertThat(result.transactionId()).startsWith("txn-");
+        }
     }
 
     @Nested

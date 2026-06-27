@@ -172,22 +172,60 @@ class OrderSagaOrchestratorCancelTest {
         }
 
         @Test
-        @DisplayName("shouldCancelOrderEvenIfRefundFails")
-        void shouldCancelOrderEvenIfRefundFails() {
+        @DisplayName("shouldHoldOrderInRefundFailedWhenRefundFails")
+        void shouldHoldOrderInRefundFailedWhenRefundFails() {
             Order order = buildConfirmedOrder();
             doThrow(new SagaStepException("Refund failed", false))
                     .when(refundPaymentStep).execute(any(SagaContext.class));
-            doNothing().when(releaseInventoryStep).compensate(any(SagaContext.class));
 
             // Should NOT throw — best-effort
             orchestrator.cancelConfirmedSaga(order, "Customer cancelled", "user-1");
 
+            // The customer was NOT refunded, so the order must NOT be finalized as CANCELLED.
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.REFUND_FAILED);
+            // Inventory is NOT released — the order is not cancelled yet, the refund is still owed.
+            verify(releaseInventoryStep, never()).compensate(any(SagaContext.class));
+            // Visibility: a status-changed event is published (NOT order_cancelled).
+            verify(outboxEventRepository).save(outboxCaptor.capture());
+            assertThat(outboxCaptor.getValue().getEventType()).isEqualTo("order_status_changed");
+        }
+    }
+
+    @Nested
+    @DisplayName("recovery of refund-failed sagas")
+    class RefundFailureRecovery {
+
+        @Test
+        @DisplayName("shouldFinalizeCancelledWhenRefundSucceedsOnRecovery")
+        void shouldFinalizeCancelledWhenRefundSucceedsOnRecovery() {
+            Order order = buildConfirmedOrder();
+            order.setStatus(OrderStatus.REFUND_FAILED);
+            doNothing().when(refundPaymentStep).execute(any(SagaContext.class));
+            doNothing().when(releaseInventoryStep).compensate(any(SagaContext.class));
+
+            orchestrator.handleDeadSaga(order);
+
+            // Refund now succeeded → release inventory and finalize as CANCELLED.
             assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
-            // Still releases inventory even when refund failed
+            verify(refundPaymentStep).execute(any(SagaContext.class));
             verify(releaseInventoryStep).compensate(any(SagaContext.class));
-            // Still publishes cancelled event
             verify(outboxEventRepository).save(outboxCaptor.capture());
             assertThat(outboxCaptor.getValue().getEventType()).isEqualTo("order_cancelled");
+        }
+
+        @Test
+        @DisplayName("shouldStayRefundFailedWhenRefundStillFailsOnRecovery")
+        void shouldStayRefundFailedWhenRefundStillFailsOnRecovery() {
+            Order order = buildConfirmedOrder();
+            order.setStatus(OrderStatus.PAYMENT_REFUNDING);
+            doThrow(new SagaStepException("Refund still failing", false))
+                    .when(refundPaymentStep).execute(any(SagaContext.class));
+
+            orchestrator.handleDeadSaga(order);
+
+            // Refund still failing → never finalize; money is never abandoned.
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.REFUND_FAILED);
+            verify(releaseInventoryStep, never()).compensate(any(SagaContext.class));
         }
     }
 }

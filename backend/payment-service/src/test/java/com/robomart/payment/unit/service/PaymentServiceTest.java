@@ -133,7 +133,7 @@ class PaymentServiceTest {
             // given
             when(idempotencyKeyRepository.findByIdempotencyKey("key-1")).thenReturn(Optional.empty());
             when(paymentRepository.findByIdempotencyKey("key-1")).thenReturn(Optional.empty());
-            when(paymentGateway.processPayment(any(), anyString())).thenReturn(new GatewayResult("txn-abc", "COMPLETED"));
+            when(paymentGateway.processPayment(any(), anyString(), anyString())).thenReturn(new GatewayResult("txn-abc", "COMPLETED"));
             when(paymentRepository.save(any(Payment.class))).thenAnswer(inv -> {
                 Payment p = inv.getArgument(0);
                 try {
@@ -202,7 +202,7 @@ class PaymentServiceTest {
             // given
             when(idempotencyKeyRepository.findByIdempotencyKey("key-transient")).thenReturn(Optional.empty());
             when(paymentRepository.findByIdempotencyKey("key-transient")).thenReturn(Optional.empty());
-            when(paymentGateway.processPayment(any(), anyString()))
+            when(paymentGateway.processPayment(any(), anyString(), anyString()))
                     .thenThrow(new PaymentTransientException("Temporary error"));
             when(paymentRepository.save(any(Payment.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -224,7 +224,7 @@ class PaymentServiceTest {
             // given
             when(idempotencyKeyRepository.findByIdempotencyKey("key-declined")).thenReturn(Optional.empty());
             when(paymentRepository.findByIdempotencyKey("key-declined")).thenReturn(Optional.empty());
-            when(paymentGateway.processPayment(any(), anyString()))
+            when(paymentGateway.processPayment(any(), anyString(), anyString()))
                     .thenThrow(new PaymentDeclinedException("Card declined"));
             when(paymentRepository.save(any(Payment.class))).thenAnswer(inv -> inv.getArgument(0));
             lenient().when(idempotencyKeyRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -253,7 +253,7 @@ class PaymentServiceTest {
 
             when(idempotencyKeyRepository.findByIdempotencyKey("key-expired")).thenReturn(Optional.of(expiredKey));
             when(paymentRepository.findByIdempotencyKey("key-expired")).thenReturn(Optional.empty());
-            when(paymentGateway.processPayment(any(), anyString())).thenReturn(new GatewayResult("txn-new", "COMPLETED"));
+            when(paymentGateway.processPayment(any(), anyString(), anyString())).thenReturn(new GatewayResult("txn-new", "COMPLETED"));
             when(paymentRepository.save(any(Payment.class))).thenAnswer(inv -> {
                 Payment p = inv.getArgument(0);
                 try {
@@ -312,7 +312,7 @@ class PaymentServiceTest {
 
             when(idempotencyKeyRepository.findByIdempotencyKey("key-retry")).thenReturn(Optional.empty());
             when(paymentRepository.findByIdempotencyKey("key-retry")).thenReturn(Optional.of(failedPayment));
-            when(paymentGateway.processPayment(any(), anyString())).thenReturn(new GatewayResult("txn-retry", "COMPLETED"));
+            when(paymentGateway.processPayment(any(), anyString(), anyString())).thenReturn(new GatewayResult("txn-retry", "COMPLETED"));
             when(paymentRepository.save(any(Payment.class))).thenAnswer(inv -> inv.getArgument(0));
             lenient().when(idempotencyKeyRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
             lenient().when(outboxEventRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -350,7 +350,7 @@ class PaymentServiceTest {
                     .thenReturn(Optional.empty())
                     .thenReturn(Optional.of(raceCachedKey));
             when(paymentRepository.findByIdempotencyKey("key-race")).thenReturn(Optional.empty());
-            when(paymentGateway.processPayment(any(), anyString())).thenReturn(new GatewayResult("txn-mine", "COMPLETED"));
+            when(paymentGateway.processPayment(any(), anyString(), anyString())).thenReturn(new GatewayResult("txn-mine", "COMPLETED"));
             when(paymentRepository.save(any(Payment.class))).thenAnswer(inv -> {
                 Payment p = inv.getArgument(0);
                 try {
