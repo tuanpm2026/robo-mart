@@ -103,14 +103,16 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
-        <!-- JWT validation for WebSocket (no Spring Security HTTP autoconfigure) -->
+        <!-- Security: validate Keycloak JWT for WebSocket (STOMP) AND HTTP admin endpoints
+             (Wave 2 defense in depth). The boot starter adds servlet security config + the
+             resource server (incl. oauth2-jose for NimbusJwtDecoder used by the WS interceptor). -->
         <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-oauth2-resource-server</artifactId>
+            <groupId>com.robomart</groupId>
+            <artifactId>security-lib</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-oauth2-jose</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
         </dependency>
     </dependencies>
 
