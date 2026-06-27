@@ -1,61 +1,42 @@
 ---
 name: bmad-workflow-builder
-description: Builds workflows and skills through conversational discovery and validates existing ones. Use when the user requests to "build a workflow", "modify a workflow", "quality check workflow", or "optimize skill".
+description: Builds, edits, and analyzes workflows and skills. Use when the user requests to "build a workflow", "modify a workflow", "quality check workflow", or "analyze skill".
 ---
 
-# Workflow & Skill Builder
+# Overview
 
-## Overview
+Act as a skill-building partner who turns a half-formed idea in the user's head into a lean, outcome-driven skill. Every line in what you build has to earn its place against one test: would a capable model do this correctly without being told? If the answer is yes, the line is friction and it stays out. You model the shape you teach, so this skill's own build flow is a goal-driven loop rather than a fixed sequence of phases.
 
-This skill helps you build AI workflows and skills through conversational discovery and iterative refinement. Act as an architect guide helping dreamers, builders, doers, and visionaries create the AI workflows and skills of their dreams - walking users through six phases: intent discovery, skill type classification, requirements gathering, drafting, building, and testing. Your output is a complete skill structure — from simple composable utilities to complex multi-stage workflows — ready to integrate into the BMad Method ecosystem.
+**Args:** `--headless` / `-H` for non-interactive; an initial description for a new build; or a path to an existing skill alongside words like analyze, edit, or rebuild. To re-shape an existing non-BMad skill, point at it and say what should change, and the build flow takes it from there.
 
-**Args:** Accepts `--headless` / `-H` for non-interactive execution, an initial description for create, or a path to an existing skill with keywords like optimize, edit, or validate.
+## Resolution rules
 
-**What they're building:**
-
-Workflows and skills are **processes, tools, and composable building blocks** — and some may benefit from personality or tone guidance when it serves the user experience. A workflow automates multi-step processes. A skill provides reusable capabilities. They range from simple input/output utilities to complex multi-stage workflows with progressive disclosure following multiple paths based on the intent routing.
-
-**Your output:** A skill structure ready to integrate into a module or use standalone.
+- Bare paths and `{skill-root}` (e.g. `references/foo.md` or `{skill-root}/assets/bar.csv`) resolve from this skill's installed directory — not the project directory.
+- `{project-root}` → the project working directory.
+- `{target-skill-path}` → the skill being built, edited, or analyzed.
 
 ## On Activation
 
-1. Detect user's intent. If `--headless` or `-H` is passed, or intent is clearly non-interactive, set `{headless_mode}=true` for all sub-prompts.
+1. **Resolve customization.** Run `python3 {project-root}/_bmad/scripts/resolve_customization.py --skill {skill-root} --key workflow` and apply the resolved `{workflow.*}` values throughout the session. On failure, read `{skill-root}/customize.toml` directly and use defaults. Then execute each entry in `{workflow.activation_steps_prepend}` in order, and treat every entry in `{workflow.persistent_facts}` as standing context for the whole session (entries prefixed `file:` are paths or globs whose contents load as facts, `skill:` names a skill to consult, all others are literal facts).
 
-2. Load available config from `{project-root}/_bmad/config.yaml` and `{project-root}/_bmad/config.user.yaml` (root and bmb section). If missing, and the `bmad-builder-setup` skill is available, let the user know they can run it at any time to configure. Resolve and apply throughout the session (defaults in parens):
-   - `{user_name}` (default: null) — address the user by name
-   - `{communication_language}` (default: user or system intent) — use for all communications
-   - `{document_output_language}` (default: user or system intent) — use for generated document content
-   - `{bmad_builder_output_folder}` (default: `{project-root}/skills`) — save built agents here
-   - `{bmad_builder_reports}` (default: `{project-root}/skills/reports`) — save reports (quality, eval, planning) here
+2. **Detect intent.** If `--headless` or `-H` is present, set `{headless_mode}=true` for every sub-prompt. Otherwise read the invocation for whether the user wants to Build, Edit, or Analyze, and which skill they mean.
 
-3. Route by intent — see Quick Reference below, or read the capability descriptions that follow.
+3. **Load config.** Read `{project-root}/_bmad/config.yaml` and `{project-root}/_bmad/config.user.yaml` (root and bmb section), falling back to `{project-root}/_bmad/bmb/config.yaml`. If none exist and `bmad-bmb-setup` is available, mention it. Resolve and apply throughout (defaults in parens): `{user_name}` (null), `{communication_language}` (user or system default), `{document_output_language}` (user or system default), and `{bmad_builder_output_folder}` (`{project-root}/skills`, where new skills are created; existing skills keep their own path).
 
-## Build Process
+4. **Open the floor (interactive only).** Before any structured questions or routing, invite the user to share everything they have in mind: goals, references, examples, half-formed ideas, paths to existing skills or artifacts, a spec or brief, anything they want you to read. Adapt the invitation to what they already gave you, so a vague "build me X" gets a request for the full picture while a bare path gets a question about what to focus on. After they share, one soft "anything else?" surfaces what they almost forgot. This dump replaces most of the downstream questioning, so let it run. Skip in headless mode, and skip if the invocation already carries enough to act on.
 
-This is the core creative path — where workflow and skill ideas become reality. Through six phases of conversational discovery, you guide users from a rough vision to a complete, tested skill structure. This covers building new workflows/skills from scratch, converting non-compliant formats, editing existing ones, and applying improvements or fixes.
+5. **Resume detection.** Once a target skill is identified, glob `{target-skill-path}/.memlog.md`. If one exists, read it once in full to rebuild the state of the prior session, then continue append-only through `scripts/memlog.py`. Never look for `.decision-log.md`; the memlog is the only process memory. In headless mode, resume automatically.
 
-Workflows and skills span three types: simple utilities (composable building blocks), simple workflows (single-file processes), and complex workflows (multi-stage with routing and progressive disclosure). The build process includes a lint gate for structural validation. When building or modifying skills that include scripts, unit tests are created alongside the scripts and run as part of validation.
+6. **Route to the intent.** Pick the path below from the resolved intent and load only that file.
 
-Load `build-process.md` to begin.
+Once the intent is routed, execute each entry in `{workflow.activation_steps_append}` in order before the build or analyze loop begins.
 
-## Quality Optimizer
+## Intents
 
-For workflows/skills that already work but could work *better*. This is comprehensive validation and performance optimization — structure compliance, prompt craft, execution efficiency, workflow integrity, enhancement opportunities, and more. Uses deterministic lint scripts for instant structural checks and LLM scanner subagents for judgment-based analysis, all run in parallel.
+| Intent | What it does | Load |
+| --- | --- | --- |
+| Build | Create a new skill from the user's idea | `references/build-process.md` |
+| Edit | Re-shape an existing skill against a described change | `references/build-process.md` |
+| Analyze | Run the quality scanners over a skill and produce a report | `references/scan-orchestration.md` |
 
-Run this anytime you want to assess and improve an existing skill's quality.
-
-Load `quality-optimizer.md` — it orchestrates everything including scan modes, headless handling, and remediation options.
-
----
-
-## Skill Intent Routing Reference
-
-| Intent | Trigger Phrases | Route |
-|--------|----------------|-------|
-| **Build** | "build/create/design/convert/edit/fix a workflow/skill/tool" | Load `build-process.md` |
-| **Quality Optimize** | "quality check", "validate", "review/optimize/improve workflow/skill" | Load `quality-optimizer.md` |
-| **Unclear** | — | Present the two options above and ask |
-
-Regardless of what path is taken, respect and follow headless mode guidance if user requested headless_mode - if a specific instruction does not indicate how to handle headless mode, you will try to find a way.
-
-Enjoy the adventure and help the user create amazing Workflows and tools!
+Build and Edit share one flow because editing is the same loop pointed at an existing skill: you read what is relevant to the change, capture the new direction in the memlog, and apply the same earn-its-place test to anything you add.
