@@ -47,7 +47,7 @@ class OutboxPollingServiceTest {
 
     @Test
     void shouldDoNothingWhenNoUnpublishedEvents() {
-        when(outboxEventRepository.findTop50ByPublishedFalseOrderByCreatedAtAsc())
+        when(outboxEventRepository.findUnpublishedSkipLocked(org.mockito.ArgumentMatchers.anyInt()))
                 .thenReturn(Collections.emptyList());
 
         outboxPollingService.pollAndPublish();
@@ -62,7 +62,7 @@ class OutboxPollingServiceTest {
                 "\"brand\":\"ToyBrand\",\"rating\":4.5,\"stockQuantity\":100}";
 
         OutboxEvent event = new OutboxEvent("PRODUCT", "1", "PRODUCT_CREATED", payload);
-        when(outboxEventRepository.findTop50ByPublishedFalseOrderByCreatedAtAsc())
+        when(outboxEventRepository.findUnpublishedSkipLocked(org.mockito.ArgumentMatchers.anyInt()))
                 .thenReturn(List.of(event));
 
         var sendResult = new SendResult<String, SpecificRecord>(null,
@@ -97,7 +97,7 @@ class OutboxPollingServiceTest {
                 "\"price\":29.99,\"categoryId\":1,\"categoryName\":\"Electronics\",\"stockQuantity\":100}";
 
         OutboxEvent event = new OutboxEvent("PRODUCT", "1", "PRODUCT_CREATED", payload);
-        when(outboxEventRepository.findTop50ByPublishedFalseOrderByCreatedAtAsc())
+        when(outboxEventRepository.findUnpublishedSkipLocked(org.mockito.ArgumentMatchers.anyInt()))
                 .thenReturn(List.of(event));
         when(objectMapper.readValue(eq(payload), eq(java.util.Map.class)))
                 .thenReturn(java.util.Map.of(

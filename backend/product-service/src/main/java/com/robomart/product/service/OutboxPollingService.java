@@ -1,5 +1,6 @@
 package com.robomart.product.service;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
@@ -8,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.concurrent.TimeUnit;
 
 import com.robomart.product.entity.OutboxEvent;
@@ -24,6 +26,7 @@ import tools.jackson.databind.ObjectMapper;
 public class OutboxPollingService {
 
     private static final Logger log = LoggerFactory.getLogger(OutboxPollingService.class);
+    private static final int BATCH_SIZE = 50;
 
     private final OutboxEventRepository outboxEventRepository;
     private final ProductEventProducer productEventProducer;
@@ -37,9 +40,13 @@ public class OutboxPollingService {
         this.objectMapper = objectMapper;
     }
 
+    // @Transactional so the FOR UPDATE SKIP LOCKED row locks are held until each event is marked
+    // published and committed — otherwise two instances both publish the same rows (duplicate
+    // Kafka events).
     @Scheduled(fixedDelay = 1000)
+    @Transactional
     public void pollAndPublish() {
-        var events = outboxEventRepository.findTop50ByPublishedFalseOrderByCreatedAtAsc();
+        var events = outboxEventRepository.findUnpublishedSkipLocked(BATCH_SIZE);
         if (events.isEmpty()) {
             return;
         }
@@ -67,11 +74,15 @@ public class OutboxPollingService {
         Map<String, Object> payload = objectMapper.readValue(event.getPayload(), Map.class);
         String aggregateId = event.getAggregateId();
         Instant now = Instant.now();
+        // Stable eventId derived from the outbox row so a re-publish carries the same id
+        // (consumer-side dedup friendly) instead of a fresh random UUID each send.
+        String eventId = UUID.nameUUIDFromBytes(
+                ("product-outbox-" + event.getId()).getBytes(StandardCharsets.UTF_8)).toString();
 
         switch (event.getEventType()) {
             case "PRODUCT_CREATED" -> {
                 var avroEvent = ProductCreatedEvent.newBuilder()
-                        .setEventId(UUID.randomUUID().toString())
+                        .setEventId(eventId)
                         .setEventType("PRODUCT_CREATED")
                         .setAggregateId(aggregateId)
                         .setAggregateType("PRODUCT")
@@ -92,7 +103,7 @@ public class OutboxPollingService {
             }
             case "PRODUCT_UPDATED" -> {
                 var avroEvent = ProductUpdatedEvent.newBuilder()
-                        .setEventId(UUID.randomUUID().toString())
+                        .setEventId(eventId)
                         .setEventType("PRODUCT_UPDATED")
                         .setAggregateId(aggregateId)
                         .setAggregateType("PRODUCT")
@@ -113,7 +124,7 @@ public class OutboxPollingService {
             }
             case "PRODUCT_DELETED" -> {
                 var avroEvent = ProductDeletedEvent.newBuilder()
-                        .setEventId(UUID.randomUUID().toString())
+                        .setEventId(eventId)
                         .setEventType("PRODUCT_DELETED")
                         .setAggregateId(aggregateId)
                         .setAggregateType("PRODUCT")

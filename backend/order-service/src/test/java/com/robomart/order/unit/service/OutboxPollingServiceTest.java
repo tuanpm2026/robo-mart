@@ -2,6 +2,7 @@ package com.robomart.order.unit.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
@@ -20,8 +21,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import com.robomart.events.order.OrderCancelledEvent;
 import com.robomart.events.order.OrderStatusChangedEvent;
@@ -38,7 +37,6 @@ class OutboxPollingServiceTest {
 
     @Mock private OutboxEventRepository outboxEventRepository;
     @Mock private OrderEventProducer orderEventProducer;
-    @Mock private TransactionTemplate transactionTemplate;
 
     @Captor private ArgumentCaptor<SpecificRecord> eventCaptor;
 
@@ -47,12 +45,8 @@ class OutboxPollingServiceTest {
     @BeforeEach
     void setUp() {
         service = new OutboxPollingService(
-                outboxEventRepository, orderEventProducer, new ObjectMapper(), transactionTemplate);
+                outboxEventRepository, orderEventProducer, new ObjectMapper());
 
-        lenient().when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
-            TransactionCallback<?> callback = invocation.getArgument(0);
-            return callback.doInTransaction(null);
-        });
         lenient().when(orderEventProducer.send(anyString(), anyString(), any()))
                 .thenReturn(CompletableFuture.completedFuture(null));
     }
@@ -62,7 +56,7 @@ class OutboxPollingServiceTest {
     void publishesStatusChangedAsAvro() {
         OutboxEvent event = new OutboxEvent("Order", "1", "order_status_changed",
                 "{\"orderId\":\"1\",\"previousStatus\":\"PAYMENT_PROCESSING\",\"newStatus\":\"CONFIRMED\"}");
-        when(outboxEventRepository.findByPublishedFalseOrderByCreatedAtAsc()).thenReturn(List.of(event));
+        when(outboxEventRepository.findUnpublishedSkipLocked(anyInt())).thenReturn(List.of(event));
 
         service.pollAndPublish();
 
@@ -86,7 +80,7 @@ class OutboxPollingServiceTest {
     void publishesCancelledAsAvro() {
         OutboxEvent event = new OutboxEvent("Order", "7", "order_cancelled",
                 "{\"orderId\":\"7\",\"reason\":\"Customer cancelled\",\"cancelledBy\":\"user-1\"}");
-        when(outboxEventRepository.findByPublishedFalseOrderByCreatedAtAsc()).thenReturn(List.of(event));
+        when(outboxEventRepository.findUnpublishedSkipLocked(anyInt())).thenReturn(List.of(event));
 
         service.pollAndPublish();
 

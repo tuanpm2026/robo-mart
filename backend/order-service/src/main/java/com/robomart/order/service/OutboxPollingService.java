@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.robomart.events.order.OrderCancelledEvent;
 import com.robomart.events.order.OrderStatusChangedEvent;
@@ -41,23 +41,23 @@ public class OutboxPollingService {
     private final OutboxEventRepository outboxEventRepository;
     private final OrderEventProducer orderEventProducer;
     private final ObjectMapper objectMapper;
-    private final TransactionTemplate transactionTemplate;
 
     public OutboxPollingService(
             OutboxEventRepository outboxEventRepository,
             OrderEventProducer orderEventProducer,
-            ObjectMapper objectMapper,
-            TransactionTemplate transactionTemplate) {
+            ObjectMapper objectMapper) {
         this.outboxEventRepository = outboxEventRepository;
         this.orderEventProducer = orderEventProducer;
         this.objectMapper = objectMapper;
-        this.transactionTemplate = transactionTemplate;
     }
 
+    // @Transactional so the FOR UPDATE SKIP LOCKED row locks are held until each event is marked
+    // published and committed — otherwise two instances both publish the same rows (duplicate
+    // Kafka events).
     @Scheduled(fixedDelay = 1000)
+    @Transactional
     public void pollAndPublish() {
-        List<OutboxEvent> unpublished = outboxEventRepository.findByPublishedFalseOrderByCreatedAtAsc();
-        List<OutboxEvent> batch = unpublished.stream().limit(BATCH_SIZE).toList();
+        List<OutboxEvent> batch = outboxEventRepository.findUnpublishedSkipLocked(BATCH_SIZE);
 
         if (batch.isEmpty()) {
             return;
@@ -68,11 +68,8 @@ public class OutboxPollingService {
         for (OutboxEvent event : batch) {
             try {
                 publishEvent(event);
-                transactionTemplate.execute(status -> {
-                    event.markPublished();
-                    outboxEventRepository.save(event);
-                    return null;
-                });
+                event.markPublished();
+                outboxEventRepository.save(event);
                 log.debug("Published outbox event id={}, type={}", event.getId(), event.getEventType());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -81,11 +78,8 @@ public class OutboxPollingService {
             } catch (IllegalArgumentException e) {
                 log.error("Corrupted/unmappable outbox event id={}, type={}: permanently skipping. Error: {}",
                         event.getId(), event.getEventType(), e.getMessage());
-                transactionTemplate.execute(status -> {
-                    event.markPublished();
-                    outboxEventRepository.save(event);
-                    return null;
-                });
+                event.markPublished();
+                outboxEventRepository.save(event);
             } catch (Exception e) {
                 log.error("Failed to publish outbox event id={}: {}", event.getId(), e.getMessage(), e);
             }
