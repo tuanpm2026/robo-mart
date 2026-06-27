@@ -3,6 +3,12 @@ spring:
     name: product-service
   profiles:
     active: dev
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # jwk-set-uri (lazy) so the app/tests start without Keycloak reachable.
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/robomart/protocol/openid-connect/certs}
   servlet:
     multipart:
       max-file-size: 5MB
