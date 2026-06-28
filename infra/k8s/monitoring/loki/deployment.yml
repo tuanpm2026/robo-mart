@@ -13,9 +13,22 @@ spec:
       labels:
         app: loki
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001      # grafana/loki default non-root uid
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: loki
         image: grafana/loki:3.0.0
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
         args:
         - -config.file=/etc/loki/local-config.yaml
         ports:
@@ -24,6 +37,11 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /loki
+        # The bundled local-config.yaml uses /tmp/loki as its path_prefix, so
+        # /tmp must be writable under readOnlyRootFilesystem. Storage stays
+        # ephemeral (emptyDir) — persisting Loki is out of scope for this wave.
+        - name: tmp
+          mountPath: /tmp
         resources:
           requests:
             memory: "128Mi"
@@ -33,4 +51,6 @@ spec:
             cpu: "200m"
       volumes:
       - name: data
+        emptyDir: {}
+      - name: tmp
         emptyDir: {}

@@ -1,0 +1,42 @@
+# Persistent storage for the stateful monitoring components. Without these,
+# metrics (Prometheus), traces (Tempo), and dashboards/users (Grafana) were held
+# in emptyDir volumes and lost on every pod restart/reschedule.
+#
+# storageClassName is intentionally omitted so the cluster's default
+# StorageClass provisions the volume. Set it explicitly if the cluster has no
+# default class.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-data
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tempo-data
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: grafana-data
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi

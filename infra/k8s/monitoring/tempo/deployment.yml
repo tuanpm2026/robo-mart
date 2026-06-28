@@ -5,6 +5,9 @@ metadata:
   namespace: monitoring
 spec:
   replicas: 1
+  # Recreate: the ReadWriteOnce PVC cannot be shared by old+new pods mid-rollout.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: tempo
@@ -13,9 +16,22 @@ spec:
       labels:
         app: tempo
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001      # grafana/tempo default non-root uid
+        runAsGroup: 10001
+        fsGroup: 10001        # so the PVC is writable by the non-root process
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: tempo
-        image: grafana/tempo:latest
+        image: grafana/tempo:2.9.3
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
         args:
         - -config.file=/etc/tempo/tempo.yml
         ports:
@@ -30,6 +46,8 @@ spec:
           mountPath: /etc/tempo
         - name: data
           mountPath: /var/tempo
+        - name: tmp
+          mountPath: /tmp
         resources:
           requests:
             memory: "256Mi"
@@ -42,4 +60,7 @@ spec:
         configMap:
           name: tempo-config
       - name: data
+        persistentVolumeClaim:
+          claimName: tempo-data
+      - name: tmp
         emptyDir: {}

@@ -22,7 +22,8 @@ COPY backend/notification-service/pom.xml backend/notification-service/pom.xml
 COPY backend/e2e-tests/pom.xml backend/e2e-tests/pom.xml
 
 # Download dependencies (cached layer — only invalidated when pom.xml changes)
-RUN cd backend && ./mvnw dependency:go-offline -pl :inventory-service -am -DskipTests -q
+WORKDIR /workspace/backend
+RUN ./mvnw dependency:go-offline -pl :inventory-service -am -DskipTests -q
 # protobuf-maven-plugin downloads protoc binaries without execute permission on Linux
 RUN find /workspace/backend/proto/target/protoc-plugins -type f \( -name "*.exe" -o -name "protoc" \) -exec chmod +x {} + 2>/dev/null || true
 
@@ -34,7 +35,7 @@ COPY backend/events/src backend/events/src
 COPY backend/test-support/src backend/test-support/src
 COPY backend/inventory-service/src backend/inventory-service/src
 
-RUN cd backend && ./mvnw package -pl :inventory-service -am -DskipTests -DskipITs -q
+RUN ./mvnw package -pl :inventory-service -am -DskipTests -DskipITs -q
 
 RUN find /workspace/backend/inventory-service/target -name '*.jar' ! -name '*-plain.jar' -exec cp {} /workspace/app.jar \;
 

@@ -31,6 +31,8 @@ RUN ./mvnw clean package -DskipTests --no-transfer-progress
 FROM eclipse-temurin:21-jre-jammy AS api-gateway
 WORKDIR /app
 COPY --from=builder /workspace/api-gateway/target/*.jar app.jar
+RUN groupadd -r -g 1001 robomart && useradd -r -u 1001 -g robomart robomart && chown -R robomart:robomart /app
+USER robomart
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
@@ -39,6 +41,8 @@ FROM eclipse-temurin:21-jre-jammy AS product-service
 WORKDIR /app
 COPY --from=builder /workspace/product-service/target/*.jar app.jar
 RUN mkdir -p /tmp/robomart-images
+RUN groupadd -r -g 1001 robomart && useradd -r -u 1001 -g robomart robomart && chown -R robomart:robomart /app /tmp/robomart-images
+USER robomart
 EXPOSE 8081
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
@@ -46,6 +50,8 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 FROM eclipse-temurin:21-jre-jammy AS cart-service
 WORKDIR /app
 COPY --from=builder /workspace/cart-service/target/*.jar app.jar
+RUN groupadd -r -g 1001 robomart && useradd -r -u 1001 -g robomart robomart && chown -R robomart:robomart /app
+USER robomart
 EXPOSE 8082
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
@@ -53,6 +59,8 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 FROM eclipse-temurin:21-jre-jammy AS order-service
 WORKDIR /app
 COPY --from=builder /workspace/order-service/target/*.jar app.jar
+RUN groupadd -r -g 1001 robomart && useradd -r -u 1001 -g robomart robomart && chown -R robomart:robomart /app
+USER robomart
 EXPOSE 8083 9093
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
@@ -60,6 +68,8 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 FROM eclipse-temurin:21-jre-jammy AS inventory-service
 WORKDIR /app
 COPY --from=builder /workspace/inventory-service/target/*.jar app.jar
+RUN groupadd -r -g 1001 robomart && useradd -r -u 1001 -g robomart robomart && chown -R robomart:robomart /app
+USER robomart
 EXPOSE 8084 9094
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
@@ -67,6 +77,8 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 FROM eclipse-temurin:21-jre-jammy AS payment-service
 WORKDIR /app
 COPY --from=builder /workspace/payment-service/target/*.jar app.jar
+RUN groupadd -r -g 1001 robomart && useradd -r -u 1001 -g robomart robomart && chown -R robomart:robomart /app
+USER robomart
 EXPOSE 8086 9095
 ENTRYPOINT ["java", "-jar", "app.jar"]
 
@@ -74,5 +86,7 @@ ENTRYPOINT ["java", "-jar", "app.jar"]
 FROM eclipse-temurin:21-jre-jammy AS notification-service
 WORKDIR /app
 COPY --from=builder /workspace/notification-service/target/*.jar app.jar
+RUN groupadd -r -g 1001 robomart && useradd -r -u 1001 -g robomart robomart && chown -R robomart:robomart /app
+USER robomart
 EXPOSE 8087
 ENTRYPOINT ["java", "-jar", "app.jar"]

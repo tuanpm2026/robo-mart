@@ -13,9 +13,22 @@ spec:
       labels:
         app: kafka-ui
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: kafka-ui
-        image: provectuslabs/kafka-ui:latest
+        image: provectuslabs/kafka-ui:v0.7.2
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
         ports:
         - containerPort: 8080
           name: http
@@ -26,6 +39,11 @@ spec:
           value: kafka.robomart.svc.cluster.local:9092
         - name: KAFKA_CLUSTERS_0_SCHEMAREGISTRY
           value: http://schema-registry.robomart.svc.cluster.local:8081
+        volumeMounts:
+        # The Spring Boot app writes its work dir under /tmp — must be writable
+        # under readOnlyRootFilesystem.
+        - name: tmp
+          mountPath: /tmp
         resources:
           requests:
             memory: "128Mi"
@@ -33,3 +51,6 @@ spec:
           limits:
             memory: "256Mi"
             cpu: "200m"
+      volumes:
+      - name: tmp
+        emptyDir: {}

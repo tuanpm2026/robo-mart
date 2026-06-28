@@ -14,11 +14,27 @@ spec:
         app: alloy
     spec:
       serviceAccountName: alloy
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 473        # grafana/alloy conventional non-root uid
+        runAsGroup: 473
+        fsGroup: 473
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: alloy
-        image: grafana/alloy:latest
+        image: grafana/alloy:v1.17.0
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
         args:
         - run
+        # Pin the WAL/state dir to a writable emptyDir so it works under
+        # readOnlyRootFilesystem (default storage path is the read-only image cwd).
+        - --storage.path=/tmp/alloy
         - /etc/alloy/config.alloy
         ports:
         - containerPort: 12345
@@ -26,6 +42,8 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /etc/alloy
+        - name: tmp
+          mountPath: /tmp
         resources:
           requests:
             memory: "64Mi"
@@ -37,3 +55,5 @@ spec:
       - name: config
         configMap:
           name: alloy-config
+      - name: tmp
+        emptyDir: {}

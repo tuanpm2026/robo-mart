@@ -51,7 +51,12 @@ jobs:
             --output trivy-results.sarif \
             --exit-code 0 \
             --offline-scan \
+            --ignorefile .trivyignore.yaml \
             --no-progress
+        # --ignorefile: documented, path-scoped acceptances for the handful of
+        # findings that are false positives or not-applicable policy rules (see
+        # .trivyignore.yaml). Trivy auto-loads only the plain .trivyignore, so the
+        # .yaml variant must be passed explicitly.
         # --offline-scan: resolve dependencies from the committed manifests/lockfiles
         # only, never reaching out to Maven Central / npm — without it Trivy fetches
         # transitive POMs at scan time and fails when the registry rate-limits the
