@@ -5,8 +5,11 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +23,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.robomart.common.exception.ResourceNotFoundException;
 import com.robomart.inventory.entity.InventoryItem;
+import com.robomart.inventory.entity.Reservation;
+import com.robomart.inventory.enums.ReservationStatus;
 import com.robomart.inventory.exception.InsufficientStockException;
 import com.robomart.inventory.exception.LockAcquisitionException;
 import com.robomart.inventory.grpc.InventoryGrpcService;
@@ -192,6 +197,79 @@ class InventoryGrpcServiceTest {
             StatusRuntimeException statusException = (StatusRuntimeException) error;
             assertThat(statusException.getStatus().getCode()).isEqualTo(Status.Code.NOT_FOUND);
         }
+
+        @Test
+        @DisplayName("should replay existing reservation without re-reserving stock (idempotent)")
+        void shouldReplayExistingReservation() {
+            // given an order that was already reserved (e.g. a saga-step timeout is now retrying)
+            Reservation existing = new Reservation("existing-res-id", "order-123", ReservationStatus.RESERVED);
+            when(inventoryService.findReservation("order-123")).thenReturn(Optional.of(existing));
+
+            ReserveInventoryRequest request = ReserveInventoryRequest.newBuilder()
+                    .setOrderId("order-123")
+                    .addItems(ReservationItem.newBuilder()
+                            .setProductId("1")
+                            .setQuantity(5)
+                            .build())
+                    .build();
+
+            // when
+            inventoryGrpcService.reserveInventory(request, reserveResponseObserver);
+
+            // then — the original reservationId is replayed and stock is NOT decremented again
+            verify(reserveResponseObserver).onNext(reserveResponseCaptor.capture());
+            verify(reserveResponseObserver).onCompleted();
+            assertThat(reserveResponseCaptor.getValue().getReservationId()).isEqualTo("existing-res-id");
+            verify(inventoryService, never()).reserveStock(anyLong(), anyInt(), anyString());
+        }
+
+        @Test
+        @DisplayName("should reject reserve when the order's reservation was already released")
+        void shouldRejectReserveWhenAlreadyReleased() {
+            // given
+            Reservation released = new Reservation("res-id", "order-123", ReservationStatus.RELEASED);
+            when(inventoryService.findReservation("order-123")).thenReturn(Optional.of(released));
+
+            ReserveInventoryRequest request = ReserveInventoryRequest.newBuilder()
+                    .setOrderId("order-123")
+                    .addItems(ReservationItem.newBuilder()
+                            .setProductId("1")
+                            .setQuantity(5)
+                            .build())
+                    .build();
+
+            // when
+            inventoryGrpcService.reserveInventory(request, reserveResponseObserver);
+
+            // then
+            verify(reserveResponseObserver).onError(throwableCaptor.capture());
+            assertThat(((StatusRuntimeException) throwableCaptor.getValue()).getStatus().getCode())
+                    .isEqualTo(Status.Code.FAILED_PRECONDITION);
+            verify(inventoryService, never()).reserveStock(anyLong(), anyInt(), anyString());
+        }
+
+        @Test
+        @DisplayName("should record the reservation after reserving stock")
+        void shouldRecordReservationAfterReserving() {
+            // given
+            InventoryItem item = createTestInventoryItem(1L, 95, 5, 100);
+            when(inventoryService.reserveStock(eq(1L), eq(5), eq("order-123"))).thenReturn(item);
+
+            ReserveInventoryRequest request = ReserveInventoryRequest.newBuilder()
+                    .setOrderId("order-123")
+                    .addItems(ReservationItem.newBuilder()
+                            .setProductId("1")
+                            .setQuantity(5)
+                            .build())
+                    .build();
+
+            // when
+            inventoryGrpcService.reserveInventory(request, reserveResponseObserver);
+
+            // then — a reservation record is persisted under the orderId for idempotency
+            verify(inventoryService).recordReservation(eq("order-123"), anyString());
+            verify(reserveResponseObserver).onCompleted();
+        }
     }
 
     @Nested
@@ -223,6 +301,33 @@ class InventoryGrpcServiceTest {
 
             ReleaseInventoryResponse response = releaseResponseCaptor.getValue();
             assertThat(response.getSuccess()).isTrue();
+            // reservation marked released so a retry is an idempotent no-op
+            verify(inventoryService).markReservationReleased("order-123");
+        }
+
+        @Test
+        @DisplayName("should be an idempotent no-op when the reservation is already released")
+        void shouldBeNoOpWhenAlreadyReleased() {
+            // given
+            Reservation released = new Reservation("res-id", "order-123", ReservationStatus.RELEASED);
+            when(inventoryService.findReservation("order-123")).thenReturn(Optional.of(released));
+
+            ReleaseInventoryRequest request = ReleaseInventoryRequest.newBuilder()
+                    .setOrderId("order-123")
+                    .addItems(ReservationItem.newBuilder()
+                            .setProductId("1")
+                            .setQuantity(5)
+                            .build())
+                    .build();
+
+            // when
+            inventoryGrpcService.releaseInventory(request, releaseResponseObserver);
+
+            // then — success without releasing stock again
+            verify(releaseResponseObserver).onNext(releaseResponseCaptor.capture());
+            verify(releaseResponseObserver).onCompleted();
+            assertThat(releaseResponseCaptor.getValue().getSuccess()).isTrue();
+            verify(inventoryService, never()).releaseStock(anyLong(), anyInt(), anyString());
         }
     }
 

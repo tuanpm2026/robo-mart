@@ -2,15 +2,19 @@ package com.robomart.inventory.grpc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.grpc.server.service.GrpcService;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import com.robomart.common.exception.ResourceNotFoundException;
 import com.robomart.inventory.entity.InventoryItem;
+import com.robomart.inventory.entity.Reservation;
+import com.robomart.inventory.enums.ReservationStatus;
 import com.robomart.inventory.exception.InsufficientStockException;
 import com.robomart.inventory.exception.LockAcquisitionException;
 import com.robomart.inventory.service.InventoryService;
@@ -56,6 +60,29 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
             return;
         }
 
+        // Idempotency: a reserve that is retried or replayed after a saga-step timeout must not
+        // decrement stock twice. If a reservation already exists for this order, replay it.
+        Optional<Reservation> existing = inventoryService.findReservation(orderId);
+        if (existing.isPresent()) {
+            Reservation reservation = existing.get();
+            if (reservation.getStatus() == ReservationStatus.RELEASED) {
+                log.warn("reserveInventory rejected: reservation already released for orderId={}", orderId);
+                responseObserver.onError(Status.FAILED_PRECONDITION
+                        .withDescription("Reservation already released for order " + orderId)
+                        .asRuntimeException());
+                return;
+            }
+            log.info("reserveInventory idempotent replay: returning existing reservationId={} for orderId={}",
+                    reservation.getReservationId(), orderId);
+            responseObserver.onNext(ReserveInventoryResponse.newBuilder()
+                    .setSuccess(true)
+                    .setMessage("Inventory already reserved")
+                    .setReservationId(reservation.getReservationId())
+                    .build());
+            responseObserver.onCompleted();
+            return;
+        }
+
         // Track successfully reserved items for rollback on partial failure
         List<ReservationItem> reservedItems = new ArrayList<>();
 
@@ -73,6 +100,31 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
             }
 
             String reservationId = UUID.randomUUID().toString();
+
+            // Persist the reservation record AFTER decrementing stock (decrement-first keeps us
+            // oversell-safe). The order_id unique constraint guards against a concurrent duplicate
+            // reserve: the loser rolls back its decrements and replays the winner's reservation.
+            try {
+                inventoryService.recordReservation(orderId, reservationId);
+            } catch (DataIntegrityViolationException dup) {
+                log.warn("Concurrent duplicate reservation for orderId={} — rolling back and replaying", orderId);
+                rollbackReservations(reservedItems, orderId);
+                Optional<Reservation> winner = inventoryService.findReservation(orderId);
+                if (winner.isPresent() && winner.get().getStatus() == ReservationStatus.RESERVED) {
+                    responseObserver.onNext(ReserveInventoryResponse.newBuilder()
+                            .setSuccess(true)
+                            .setMessage("Inventory already reserved")
+                            .setReservationId(winner.get().getReservationId())
+                            .build());
+                    responseObserver.onCompleted();
+                    return;
+                }
+                responseObserver.onError(Status.ABORTED
+                        .withDescription("Concurrent reservation conflict, please retry")
+                        .asRuntimeException());
+                return;
+            }
+
             log.info("All items reserved successfully: orderId={}, reservationId={}, itemCount={}",
                     orderId, reservationId, reservedItems.size());
 
@@ -169,6 +221,20 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
             return;
         }
 
+        // Idempotency: if this order's reservation is already released, do nothing. This makes
+        // compensation safe to retry and tolerates a release issued for an order whose reserve
+        // response was lost (the order-service releases by orderId, not by reservationId).
+        Optional<Reservation> existing = inventoryService.findReservation(orderId);
+        if (existing.isPresent() && existing.get().getStatus() == ReservationStatus.RELEASED) {
+            log.info("releaseInventory idempotent no-op: already released for orderId={}", orderId);
+            responseObserver.onNext(ReleaseInventoryResponse.newBuilder()
+                    .setSuccess(true)
+                    .setMessage("Inventory already released")
+                    .build());
+            responseObserver.onCompleted();
+            return;
+        }
+
         try {
             for (ReservationItem item : request.getItemsList()) {
                 Long productId = parseProductId(item.getProductId());
@@ -180,6 +246,9 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
                 log.debug("Releasing stock: productId={}, quantity={}, orderId={}", productId, quantity, orderId);
                 inventoryService.releaseStock(productId, quantity, orderId);
             }
+
+            // Mark the reservation released so a subsequent release is an idempotent no-op.
+            inventoryService.markReservationReleased(orderId);
 
             log.info("All items released successfully: orderId={}, reservationId={}", orderId, reservationId);
 

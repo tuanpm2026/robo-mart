@@ -12,9 +12,11 @@ import com.robomart.events.product.ProductDeletedEvent;
 import com.robomart.events.product.ProductUpdatedEvent;
 import com.robomart.product.config.CacheConfig;
 import com.robomart.product.event.consumer.ProductCacheInvalidationConsumer;
+import com.robomart.product.service.ProcessedEventService;
 
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,11 +31,14 @@ class ProductCacheInvalidationConsumerTest {
     @Mock
     private Cache productSearchCache;
 
+    @Mock
+    private ProcessedEventService processedEventService;
+
     private ProductCacheInvalidationConsumer consumer;
 
     @BeforeEach
     void setUp() {
-        consumer = new ProductCacheInvalidationConsumer(cacheManager);
+        consumer = new ProductCacheInvalidationConsumer(cacheManager, processedEventService);
     }
 
     @Test
@@ -138,6 +143,33 @@ class ProductCacheInvalidationConsumerTest {
         // Cache eviction is idempotent — evicting twice is harmless
         verify(productDetailCache, org.mockito.Mockito.times(2)).evict(42L);
         verify(productSearchCache, org.mockito.Mockito.times(2)).clear();
+    }
+
+    @Test
+    void shouldSkipAlreadyProcessedEvent() {
+        when(processedEventService.isProcessed(
+                "product-service-cache-invalidation-group", "duplicate-evt")).thenReturn(true);
+
+        var event = ProductUpdatedEvent.newBuilder()
+                .setEventId("duplicate-evt")
+                .setEventType("PRODUCT_UPDATED")
+                .setAggregateId("42")
+                .setAggregateType("PRODUCT")
+                .setTimestamp(java.time.Instant.now())
+                .setVersion(1)
+                .setProductId(42L)
+                .setSku("SKU-001")
+                .setName("Product")
+                .setPrice("29.99")
+                .setCategoryId(1L)
+                .setCategoryName("Electronics")
+                .setStockQuantity(100)
+                .build();
+
+        consumer.onProductUpdated(event);
+
+        // Duplicate event: caches are not touched at all
+        verifyNoInteractions(cacheManager);
     }
 
     @Test

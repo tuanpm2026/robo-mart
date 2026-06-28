@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,12 +30,15 @@ import org.springframework.transaction.support.TransactionTemplate;
 import com.robomart.common.exception.ResourceNotFoundException;
 import com.robomart.inventory.entity.InventoryItem;
 import com.robomart.inventory.entity.OutboxEvent;
+import com.robomart.inventory.entity.Reservation;
 import com.robomart.inventory.entity.StockMovement;
+import com.robomart.inventory.enums.ReservationStatus;
 import com.robomart.inventory.enums.StockMovementType;
 import com.robomart.inventory.exception.InsufficientStockException;
 import com.robomart.inventory.exception.LockAcquisitionException;
 import com.robomart.inventory.repository.InventoryItemRepository;
 import com.robomart.inventory.repository.OutboxEventRepository;
+import com.robomart.inventory.repository.ReservationRepository;
 import com.robomart.inventory.repository.StockMovementRepository;
 import com.robomart.inventory.service.DistributedLockService;
 import com.robomart.inventory.service.InventoryService;
@@ -53,6 +57,9 @@ class InventoryServiceTest {
 
     @Mock
     private OutboxEventRepository outboxEventRepository;
+
+    @Mock
+    private ReservationRepository reservationRepository;
 
     @Mock
     private DistributedLockService distributedLockService;
@@ -81,6 +88,7 @@ class InventoryServiceTest {
                 inventoryItemRepository,
                 stockMovementRepository,
                 outboxEventRepository,
+                reservationRepository,
                 distributedLockService,
                 transactionTemplate,
                 objectMapper
@@ -510,6 +518,59 @@ class InventoryServiceTest {
             assertThat(results.get(0).getAvailableQuantity()).isEqualTo(80);
             assertThat(results.get(1).getAvailableQuantity()).isEqualTo(60);
             verify(stockMovementRepository, times(2)).save(any(StockMovement.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("reservation idempotency records")
+    class ReservationRecords {
+
+        @Test
+        @DisplayName("findReservation delegates to repository by orderId")
+        void findReservationDelegatesToRepository() {
+            Reservation reservation = new Reservation("res-1", ORDER_ID, ReservationStatus.RESERVED);
+            when(reservationRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(reservation));
+
+            Optional<Reservation> result = inventoryService.findReservation(ORDER_ID);
+
+            assertThat(result).containsSame(reservation);
+        }
+
+        @Test
+        @DisplayName("recordReservation saves a RESERVED reservation for the order")
+        void recordReservationSavesReserved() {
+            ArgumentCaptor<Reservation> captor = ArgumentCaptor.forClass(Reservation.class);
+            when(reservationRepository.saveAndFlush(captor.capture())).thenAnswer(inv -> inv.getArgument(0));
+
+            inventoryService.recordReservation(ORDER_ID, "res-1");
+
+            Reservation saved = captor.getValue();
+            assertThat(saved.getOrderId()).isEqualTo(ORDER_ID);
+            assertThat(saved.getReservationId()).isEqualTo("res-1");
+            assertThat(saved.getStatus()).isEqualTo(ReservationStatus.RESERVED);
+        }
+
+        @Test
+        @DisplayName("markReservationReleased flips status to RELEASED")
+        void markReservationReleasedFlipsStatus() {
+            Reservation reservation = new Reservation("res-1", ORDER_ID, ReservationStatus.RESERVED);
+            when(reservationRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(reservation));
+            when(reservationRepository.save(any(Reservation.class))).thenAnswer(inv -> inv.getArgument(0));
+
+            inventoryService.markReservationReleased(ORDER_ID);
+
+            assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.RELEASED);
+            verify(reservationRepository).save(reservation);
+        }
+
+        @Test
+        @DisplayName("markReservationReleased is a no-op when no reservation exists")
+        void markReservationReleasedNoOpWhenMissing() {
+            when(reservationRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
+
+            inventoryService.markReservationReleased(ORDER_ID);
+
+            verify(reservationRepository, never()).save(any(Reservation.class));
         }
     }
 }

@@ -11,6 +11,7 @@ import org.springframework.grpc.server.lifecycle.GrpcServerLifecycle;
 import org.springframework.test.context.TestPropertySource;
 
 import com.robomart.inventory.config.RedisLockConfig;
+import com.robomart.inventory.entity.InventoryItem;
 import com.robomart.inventory.repository.InventoryItemRepository;
 import com.robomart.proto.inventory.GetInventoryRequest;
 import com.robomart.proto.inventory.GetInventoryResponse;
@@ -179,6 +180,97 @@ class InventoryGrpcIT {
         assertThat(response.getProductId()).isEqualTo("8");
         assertThat(response.getAvailableQuantity()).isGreaterThan(0);
         assertThat(response.getTotalQuantity()).isGreaterThan(0);
+    }
+
+    @Test
+    void shouldReplayReservationOnDuplicateReserveViaGrpc() {
+        // Arrange: a controlled stock level on a dedicated product
+        Long productId = 11L;
+        InventoryItem item = inventoryItemRepository.findByProductId(productId).orElseThrow();
+        item.setAvailableQuantity(100);
+        item.setReservedQuantity(0);
+        inventoryItemRepository.save(item);
+
+        String orderId = "grpc-idem-reserve-1";
+        ReserveInventoryRequest request = ReserveInventoryRequest.newBuilder()
+                .setOrderId(orderId)
+                .addItems(ReservationItem.newBuilder().setProductId("11").setQuantity(2).build())
+                .build();
+
+        // Act: reserve, then reserve again for the SAME orderId (simulates a retry/replay)
+        ReserveInventoryResponse first = stub.reserveInventory(request);
+        ReserveInventoryResponse second = stub.reserveInventory(request);
+
+        // Assert: same reservationId replayed, stock decremented exactly once
+        assertThat(first.getReservationId()).isNotEmpty();
+        assertThat(second.getReservationId()).isEqualTo(first.getReservationId());
+
+        InventoryItem after = inventoryItemRepository.findByProductId(productId).orElseThrow();
+        assertThat(after.getAvailableQuantity()).isEqualTo(98);
+        assertThat(after.getReservedQuantity()).isEqualTo(2);
+    }
+
+    @Test
+    void shouldBeIdempotentOnDuplicateReleaseViaGrpc() {
+        // Arrange: a controlled stock level on a dedicated product
+        Long productId = 12L;
+        InventoryItem item = inventoryItemRepository.findByProductId(productId).orElseThrow();
+        item.setAvailableQuantity(100);
+        item.setReservedQuantity(0);
+        inventoryItemRepository.save(item);
+
+        String orderId = "grpc-idem-release-1";
+        ReserveInventoryResponse reserveResponse = stub.reserveInventory(ReserveInventoryRequest.newBuilder()
+                .setOrderId(orderId)
+                .addItems(ReservationItem.newBuilder().setProductId("12").setQuantity(3).build())
+                .build());
+
+        ReleaseInventoryRequest releaseRequest = ReleaseInventoryRequest.newBuilder()
+                .setOrderId(orderId)
+                .setReservationId(reserveResponse.getReservationId())
+                .addItems(ReservationItem.newBuilder().setProductId("12").setQuantity(3).build())
+                .build();
+
+        // Act: release twice for the same orderId (simulates compensation retry)
+        ReleaseInventoryResponse firstRelease = stub.releaseInventory(releaseRequest);
+        ReleaseInventoryResponse secondRelease = stub.releaseInventory(releaseRequest);
+
+        // Assert: both succeed, stock restored exactly once (no over-release)
+        assertThat(firstRelease.getSuccess()).isTrue();
+        assertThat(secondRelease.getSuccess()).isTrue();
+
+        InventoryItem after = inventoryItemRepository.findByProductId(productId).orElseThrow();
+        assertThat(after.getAvailableQuantity()).isEqualTo(100);
+        assertThat(after.getReservedQuantity()).isEqualTo(0);
+    }
+
+    @Test
+    void shouldReleaseByOrderIdWithoutReservationId() {
+        // Arrange: reserve so there is a reservation record, then release WITHOUT a reservationId —
+        // mirrors the order-service compensation path after a ReserveInventory step timeout.
+        Long productId = 13L;
+        InventoryItem item = inventoryItemRepository.findByProductId(productId).orElseThrow();
+        item.setAvailableQuantity(100);
+        item.setReservedQuantity(0);
+        inventoryItemRepository.save(item);
+
+        String orderId = "grpc-release-by-order-1";
+        stub.reserveInventory(ReserveInventoryRequest.newBuilder()
+                .setOrderId(orderId)
+                .addItems(ReservationItem.newBuilder().setProductId("13").setQuantity(4).build())
+                .build());
+
+        // Act: release with order_id + items but NO reservation_id
+        ReleaseInventoryResponse response = stub.releaseInventory(ReleaseInventoryRequest.newBuilder()
+                .setOrderId(orderId)
+                .addItems(ReservationItem.newBuilder().setProductId("13").setQuantity(4).build())
+                .build());
+
+        // Assert: released successfully back to the original level
+        assertThat(response.getSuccess()).isTrue();
+        InventoryItem after = inventoryItemRepository.findByProductId(productId).orElseThrow();
+        assertThat(after.getAvailableQuantity()).isEqualTo(100);
+        assertThat(after.getReservedQuantity()).isEqualTo(0);
     }
 
     @Test

@@ -2,6 +2,7 @@ package com.robomart.notification.unit;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,6 +14,7 @@ import com.robomart.events.order.OrderStatusChangedEvent;
 import com.robomart.notification.event.OrderEventConsumer;
 import com.robomart.notification.service.AdminPushService;
 import com.robomart.notification.service.NotificationService;
+import com.robomart.notification.service.ProcessedEventService;
 
 @ExtendWith(MockitoExtension.class)
 class OrderEventConsumerTest {
@@ -22,6 +24,9 @@ class OrderEventConsumerTest {
 
     @Mock
     private AdminPushService adminPushService;
+
+    @Mock
+    private ProcessedEventService processedEventService;
 
     @InjectMocks
     private OrderEventConsumer orderEventConsumer;
@@ -92,5 +97,18 @@ class OrderEventConsumerTest {
         orderEventConsumer.onOrderStatusChanged(event);
 
         verifyNoInteractions(notificationService);
+    }
+
+    @Test
+    void shouldSkipAlreadyProcessedEvent() {
+        when(processedEventService.isProcessed("notification-order-status-group", "evt-1"))
+                .thenReturn(true);
+        OrderStatusChangedEvent event = buildEvent("100", "PAYMENT_PROCESSING", "CONFIRMED");
+
+        orderEventConsumer.onOrderStatusChanged(event);
+
+        // Duplicate event: no notifications sent, no admin push, not re-marked
+        verifyNoInteractions(notificationService);
+        verifyNoInteractions(adminPushService);
     }
 }

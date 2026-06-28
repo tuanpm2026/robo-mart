@@ -17,12 +17,16 @@ import com.robomart.events.cart.CartExpiryWarningEvent;
 import com.robomart.events.cart.CartItemSummary;
 import com.robomart.notification.event.CartExpiryConsumer;
 import com.robomart.notification.service.NotificationService;
+import com.robomart.notification.service.ProcessedEventService;
 
 @ExtendWith(MockitoExtension.class)
 class CartExpiryConsumerTest {
 
     @Mock
     private NotificationService notificationService;
+
+    @Mock
+    private ProcessedEventService processedEventService;
 
     @InjectMocks
     private CartExpiryConsumer cartExpiryConsumer;

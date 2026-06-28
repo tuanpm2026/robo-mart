@@ -40,17 +40,21 @@ public class ReleaseInventoryStep implements SagaStep {
     @Override
     public void compensate(SagaContext context) {
         Order order = context.getOrder();
+        String reservationId = order.getReservationId();
 
-        if (order.getReservationId() == null) {
-            log.debug("ReleaseInventoryStep.compensate() skipped — no reservationId for orderId={}", order.getId());
-            return;
-        }
-
-        log.info("Releasing inventory for orderId={}, reservationId={}", order.getId(), order.getReservationId());
+        // Release by orderId — do NOT skip when reservationId is null. On a ReserveInventory
+        // step timeout the gRPC reserve may have succeeded server-side while its response (and thus
+        // the reservationId) was lost, leaving stock reserved under this orderId. The inventory
+        // service dedups release by orderId and is a no-op when nothing is reserved, so issuing the
+        // release unconditionally fixes the leak and stays safe when nothing was actually reserved.
+        log.info("Releasing inventory for orderId={}, reservationId={}",
+                order.getId(), reservationId != null ? reservationId : "<none>");
 
         ReleaseInventoryRequest.Builder requestBuilder = ReleaseInventoryRequest.newBuilder()
-                .setOrderId(order.getId().toString())
-                .setReservationId(order.getReservationId());
+                .setOrderId(order.getId().toString());
+        if (reservationId != null) {
+            requestBuilder.setReservationId(reservationId);
+        }
 
         for (OrderItem item : order.getItems()) {
             requestBuilder.addItems(ReservationItem.newBuilder()

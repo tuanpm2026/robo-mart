@@ -14,47 +14,71 @@ import com.robomart.events.product.ProductDeletedEvent;
 import com.robomart.events.product.ProductUpdatedEvent;
 import com.robomart.product.document.ProductDocument;
 import com.robomart.product.repository.ProductSearchRepository;
+import com.robomart.product.service.ProcessedEventService;
 
 @Component
 public class ProductIndexConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(ProductIndexConsumer.class);
 
-    private final ProductSearchRepository productSearchRepository;
+    private static final String CONSUMER_GROUP = "product-service-product-index-group";
 
-    public ProductIndexConsumer(ProductSearchRepository productSearchRepository) {
+    private final ProductSearchRepository productSearchRepository;
+    private final ProcessedEventService processedEventService;
+
+    public ProductIndexConsumer(ProductSearchRepository productSearchRepository,
+                                ProcessedEventService processedEventService) {
         this.productSearchRepository = productSearchRepository;
+        this.processedEventService = processedEventService;
     }
 
     @KafkaListener(
             topics = "product.product.created",
-            groupId = "product-service-product-index-group"
+            groupId = CONSUMER_GROUP
     )
     public void onProductCreated(ProductCreatedEvent event) {
         log.debug("Received PRODUCT_CREATED event: aggregateId={}, eventId={}",
                 event.getAggregateId(), event.getEventId());
+        String eventId = event.getEventId() != null ? event.getEventId().toString() : null;
+        if (processedEventService.isProcessed(CONSUMER_GROUP, eventId)) {
+            log.debug("Skipping duplicate PRODUCT_CREATED event: eventId={}", eventId);
+            return;
+        }
         indexProduct(event);
+        processedEventService.markProcessed(CONSUMER_GROUP, eventId);
     }
 
     @KafkaListener(
             topics = "product.product.updated",
-            groupId = "product-service-product-index-group"
+            groupId = CONSUMER_GROUP
     )
     public void onProductUpdated(ProductUpdatedEvent event) {
         log.debug("Received PRODUCT_UPDATED event: aggregateId={}, eventId={}",
                 event.getAggregateId(), event.getEventId());
+        String eventId = event.getEventId() != null ? event.getEventId().toString() : null;
+        if (processedEventService.isProcessed(CONSUMER_GROUP, eventId)) {
+            log.debug("Skipping duplicate PRODUCT_UPDATED event: eventId={}", eventId);
+            return;
+        }
         indexProduct(event);
+        processedEventService.markProcessed(CONSUMER_GROUP, eventId);
     }
 
     @KafkaListener(
             topics = "product.product.deleted",
-            groupId = "product-service-product-index-group"
+            groupId = CONSUMER_GROUP
     )
     public void onProductDeleted(ProductDeletedEvent event) {
         log.debug("Received PRODUCT_DELETED event: aggregateId={}, productId={}",
                 event.getAggregateId(), event.getProductId());
+        String eventId = event.getEventId() != null ? event.getEventId().toString() : null;
+        if (processedEventService.isProcessed(CONSUMER_GROUP, eventId)) {
+            log.debug("Skipping duplicate PRODUCT_DELETED event: eventId={}", eventId);
+            return;
+        }
         productSearchRepository.deleteById(event.getProductId());
         log.info("Deleted product from Elasticsearch index: id={}", event.getProductId());
+        processedEventService.markProcessed(CONSUMER_GROUP, eventId);
     }
 
     private void indexProduct(SpecificRecord record) {
