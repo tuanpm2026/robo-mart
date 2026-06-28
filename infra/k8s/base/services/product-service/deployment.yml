@@ -20,9 +20,22 @@ spec:
       labels:
         app: product-service
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: product-service
         image: ghcr.io/robomart/product-service:latest
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
         ports:
         - containerPort: 8081
           name: http
@@ -38,6 +51,9 @@ spec:
             name: robomart-config
         - secretRef:
             name: product-db-secret
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
@@ -54,3 +70,6 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 6
+      volumes:
+      - name: tmp
+        emptyDir: {}

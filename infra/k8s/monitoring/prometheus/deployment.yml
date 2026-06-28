@@ -5,6 +5,10 @@ metadata:
   namespace: monitoring
 spec:
   replicas: 1
+  # Recreate: a single PVC (ReadWriteOnce) cannot be mounted by an old and new
+  # pod simultaneously during a rolling update, which would deadlock the rollout.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: prometheus
@@ -13,9 +17,22 @@ spec:
       labels:
         app: prometheus
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534      # nobody — prom/prometheus default
+        runAsGroup: 65534
+        fsGroup: 65534        # so the PVC is writable by the non-root process
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: prometheus
         image: prom/prometheus:v3.9.0
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
         args:
         - --config.file=/etc/prometheus/prometheus.yml
         - --storage.tsdb.path=/prometheus
@@ -39,4 +56,5 @@ spec:
         configMap:
           name: prometheus-config
       - name: data
-        emptyDir: {}
+        persistentVolumeClaim:
+          claimName: prometheus-data

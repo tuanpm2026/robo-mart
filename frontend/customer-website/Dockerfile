@@ -22,7 +22,13 @@ ENV VITE_KEYCLOAK_REALM=$VITE_KEYCLOAK_REALM
 ENV VITE_KEYCLOAK_CLIENT_ID=$VITE_KEYCLOAK_CLIENT_ID
 RUN npm run build-only
 
-FROM nginx:alpine
+# nginx-unprivileged runs as non-root uid 101 and listens on an unprivileged
+# port (8080) — satisfies Trivy DS-0002 (non-root image) and KSV-0117 (no
+# privileged-port bind). COPY runs as root so the static assets/config land with
+# the right ownership; the final USER is 101.
+FROM nginxinc/nginx-unprivileged:alpine
+USER root
 COPY --from=builder /app/customer-website/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+USER 101
+EXPOSE 8080

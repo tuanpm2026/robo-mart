@@ -20,9 +20,22 @@ spec:
       labels:
         app: order-service
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: order-service
         image: ghcr.io/robomart/order-service:latest
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
         ports:
         - containerPort: 8083
           name: http
@@ -43,6 +56,9 @@ spec:
         env:
         - name: GRPC_SERVER_PORT
           value: "9093"
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
@@ -59,3 +75,6 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 6
+      volumes:
+      - name: tmp
+        emptyDir: {}

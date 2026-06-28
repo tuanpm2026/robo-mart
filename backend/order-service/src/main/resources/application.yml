@@ -85,7 +85,7 @@ management:
       enabled: true
   endpoint:
     health:
-      show-details: always
+      show-details: when-authorized
       group:
         liveness:
           include: livenessState

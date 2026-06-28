@@ -1,0 +1,35 @@
+# Trivy ignore policy. Passed explicitly via --ignorefile in
+# .github/workflows/security-scan.yml (Trivy does not auto-load the .yaml
+# variant; only the plain .trivyignore is auto-detected).
+#
+# Every entry below is a deliberate, documented acceptance — not a blanket
+# silence. Real misconfigurations (non-root, read-only FS, seccomp, privilege
+# escalation, privileged ports, hard-coded Grafana password, :latest on the
+# monitoring images) were FIXED in Wave 5, not ignored.
+misconfigurations:
+  # KSV-0125 — "Restrict container images to trusted registries". Trivy flags
+  # every image because it has no configured trusted-registry allowlist. We pull
+  # only from well-known public registries (docker.io/grafana, docker.io/prom,
+  # docker.io/provectuslabs) and our own ghcr.io/<org>/robomart. There is no
+  # private mirror to enforce, so this policy rule is not applicable here.
+  - id: KSV-0125
+    statement: "Images come from well-known public registries + our own ghcr.io org; no private-mirror policy applies."
+
+  # KSV-01010 — "ConfigMap with sensitive content". False positive: the flagged
+  # keys (CORS_KEYCLOAK_ORIGIN, KEYCLOAK_JWK_SET_URI, SPRING_DATA_REDIS_PORT)
+  # are a CORS origin URL, a PUBLIC JWKS endpoint URL, and a port number — none
+  # are secrets. Real credentials live in K8s Secrets (see secrets-template.yml).
+  - id: KSV-01010
+    paths:
+      - "infra/k8s/base/configmap.yml"
+    statement: "Flagged keys are public URLs / a port number, not secrets; real credentials are in K8s Secrets."
+
+  # KSV-0013 — ':latest' tag. The base Deployment manifests use ':latest' purely
+  # as a placeholder; the active production overlay (overlays/production) remaps
+  # both the image name and tag to a CD-pinned 'main-<sha>' tag via its kustomize
+  # `images:` block, so ':latest' is never actually deployed. Scoped to the base
+  # placeholders only — ':latest' elsewhere (compose, monitoring) is still caught.
+  - id: KSV-0013
+    paths:
+      - "infra/k8s/base/services/*/deployment.yml"
+    statement: "Base image tags are GitOps placeholders; the production overlay pins them to CD-managed main-<sha> tags."

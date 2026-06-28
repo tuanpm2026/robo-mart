@@ -5,6 +5,9 @@ metadata:
   namespace: monitoring
 spec:
   replicas: 1
+  # Recreate: the ReadWriteOnce PVC cannot be shared by old+new pods mid-rollout.
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: grafana
@@ -13,15 +16,35 @@ spec:
       labels:
         app: grafana
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 472        # grafana — official non-root uid
+        runAsGroup: 472
+        fsGroup: 472          # so the PVC is writable by the non-root process
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: grafana
         image: grafana/grafana:12.3.0
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
         ports:
         - containerPort: 3000
           name: http
         env:
+        # Admin password is no longer hard-coded. Create the `grafana-admin`
+        # Secret once before deploying (see grafana/secret-template.yml). The
+        # template is intentionally NOT in kustomization.yaml so no placeholder
+        # value is ever committed/applied.
         - name: GF_SECURITY_ADMIN_PASSWORD
-          value: "admin"
+          valueFrom:
+            secretKeyRef:
+              name: grafana-admin
+              key: admin-password
         - name: GF_PATHS_PROVISIONING
           value: /etc/grafana/provisioning
         volumeMounts:
@@ -29,6 +52,8 @@ spec:
           mountPath: /etc/grafana/provisioning/datasources
         - name: data
           mountPath: /var/lib/grafana
+        - name: tmp
+          mountPath: /tmp
         resources:
           requests:
             memory: "128Mi"
@@ -41,4 +66,7 @@ spec:
         configMap:
           name: grafana-datasources
       - name: data
+        persistentVolumeClaim:
+          claimName: grafana-data
+      - name: tmp
         emptyDir: {}
