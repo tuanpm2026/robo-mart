@@ -10,36 +10,54 @@ import org.springframework.stereotype.Component;
 import com.robomart.events.product.ProductDeletedEvent;
 import com.robomart.events.product.ProductUpdatedEvent;
 import com.robomart.product.config.CacheConfig;
+import com.robomart.product.service.ProcessedEventService;
 
 @Component
 public class ProductCacheInvalidationConsumer {
 
     private static final Logger log = LoggerFactory.getLogger(ProductCacheInvalidationConsumer.class);
 
-    private final CacheManager cacheManager;
+    private static final String CONSUMER_GROUP = "product-service-cache-invalidation-group";
 
-    public ProductCacheInvalidationConsumer(CacheManager cacheManager) {
+    private final CacheManager cacheManager;
+    private final ProcessedEventService processedEventService;
+
+    public ProductCacheInvalidationConsumer(CacheManager cacheManager,
+                                            ProcessedEventService processedEventService) {
         this.cacheManager = cacheManager;
+        this.processedEventService = processedEventService;
     }
 
     @KafkaListener(
             topics = "product.product.updated",
-            groupId = "product-service-cache-invalidation-group"
+            groupId = CONSUMER_GROUP
     )
     public void onProductUpdated(ProductUpdatedEvent event) {
         log.debug("Cache invalidation triggered by PRODUCT_UPDATED: productId={}, eventId={}",
                 event.getProductId(), event.getEventId());
+        String eventId = event.getEventId() != null ? event.getEventId().toString() : null;
+        if (processedEventService.isProcessed(CONSUMER_GROUP, eventId)) {
+            log.debug("Skipping duplicate cache-invalidation PRODUCT_UPDATED event: eventId={}", eventId);
+            return;
+        }
         evictProductCaches(event.getProductId());
+        processedEventService.markProcessed(CONSUMER_GROUP, eventId);
     }
 
     @KafkaListener(
             topics = "product.product.deleted",
-            groupId = "product-service-cache-invalidation-group"
+            groupId = CONSUMER_GROUP
     )
     public void onProductDeleted(ProductDeletedEvent event) {
         log.debug("Cache invalidation triggered by PRODUCT_DELETED: productId={}, eventId={}",
                 event.getProductId(), event.getEventId());
+        String eventId = event.getEventId() != null ? event.getEventId().toString() : null;
+        if (processedEventService.isProcessed(CONSUMER_GROUP, eventId)) {
+            log.debug("Skipping duplicate cache-invalidation PRODUCT_DELETED event: eventId={}", eventId);
+            return;
+        }
         evictProductCaches(event.getProductId());
+        processedEventService.markProcessed(CONSUMER_GROUP, eventId);
     }
 
     private void evictProductCaches(long productId) {

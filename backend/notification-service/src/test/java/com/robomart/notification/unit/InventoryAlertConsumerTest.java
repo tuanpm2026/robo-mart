@@ -14,6 +14,7 @@ import com.robomart.events.inventory.StockLowAlertEvent;
 import com.robomart.notification.event.InventoryAlertConsumer;
 import com.robomart.notification.service.AdminPushService;
 import com.robomart.notification.service.NotificationService;
+import com.robomart.notification.service.ProcessedEventService;
 
 @ExtendWith(MockitoExtension.class)
 class InventoryAlertConsumerTest {
@@ -23,6 +24,9 @@ class InventoryAlertConsumerTest {
 
     @Mock
     private AdminPushService adminPushService;
+
+    @Mock
+    private ProcessedEventService processedEventService;
 
     @InjectMocks
     private InventoryAlertConsumer inventoryAlertConsumer;
