@@ -20,13 +20,16 @@ concurrency:
 
 jobs:
   proto-compatibility:
-    name: Protobuf Backward Compatibility (buf lint)
+    name: Protobuf Backward Compatibility (buf)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # Full history so `buf breaking` can resolve the `main` ref locally if needed.
+          fetch-depth: 0
 
       - name: Set up Java 21
         uses: actions/setup-java@v4
@@ -38,61 +41,31 @@ jobs:
       - name: Install buf
         uses: bufbuild/buf-setup-action@v1
 
-      - name: buf lint (style + WIRE_COMPATIBLE rules)
+      # Style + naming lint. The buf.yaml STANDARD ruleset excepts only the three
+      # structural rules (directory/version layout) that conflict with this repo's
+      # intentional flat proto layout — all naming/style/comment rules are enforced.
+      - name: buf lint
         working-directory: backend/proto
         run: buf lint
 
-      - name: buf breaking (backward compatibility check against main)
+      # Wire backward-compatibility: compare this PR's protos against main's protos.
+      # Uses the remote URL form so it never depends on which refs are present in the
+      # shallow PR checkout, and is unaffected by main's buf.yaml (breaking checks read
+      # only proto descriptors, not the lint config).
+      - name: buf breaking (backward compatibility against main)
         if: github.event_name == 'pull_request'
-        working-directory: backend/proto
-        run: buf breaking --against '.git#branch=main'
-        # Only runs on PRs — comparing HEAD against main catches breaking changes before merge.
-        # Running on push to main would compare HEAD against itself (no-op).
+        run: |
+          buf breaking backend/proto \
+            --against "https://github.com/${{ github.repository }}.git#branch=main,subdir=backend/proto"
 
-      - name: Maven build proto module
+      - name: Maven build proto module (runs buf lint via build)
         working-directory: backend
         run: ./mvnw install -pl :proto -DskipBufLint=false -DskipTests
 
   avro-compatibility:
-    name: Avro Schema Backward Compatibility (Schema Registry)
+    name: Avro Schema Compatibility (Schema Registry)
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
-
-    services:
-      zookeeper:
-        image: confluentinc/cp-zookeeper:7.7.0
-        env:
-          ZOOKEEPER_CLIENT_PORT: 2181
-          ZOOKEEPER_TICK_TIME: 2000
-        options: >-
-          --health-cmd="echo srvr | nc localhost 2181"
-          --health-interval=10s
-          --health-retries=5
-
-      kafka:
-        image: confluentinc/cp-kafka:7.7.0
-        env:
-          KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092
-          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-          KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-        options: >-
-          --health-cmd="kafka-topics --bootstrap-server localhost:9092 --list"
-          --health-interval=15s
-          --health-retries=10
-
-      schema-registry:
-        image: confluentinc/cp-schema-registry:7.7.0
-        env:
-          SCHEMA_REGISTRY_HOST_NAME: schema-registry
-          SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
-          SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8085
-        ports:
-          - 8085:8085
-        options: >-
-          --health-cmd="curl -sf http://localhost:8085/subjects"
-          --health-interval=10s
-          --health-retries=10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -105,11 +78,28 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Build events module and validate Avro schemas
+      # AvroSchemaCompatibilityIT self-provisions a real Kafka + Confluent Schema
+      # Registry via Testcontainers (Docker is preinstalled on the runner), then
+      # registers all 13 Avro schemas and verifies each is accepted and backward-
+      # compatible with its registered version. No GitHub `services:` containers are
+      # needed — the previous zookeeper/kafka/schema-registry services were unused by
+      # the test and their kafka health check was misconfigured (probed :9092 while the
+      # broker only advertised :29092), which made this job fail before the test ran.
+      - name: Build events module + deps (skip tests)
         working-directory: backend
-        run: |
-          ./mvnw install -pl :events -am -DskipTests
-          ./mvnw test -pl :events -Dtest=*SchemaCompatibility* -DfailIfNoTests=false
+        run: ./mvnw install -pl :events -am -DskipTests
+
+      - name: Verify Avro schema compatibility (Testcontainers IT)
+        working-directory: backend
+        run: ./mvnw verify -pl :events
         env:
-          SCHEMA_REGISTRY_URL: http://localhost:8085
-          SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://localhost:8085
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+
+      - name: Publish Test Results (events)
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Avro Schema Compatibility Results
+          path: backend/events/target/failsafe-reports/TEST-*.xml,backend/events/target/surefire-reports/TEST-*.xml
+          reporter: java-junit
+          fail-on-empty: false

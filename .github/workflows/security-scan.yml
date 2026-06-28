@@ -1,0 +1,100 @@
+name: Security Scan
+
+# Supply-chain & static security scanning. Findings are uploaded to the repo's
+# "Security → Code scanning" tab (SARIF). Scans are report-only by default
+# (exit-code 0) so a backlog of pre-existing findings does not block PRs on day
+# one; flip Trivy's exit-code (see below) once the backlog is triaged to make it
+# a hard gate.
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Weekly re-scan (Mondays 06:23 UTC) catches newly-disclosed CVEs in pinned deps.
+    - cron: '23 6 * * 1'
+
+permissions:
+  contents: read
+  security-events: write   # required to upload SARIF to code scanning
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Trivy — dependency CVEs (Maven + npm), hard-coded secrets, and IaC/Dockerfile
+  # misconfigurations across the whole repo, in a single filesystem scan.
+  # ---------------------------------------------------------------------------
+  trivy:
+    name: Trivy (deps + secrets + IaC)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Install from the official script (no action-version pinning to drift).
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh \
+            | sh -s -- -b /usr/local/bin
+
+      - name: Trivy filesystem scan (SARIF)
+        run: |
+          trivy fs . \
+            --scanners vuln,secret,misconfig \
+            --severity CRITICAL,HIGH,MEDIUM \
+            --format sarif \
+            --output trivy-results.sarif \
+            --exit-code 0 \
+            --offline-scan \
+            --no-progress
+        # --offline-scan: resolve dependencies from the committed manifests/lockfiles
+        # only, never reaching out to Maven Central / npm — without it Trivy fetches
+        # transitive POMs at scan time and fails when the registry rate-limits the
+        # runner (HTTP 429). The vulnerability DB is still downloaded normally.
+        env:
+          # Cache the vuln DB across runs via GitHub Actions cache dir.
+          TRIVY_CACHE_DIR: .trivycache
+
+      - name: Upload Trivy SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-fs
+
+  # ---------------------------------------------------------------------------
+  # CodeQL — static analysis (SAST) for the Java backend and the TS/JS frontend.
+  # build-mode: none analyses source directly, so no Maven/npm build is required.
+  # ---------------------------------------------------------------------------
+  codeql:
+    name: CodeQL (${{ matrix.language }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: java-kotlin
+            build-mode: none
+          - language: javascript-typescript
+            build-mode: none
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-extended
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
