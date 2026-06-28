@@ -3,9 +3,18 @@ modules:
   - path: src/main/proto
 lint:
   use:
-    - DEFAULT
-    - WIRE_COMPATIBLE
+    - STANDARD
+  # The protos use a flat layout with one file per service package and no
+  # version-suffixed packages (Java stubs are consumed directly by name across
+  # services). Enforcing buf's directory/version structural rules would require
+  # renaming every package and regenerating all gRPC stubs — out of scope and
+  # purely cosmetic. We keep all STANDARD naming/style/comment rules and except
+  # only the three structural rules that conflict with this intentional layout.
+  except:
+    - DIRECTORY_SAME_PACKAGE
+    - PACKAGE_DIRECTORY_MATCH
+    - PACKAGE_VERSION_SUFFIX
 breaking:
   use:
-    - WIRE_COMPATIBLE
+    - WIRE
   ignore_unstable_packages: true

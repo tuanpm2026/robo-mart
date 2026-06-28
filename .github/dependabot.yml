@@ -1,0 +1,47 @@
+version: 2
+
+# Automated dependency-update PRs (supply-chain hygiene). Grouped so a weekly
+# refresh lands as a few reviewable PRs rather than dozens.
+updates:
+  # Backend — Maven multimodule reactor (root pom drives all service modules).
+  - package-ecosystem: maven
+    directory: /backend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      backend-minor-patch:
+        update-types: [minor, patch]
+
+  # Frontend — npm workspaces (root package.json covers all apps + shared).
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      frontend-minor-patch:
+        update-types: [minor, patch]
+
+  # GitHub Actions used across all workflows.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # Container base images (Dockerfiles across backend, frontend, and infra).
+  - package-ecosystem: docker
+    directories:
+      - /backend
+      - /frontend/admin-dashboard
+      - /frontend/customer-website
+      - /infra/docker/*
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      docker:
+        patterns: ["*"]
