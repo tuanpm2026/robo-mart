@@ -50,7 +50,12 @@ jobs:
             --format sarif \
             --output trivy-results.sarif \
             --exit-code 0 \
+            --offline-scan \
             --no-progress
+        # --offline-scan: resolve dependencies from the committed manifests/lockfiles
+        # only, never reaching out to Maven Central / npm — without it Trivy fetches
+        # transitive POMs at scan time and fails when the registry rate-limits the
+        # runner (HTTP 429). The vulnerability DB is still downloaded normally.
         env:
           # Cache the vuln DB across runs via GitHub Actions cache dir.
           TRIVY_CACHE_DIR: .trivycache
