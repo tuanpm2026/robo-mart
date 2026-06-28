@@ -94,5 +94,14 @@
             <!-- No scope restriction: test-support itself is declared scope=test by consumers,
                  so ArchUnit classes in src/main/java are available on the test classpath. -->
         </dependency>
+        <!-- Resource-server types so TestJwtDecoderConfig can mint test JWTs for secured-service ITs.
+             optional=true so it is NOT transitive: secured services already declare this starter
+             themselves, while unsecured services (e.g. cart) must NOT inherit spring-security — it
+             would trigger Spring Boot's default (deny-all) security filter and 401 their ITs. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 </project>

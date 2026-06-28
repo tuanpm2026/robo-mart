@@ -10,7 +10,8 @@ import com.robomart.common.dto.ApiResponse;
 import com.robomart.notification.service.HealthAggregatorService;
 import com.robomart.notification.web.SystemHealthResponse;
 
-// No @PreAuthorize — ADMIN enforced at API Gateway level
+// ADMIN enforced both at the API Gateway AND here (defense in depth — see ResourceServerSecurityConfig).
+@org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/v1/admin/system")
 public class AdminSystemHealthRestController {

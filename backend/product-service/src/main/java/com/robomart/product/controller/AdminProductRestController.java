@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,8 +40,8 @@ import io.micrometer.tracing.Tracer;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 
-// No @PreAuthorize needed — ADMIN role enforced at API Gateway level
-// GatewaySecurityConfig: .pathMatchers("/api/v1/admin/**").hasRole("ADMIN")
+// ADMIN enforced both at the API Gateway AND here (defense in depth — see ResourceServerSecurityConfig).
+@PreAuthorize("hasRole('ADMIN')")
 @Validated
 @RestController
 @RequestMapping("/api/v1/admin")

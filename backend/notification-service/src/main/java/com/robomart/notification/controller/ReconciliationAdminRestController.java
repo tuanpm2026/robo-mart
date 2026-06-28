@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+// ADMIN enforced both at the API Gateway AND here (defense in depth — see ResourceServerSecurityConfig).
+@org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/v1/admin/reconciliation")
 public class ReconciliationAdminRestController {

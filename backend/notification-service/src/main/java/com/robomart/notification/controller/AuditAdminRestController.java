@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+// ADMIN enforced both at the API Gateway AND here (defense in depth — see ResourceServerSecurityConfig).
+@org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
 @Validated
 @RestController
 @RequestMapping("/api/v1/admin/audit-logs")

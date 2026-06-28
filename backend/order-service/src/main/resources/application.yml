@@ -3,6 +3,19 @@ spring:
     name: order-service
   profiles:
     active: dev
+  autoconfigure:
+    # Secure HTTP only. order-service runs a gRPC server (OrderGrpcService); spring-grpc would
+    # auto-secure it once spring-security is present (every call → UNAUTHENTICATED). gRPC is
+    # internal and protected by the NetworkPolicy, so disable gRPC-layer security.
+    exclude:
+      - org.springframework.boot.grpc.server.autoconfigure.security.GrpcSecurityAutoConfiguration
+      - org.springframework.boot.grpc.server.autoconfigure.security.OAuth2ResourceServerAutoConfiguration
+      - org.springframework.boot.grpc.server.autoconfigure.security.OAuth2ClientAutoConfiguration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/robomart/protocol/openid-connect/certs}
   flyway:
     enabled: true
     locations: classpath:db/migration

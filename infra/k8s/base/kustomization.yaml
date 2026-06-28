@@ -4,6 +4,7 @@ resources:
   - namespace.yml
   - serviceaccount.yml
   - configmap.yml
+  - network-policy.yml
   - services/api-gateway/deployment.yml
   - services/api-gateway/service.yml
   - services/api-gateway/hpa.yml

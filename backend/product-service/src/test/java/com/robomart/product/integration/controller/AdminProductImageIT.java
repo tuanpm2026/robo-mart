@@ -18,12 +18,16 @@ import org.springframework.web.client.RestClient;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.robomart.test.IntegrationTest;
+import com.robomart.test.security.TestJwt;
+import com.robomart.test.security.TestJwtDecoderConfig;
 
+import org.springframework.context.annotation.Import;
 import org.springframework.web.client.ResourceAccessException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
+@Import(TestJwtDecoderConfig.class)
 class AdminProductImageIT {
 
     // Valid JPEG magic bytes: FF D8 FF E0 (minimum for JPEG detection)
@@ -50,6 +54,8 @@ class AdminProductImageIT {
     void setUp() {
         restClient = RestClient.builder()
                 .baseUrl("http://localhost:" + port)
+                // Service-level security now requires an ADMIN JWT on /api/v1/admin/**.
+                .defaultHeader("Authorization", TestJwt.adminBearer())
                 .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> {
                     // Don't throw — we assert status codes directly
                 })

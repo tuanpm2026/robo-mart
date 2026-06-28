@@ -1,0 +1,160 @@
+# Defense-in-depth network isolation (Wave 2 — closes the two Critical findings:
+# direct in-cluster access bypassing gateway RBAC + X-User-Id impersonation).
+#
+# Each backend service that holds money or destructive admin operations is made
+# ingress-isolated: once a NetworkPolicy selects a pod, ONLY the listed ingress is
+# allowed. Allowed callers, derived from the actual call graph:
+#   - api-gateway        → all services (REST proxy; the only JWT/RBAC-enforcing edge)
+#   - order-service      → inventory:9094, payment:9095 (gRPC saga calls)
+#   - notification-service → product:8081, order:8083 (REST clients)
+#   - monitoring ns      → all services' HTTP port (Prometheus scrapes /actuator/prometheus)
+# Egress is intentionally NOT restricted, so services keep reaching Postgres/Kafka/
+# Redis/Elasticsearch/Schema Registry/Keycloak without extra rules.
+#
+# NOT YET LOCKED DOWN: notification-service — its WebSocket/STOMP ingress path (direct
+# vs via gateway/ingress-controller) must be confirmed before isolating it, or live
+# WS clients could be cut off.
+#
+# VALIDATE ON-CLUSTER before production: confirm the CNI does not block kubelet
+# liveness/readiness probes under NetworkPolicy (some CNIs require an explicit
+# allow for node-sourced probe traffic), and confirm the monitoring namespace carries
+# the kubernetes.io/metadata.name=monitoring label (auto-applied on k8s >= 1.21).
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-product-ingress
+  namespace: robomart
+spec:
+  podSelector:
+    matchLabels:
+      app: product-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+        - podSelector:
+            matchLabels:
+              app: notification-service
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - port: 8081
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-cart-ingress
+  namespace: robomart
+spec:
+  podSelector:
+    matchLabels:
+      app: cart-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - port: 8082
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-order-ingress
+  namespace: robomart
+spec:
+  podSelector:
+    matchLabels:
+      app: order-service
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+        - podSelector:
+            matchLabels:
+              app: notification-service
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - port: 8083
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-inventory-ingress
+  namespace: robomart
+spec:
+  podSelector:
+    matchLabels:
+      app: inventory-service
+  policyTypes:
+    - Ingress
+  ingress:
+    # HTTP (gateway proxy + Prometheus scrape)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - port: 8084
+          protocol: TCP
+    # gRPC reserve/release calls from the order saga
+    - from:
+        - podSelector:
+            matchLabels:
+              app: order-service
+      ports:
+        - port: 9094
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-payment-ingress
+  namespace: robomart
+spec:
+  podSelector:
+    matchLabels:
+      app: payment-service
+  policyTypes:
+    - Ingress
+  ingress:
+    # HTTP (gateway proxy + Prometheus scrape)
+    - from:
+        - podSelector:
+            matchLabels:
+              app: api-gateway
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - port: 8086
+          protocol: TCP
+    # gRPC charge/refund calls from the order saga
+    - from:
+        - podSelector:
+            matchLabels:
+              app: order-service
+      ports:
+        - port: 9095
+          protocol: TCP

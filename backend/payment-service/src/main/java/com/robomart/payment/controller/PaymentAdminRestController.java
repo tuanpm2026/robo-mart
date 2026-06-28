@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Max;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,7 +25,8 @@ import com.robomart.payment.web.PaymentStatusResponse;
 
 import java.time.Instant;
 
-// No @PreAuthorize needed — ADMIN role enforced at API Gateway level
+// ADMIN enforced both at the API Gateway AND here (defense in depth — see SecurityConfig).
+@PreAuthorize("hasRole('ADMIN')")
 @Validated
 @RestController
 @RequestMapping("/api/v1/admin/payments")

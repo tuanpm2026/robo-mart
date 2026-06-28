@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.robomart.events.inventory.StockLowAlertEvent;
 import com.robomart.events.inventory.StockReleasedEvent;
@@ -37,7 +38,12 @@ public class OutboxPollingService {
         this.objectMapper = objectMapper;
     }
 
+    // @Transactional so the FOR UPDATE SKIP LOCKED row locks from findUnpublishedSkipLocked are
+    // actually held until each event is marked published and committed. Without it, auto-commit
+    // released the locks the instant the SELECT returned, letting a second instance re-publish the
+    // same rows (duplicate Kafka events).
     @Scheduled(fixedDelay = 1000)
+    @Transactional
     public void pollAndPublish() {
         var events = outboxEventRepository.findUnpublishedSkipLocked(BATCH_SIZE);
         if (events.isEmpty()) {

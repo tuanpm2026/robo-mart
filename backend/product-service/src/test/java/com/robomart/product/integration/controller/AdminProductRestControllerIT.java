@@ -6,13 +6,17 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.context.annotation.Import;
 import org.springframework.web.client.RestClient;
 
 import com.robomart.test.IntegrationTest;
+import com.robomart.test.security.TestJwt;
+import com.robomart.test.security.TestJwtDecoderConfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
+@Import(TestJwtDecoderConfig.class)
 class AdminProductRestControllerIT {
 
     @LocalServerPort
@@ -24,10 +28,27 @@ class AdminProductRestControllerIT {
     void setUp() {
         restClient = RestClient.builder()
                 .baseUrl("http://localhost:" + port)
+                // Service-level security now requires an ADMIN JWT on /api/v1/admin/**.
+                .defaultHeader("Authorization", TestJwt.adminBearer())
                 .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> {
                     // Don't throw on error status codes — we assert them directly
                 })
                 .build();
+    }
+
+    @Test
+    void shouldRejectAdminRequestWithoutToken() {
+        RestClient anonymous = RestClient.builder()
+                .baseUrl("http://localhost:" + port)
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { })
+                .build();
+
+        var response = anonymous.get()
+                .uri("/api/v1/admin/products?page=0&size=10")
+                .retrieve()
+                .toBodilessEntity();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     @Test

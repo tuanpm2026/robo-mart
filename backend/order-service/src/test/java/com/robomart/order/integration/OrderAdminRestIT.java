@@ -31,10 +31,12 @@ import com.robomart.order.repository.OrderStatusHistoryRepository;
 import com.robomart.proto.inventory.InventoryServiceGrpc;
 import com.robomart.proto.payment.PaymentServiceGrpc;
 import com.robomart.test.PostgresContainerConfig;
+import com.robomart.test.security.TestJwt;
+import com.robomart.test.security.TestJwtDecoderConfig;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Import(PostgresContainerConfig.class)
+@Import({PostgresContainerConfig.class, TestJwtDecoderConfig.class})
 @DisplayName("OrderAdminRestController Integration Tests")
 class OrderAdminRestIT {
 
@@ -69,10 +71,29 @@ class OrderAdminRestIT {
     void setUp() {
         restClient = RestClient.builder()
                 .baseUrl("http://localhost:" + port)
+                // Service-level security now requires a valid ADMIN JWT on /api/v1/admin/** (defense
+                // in depth). The test decoder (TestJwtDecoderConfig) resolves this token to an ADMIN.
+                .defaultHeader("Authorization", TestJwt.adminBearer())
                 .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> {
                     // Don't throw on error status codes — we assert them directly
                 })
                 .build();
+    }
+
+    @Test
+    @DisplayName("shouldRejectAdminRequestWithoutToken")
+    void shouldRejectAdminRequestWithoutToken() {
+        RestClient anonymous = RestClient.builder()
+                .baseUrl("http://localhost:" + port)
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { })
+                .build();
+
+        var response = anonymous.get()
+                .uri("/api/v1/admin/orders?page=0&size=10")
+                .retrieve()
+                .toBodilessEntity();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     private Order persistOrderInState(OrderStatus status, String userId) {

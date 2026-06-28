@@ -20,7 +20,8 @@ import com.robomart.notification.entity.FailedEvent;
 import com.robomart.notification.service.FailedEventService;
 import com.robomart.notification.web.DlqEventResponse;
 
-// No @PreAuthorize needed — ADMIN role enforced at API Gateway level
+// ADMIN enforced both at the API Gateway AND here (defense in depth — see ResourceServerSecurityConfig).
+@org.springframework.security.access.prepost.PreAuthorize("hasRole('ADMIN')")
 @RestController
 @RequestMapping("/api/v1/admin/dlq")
 public class DlqAdminRestController {

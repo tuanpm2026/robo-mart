@@ -10,7 +10,11 @@ public enum OrderStatus {
     DELIVERED,
     CANCELLED,
     PAYMENT_REFUNDING,
-    INVENTORY_RELEASING;
+    INVENTORY_RELEASING,
+    // Non-terminal: a cancellation could not refund the customer. The order is held here (NOT
+    // CANCELLED — money is still owed) so the recovery scan keeps retrying the refund. Reaching
+    // CANCELLED requires a successful (or unnecessary) refund.
+    REFUND_FAILED;
 
     public boolean isTerminal() {
         return this == CONFIRMED || this == CANCELLED || this == DELIVERED;

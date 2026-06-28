@@ -3,6 +3,21 @@ spring:
     name: payment-service
   profiles:
     active: dev
+  autoconfigure:
+    # Wave 2 secures HTTP endpoints only. Adding spring-security to the classpath makes spring-grpc
+    # auto-secure the gRPC server (every call → UNAUTHENTICATED). gRPC here is internal and protected
+    # by the NetworkPolicy (ingress restricted to order-service), so disable gRPC-layer security.
+    exclude:
+      - org.springframework.boot.grpc.server.autoconfigure.security.GrpcSecurityAutoConfiguration
+      - org.springframework.boot.grpc.server.autoconfigure.security.OAuth2ResourceServerAutoConfiguration
+      - org.springframework.boot.grpc.server.autoconfigure.security.OAuth2ClientAutoConfiguration
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # jwk-set-uri (not issuer-uri) so the JwtDecoder is built lazily — the app/tests start
+          # without Keycloak being reachable; JWKS is fetched on first token validation.
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/robomart/protocol/openid-connect/certs}
   flyway:
     enabled: true
     locations: classpath:db/migration
