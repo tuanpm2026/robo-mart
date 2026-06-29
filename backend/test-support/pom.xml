@@ -70,7 +70,7 @@
         <dependency>
             <groupId>com.github.dasniko</groupId>
             <artifactId>testcontainers-keycloak</artifactId>
-            <version>3.5.0</version>
+            <version>4.2.1</version>
             <exclusions>
                 <exclusion>
                     <groupId>commons-io</groupId>
