@@ -28,12 +28,12 @@ RUN ./mvnw dependency:go-offline -pl :payment-service -am -DskipTests -q
 RUN find /workspace/backend/proto/target/protoc-plugins -type f \( -name "*.exe" -o -name "protoc" \) -exec chmod +x {} + 2>/dev/null || true
 
 # Copy source (including avro schemas and proto files for codegen modules)
-COPY backend/common-lib/src backend/common-lib/src
-COPY backend/security-lib/src backend/security-lib/src
-COPY backend/proto/src backend/proto/src
-COPY backend/events/src backend/events/src
-COPY backend/test-support/src backend/test-support/src
-COPY backend/payment-service/src backend/payment-service/src
+COPY backend/common-lib/src common-lib/src
+COPY backend/security-lib/src security-lib/src
+COPY backend/proto/src proto/src
+COPY backend/events/src events/src
+COPY backend/test-support/src test-support/src
+COPY backend/payment-service/src payment-service/src
 
 RUN ./mvnw package -pl :payment-service -am -DskipTests -DskipITs -q
 
