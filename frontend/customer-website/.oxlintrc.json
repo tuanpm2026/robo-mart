@@ -6,5 +6,12 @@
   },
   "categories": {
     "correctness": "error"
+  },
+  "rules": {
+    // oxlint 1.71 promoted this stylistic vitest rule into the "correctness"
+    // category. `vi.fn()` without an explicit generic is valid, idiomatic
+    // usage (not a bug), so we opt out of this single rule rather than
+    // annotate ~140 mock calls across the test suite.
+    "vitest/require-mock-type-parameters": "off"
   }
 }

@@ -46,8 +46,7 @@ export function setAuthAccessor(
 
 // UI store accessor — set by main.ts after store initialization
 let getUiState:
-  | (() => { setDegradationTier: (tier: 'normal' | 'partial' | 'maintenance') => void })
-  | null = null
+  (() => { setDegradationTier: (tier: 'normal' | 'partial' | 'maintenance') => void }) | null = null
 
 export function setUiAccessor(
   accessor: () => { setDegradationTier: (tier: 'normal' | 'partial' | 'maintenance') => void },
