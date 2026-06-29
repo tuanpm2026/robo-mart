@@ -27,7 +27,7 @@
         <confluent.version>7.9.0</confluent.version>
         <resilience4j.version>2.3.0</resilience4j.version>
         <spring-grpc.version>1.0.2</spring-grpc.version>
-        <shedlock.version>5.16.0</shedlock.version>
+        <shedlock.version>7.7.0</shedlock.version>
         <grpc.version>1.77.1</grpc.version>
         <protobuf.version>4.33.4</protobuf.version>
         <guava.version>33.4.8-jre</guava.version>
