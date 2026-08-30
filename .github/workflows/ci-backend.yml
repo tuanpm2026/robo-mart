@@ -32,10 +32,10 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -67,7 +67,7 @@ jobs:
           fi
 
       - name: Publish Test Results (unit-only modules)
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         if: always()
         with:
           name: Backend Test Results - libs+gateway
@@ -107,10 +107,10 @@ jobs:
           - events               # Kafka + Schema Registry
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Java 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -132,7 +132,7 @@ jobs:
           PACT_BROKER_URL: ${{ vars.PACT_BROKER_URL || '' }}
 
       - name: Publish Test Results (${{ matrix.module }})
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         if: always()
         with:
           name: Backend Test Results - ${{ matrix.module }}
@@ -141,7 +141,7 @@ jobs:
           fail-on-empty: false
 
       - name: Upload Test Reports (${{ matrix.module }})
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: backend-test-reports-${{ matrix.module }}
