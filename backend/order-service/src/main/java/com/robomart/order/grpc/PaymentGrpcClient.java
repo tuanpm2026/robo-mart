@@ -1,5 +1,7 @@
 package com.robomart.order.grpc;
 
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -32,6 +34,16 @@ public class PaymentGrpcClient {
     public ProcessPaymentResponse processPayment(ProcessPaymentRequest request) {
         try {
             return stub.processPayment(request);
+        } catch (StatusRuntimeException e) {
+            throw mapBusinessError(e);
+        }
+    }
+
+    @CircuitBreaker(name = INSTANCE, fallbackMethod = "paymentFallback")
+    @Retry(name = INSTANCE)
+    public ProcessPaymentResponse resumePayment(ProcessPaymentRequest request) {
+        try {
+            return stub.withDeadlineAfter(5, TimeUnit.SECONDS).processPayment(request);
         } catch (StatusRuntimeException e) {
             throw mapBusinessError(e);
         }

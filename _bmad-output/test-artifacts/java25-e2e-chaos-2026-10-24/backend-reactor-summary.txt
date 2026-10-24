@@ -1,0 +1,22 @@
+Robo-Mart Parent 0.0.1-SNAPSHOT:
+[INFO]
+[INFO] Robo-Mart Parent ................................... SUCCESS [  0.164 s]
+[INFO] Robo-Mart Common Library ........................... SUCCESS [  2.335 s]
+[INFO] Robo-Mart Security Library ......................... SUCCESS [  0.586 s]
+[INFO] Robo-Mart Proto .................................... SUCCESS [  2.362 s]
+[INFO] Robo-Mart Events ................................... SUCCESS [ 10.255 s]
+[INFO] Robo-Mart Test Support ............................. SUCCESS [  0.144 s]
+[INFO] Robo-Mart Product Service .......................... SUCCESS [ 57.684 s]
+[INFO] Robo-Mart Cart Service ............................. SUCCESS [03:13 min]
+[INFO] Robo-Mart API Gateway .............................. SUCCESS [ 19.525 s]
+[INFO] Robo-Mart Order Service ............................ SUCCESS [ 51.046 s]
+[INFO] Robo-Mart Inventory Service ........................ SUCCESS [01:00 min]
+[INFO] Robo-Mart Payment Service .......................... SUCCESS [ 31.531 s]
+[INFO] Robo-Mart Notification Service ..................... SUCCESS [ 51.328 s]
+[INFO] E2E Tests .......................................... SUCCESS [  0.034 s]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  08:01 min
+[INFO] Finished at: 2026-10-24T12:21:30+07:00
+[INFO] ------------------------------------------------------------------------

@@ -1,5 +1,7 @@
 package com.robomart.order.grpc;
 
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -42,6 +44,16 @@ public class InventoryGrpcClient {
     public ReleaseInventoryResponse releaseInventory(ReleaseInventoryRequest request) {
         try {
             return stub.releaseInventory(request);
+        } catch (StatusRuntimeException e) {
+            throw mapBusinessError(e);
+        }
+    }
+
+    @CircuitBreaker(name = INSTANCE, fallbackMethod = "releaseFallback")
+    @Retry(name = INSTANCE)
+    public ReleaseInventoryResponse releaseInventoryForRecovery(ReleaseInventoryRequest request) {
+        try {
+            return stub.withDeadlineAfter(5, TimeUnit.SECONDS).releaseInventory(request);
         } catch (StatusRuntimeException e) {
             throw mapBusinessError(e);
         }

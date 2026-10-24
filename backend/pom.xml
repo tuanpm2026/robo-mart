@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.0.4</version>
+        <version>4.1.2</version>
         <relativePath/>
     </parent>
 
@@ -19,22 +19,18 @@
     <description>Robo-Mart E-Commerce Microservices Platform</description>
 
     <properties>
-        <java.version>21</java.version>
-        <spring-cloud.version>2025.1.1</spring-cloud.version>
+        <java.version>25</java.version>
+        <spring-cloud.version>2025.1.4</spring-cloud.version>
         <mapstruct.version>1.6.3</mapstruct.version>
-        <avro.version>1.12.1</avro.version>
+        <avro.version>1.12.2</avro.version>
         <logstash-logback-encoder.version>9.0</logstash-logback-encoder.version>
-        <confluent.version>8.3.0</confluent.version>
-        <swagger.version>2.2.47</swagger.version>
+        <confluent.version>7.9.10</confluent.version>
         <resilience4j.version>2.4.0</resilience4j.version>
-        <spring-grpc.version>1.0.2</spring-grpc.version>
-        <shedlock.version>7.7.0</shedlock.version>
-        <grpc.version>1.77.1</grpc.version>
-        <protobuf.version>4.33.4</protobuf.version>
-        <guava.version>33.6.0-jre</guava.version>
-        <error-prone.version>2.50.0</error-prone.version>
+        <shedlock.version>7.10.1</shedlock.version>
+        <guava.version>33.7.2-jre</guava.version>
+        <error-prone.version>2.51.0</error-prone.version>
         <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
-        <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
+        <xolstice-protobuf-maven-plugin.version>0.6.1</xolstice-protobuf-maven-plugin.version>
         <!-- buf lint is disabled by default; enable in CI with -DskipBufLint=false -->
         <skipBufLint>true</skipBufLint>
         <!-- E2E tests require full Docker stack — skipped by default -->
@@ -45,6 +41,10 @@
     </properties>
 
     <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
         <repository>
             <id>confluent</id>
             <url>https://packages.confluent.io/maven/</url>
@@ -69,6 +69,15 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- First imported BOM wins: keep Resilience4j 2.4 aligned with its Boot 4 starter. -->
+            <dependency>
+                <groupId>io.github.resilience4j</groupId>
+                <artifactId>resilience4j-bom</artifactId>
+                <version>${resilience4j.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <!-- Spring Cloud BOM -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
@@ -78,22 +87,11 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- Spring gRPC BOM -->
-            <dependency>
-                <groupId>org.springframework.grpc</groupId>
-                <artifactId>spring-grpc-dependencies</artifactId>
-                <version>${spring-grpc.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <!-- Resilience4j BOM -->
+            <!-- Resilience4j 2.4.0 does not include its Boot 4 starter in the BOM. -->
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
-                <artifactId>resilience4j-bom</artifactId>
+                <artifactId>resilience4j-spring-boot4</artifactId>
                 <version>${resilience4j.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
             </dependency>
 
             <!-- ShedLock — distributed lock for @Scheduled jobs -->
@@ -140,14 +138,14 @@
             <dependency>
                 <groupId>com.tngtech.archunit</groupId>
                 <artifactId>archunit-junit5</artifactId>
-                <version>1.4.2</version>
+                <version>1.5.1</version>
             </dependency>
 
             <!-- springdoc-openapi for OpenAPI spec generation -->
             <dependency>
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-                <version>3.0.3</version>
+                <version>3.1.1</version>
             </dependency>
 
             <!-- MapStruct -->
@@ -188,24 +186,17 @@
                 <version>${error-prone.version}</version>
             </dependency>
 
-            <!--
-              Convergence pin: confluent 8.3.0 (kafka-schema-registry-client) pulls
-              swagger-annotations-jakarta 2.2.42, while springdoc 3.0.3
-              (swagger-core-jakarta) pulls 2.2.47. Pin to the higher 2.2.47
-              (backward compatible within 2.2.x) so DependencyConvergence passes.
-            -->
-            <dependency>
-                <groupId>io.swagger.core.v3</groupId>
-                <artifactId>swagger-annotations-jakarta</artifactId>
-                <version>${swagger.version}</version>
-            </dependency>
-
             <!-- Confluent Kafka Avro Serializer -->
             <dependency>
                 <groupId>io.confluent</groupId>
                 <artifactId>kafka-avro-serializer</artifactId>
                 <version>${confluent.version}</version>
                 <exclusions>
+                    <!-- Legacy Swagger annotations shadow springdoc's Jakarta classes at runtime. -->
+                    <exclusion>
+                        <groupId>io.swagger.core.v3</groupId>
+                        <artifactId>swagger-annotations</artifactId>
+                    </exclusion>
                     <exclusion>
                         <groupId>org.apache.kafka</groupId>
                         <artifactId>kafka-clients</artifactId>
@@ -315,15 +306,15 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <version>[21,)</version>
-                                    <message>Java 21+ is required</message>
+                                    <version>[25,26)</version>
+                                    <message>Java 25 LTS is required</message>
                                 </requireJavaVersion>
                                 <dependencyConvergence/>
                                 <bannedDependencies>
                                     <excludes>
                                         <exclude>org.junit.vintage:junit-vintage-engine</exclude>
                                     </excludes>
-                                    <message>Use JUnit 5 instead of JUnit 4</message>
+                                    <message>Use JUnit Jupiter instead of JUnit 4</message>
                                 </bannedDependencies>
                             </rules>
                         </configuration>

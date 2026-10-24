@@ -48,6 +48,12 @@ public class ProcessPaymentStep implements SagaStep {
 
         try {
             ProcessPaymentResponse response = paymentClient.processPayment(request);
+            if (!response.getSuccess()) {
+                throw new PaymentBusinessException("Payment declined", null);
+            }
+            if (response.getPaymentId().isBlank()) {
+                throw new PaymentServiceUnavailableException("Payment result is incomplete", null);
+            }
             order.setPaymentId(response.getPaymentId());
             log.info("Payment processed for orderId={}, paymentId={}", order.getId(), response.getPaymentId());
         } catch (PaymentBusinessException e) {
@@ -65,11 +71,9 @@ public class ProcessPaymentStep implements SagaStep {
                     true      // shouldHoldAsPending: true — do NOT cancel
             );
         } catch (RuntimeException e) {
-            // Transient/unexpected gRPC failure that survived retries but did not open the circuit.
-            // Set a clean, user-safe reason — never leak raw exception detail (mirrors
-            // ReserveInventoryStep's equivalent branch).
-            order.setCancellationReason("Payment failed");
-            throw new SagaStepException("Payment error for orderId=" + order.getId(), e, true);
+            // An unexpected client failure cannot prove the provider did not settle the charge.
+            // Reconcile with the same key; only a definitive business rejection releases inventory.
+            throw new SagaStepException("Payment result uncertain for orderId=" + order.getId(), e, false, true);
         }
     }
 

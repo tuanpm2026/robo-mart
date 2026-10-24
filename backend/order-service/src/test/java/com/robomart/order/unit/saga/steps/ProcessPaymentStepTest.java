@@ -119,6 +119,39 @@ class ProcessPaymentStepTest {
     }
 
     @Test
+    void unexpectedClientFailureKeepsReservationForReconciliation() {
+        when(paymentClient.processPayment(any())).thenThrow(new IllegalStateException("Response lost"));
+        assertThatThrownBy(() -> step.execute(new SagaContext(buildOrder())))
+                .isInstanceOfSatisfying(SagaStepException.class, ex -> {
+                    assertThat(ex.isShouldCompensate()).isFalse();
+                    assertThat(ex.isShouldHoldAsPending()).isTrue();
+                });
+    }
+
+    @Test
+    void cachedDeclineDoesNotConfirmAnEmptyPayment() {
+        Order order = buildOrder();
+        when(paymentClient.processPayment(any())).thenReturn(ProcessPaymentResponse.getDefaultInstance());
+        assertThatThrownBy(() -> step.execute(new SagaContext(order)))
+                .isInstanceOfSatisfying(SagaStepException.class, ex -> {
+                    assertThat(ex.isShouldCompensate()).isTrue();
+                    assertThat(ex.isShouldHoldAsPending()).isFalse();
+                });
+        assertThat(order.getPaymentId()).isNull();
+    }
+
+    @Test
+    void incompleteSuccessStaysPendingRatherThanReleasingStock() {
+        when(paymentClient.processPayment(any())).thenReturn(
+                ProcessPaymentResponse.newBuilder().setSuccess(true).build());
+        assertThatThrownBy(() -> step.execute(new SagaContext(buildOrder())))
+                .isInstanceOfSatisfying(SagaStepException.class, ex -> {
+                    assertThat(ex.isShouldCompensate()).isFalse();
+                    assertThat(ex.isShouldHoldAsPending()).isTrue();
+                });
+    }
+
+    @Test
     @DisplayName("shouldNotContainManualRetryLogic")
     void shouldNotContainManualRetryLogic() throws Exception {
         // Verify ProcessPaymentStep has no callWithRetry method (manual retry removed)

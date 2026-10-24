@@ -1,6 +1,7 @@
 package com.robomart.order.entity;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +43,12 @@ public class Order extends BaseEntity {
 
     @Column(name = "cancellation_reason", columnDefinition = "TEXT")
     private String cancellationReason;
+
+    @Column(name = "payment_retry_count", nullable = false)
+    private int paymentRetryCount;
+
+    @Column(name = "next_payment_retry_at")
+    private Instant nextPaymentRetryAt;
 
     @Version
     private Integer version;
@@ -108,6 +115,22 @@ public class Order extends BaseEntity {
         this.cancellationReason = cancellationReason;
     }
 
+    public int getPaymentRetryCount() {
+        return paymentRetryCount;
+    }
+
+    public void setPaymentRetryCount(int paymentRetryCount) {
+        this.paymentRetryCount = paymentRetryCount;
+    }
+
+    public Instant getNextPaymentRetryAt() {
+        return nextPaymentRetryAt;
+    }
+
+    public void setNextPaymentRetryAt(Instant nextPaymentRetryAt) {
+        this.nextPaymentRetryAt = nextPaymentRetryAt;
+    }
+
     public Integer getVersion() {
         return version;
     }
@@ -121,7 +144,13 @@ public class Order extends BaseEntity {
     }
 
     public void setItems(List<OrderItem> items) {
-        this.items = items;
+        if (this.items == items) {
+            return;
+        }
+        // Preserve Hibernate's managed collection so orphan removal tracks item changes.
+        List<OrderItem> replacement = new ArrayList<>(items);
+        this.items.clear();
+        this.items.addAll(replacement);
     }
 
     public List<OrderStatusHistory> getStatusHistory() {

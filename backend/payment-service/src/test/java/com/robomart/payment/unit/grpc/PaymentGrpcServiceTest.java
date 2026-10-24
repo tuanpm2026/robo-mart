@@ -128,6 +128,18 @@ class PaymentGrpcServiceTest {
         }
 
         @Test
+        void shouldReturnFailedPreconditionForCachedDeclineResponse() {
+            when(paymentService.processPayment(anyString(), anyString(), any(), anyString(), anyString()))
+                    .thenReturn(new PaymentResult(false, "Cached card decline", null, null));
+            grpcService.processPayment(createProcessRequest("order-1", "key-1", "99.99", "USD"),
+                    processResponseObserver);
+            verify(processResponseObserver).onError(throwableCaptor.capture());
+            assertThat(Status.fromThrowable(throwableCaptor.getValue()).getCode())
+                    .isEqualTo(Status.Code.FAILED_PRECONDITION);
+            verify(processResponseObserver, org.mockito.Mockito.never()).onNext(any());
+        }
+
+        @Test
         @DisplayName("should return UNAVAILABLE when transient failure")
         void shouldReturnUnavailableWhenTransientFailure() {
             // given

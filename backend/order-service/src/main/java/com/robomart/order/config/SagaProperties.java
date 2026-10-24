@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 public class SagaProperties {
 
     private Steps steps = new Steps();
+    private PaymentRecovery paymentRecovery = new PaymentRecovery();
     private DeadSagaDetection deadSagaDetection = new DeadSagaDetection();
 
     public Steps getSteps() {
@@ -28,6 +29,41 @@ public class SagaProperties {
 
     public void setDeadSagaDetection(DeadSagaDetection deadSagaDetection) {
         this.deadSagaDetection = deadSagaDetection;
+    }
+
+    public PaymentRecovery getPaymentRecovery() {
+        return paymentRecovery;
+    }
+
+    public void setPaymentRecovery(PaymentRecovery paymentRecovery) {
+        this.paymentRecovery = paymentRecovery;
+    }
+
+    public static class PaymentRecovery {
+        private int batchSize = 20;
+        private Duration retryDelay = Duration.ofSeconds(30);
+
+        public int getBatchSize() {
+            return batchSize;
+        }
+
+        public void setBatchSize(int batchSize) {
+            if (batchSize < 1 || batchSize > 100) {
+                throw new IllegalArgumentException("Payment recovery batch size must be between 1 and 100");
+            }
+            this.batchSize = batchSize;
+        }
+
+        public Duration getRetryDelay() {
+            return retryDelay;
+        }
+
+        public void setRetryDelay(Duration retryDelay) {
+            if (retryDelay.isNegative() || retryDelay.isZero()) {
+                throw new IllegalArgumentException("Payment recovery retry delay must be positive");
+            }
+            this.retryDelay = retryDelay;
+        }
     }
 
     public static class Steps {

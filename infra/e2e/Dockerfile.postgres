@@ -1,0 +1,3 @@
+FROM postgres:17
+COPY infra/e2e/init-databases.sql /docker-entrypoint-initdb.d/01-databases.sql
+USER postgres

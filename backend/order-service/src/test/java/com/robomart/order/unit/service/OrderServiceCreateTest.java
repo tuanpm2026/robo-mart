@@ -71,7 +71,6 @@ class OrderServiceCreateTest {
             // Simulate transaction callback returning saved order
             return saved;
         });
-        when(orderItemRepository.findByOrderId(1L)).thenReturn(List.of());
         doNothing().when(orderSagaOrchestrator).executeSaga(saved);
 
         Order result = orderService.createOrder("user-1", ITEMS, "123 Main St");
@@ -86,7 +85,6 @@ class OrderServiceCreateTest {
         Order savedOrder = buildOrder(2L, OrderStatus.PENDING);
 
         when(transactionTemplate.execute(any())).thenAnswer(inv -> savedOrder);
-        when(orderItemRepository.findByOrderId(2L)).thenReturn(List.of());
         // Saga modifies order status to CANCELLED internally and returns (no throw)
         org.mockito.Mockito.doAnswer(inv -> {
             Order order = ((Order) inv.getArguments()[0]);
@@ -109,7 +107,6 @@ class OrderServiceCreateTest {
         when(transactionTemplate.execute(any()))
                 .thenAnswer(inv -> savedOrder)
                 .thenReturn(null); // second call for cancel
-        when(orderItemRepository.findByOrderId(3L)).thenReturn(List.of());
         doThrow(new RuntimeException("Unexpected gRPC error"))
                 .when(orderSagaOrchestrator).executeSaga(savedOrder);
 

@@ -8,9 +8,8 @@ spring:
     # auto-secure the gRPC server (every call → UNAUTHENTICATED). gRPC here is internal and protected
     # by the NetworkPolicy (ingress restricted to order-service), so disable gRPC-layer security.
     exclude:
-      - org.springframework.boot.grpc.server.autoconfigure.security.GrpcSecurityAutoConfiguration
-      - org.springframework.boot.grpc.server.autoconfigure.security.OAuth2ResourceServerAutoConfiguration
-      - org.springframework.boot.grpc.server.autoconfigure.security.OAuth2ClientAutoConfiguration
+      - org.springframework.boot.grpc.server.autoconfigure.security.GrpcServerSecurityAutoConfiguration
+      - org.springframework.boot.grpc.server.autoconfigure.security.GrpcServerOAuth2ResourceServerAutoConfiguration
   security:
     oauth2:
       resourceserver:

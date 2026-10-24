@@ -8,9 +8,8 @@ spring:
     # auto-secure it once spring-security is present (every call → UNAUTHENTICATED). gRPC is
     # internal and protected by the NetworkPolicy, so disable gRPC-layer security.
     exclude:
-      - org.springframework.boot.grpc.server.autoconfigure.security.GrpcSecurityAutoConfiguration
-      - org.springframework.boot.grpc.server.autoconfigure.security.OAuth2ResourceServerAutoConfiguration
-      - org.springframework.boot.grpc.server.autoconfigure.security.OAuth2ClientAutoConfiguration
+      - org.springframework.boot.grpc.server.autoconfigure.security.GrpcServerSecurityAutoConfiguration
+      - org.springframework.boot.grpc.server.autoconfigure.security.GrpcServerOAuth2ResourceServerAutoConfiguration
   security:
     oauth2:
       resourceserver:
@@ -39,16 +38,25 @@ spring:
     server:
       port: 9093
     client:
-      inventory-service:
-        address: '${GRPC_CLIENT_INVENTORY_SERVICE_ADDRESS:static://localhost:9094}'
-        negotiation-type: plaintext
-      payment-service:
-        address: '${GRPC_CLIENT_PAYMENT_SERVICE_ADDRESS:static://localhost:9095}'
-        negotiation-type: plaintext
+      channel:
+        inventory-service:
+          target: '${GRPC_CLIENT_INVENTORY_SERVICE_ADDRESS:static://localhost:9094}'
+          ssl:
+            enabled: false
+        payment-service:
+          target: '${GRPC_CLIENT_PAYMENT_SERVICE_ADDRESS:static://localhost:9095}'
+          ssl:
+            enabled: false
   lifecycle:
     timeout-per-shutdown-phase: 25s
 
 saga:
+  payment-recovery:
+    enabled: true
+    check-interval-ms: 5000
+    initial-delay-ms: 5000
+    retry-delay: 30s
+    batch-size: 20
   steps:
     default-timeout: 10s
     timeouts:
@@ -204,3 +212,8 @@ management:
       # readiness group; skip group-membership validation so the context starts (matches
       # the shared @IntegrationTest meta-annotation used by other services).
       validate-group-membership: false
+
+saga:
+  payment-recovery:
+    # Integration tests invoke the recovery service explicitly to control fault timing.
+    enabled: false

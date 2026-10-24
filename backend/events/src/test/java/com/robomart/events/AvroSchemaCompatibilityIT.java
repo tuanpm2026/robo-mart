@@ -57,7 +57,7 @@ class AvroSchemaCompatibilityIT {
             KAFKA_NETWORK_ALIAS + ":" + KAFKA_NETWORK_PORT;
 
     private static final ConfluentKafkaContainer KAFKA =
-            new ConfluentKafkaContainer("confluentinc/cp-kafka:7.8.0")
+            new ConfluentKafkaContainer("confluentinc/cp-kafka:7.9.10")
                     .withNetwork(NETWORK)
                     .withListener(KAFKA_IN_NETWORK_LISTENER);
 
@@ -72,7 +72,7 @@ class AvroSchemaCompatibilityIT {
     static void startContainers() {
         KAFKA.start();
 
-        schemaRegistry = new GenericContainer<>("confluentinc/cp-schema-registry:7.8.0")
+        schemaRegistry = new GenericContainer<>("confluentinc/cp-schema-registry:7.9.10")
                 .withNetwork(NETWORK)
                 .withExposedPorts(8081)
                 .withEnv("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")

@@ -15,9 +15,25 @@
     <description>Kafka event schemas (Avro)</description>
 
     <dependencies>
+        <!-- Auto-register the generated event allowlist in Spring Boot consumers. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+            <optional>true</optional>
+        </dependency>
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.confluent</groupId>
+            <artifactId>kafka-avro-serializer</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <scope>test</scope>
         </dependency>
         <!-- Test dependencies for AvroSchemaCompatibilityIT -->
         <dependency>

@@ -4,6 +4,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.grpc.server.lifecycle.GrpcServerLifecycle;
 import org.springframework.test.context.TestPropertySource;
 
@@ -38,6 +39,9 @@ class PaymentGrpcIT {
     private MockPaymentGateway mockPaymentGateway;
 
     @Autowired
+    private JdbcTemplate jdbc;
+
+    @Autowired
     private PaymentRepository paymentRepository;
 
     @Autowired
@@ -58,6 +62,7 @@ class PaymentGrpcIT {
         stub = PaymentServiceGrpc.newBlockingStub(channel);
 
         mockPaymentGateway.reset();
+        jdbc.update("DELETE FROM mock_gateway_operations");
         outboxEventRepository.deleteAll();
         idempotencyKeyRepository.deleteAll();
         paymentRepository.deleteAll();
@@ -165,6 +170,10 @@ class PaymentGrpcIT {
         StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
                 () -> stub.processPayment(request));
         assertThat(ex.getStatus().getCode()).isEqualTo(Status.Code.FAILED_PRECONDITION);
+        mockPaymentGateway.reset();
+        StatusRuntimeException replay = assertThrows(StatusRuntimeException.class,
+                () -> stub.processPayment(request));
+        assertThat(replay.getStatus().getCode()).isEqualTo(Status.Code.FAILED_PRECONDITION);
     }
 
     @Test

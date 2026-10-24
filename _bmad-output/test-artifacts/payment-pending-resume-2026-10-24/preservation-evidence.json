@@ -1,0 +1,13 @@
+{
+  "original_containers_preserved": 23,
+  "original_volumes_preserved": 60,
+  "resume_project_containers_remaining": 0,
+  "test_volumes_retained": [
+    "6c01f45ff0655d0a02c3e16f1bf67befd9b75fea5cdc408f84ad4d91e6cac76e",
+    "b9877ef944f481aab372880c30237af48bf59f837df7abb8febcf5b1c44e5cd4",
+    "dfb0462d76790af2c38aafdf4081fcb39908a3f71d805646d6d3c0b93626bf04",
+    "robomart-java25-e2e-resume_elasticsearch-data",
+    "robomart-java25-e2e-resume_kafka-data",
+    "robomart-java25-e2e-resume_postgres-data"
+  ]
+}

@@ -15,6 +15,15 @@
     <description>Notification microservice for order and payment event notifications</description>
 
     <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-restclient</artifactId>
+        </dependency>
+        <!-- Machine-to-machine authentication for asynchronous Order detail lookups. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-oauth2-client</artifactId>
+        </dependency>
         <!-- Internal -->
         <dependency>
             <groupId>com.robomart</groupId>
@@ -95,7 +104,7 @@
         <dependency>
             <groupId>au.com.dius.pact.consumer</groupId>
             <artifactId>junit5</artifactId>
-            <version>4.7.3</version>
+            <version>4.7.5</version>
             <scope>test</scope>
         </dependency>
         <!-- WebSocket -->

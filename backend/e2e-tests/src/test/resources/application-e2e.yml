@@ -1,7 +1,6 @@
-# E2E test profile - no Spring context needed (pure HTTP tests)
-# All configuration is read from system properties in test classes:
-#   e2e.base-url (default: http://localhost:8080)
-#   e2e.keycloak-url (default: http://localhost:8180)
-spring:
-  autoconfigure:
-    exclude: []
+# E2E tests use HTTP clients directly and do not load a Spring application context.
+# E2E_BASE_URL defaults to http://localhost:18080; E2E_KEYCLOAK_URL to http://localhost:18180.
+# E2E_COMPOSE_PROJECT is required for read-only database probes and guarded chaos actions.
+# Credentials/tokens are optional E2E_CUSTOMER_* / E2E_ADMIN_* environment variables;
+# defaults match the explicitly seeded local test users. Never pass tokens as Maven properties.
+# Run: ./mvnw verify -pl :e2e-tests -DskipE2ETests=false

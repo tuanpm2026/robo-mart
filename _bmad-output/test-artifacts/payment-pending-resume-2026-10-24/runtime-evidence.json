@@ -1,0 +1,50 @@
+{
+  "orders": "CANCELLED|7",
+  "payments": "REFUNDED|7|7",
+  "provider_operations": "COMPLETED|7\nREFUNDED|7",
+  "duplicate_provider_order_bindings": "0",
+  "reserved_quantity": "0",
+  "stock_movements": "RELEASE|7\nRESERVE|7",
+  "confirmation_history": "7",
+  "chaos_status": {
+    "disabledAt": "2026-10-24T06:39:31.714Z",
+    "enabled": false
+  },
+  "chaos_assaults": {
+    "cpuActive": false,
+    "cpuCronExpression": "OFF",
+    "cpuLoadTargetFraction": 0.9,
+    "cpuMillisecondsHoldLoad": 90000,
+    "deterministic": true,
+    "exception": {
+      "arguments": [
+        {
+          "type": "java.lang.String",
+          "value": "Chaos Monkey - RuntimeException"
+        }
+      ],
+      "method": "<init>",
+      "type": "java.lang.RuntimeException"
+    },
+    "exceptionsActive": false,
+    "killApplicationActive": false,
+    "killApplicationCronExpression": "OFF",
+    "latencyActive": false,
+    "latencyRangeEnd": 500,
+    "latencyRangeStart": 500,
+    "level": 1,
+    "memoryActive": false,
+    "memoryCronExpression": "OFF",
+    "memoryFillIncrementFraction": 0.15,
+    "memoryFillTargetFraction": 0.25,
+    "memoryMillisecondsHoldFilledMemory": 90000,
+    "memoryMillisecondsWaitNextIncrease": 1000
+  },
+  "payment_health": {
+    "groups": [
+      "liveness",
+      "readiness"
+    ],
+    "status": "UP"
+  }
+}

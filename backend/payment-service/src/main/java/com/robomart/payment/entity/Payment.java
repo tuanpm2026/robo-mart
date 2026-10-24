@@ -29,6 +29,9 @@ public class Payment {
     @Column(name = "order_id", nullable = false, length = 100)
     private String orderId;
 
+    @Column(name = "user_id", length = 100)
+    private String userId;
+
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
@@ -44,6 +47,9 @@ public class Payment {
 
     @Column(name = "idempotency_key", nullable = false, unique = true, length = 100)
     private String idempotencyKey;
+
+    @Column(name = "refund_transaction_id", length = 100)
+    private String refundTransactionId;
 
     @Version
     private Integer version;
@@ -66,6 +72,14 @@ public class Payment {
 
     public void setOrderId(String orderId) {
         this.orderId = orderId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public BigDecimal getAmount() {
@@ -98,6 +112,14 @@ public class Payment {
 
     public void setTransactionId(String transactionId) {
         this.transactionId = transactionId;
+    }
+
+    public String getRefundTransactionId() {
+        return refundTransactionId;
+    }
+
+    public void setRefundTransactionId(String refundTransactionId) {
+        this.refundTransactionId = refundTransactionId;
     }
 
     public String getIdempotencyKey() {

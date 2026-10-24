@@ -17,6 +17,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.web.client.RestClient;
 import org.springframework.context.annotation.Import;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -27,6 +31,7 @@ import com.robomart.order.entity.OutboxEvent;
 import com.robomart.order.entity.SagaAuditLog;
 import com.robomart.order.enums.OrderStatus;
 import com.robomart.order.repository.OrderRepository;
+import com.robomart.order.repository.OrderItemRepository;
 import com.robomart.order.repository.OutboxEventRepository;
 import com.robomart.order.repository.SagaAuditLogRepository;
 import com.robomart.order.service.OrderService;
@@ -38,14 +43,20 @@ import com.robomart.proto.inventory.ReserveInventoryResponse;
 import com.robomart.proto.payment.PaymentServiceGrpc;
 import com.robomart.proto.payment.ProcessPaymentRequest;
 import com.robomart.proto.payment.ProcessPaymentResponse;
+import com.robomart.proto.payment.RefundPaymentRequest;
+import com.robomart.proto.payment.RefundPaymentResponse;
 import com.robomart.test.PostgresContainerConfig;
+import com.robomart.test.security.TestJwt;
+import com.robomart.test.security.TestJwtDecoderConfig;
+
+import tools.jackson.databind.json.JsonMapper;
 
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Import(PostgresContainerConfig.class)
+@Import({PostgresContainerConfig.class, TestJwtDecoderConfig.class})
 @DisplayName("OrderSaga Integration Tests")
 class OrderSagaIT {
 
@@ -59,8 +70,14 @@ class OrderSagaIT {
     @SuppressWarnings("rawtypes")
     private KafkaTemplate kafkaTemplate;
 
+    @LocalServerPort
+    private int port;
+
     @Autowired
     private OrderService orderService;
+
+    @Autowired
+    private OrderItemRepository orderItemRepository;
 
     @Autowired
     private OrderRepository orderRepository;
@@ -118,6 +135,48 @@ class OrderSagaIT {
                 .orElseThrow();
         assertThat(event.getEventType()).isEqualTo("order_status_changed");
         assertThat(event.getAggregateType()).isEqualTo("Order");
+    }
+
+    @Test
+    void shouldCreateAndCancelThroughHttpWithoutReplacingManagedItems() {
+        stubInventorySuccess();
+        stubPaymentSuccess();
+        when(paymentStub.refundPayment(any(RefundPaymentRequest.class)))
+                .thenReturn(RefundPaymentResponse.newBuilder().setSuccess(true).build());
+        when(inventoryStub.releaseInventory(any(ReleaseInventoryRequest.class)))
+                .thenReturn(ReleaseInventoryResponse.newBuilder().setSuccess(true).build());
+        RestClient client = RestClient.builder().baseUrl("http://localhost:" + port)
+                .defaultHeader("Authorization", TestJwt.customerBearer())
+                .defaultHeader("X-User-Id", "user-http-orphan-regression")
+                .defaultStatusHandler(status -> status.isError(), (request, response) -> { })
+                .build();
+
+        // A real web request keeps the EntityManager open across the saga's short transactions.
+        // Replacing Order.items here used to fail at flush even though direct service ITs passed.
+        var created = client.post().uri("/api/v1/orders").contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"items":[{"productId":"10","productName":"HTTP Widget",
+                        "quantity":2,"unitPrice":49.99}],"shippingAddress":"123 HTTP Test St"}
+                        """)
+                .retrieve().toEntity(String.class);
+        assertThat(created.getStatusCode()).as("Checkout response: %s", created.getBody()).isEqualTo(HttpStatus.CREATED);
+        var data = JsonMapper.builder().build().readTree(created.getBody()).path("data");
+        long id = data.path("id").asLong();
+        assertThat(data.path("status").asString()).isEqualTo("CONFIRMED");
+        assertThat(orderRepository.findById(id).orElseThrow().getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+        assertThat(orderItemRepository.findByOrderId(id)).singleElement().satisfies(item -> {
+            assertThat(item.getQuantity()).isEqualTo(2);
+            assertThat(item.getSubtotal()).isEqualByComparingTo("99.98");
+        });
+
+        var cancelled = client.post().uri("/api/v1/orders/" + id + "/cancel")
+                .contentType(MediaType.APPLICATION_JSON).body("{\"reason\":\"HTTP regression cancellation\"}")
+                .retrieve().toEntity(String.class);
+        assertThat(cancelled.getStatusCode()).as("Cancellation response: %s", cancelled.getBody()).isEqualTo(HttpStatus.OK);
+        assertThat(orderRepository.findById(id).orElseThrow().getStatus()).isEqualTo(OrderStatus.CANCELLED);
+        assertThat(orderItemRepository.findByOrderId(id)).hasSize(1);
+        verify(paymentStub).refundPayment(any(RefundPaymentRequest.class));
+        verify(inventoryStub).releaseInventory(any(ReleaseInventoryRequest.class));
     }
 
     @Test

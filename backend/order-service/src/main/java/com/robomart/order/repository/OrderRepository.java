@@ -3,6 +3,7 @@ package com.robomart.order.repository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +16,19 @@ import com.robomart.order.entity.Order;
 import com.robomart.order.enums.OrderStatus;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
+
+    @Override
+    @EntityGraph(attributePaths = {"items"})
+    Optional<Order> findById(Long id);
+
+    @Query(value = "SELECT * FROM orders WHERE status = 'PAYMENT_PENDING' "
+            + "AND (next_payment_retry_at IS NULL OR next_payment_retry_at <= :now) "
+            + "ORDER BY next_payment_retry_at NULLS FIRST, id LIMIT 1 FOR UPDATE SKIP LOCKED", nativeQuery = true)
+    Optional<Order> findNextPendingPaymentForUpdate(@Param("now") Instant now);
+
+    @Query(value = "SELECT * FROM orders WHERE id = :id AND status = 'PAYMENT_PROCESSING' "
+            + "AND updated_at <= :cutoff FOR UPDATE SKIP LOCKED", nativeQuery = true)
+    Optional<Order> findUncertainPaymentForUpdate(@Param("id") Long id, @Param("cutoff") Instant cutoff);
 
     Page<Order> findByUserId(String userId, Pageable pageable);
 

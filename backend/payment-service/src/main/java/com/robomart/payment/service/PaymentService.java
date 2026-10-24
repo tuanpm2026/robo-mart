@@ -10,7 +10,6 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -59,7 +58,8 @@ public class PaymentService {
         this.objectMapper = objectMapper;
     }
 
-    @Auditable(action = AuditAction.CREATE, entityType = "Payment", entityIdExpression = "#result?.paymentId?.toString()")
+    @Auditable(action = AuditAction.CREATE, entityType = "Payment",
+            entityIdExpression = "#result?.paymentId?.toString()")
     public PaymentResult processPayment(String orderId, String userId, BigDecimal amount,
                                         String currency, String idempotencyKey) {
         log.info("Processing payment: orderId={}, amount={} {}, idempotencyKey={}",
@@ -69,156 +69,163 @@ public class PaymentService {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Payment amount must be positive, got: " + amount);
         }
-        if (currency == null || currency.isBlank()) {
-            throw new IllegalArgumentException("Currency must not be blank");
+        if (amount.stripTrailingZeros().scale() > 2 || amount.precision() - amount.scale() > 17) {
+            throw new IllegalArgumentException("Payment amount must fit 19 digits with at most 2 decimal places");
+        }
+        if (currency == null || currency.isBlank() || currency.length() != 3) {
+            throw new IllegalArgumentException("Currency must contain exactly 3 characters");
         }
 
-        // Step 1: Check idempotency key
+        if (orderId == null || orderId.isBlank() || idempotencyKey == null || idempotencyKey.isBlank()
+                || userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("Order, user and idempotency key are required");
+        }
+        if (orderId.length() > 100 || idempotencyKey.length() > 100 || userId.length() > 100) {
+            throw new IllegalArgumentException("Order, user and idempotency key must not exceed 100 characters");
+        }
+        PaymentAttempt attempt = transactionTemplate.execute(status -> {
+            // Serialize across replicas before any gateway call, including retries of a FAILED row.
+            paymentRepository.lockPaymentRequest("payment:order:" + orderId);
+            paymentRepository.lockPaymentRequest("payment:key:" + idempotencyKey);
+            return processLocked(orderId, userId, amount, currency, idempotencyKey);
+        });
+        if (attempt == null) {
+            throw new IllegalStateException("Payment transaction returned no result");
+        }
+        // Commit FAILED/cached-decline state before propagating the original gRPC failure.
+        if (attempt.failure() != null) {
+            throw attempt.failure();
+        }
+        return attempt.result();
+    }
+
+    private PaymentAttempt processLocked(String orderId, String userId, BigDecimal amount,
+            String currency, String idempotencyKey) {
+        Optional<Payment> existingPayment = paymentRepository.findByIdempotencyKey(idempotencyKey);
+        if (existingPayment.isEmpty()) {
+            existingPayment = paymentRepository.findByOrderId(orderId);
+        }
+        if (existingPayment.isPresent()) {
+            Payment previous = existingPayment.get();
+            if (!previous.getOrderId().equals(orderId) || !previous.getIdempotencyKey().equals(idempotencyKey)
+                    || previous.getAmount().compareTo(amount) != 0 || !previous.getCurrency().equals(currency)
+                    || (previous.getUserId() != null && !previous.getUserId().equals(userId))) {
+                throw new IllegalArgumentException("Idempotency key/order is bound to a different payment request");
+            }
+            if (previous.getStatus() == PaymentStatus.REFUNDED) {
+                throw new PaymentDeclinedException("Payment has already been refunded");
+            }
+            if (previous.getStatus() == PaymentStatus.COMPLETED) {
+                return new PaymentAttempt(completedResult(previous), null);
+            }
+        }
         Optional<IdempotencyKey> existingKey = idempotencyKeyRepository.findByIdempotencyKey(idempotencyKey);
         if (existingKey.isPresent()) {
             IdempotencyKey cached = existingKey.get();
-            if (cached.getExpiresAt().isAfter(Instant.now())) {
-                // Return cached response
-                log.info("Idempotency key found and valid, returning cached response: key={}", idempotencyKey);
-                return deserializeResponse(cached.getResponse());
-            } else {
-                // [Fix #3] Expired — delete atomically in transaction
-                log.info("Idempotency key expired, deleting and reprocessing: key={}", idempotencyKey);
-                transactionTemplate.executeWithoutResult(status -> {
-                    idempotencyKeyRepository.delete(cached);
-                    paymentRepository.findByIdempotencyKey(idempotencyKey)
-                            .ifPresent(paymentRepository::delete);
-                });
+            if (!cached.getOrderId().equals(orderId)) {
+                throw new IllegalArgumentException("Idempotency key is bound to a different order");
             }
+            // TTL bounds the response cache, never permission to charge a settled request again.
+            PaymentResult result = deserializeResponse(cached.getResponse());
+            if (!result.success()) {
+                throw new PaymentDeclinedException(result.message());
+            }
+            return new PaymentAttempt(result, null);
         }
-
-        // [Fix #1] Check for existing FAILED payment (allows retry after transient failure)
-        Payment payment = paymentRepository.findByIdempotencyKey(idempotencyKey)
-                .orElseGet(() -> {
-                    Payment newPayment = new Payment();
-                    newPayment.setOrderId(orderId);
-                    newPayment.setAmount(amount);
-                    newPayment.setCurrency(currency);
-                    newPayment.setIdempotencyKey(idempotencyKey);
-                    return newPayment;
-                });
-        payment.setStatus(PaymentStatus.PENDING);
-
-        // Step 3: Call gateway and process within transaction.
-        // The idempotency key is passed to the gateway so the charge is idempotent: if this request
-        // previously charged but crashed before persisting (or two requests race with the same key),
-        // the gateway charges ONCE and returns the same transaction — no double-charge.
+        Payment payment = existingPayment.orElseGet(
+                () -> newPayment(orderId, userId, amount, currency, idempotencyKey));
         try {
-            GatewayResult gatewayResult = paymentGateway.processPayment(amount, currency, idempotencyKey);
-
-            // [Fix #2] Success — save in transaction, catch constraint violation for race condition
-            try {
-                return transactionTemplate.execute(status -> {
-                    payment.setStatus(PaymentStatus.COMPLETED);
-                    payment.setTransactionId(gatewayResult.transactionId());
-                    Payment savedPayment = paymentRepository.save(payment);
-
-                    // Create idempotency key with cached response
-                    PaymentResult result = new PaymentResult(
-                            true,
-                            "Payment processed successfully",
-                            String.valueOf(savedPayment.getId()),
-                            gatewayResult.transactionId()
-                    );
-
-                    IdempotencyKey newKey = new IdempotencyKey();
-                    newKey.setIdempotencyKey(idempotencyKey);
-                    newKey.setOrderId(orderId);
-                    newKey.setResponse(serializeResponse(result));
-                    newKey.setExpiresAt(Instant.now().plus(IDEMPOTENCY_KEY_TTL_HOURS, ChronoUnit.HOURS));
-                    idempotencyKeyRepository.save(newKey);
-
-                    // Create outbox event
-                    createPaymentProcessedEvent(savedPayment);
-
-                    log.info("Payment completed: paymentId={}, transactionId={}",
-                            savedPayment.getId(), gatewayResult.transactionId());
-                    return result;
-                });
-            } catch (DataIntegrityViolationException e) {
-                // [Fix #2] Race condition: another request already saved this idempotency key
-                log.warn("Race condition detected for idempotency key: {}, returning existing result", idempotencyKey);
-                return idempotencyKeyRepository.findByIdempotencyKey(idempotencyKey)
-                        .map(cached -> deserializeResponse(cached.getResponse()))
-                        .orElseThrow(() -> new IllegalStateException(
-                                "Race condition on idempotency key but no cached result found: " + idempotencyKey));
-            }
-
+            GatewayResult gatewayResult = paymentGateway.processPayment(
+                    amount, currency, idempotencyKey, orderId, userId);
+            payment.setStatus(PaymentStatus.COMPLETED);
+            payment.setTransactionId(gatewayResult.transactionId());
+            Payment saved = paymentRepository.save(payment);
+            PaymentResult result = completedResult(saved);
+            cacheResult(orderId, idempotencyKey, result);
+            createPaymentProcessedEvent(saved);
+            return new PaymentAttempt(result, null);
         } catch (PaymentTransientException e) {
-            // Transient failure — save FAILED payment, do NOT store idempotency key (allow retry)
-            log.warn("Transient payment failure: orderId={}, key={}", orderId, idempotencyKey, e);
-            transactionTemplate.executeWithoutResult(status -> {
-                payment.setStatus(PaymentStatus.FAILED);
-                paymentRepository.save(payment);
-            });
-            throw e;
-
+            payment.setStatus(PaymentStatus.FAILED);
+            paymentRepository.save(payment);
+            return new PaymentAttempt(null, e);
         } catch (PaymentDeclinedException e) {
-            // Permanent failure — save FAILED payment and store idempotency key (prevent re-attempt)
-            log.warn("Payment declined: orderId={}, key={}", orderId, idempotencyKey, e);
-            transactionTemplate.executeWithoutResult(status -> {
-                payment.setStatus(PaymentStatus.FAILED);
-                paymentRepository.save(payment);
-
-                PaymentResult failResult = new PaymentResult(
-                        false, "Payment declined: " + e.getMessage(), null, null
-                );
-
-                IdempotencyKey newKey = new IdempotencyKey();
-                newKey.setIdempotencyKey(idempotencyKey);
-                newKey.setOrderId(orderId);
-                newKey.setResponse(serializeResponse(failResult));
-                newKey.setExpiresAt(Instant.now().plus(IDEMPOTENCY_KEY_TTL_HOURS, ChronoUnit.HOURS));
-                idempotencyKeyRepository.save(newKey);
-            });
-            throw e;
+            payment.setStatus(PaymentStatus.FAILED);
+            paymentRepository.save(payment);
+            cacheResult(orderId, idempotencyKey,
+                    new PaymentResult(false, "Payment declined: " + e.getMessage(), null, null));
+            return new PaymentAttempt(null, e);
         }
     }
 
-    @Auditable(action = AuditAction.UPDATE, entityType = "PAYMENT", entityIdExpression = "#result?.paymentId?.toString()")
+    private Payment newPayment(String orderId, String userId, BigDecimal amount,
+            String currency, String idempotencyKey) {
+        Payment payment = new Payment();
+        payment.setOrderId(orderId);
+        payment.setUserId(userId);
+        payment.setAmount(amount);
+        payment.setCurrency(currency);
+        payment.setIdempotencyKey(idempotencyKey);
+        return payment;
+    }
+
+    private PaymentResult completedResult(Payment payment) {
+        return new PaymentResult(true, "Payment processed successfully", String.valueOf(payment.getId()),
+                payment.getTransactionId());
+    }
+
+    private void cacheResult(String orderId, String idempotencyKey, PaymentResult result) {
+        IdempotencyKey cached = new IdempotencyKey();
+        cached.setIdempotencyKey(idempotencyKey);
+        cached.setOrderId(orderId);
+        cached.setResponse(serializeResponse(result));
+        cached.setExpiresAt(Instant.now().plus(IDEMPOTENCY_KEY_TTL_HOURS, ChronoUnit.HOURS));
+        idempotencyKeyRepository.save(cached);
+    }
+
+    private record PaymentAttempt(PaymentResult result, RuntimeException failure) {
+    }
+
+    @Auditable(action = AuditAction.UPDATE, entityType = "PAYMENT",
+            entityIdExpression = "#result?.paymentId?.toString()")
     public PaymentResult refundPayment(Long paymentId, String orderId, BigDecimal amount, String reason) {
         log.info("Processing refund: paymentId={}, orderId={}, amount={}, reason={}",
                 paymentId, orderId, amount, reason);
 
-        Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment", paymentId));
-
-        if (payment.getStatus() != PaymentStatus.COMPLETED) {
-            throw new IllegalStateException(
-                    String.format("Cannot refund payment %d: status is %s, expected COMPLETED",
-                            paymentId, payment.getStatus()));
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException("Refund amount must be positive");
         }
-
-        // [Fix #5] Validate refund amount does not exceed original payment
-        if (amount.compareTo(payment.getAmount()) > 0) {
-            throw new IllegalArgumentException(
-                    String.format("Refund amount %s exceeds payment amount %s",
-                            amount.toPlainString(), payment.getAmount().toPlainString()));
+        if (amount.stripTrailingZeros().scale() > 2 || amount.precision() - amount.scale() > 17) {
+            throw new IllegalArgumentException("Refund amount must fit 19 digits with at most 2 decimal places");
         }
-
-        GatewayResult gatewayResult = paymentGateway.refundPayment(payment.getTransactionId(), amount);
-
         return transactionTemplate.execute(status -> {
+            paymentRepository.lockPaymentRequest("payment:order:" + orderId);
+            Payment payment = paymentRepository.findById(paymentId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Payment", paymentId));
+            if (!payment.getOrderId().equals(orderId)) {
+                throw new IllegalArgumentException("Payment does not belong to the requested order");
+            }
+            paymentRepository.lockPaymentRequest("payment:key:" + payment.getIdempotencyKey());
+            if (payment.getStatus() == PaymentStatus.REFUNDED) {
+                // Legacy refunded rows predate the durable refund receipt column. Never refund again;
+                // an empty receipt means the historical refund transaction ID is unavailable.
+                return new PaymentResult(true, "Payment already refunded", String.valueOf(payment.getId()),
+                        payment.getRefundTransactionId() == null ? "" : payment.getRefundTransactionId());
+            }
+            if (payment.getStatus() != PaymentStatus.COMPLETED) {
+                throw new IllegalStateException(String.format(
+                        "Cannot refund payment %d: status is %s, expected COMPLETED", paymentId, payment.getStatus()));
+            }
+            if (amount.compareTo(payment.getAmount()) > 0) {
+                throw new IllegalArgumentException(String.format("Refund amount %s exceeds payment amount %s",
+                        amount.toPlainString(), payment.getAmount().toPlainString()));
+            }
+            GatewayResult gatewayResult = paymentGateway.refundPayment(payment.getTransactionId(), amount);
             payment.setStatus(PaymentStatus.REFUNDED);
+            payment.setRefundTransactionId(gatewayResult.transactionId());
             Payment savedPayment = paymentRepository.save(payment);
-
-            // Create outbox event for refund
             createPaymentRefundedEvent(savedPayment, gatewayResult.transactionId());
-
-            log.info("Payment refunded: paymentId={}, refundTransactionId={}",
-                    paymentId, gatewayResult.transactionId());
-
-            return new PaymentResult(
-                    true,
-                    "Payment refunded successfully",
-                    String.valueOf(savedPayment.getId()),
-                    gatewayResult.transactionId()
-            );
+            return new PaymentResult(true, "Payment refunded successfully", String.valueOf(savedPayment.getId()),
+                    gatewayResult.transactionId());
         });
     }
 

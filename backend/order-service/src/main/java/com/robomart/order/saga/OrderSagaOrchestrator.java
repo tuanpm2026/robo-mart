@@ -111,6 +111,8 @@ public class OrderSagaOrchestrator {
                 executeStep(step, context, 0);
             } catch (SagaStepException e) {
                 if (e.isShouldHoldAsPending()) {
+                    order.setNextPaymentRetryAt(Instant.now()
+                            .plus(sagaProperties.getPaymentRecovery().getRetryDelay()));
                     updateOrderStatus(order, OrderStatus.PAYMENT_PENDING);
                     publishStatusChangedEvent(order, targetState);
                     log.info("Order held as PAYMENT_PENDING for orderId={}", sagaId);
@@ -166,7 +168,7 @@ public class OrderSagaOrchestrator {
                         "Step timed out after " + timeout.toSeconds() + "s", retryCount);
             throw new SagaStepException(
                 "Saga step " + step.getName() + " timed out after " + timeout.toSeconds() + "s",
-                null, true, false);
+                null, !(step instanceof ProcessPaymentStep), step instanceof ProcessPaymentStep);
 
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
@@ -182,7 +184,8 @@ public class OrderSagaOrchestrator {
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new SagaStepException("Step execution interrupted", e, true, false);
+            throw new SagaStepException("Step execution interrupted", e,
+                    !(step instanceof ProcessPaymentStep), step instanceof ProcessPaymentStep);
         }
     }
 
@@ -385,11 +388,15 @@ public class OrderSagaOrchestrator {
         log.warn("Dead saga detected: orderId={}, status={}", order.getId(), order.getStatus());
         logSagaStep(order, "DEAD_SAGA_DETECTION", "RECOVERY",
                     null, null,
-                    "Stuck in " + order.getStatus() + " — triggering compensation", 0);
+                    "Stuck in " + order.getStatus() + " — triggering recovery", 0);
         recoverSingleSaga(order);
     }
 
     private void recoverSingleSaga(Order order) {
+        if (order.getStatus() == OrderStatus.PAYMENT_PROCESSING) {
+            requeueUncertainPayment(order.getId());
+            return;
+        }
         String sagaId = order.getId().toString();
         String staleStatus = order.getStatus().name();
         String recoveryReason = "Recovered from stale state: " + staleStatus;
@@ -412,6 +419,31 @@ public class OrderSagaOrchestrator {
             runCompensation(new SagaContext(order), sagaId);
             finalizeCancellation(order, recoveryReason, "system");
         }
+    }
+
+    private void requeueUncertainPayment(Long orderId) {
+        Instant cutoff = Instant.now().minus(sagaProperties.getDeadSagaDetection().getStuckThreshold());
+        transactionTemplate.execute(status -> {
+            var candidate = orderRepository.findUncertainPaymentForUpdate(orderId, cutoff);
+            if (candidate.isEmpty()) {
+                // A live checkout, another recovery worker or a completed order owns this row.
+                return null;
+            }
+            Order order = candidate.get();
+            order.setStatus(OrderStatus.PAYMENT_PENDING);
+            order.setNextPaymentRetryAt(Instant.now());
+            OrderStatusHistory history = new OrderStatusHistory();
+            history.setOrder(order);
+            history.setStatus(OrderStatus.PAYMENT_PENDING);
+            history.setChangedAt(Instant.now());
+            orderStatusHistoryRepository.save(history);
+            outboxEventRepository.save(new OutboxEvent("Order", orderId.toString(), "order_status_changed",
+                    objectMapper.writeValueAsString(Map.of("orderId", orderId.toString(),
+                            "previousStatus", OrderStatus.PAYMENT_PROCESSING.name(),
+                            "newStatus", OrderStatus.PAYMENT_PENDING.name()))));
+            log.info("Uncertain payment queued for reconciliation for orderId={}", orderId);
+            return null;
+        });
     }
 
     /**
@@ -469,9 +501,11 @@ public class OrderSagaOrchestrator {
         for (Order order : staleOrders) {
             log.warn("Recovering stale saga for orderId={}, status={}", order.getId(), order.getStatus());
             logSagaStep(order, "RECOVERY", "STARTED", null, null, null, 0);
+            boolean uncertainPayment = order.getStatus() == OrderStatus.PAYMENT_PROCESSING;
             try {
                 recoverSingleSaga(order);
-                logSagaStep(order, "RECOVERY", "COMPENSATED", null, null, null, 0);
+                String recoveryStatus = uncertainPayment ? "CHECKED" : "COMPENSATED";
+                logSagaStep(order, "RECOVERY", recoveryStatus, null, null, null, 0);
             } catch (Exception e) {
                 log.error("Recovery failed for orderId={}: {}", order.getId(), e.getMessage(), e);
                 logSagaStep(order, "RECOVERY", "FAILED", null, null, e.getMessage(), 0);

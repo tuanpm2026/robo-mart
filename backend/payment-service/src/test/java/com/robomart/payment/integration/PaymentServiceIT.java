@@ -6,6 +6,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.robomart.payment.entity.IdempotencyKey;
 import com.robomart.payment.entity.OutboxEvent;
@@ -42,9 +43,13 @@ class PaymentServiceIT {
     @Autowired
     private MockPaymentGateway mockPaymentGateway;
 
+    @Autowired
+    private JdbcTemplate jdbc;
+
     @BeforeEach
     void setUp() {
         mockPaymentGateway.reset();
+        jdbc.update("DELETE FROM mock_gateway_operations");
         outboxEventRepository.deleteAll();
         idempotencyKeyRepository.deleteAll();
         paymentRepository.deleteAll();
@@ -160,6 +165,7 @@ class PaymentServiceIT {
         // Act: second attempt with same key succeeds (gateway recovers)
         // Fix #1: service reuses existing FAILED payment — no manual delete needed
         mockPaymentGateway.reset();
+        jdbc.update("DELETE FROM mock_gateway_operations");
 
         PaymentResult result = paymentService.processPayment(
                 "order-it-5", "user-1", new BigDecimal("10.00"), "USD", "idem-key-retry");

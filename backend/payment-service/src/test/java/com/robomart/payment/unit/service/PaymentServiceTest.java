@@ -24,7 +24,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.robomart.common.exception.ResourceNotFoundException;
@@ -133,7 +132,7 @@ class PaymentServiceTest {
             // given
             when(idempotencyKeyRepository.findByIdempotencyKey("key-1")).thenReturn(Optional.empty());
             when(paymentRepository.findByIdempotencyKey("key-1")).thenReturn(Optional.empty());
-            when(paymentGateway.processPayment(any(), anyString(), anyString())).thenReturn(new GatewayResult("txn-abc", "COMPLETED"));
+            when(paymentGateway.processPayment(any(), anyString(), anyString(), anyString(), anyString())).thenReturn(new GatewayResult("txn-abc", "COMPLETED"));
             when(paymentRepository.save(any(Payment.class))).thenAnswer(inv -> {
                 Payment p = inv.getArgument(0);
                 try {
@@ -192,7 +191,7 @@ class PaymentServiceTest {
             assertThat(result.transactionId()).isEqualTo("txn-abc");
 
             // Verify no gateway call and no new saves
-            verify(paymentGateway, never()).processPayment(any(), anyString());
+            org.mockito.Mockito.verifyNoInteractions(paymentGateway);
             verify(paymentRepository, never()).save(any());
         }
 
@@ -202,7 +201,7 @@ class PaymentServiceTest {
             // given
             when(idempotencyKeyRepository.findByIdempotencyKey("key-transient")).thenReturn(Optional.empty());
             when(paymentRepository.findByIdempotencyKey("key-transient")).thenReturn(Optional.empty());
-            when(paymentGateway.processPayment(any(), anyString(), anyString()))
+            when(paymentGateway.processPayment(any(), anyString(), anyString(), anyString(), anyString()))
                     .thenThrow(new PaymentTransientException("Temporary error"));
             when(paymentRepository.save(any(Payment.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -224,7 +223,7 @@ class PaymentServiceTest {
             // given
             when(idempotencyKeyRepository.findByIdempotencyKey("key-declined")).thenReturn(Optional.empty());
             when(paymentRepository.findByIdempotencyKey("key-declined")).thenReturn(Optional.empty());
-            when(paymentGateway.processPayment(any(), anyString(), anyString()))
+            when(paymentGateway.processPayment(any(), anyString(), anyString(), anyString(), anyString()))
                     .thenThrow(new PaymentDeclinedException("Card declined"));
             when(paymentRepository.save(any(Payment.class))).thenAnswer(inv -> inv.getArgument(0));
             lenient().when(idempotencyKeyRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -242,38 +241,17 @@ class PaymentServiceTest {
         }
 
         @Test
-        @DisplayName("should reprocess when idempotency key is expired")
-        void shouldReprocessWhenIdempotencyKeyExpired() {
-            // given
-            IdempotencyKey expiredKey = new IdempotencyKey();
-            expiredKey.setIdempotencyKey("key-expired");
-            expiredKey.setOrderId("order-1");
-            expiredKey.setResponse("{}");
-            expiredKey.setExpiresAt(Instant.now().minus(1, ChronoUnit.HOURS));
-
-            when(idempotencyKeyRepository.findByIdempotencyKey("key-expired")).thenReturn(Optional.of(expiredKey));
-            when(paymentRepository.findByIdempotencyKey("key-expired")).thenReturn(Optional.empty());
-            when(paymentGateway.processPayment(any(), anyString(), anyString())).thenReturn(new GatewayResult("txn-new", "COMPLETED"));
-            when(paymentRepository.save(any(Payment.class))).thenAnswer(inv -> {
-                Payment p = inv.getArgument(0);
-                try {
-                    var idField = Payment.class.getDeclaredField("id");
-                    idField.setAccessible(true);
-                    idField.set(p, 2L);
-                } catch (Exception e) { throw new RuntimeException(e); }
-                return p;
-            });
-            lenient().when(idempotencyKeyRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-            lenient().when(outboxEventRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-            // when
+        @DisplayName("should replay the durable completed payment after cache expiry without charging")
+        void shouldReplayCompletedPaymentWhenCacheExpired() {
+            Payment completed = createSavedPayment(2L, "order-1", PaymentStatus.COMPLETED, "txn-original");
+            completed.setIdempotencyKey("key-expired");
+            when(paymentRepository.findByIdempotencyKey("key-expired")).thenReturn(Optional.of(completed));
             PaymentResult result = paymentService.processPayment("order-1", "user-1",
                     new BigDecimal("99.99"), "USD", "key-expired");
-
-            // then
-            assertThat(result.success()).isTrue();
-            assertThat(result.transactionId()).isEqualTo("txn-new");
-            verify(idempotencyKeyRepository).delete(expiredKey);
+            assertThat(result.paymentId()).isEqualTo("2");
+            assertThat(result.transactionId()).isEqualTo("txn-original");
+            org.mockito.Mockito.verifyNoInteractions(paymentGateway, idempotencyKeyRepository, outboxEventRepository);
+            verify(paymentRepository, never()).delete(any());
         }
 
         @Test
@@ -312,7 +290,7 @@ class PaymentServiceTest {
 
             when(idempotencyKeyRepository.findByIdempotencyKey("key-retry")).thenReturn(Optional.empty());
             when(paymentRepository.findByIdempotencyKey("key-retry")).thenReturn(Optional.of(failedPayment));
-            when(paymentGateway.processPayment(any(), anyString(), anyString())).thenReturn(new GatewayResult("txn-retry", "COMPLETED"));
+            when(paymentGateway.processPayment(any(), anyString(), anyString(), anyString(), anyString())).thenReturn(new GatewayResult("txn-retry", "COMPLETED"));
             when(paymentRepository.save(any(Payment.class))).thenAnswer(inv -> inv.getArgument(0));
             lenient().when(idempotencyKeyRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
             lenient().when(outboxEventRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -331,50 +309,87 @@ class PaymentServiceTest {
         }
 
         @Test
-        @DisplayName("[Fix #2] should return cached result on race condition")
-        void shouldReturnCachedResultOnRaceCondition() {
-            // given — concurrent request already stored idempotency key
-            PaymentResult otherResult = new PaymentResult(true, "Payment processed successfully", "1", "txn-other");
-            String cachedJson;
-            try { cachedJson = objectMapper.writeValueAsString(otherResult); }
-            catch (Exception e) { throw new RuntimeException(e); }
+        void shouldRejectRequestsThatCannotFitTheLedgerBeforeProviderSettlement() {
+            assertThatThrownBy(() -> paymentService.processPayment("order-1", "user-1",
+                    new BigDecimal("99.99"), "USD", "k".repeat(101)))
+                    .isInstanceOf(IllegalArgumentException.class);
+            assertThatThrownBy(() -> paymentService.processPayment("order-1", "user-1",
+                    new BigDecimal("0.001"), "USD", "key-fraction"))
+                    .isInstanceOf(IllegalArgumentException.class);
+            org.mockito.Mockito.verifyNoInteractions(paymentGateway, paymentRepository, idempotencyKeyRepository);
+        }
 
-            IdempotencyKey raceCachedKey = new IdempotencyKey();
-            raceCachedKey.setIdempotencyKey("key-race");
-            raceCachedKey.setOrderId("order-1");
-            raceCachedKey.setResponse(cachedJson);
-            raceCachedKey.setExpiresAt(Instant.now().plus(12, ChronoUnit.HOURS));
+        @Test
+        void shouldLockOrderAndKeyBeforeCallingGateway() {
+            when(paymentGateway.processPayment(any(), anyString(), anyString(), anyString(), anyString()))
+                    .thenReturn(new GatewayResult("txn-locked", "COMPLETED"));
+            when(paymentRepository.save(any())).thenReturn(
+                    createSavedPayment(3L, "order-lock", PaymentStatus.COMPLETED, "txn-locked"));
+            paymentService.processPayment("order-lock", "user-1", new BigDecimal("99.99"), "USD", "key-lock");
+            var ordered = org.mockito.Mockito.inOrder(paymentRepository, paymentGateway);
+            ordered.verify(paymentRepository).lockPaymentRequest("payment:order:order-lock");
+            ordered.verify(paymentRepository).lockPaymentRequest("payment:key:key-lock");
+            ordered.verify(paymentGateway).processPayment(new BigDecimal("99.99"), "USD", "key-lock", "order-lock", "user-1");
+        }
 
-            // First call: empty (Step 1). Second call: cached (in catch block after race).
-            when(idempotencyKeyRepository.findByIdempotencyKey("key-race"))
-                    .thenReturn(Optional.empty())
-                    .thenReturn(Optional.of(raceCachedKey));
-            when(paymentRepository.findByIdempotencyKey("key-race")).thenReturn(Optional.empty());
-            when(paymentGateway.processPayment(any(), anyString(), anyString())).thenReturn(new GatewayResult("txn-mine", "COMPLETED"));
-            when(paymentRepository.save(any(Payment.class))).thenAnswer(inv -> {
-                Payment p = inv.getArgument(0);
-                try {
-                    var idField = Payment.class.getDeclaredField("id");
-                    idField.setAccessible(true);
-                    idField.set(p, 1L);
-                } catch (Exception e) { throw new RuntimeException(e); }
-                return p;
-            });
-            when(idempotencyKeyRepository.save(any())).thenThrow(new DataIntegrityViolationException("Duplicate key"));
+        @Test
+        void shouldRejectDifferentAmountBeforeReplayingOrCharging() {
+            Payment completed = createSavedPayment(4L, "order-conflict", PaymentStatus.COMPLETED, "txn-original");
+            when(paymentRepository.findByIdempotencyKey("key-order-conflict")).thenReturn(Optional.of(completed));
+            assertThatThrownBy(() -> paymentService.processPayment("order-conflict", "user-1",
+                    new BigDecimal("100.00"), "USD", "key-order-conflict"))
+                    .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("different payment request");
+            org.mockito.Mockito.verifyNoInteractions(paymentGateway);
+        }
 
-            // when
-            PaymentResult result = paymentService.processPayment("order-1", "user-1",
-                    new BigDecimal("99.99"), "USD", "key-race");
+        @Test
+        void shouldRejectDifferentUserBeforeReplayingOrCharging() {
+            Payment completed = createSavedPayment(4L, "order-conflict", PaymentStatus.COMPLETED, "txn-original");
+            completed.setUserId("owner");
+            when(paymentRepository.findByIdempotencyKey("key-order-conflict")).thenReturn(Optional.of(completed));
+            assertThatThrownBy(() -> paymentService.processPayment("order-conflict", "another-user",
+                    new BigDecimal("99.99"), "USD", "key-order-conflict"))
+                    .isInstanceOf(IllegalArgumentException.class);
+            org.mockito.Mockito.verifyNoInteractions(paymentGateway);
+        }
 
-            // then — returns the OTHER request's cached result
-            assertThat(result.success()).isTrue();
-            assertThat(result.transactionId()).isEqualTo("txn-other");
+        @Test
+        void shouldNeverRechargeRefundedPayment() {
+            Payment refunded = createSavedPayment(4L, "order-refunded", PaymentStatus.REFUNDED, "txn-original");
+            when(paymentRepository.findByIdempotencyKey("key-order-refunded")).thenReturn(Optional.of(refunded));
+            assertThatThrownBy(() -> paymentService.processPayment("order-refunded", "user-1",
+                    new BigDecimal("99.99"), "USD", "key-order-refunded"))
+                    .isInstanceOf(PaymentDeclinedException.class).hasMessageContaining("refunded");
+            org.mockito.Mockito.verifyNoInteractions(paymentGateway);
+        }
+
+        @Test
+        void shouldReplayPermanentDeclineEvenWhenCacheExpired() {
+            IdempotencyKey cached = new IdempotencyKey();
+            cached.setOrderId("order-declined");
+            cached.setResponse(objectMapper.writeValueAsString(new PaymentResult(false, "Card declined", null, null)));
+            cached.setExpiresAt(Instant.now().minus(1, ChronoUnit.DAYS));
+            when(idempotencyKeyRepository.findByIdempotencyKey("key-declined")).thenReturn(Optional.of(cached));
+            assertThatThrownBy(() -> paymentService.processPayment("order-declined", "user-1",
+                    new BigDecimal("99.99"), "USD", "key-declined"))
+                    .isInstanceOf(PaymentDeclinedException.class);
+            org.mockito.Mockito.verifyNoInteractions(paymentGateway);
         }
     }
 
     @Nested
     @DisplayName("refundPayment")
     class RefundPaymentTests {
+
+        @Test
+        void shouldRejectRefundAmountsThatCannotFitTheLedgerBeforeProviderSettlement() {
+            for (String amount : java.util.List.of("0.001", "100000000000000000.00")) {
+                assertThatThrownBy(() -> paymentService.refundPayment(1L, "order-1",
+                        new BigDecimal(amount), "invalid precision"))
+                        .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("2 decimal places");
+            }
+            org.mockito.Mockito.verifyNoInteractions(paymentGateway, paymentRepository, outboxEventRepository);
+        }
 
         @Test
         @DisplayName("should refund completed payment successfully")
