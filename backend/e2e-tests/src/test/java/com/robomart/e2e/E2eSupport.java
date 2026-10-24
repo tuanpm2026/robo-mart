@@ -3,6 +3,9 @@ package com.robomart.e2e;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +33,34 @@ public final class E2eSupport {
     public static String env(String name, String fallback) {
         String value = System.getenv(name);
         return value == null || value.isBlank() ? fallback : value;
+    }
+
+    /** Resolve Docker without relying on the process search path. */
+    public static String dockerExecutable() {
+        String configured = env("E2E_DOCKER_BINARY", "");
+        if (!configured.isBlank()) {
+            try {
+                Path executable = Path.of(configured);
+                if (executable.isAbsolute() && Files.isRegularFile(executable) && Files.isExecutable(executable)) {
+                    return executable.toRealPath().toString();
+                }
+            } catch (InvalidPathException | IOException exception) {
+                throw new IllegalStateException("E2E_DOCKER_BINARY must identify an absolute executable Docker file", exception);
+            }
+            throw new IllegalStateException("E2E_DOCKER_BINARY must identify an absolute executable Docker file");
+        }
+        for (String candidate : List.of("/usr/bin/docker", "/usr/local/bin/docker", "/opt/homebrew/bin/docker")) {
+            Path executable = Path.of(candidate);
+            if (Files.isRegularFile(executable) && Files.isExecutable(executable)) {
+                try {
+                    return executable.toRealPath().toString();
+                } catch (IOException exception) {
+                    throw new IllegalStateException("Cannot resolve the installed Docker executable", exception);
+                }
+            }
+        }
+        throw new IllegalStateException("Docker executable not found in standard locations; "
+                + "set E2E_DOCKER_BINARY to an absolute executable file");
     }
 
     public static RestClient api() {
@@ -117,7 +148,7 @@ public final class E2eSupport {
         if (!service.matches("[a-z0-9-]+")) {
             throw new IllegalArgumentException("Invalid Compose service name");
         }
-        String ids = command(List.of("docker", "ps", "-aq", "--filter",
+        String ids = command(List.of(dockerExecutable(), "ps", "-aq", "--filter",
                 "label=com.docker.compose.project=" + project, "--filter",
                 "label=com.docker.compose.service=" + service));
         if (!ids.matches("[a-f0-9]{12,64}")) {
@@ -133,7 +164,7 @@ public final class E2eSupport {
         }
         String id = container(service);
         // Server-side read-only transactions also prevent side effects through SELECT functions.
-        return command(List.of("docker", "exec", "-e", "PGOPTIONS=-c default_transaction_read_only=on",
+        return command(List.of(dockerExecutable(), "exec", "-e", "PGOPTIONS=-c default_transaction_read_only=on",
                 id, "sh", "-c", "exec psql -X -v ON_ERROR_STOP=1 -A -t -U \"$POSTGRES_USER\" -d \"$1\" -c \"$2\"",
                 "e2e-read-only", database, sql));
     }

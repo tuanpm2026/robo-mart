@@ -281,7 +281,7 @@ class ServiceKillChaosIT {
         assertThat(E2eSupport.container("payment-service")).isEqualTo(paymentContainer);
         Path output = Files.createTempFile("robomart-chaos-docker-", ".log");
         try {
-            Process process = new ProcessBuilder("docker", action, paymentContainer)
+            Process process = new ProcessBuilder(E2eSupport.dockerExecutable(), action, paymentContainer)
                     .redirectErrorStream(true).redirectOutput(output.toFile()).start();
             if (!process.waitFor(45, java.util.concurrent.TimeUnit.SECONDS)) {
                 process.destroyForcibly();
