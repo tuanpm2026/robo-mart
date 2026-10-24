@@ -54,10 +54,11 @@ public class PaymentGrpcService extends PaymentServiceGrpc.PaymentServiceImplBas
         try {
             BigDecimal amount = new BigDecimal(request.getAmount().getAmount());
             String currency = request.getAmount().getCurrency();
-
             PaymentResult result = paymentService.processPayment(
                     orderId, request.getUserId(), amount, currency, idempotencyKey);
-
+            if (!result.success()) {
+                throw new PaymentDeclinedException(result.message());
+            }
             ProcessPaymentResponse response = ProcessPaymentResponse.newBuilder()
                     .setSuccess(result.success())
                     .setMessage(result.message())
@@ -67,7 +68,6 @@ public class PaymentGrpcService extends PaymentServiceGrpc.PaymentServiceImplBas
 
             responseObserver.onNext(response);
             responseObserver.onCompleted();
-
         } catch (PaymentDeclinedException e) {
             log.warn("Payment declined: orderId={}", orderId, e);
             responseObserver.onError(Status.FAILED_PRECONDITION

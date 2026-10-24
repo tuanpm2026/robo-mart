@@ -4,12 +4,16 @@ on:
   push:
     branches: [ main ]
     paths:
+      - 'backend/pom.xml'
+      - 'backend/.mvn/**'
       - 'backend/proto/**'
       - 'backend/events/**'
       - '.github/workflows/schema-compatibility.yml'
   pull_request:
     branches: [ main ]
     paths:
+      - 'backend/pom.xml'
+      - 'backend/.mvn/**'
       - 'backend/proto/**'
       - 'backend/events/**'
       - '.github/workflows/schema-compatibility.yml'
@@ -31,10 +35,10 @@ jobs:
           # Full history so `buf breaking` can resolve the `main` ref locally if needed.
           fetch-depth: 0
 
-      - name: Set up Java 21
+      - name: Set up Java 25
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'temurin'
           cache: 'maven'
 
@@ -71,10 +75,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java 21
+      - name: Set up Java 25
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'temurin'
           cache: 'maven'
 

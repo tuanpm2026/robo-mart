@@ -4,6 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
+import java.util.function.Supplier;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,15 +22,22 @@ import com.robomart.payment.exception.PaymentDeclinedException;
 import com.robomart.payment.exception.PaymentTransientException;
 import com.robomart.payment.service.GatewayResult;
 import com.robomart.payment.service.MockPaymentGateway;
+import com.robomart.payment.service.MockGatewayLedger;
 
 @DisplayName("MockPaymentGateway Unit Tests")
 class MockPaymentGatewayTest {
 
     private MockPaymentGateway gateway;
+    private MockGatewayLedger ledger;
 
     @BeforeEach
     void setUp() {
-        gateway = new MockPaymentGateway();
+        ledger = mock(MockGatewayLedger.class);
+        when(ledger.settle(anyString(), any(), anyString(), anyString(), anyString(), any()))
+                .thenAnswer(call -> ((Supplier<GatewayResult>) call.getArgument(5)).get());
+        when(ledger.settle(anyString(), any(), anyString(), anyString(), any()))
+                .thenAnswer(call -> ((Supplier<GatewayResult>) call.getArgument(4)).get());
+        gateway = new MockPaymentGateway(ledger);
     }
 
     @Nested
@@ -70,6 +85,8 @@ class MockPaymentGatewayTest {
         @Test
         @DisplayName("should charge once and return the same transaction for a repeated idempotency key")
         void shouldChargeOnceForSameIdempotencyKey() {
+            GatewayResult settled = new GatewayResult("txn-durable", "COMPLETED");
+            when(ledger.settle(eq("charge:key-1"), any(), eq("USD"), eq("0:0:"), eq(""), any())).thenReturn(settled);
             GatewayResult first = gateway.processPayment(new BigDecimal("99.99"), "USD", "key-1");
             GatewayResult replay = gateway.processPayment(new BigDecimal("99.99"), "USD", "key-1");
 
@@ -79,6 +96,8 @@ class MockPaymentGatewayTest {
             // A different key charges independently.
             GatewayResult other = gateway.processPayment(new BigDecimal("99.99"), "USD", "key-2");
             assertThat(other.transactionId()).isNotEqualTo(first.transactionId());
+            verify(ledger, org.mockito.Mockito.times(2))
+                    .settle(eq("charge:key-1"), any(), eq("USD"), eq("0:0:"), eq(""), any());
         }
 
         @Test

@@ -2,6 +2,7 @@ package com.robomart.order.unit.saga;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
@@ -13,6 +14,10 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -148,6 +153,42 @@ class OrderSagaOrchestratorTest {
         order.setItems(new ArrayList<>(List.of(item)));
 
         return order;
+    }
+
+    @Test
+    void interruptedPaymentWaitHoldsOrderWithoutReleasingStock() throws Exception {
+        Order order = buildOrder();
+        CountDownLatch paymentEntered = new CountDownLatch(1);
+        CountDownLatch releasePayment = new CountDownLatch(1);
+        AtomicBoolean interruptPreserved = new AtomicBoolean();
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        doAnswer(invocation -> {
+            paymentEntered.countDown();
+            releasePayment.await(10, TimeUnit.SECONDS);
+            return null;
+        }).when(processPaymentStep).execute(any(SagaContext.class));
+        Thread caller = Thread.ofPlatform().start(() -> {
+            try {
+                orchestrator.executeSaga(order);
+                interruptPreserved.set(Thread.currentThread().isInterrupted());
+            } catch (Throwable unexpected) {
+                failure.set(unexpected);
+            }
+        });
+        try {
+            assertThat(paymentEntered.await(5, TimeUnit.SECONDS)).isTrue();
+            caller.interrupt();
+            caller.join(5000);
+            assertThat(caller.isAlive()).isFalse();
+            assertThat(failure.get()).isNull();
+            assertThat(interruptPreserved).isTrue();
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
+            verify(releaseInventoryStep, never()).compensate(any(SagaContext.class));
+        } finally {
+            releasePayment.countDown();
+            caller.join(5000);
+            orchestrator.shutdownStepExecutor();
+        }
     }
 
     @Nested

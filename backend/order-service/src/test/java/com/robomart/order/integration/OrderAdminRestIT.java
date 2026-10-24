@@ -125,6 +125,28 @@ class OrderAdminRestIT {
     }
 
     @Test
+    void shouldAllowNotificationServiceToReadOnlyOrderDetail() {
+        Order order = persistOrderInState(OrderStatus.CONFIRMED, "notification-read-test");
+        RestClient machineClient = RestClient.builder()
+                .baseUrl("http://localhost:" + port)
+                .defaultHeader("Authorization", "Bearer " + TestJwt.NOTIFICATION_TOKEN)
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { })
+                .build();
+        assertThat(machineClient.get().uri("/api/v1/admin/orders/{id}", order.getId())
+                .retrieve().toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(machineClient.get().uri("/api/v1/admin/orders")
+                .retrieve().toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(machineClient.get().uri("/api/v1/admin/orders/metrics")
+                .retrieve().toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(machineClient.put().uri("/api/v1/admin/orders/{id}/status", order.getId())
+                .contentType(MediaType.APPLICATION_JSON).body("{\"status\":\"SHIPPED\"}")
+                .retrieve().toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(machineClient.post().uri("/api/v1/orders")
+                .contentType(MediaType.APPLICATION_JSON).body("{}")
+                .retrieve().toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
     @DisplayName("shouldListOrdersWithPagination")
     void shouldListOrdersWithPagination() {
         persistOrderInState(OrderStatus.CONFIRMED, "user-admin-list");

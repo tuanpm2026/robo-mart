@@ -2,8 +2,9 @@ package com.robomart.notification.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
@@ -17,8 +18,8 @@ public class OrderServiceClient {
 
     private final RestClient restClient;
 
-    public OrderServiceClient(@Value("${notification.order-service.url}") String orderServiceUrl) {
-        this.restClient = RestClient.builder().baseUrl(orderServiceUrl).build();
+    public OrderServiceClient(@Qualifier("notificationOrderRestClient") RestClient restClient) {
+        this.restClient = restClient;
     }
 
     public OrderDetailDto getOrderDetail(String orderId) {
@@ -37,8 +38,12 @@ public class OrderServiceClient {
                     .body(new ParameterizedTypeReference<>() {});
             return response != null ? response.data() : null;
         } catch (HttpClientErrorException e) {
-            log.warn("Order not found for orderId={} ({}), skipping notification", orderId, e.getStatusCode());
-            return null;
+            if (e.getStatusCode() == HttpStatus.NOT_FOUND) {
+                log.warn("Order not found for orderId={}, skipping notification", orderId);
+                return null;
+            }
+            // Authentication/configuration failures must reach retry/DLQ rather than silently drop an event.
+            throw e;
         }
         // HttpServerErrorException (5xx) propagates to trigger Kafka retry
     }

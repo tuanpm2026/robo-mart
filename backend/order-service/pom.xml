@@ -15,6 +15,11 @@
     <description>Order management microservice with Saga orchestration</description>
 
     <dependencies>
+        <!-- Chaos Monkey's optional HTTP instrumentation requires Boot's RestClient module. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-restclient</artifactId>
+        </dependency>
         <!-- Internal -->
         <dependency>
             <groupId>com.robomart</groupId>
@@ -85,15 +90,19 @@
 
         <!-- gRPC -->
         <dependency>
-            <groupId>org.springframework.grpc</groupId>
-            <artifactId>spring-grpc-spring-boot-starter</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-grpc-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-grpc-client</artifactId>
         </dependency>
 
-        <!-- Resilience4j — Circuit Breaker + Retry (Spring Boot 3/4 starter) -->
+        <!-- Resilience4j — Circuit Breaker + Retry (Spring Boot 4 starter) -->
         <!-- Includes spring-boot-starter-aop transitively for @CircuitBreaker / @Retry annotation processing -->
         <dependency>
             <groupId>io.github.resilience4j</groupId>
-            <artifactId>resilience4j-spring-boot3</artifactId>
+            <artifactId>resilience4j-spring-boot4</artifactId>
         </dependency>
 
         <!-- ShedLock — distributed lock for DeadSagaDetectionJob in multi-pod deployments -->
@@ -131,8 +140,8 @@
         </dependency>
         <dependency>
             <groupId>au.com.dius.pact.provider</groupId>
-            <artifactId>junit5spring</artifactId>
-            <version>4.7.3</version>
+            <artifactId>junit5</artifactId>
+            <version>4.7.5</version>
             <scope>test</scope>
         </dependency>
         <!-- Chaos Monkey — test scope only, Spring Boot 4.x compatible -->

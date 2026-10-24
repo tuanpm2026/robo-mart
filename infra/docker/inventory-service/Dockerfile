@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM eclipse-temurin:21-jdk AS builder
+FROM eclipse-temurin:25-jdk AS builder
 WORKDIR /workspace
 
 COPY backend/mvnw backend/mvnw
@@ -40,7 +40,7 @@ RUN ./mvnw package -pl :inventory-service -am -DskipTests -DskipITs -q
 RUN find /workspace/backend/inventory-service/target -name '*.jar' ! -name '*-plain.jar' -exec cp {} /workspace/app.jar \;
 
 # Stage 2: Runtime
-FROM eclipse-temurin:21-jre-alpine AS runtime
+FROM eclipse-temurin:25-jre-alpine AS runtime
 WORKDIR /app
 
 RUN addgroup -g 1001 -S robomart && adduser -u 1001 -S robomart -G robomart

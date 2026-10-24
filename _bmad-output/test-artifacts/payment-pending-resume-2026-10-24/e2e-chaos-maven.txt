@@ -1,0 +1,65 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::staticFieldBase has been called by com.google.inject.internal.aop.HiddenClassDefiner (file:/Users/tuanphung/.m2/wrapper/dists/apache-maven-3.9.11/a2d47e15/lib/guice-5.1.0-classes.jar)
+WARNING: Please consider reporting this to the maintainers of class com.google.inject.internal.aop.HiddenClassDefiner
+WARNING: sun.misc.Unsafe::staticFieldBase will be removed in a future release
+[INFO] Scanning for projects...
+[INFO]
+[INFO] -----------------------< com.robomart:e2e-tests >-----------------------
+[INFO] Building E2E Tests 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO]
+[INFO] --- enforcer:3.6.3:enforce (enforce-rules) @ e2e-tests ---
+[INFO] Rule 0: org.apache.maven.enforcer.rules.version.RequireJavaVersion passed
+[INFO] Rule 1: org.apache.maven.enforcer.rules.dependency.DependencyConvergence passed
+[INFO] Rule 2: org.apache.maven.enforcer.rules.dependency.BannedDependencies passed
+[INFO]
+[INFO] --- jacoco:0.8.15:prepare-agent (prepare-agent) @ e2e-tests ---
+[INFO] Skipping JaCoCo execution because property jacoco.skip is set.
+[INFO] argLine set to empty
+[INFO]
+[INFO] --- resources:3.5.0:resources (default-resources) @ e2e-tests ---
+[INFO] skip non existing resourceDirectory /Users/tuanphung/work/robo-mart/backend/e2e-tests/src/main/resources
+[INFO] skip non existing resourceDirectory /Users/tuanphung/work/robo-mart/backend/e2e-tests/src/main/resources
+[INFO]
+[INFO] --- compiler:3.15.0:compile (default-compile) @ e2e-tests ---
+[INFO] No sources to compile
+[INFO]
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ e2e-tests ---
+[INFO] Copying 1 resource from src/test/resources to target/test-classes
+[INFO]
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ e2e-tests ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO]
+[INFO] --- surefire:3.5.6:test (default-test) @ e2e-tests ---
+[INFO] Tests are skipped.
+[INFO]
+[INFO] --- jar:3.5.1:jar (default-jar) @ e2e-tests ---
+[WARNING] JAR will be empty - no content was marked for inclusion!
+[INFO]
+[INFO] --- failsafe:3.5.6:integration-test (default) @ e2e-tests ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO]
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.robomart.e2e.FullOrderFlowE2EIT
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.792 s -- in com.robomart.e2e.FullOrderFlowE2EIT
+[INFO] Running com.robomart.e2e.chaos.ServiceKillChaosIT
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 48.18 s -- in com.robomart.e2e.chaos.ServiceKillChaosIT
+[INFO]
+[INFO] Results:
+[INFO]
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0
+[INFO]
+[INFO]
+[INFO] --- failsafe:3.5.6:verify (default) @ e2e-tests ---
+[INFO]
+[INFO] --- jacoco:0.8.15:report (report) @ e2e-tests ---
+[INFO] Skipping JaCoCo execution because property jacoco.skip is set.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  54.085 s
+[INFO] Finished at: 2026-10-24T13:39:32+07:00
+[INFO] ------------------------------------------------------------------------

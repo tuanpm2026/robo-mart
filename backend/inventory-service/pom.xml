@@ -15,6 +15,11 @@
     <description>Inventory management microservice with stock tracking</description>
 
     <dependencies>
+        <!-- Chaos Monkey's optional HTTP instrumentation requires Boot's RestClient module. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-restclient</artifactId>
+        </dependency>
         <!-- Internal -->
         <dependency>
             <groupId>com.robomart</groupId>
@@ -89,8 +94,8 @@
 
         <!-- gRPC -->
         <dependency>
-            <groupId>org.springframework.grpc</groupId>
-            <artifactId>spring-grpc-spring-boot-starter</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-grpc-server</artifactId>
         </dependency>
 
         <!-- MapStruct -->

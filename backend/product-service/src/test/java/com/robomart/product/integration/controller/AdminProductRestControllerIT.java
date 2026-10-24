@@ -13,6 +13,8 @@ import com.robomart.test.IntegrationTest;
 import com.robomart.test.security.TestJwt;
 import com.robomart.test.security.TestJwtDecoderConfig;
 
+import tools.jackson.databind.json.JsonMapper;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
@@ -34,6 +36,44 @@ class AdminProductRestControllerIT {
                     // Don't throw on error status codes — we assert them directly
                 })
                 .build();
+    }
+
+    @Test
+    void shouldExposeProductOpenApiSchemaWhenAuthenticated() {
+        var response = restClient.get()
+                .uri("/v3/api-docs")
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getHeaders().getContentType()).isNotNull();
+        assertThat(response.getHeaders().getContentType().isCompatibleWith(MediaType.APPLICATION_JSON)).isTrue();
+        assertThat(response.getBody()).isNotBlank();
+
+        var document = JsonMapper.builder().build().readTree(response.getBody());
+        assertThat(document.path("openapi").asString()).startsWith("3.");
+        var paths = document.path("paths");
+        assertThat(paths.path("/api/v1/products").has("get")).isTrue();
+        assertThat(paths.path("/api/v1/products/search").has("get")).isTrue();
+        assertThat(paths.path("/api/v1/products/{productId}").path("get")
+                .path("responses").has("200")).isTrue();
+        assertThat(document.path("components").path("schemas")
+                .path("ProductDetailResponse").path("properties").has("name")).isTrue();
+    }
+
+    @Test
+    void shouldRejectOpenApiRequestWithoutToken() {
+        RestClient anonymous = RestClient.builder()
+                .baseUrl("http://localhost:" + port)
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { })
+                .build();
+
+        var response = anonymous.get()
+                .uri("/v3/api-docs")
+                .retrieve()
+                .toBodilessEntity();
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
     @Test

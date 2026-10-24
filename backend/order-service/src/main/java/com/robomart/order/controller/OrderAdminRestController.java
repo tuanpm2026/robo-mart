@@ -87,6 +87,7 @@ public class OrderAdminRestController {
     }
 
     @GetMapping("/{orderId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'NOTIFICATION_SERVICE')")
     public ResponseEntity<ApiResponse<AdminOrderDetailResponse>> getOrderDetail(
             @PathVariable Long orderId) {
         AdminOrderDetailResponse detail = orderService.getOrderDetailForAdmin(orderId);

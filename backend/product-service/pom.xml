@@ -15,6 +15,11 @@
     <description>Product catalog management microservice</description>
 
     <dependencies>
+        <!-- Chaos Monkey's optional HTTP instrumentation requires Boot's RestClient module. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-restclient</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.robomart</groupId>
             <artifactId>common-lib</artifactId>
@@ -136,8 +141,8 @@
         </dependency>
         <dependency>
             <groupId>au.com.dius.pact.provider</groupId>
-            <artifactId>junit5spring</artifactId>
-            <version>4.7.3</version>
+            <artifactId>junit5</artifactId>
+            <version>4.7.5</version>
             <scope>test</scope>
         </dependency>
         <!-- Chaos Monkey — test scope only, Spring Boot 4.x compatible -->

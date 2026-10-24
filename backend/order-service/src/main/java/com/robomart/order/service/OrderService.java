@@ -96,6 +96,7 @@ public class OrderService {
                 orderItem.setUnitPrice(itemReq.unitPrice());
                 orderItem.setSubtotal(itemReq.unitPrice().multiply(BigDecimal.valueOf(itemReq.quantity())));
                 orderItemRepository.save(orderItem);
+                savedOrder.getItems().add(orderItem);
             }
 
             OrderStatusHistory history = new OrderStatusHistory();
@@ -107,10 +108,8 @@ public class OrderService {
             return savedOrder;
         });
 
-        // Load items eagerly before passing to saga (outside transaction)
+        // Items were initialized with the owning order in the creation transaction.
         try {
-            List<OrderItem> orderItems = orderItemRepository.findByOrderId(order.getId());
-            order.setItems(orderItems);
             orderSagaOrchestrator.executeSaga(order);
         } catch (Exception e) {
             log.error("Unexpected error during saga execution for orderId={}: {}", order.getId(), e.getMessage(), e);

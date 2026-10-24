@@ -167,6 +167,28 @@ class OrderSagaOrchestratorPhaseBTest {
     }
 
     @Test
+    void paymentTimeoutHoldsReservationForSafeReplay() throws Exception {
+        Order order = buildOrder();
+        order.setReservationId("reserved-before-payment");
+        var release = new java.util.concurrent.CountDownLatch(1);
+        doAnswer(inv -> {
+            release.await(2, java.util.concurrent.TimeUnit.SECONDS);
+            return null;
+        }).when(processPaymentStep).execute(any(SagaContext.class));
+        sagaProperties.getSteps().getTimeouts().put("ProcessPayment", Duration.ofMillis(100));
+        try {
+            orchestrator.executeSaga(order);
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
+            assertThat(order.getReservationId()).isEqualTo("reserved-before-payment");
+            assertThat(order.getNextPaymentRetryAt()).isNotNull();
+            verify(releaseInventoryStep, never()).compensate(any());
+        } finally {
+            release.countDown();
+            orchestrator.shutdownStepExecutor();
+        }
+    }
+
+    @Test
     @DisplayName("reservationIdPersistedInStepSuccessTransaction")
     void reservationIdPersistedInStepSuccessTransaction() {
         Order order = buildOrder();

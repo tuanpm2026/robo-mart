@@ -32,6 +32,22 @@ public class ReleaseInventoryStep implements SagaStep {
         return "ReleaseInventory";
     }
 
+    /** Recovery cannot finalize a declined order until its reservation is actually released. */
+    public void releaseForRecovery(Order order) {
+        var request = ReleaseInventoryRequest.newBuilder().setOrderId(order.getId().toString());
+        if (order.getReservationId() != null) {
+            request.setReservationId(order.getReservationId());
+        }
+        for (OrderItem item : order.getItems()) {
+            request.addItems(ReservationItem.newBuilder().setProductId(item.getProductId().toString())
+                    .setQuantity(item.getQuantity()));
+        }
+        var response = inventoryClient.releaseInventoryForRecovery(request.build());
+        if (!response.getSuccess()) {
+            throw new IllegalStateException("Inventory release was not acknowledged for order " + order.getId());
+        }
+    }
+
     @Override
     public void execute(SagaContext context) {
         throw new UnsupportedOperationException("ReleaseInventoryStep is a compensation-only step");

@@ -1,0 +1,307 @@
+# Standalone disposable test stack: never layer over the developer Compose files.
+name: robomart-java25-e2e-resume
+
+x-app-env: &app-env
+  SPRING_PROFILES_ACTIVE: dev
+  JAVA_TOOL_OPTIONS: -Xms64m -Xmx192m -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=48m -XX:ActiveProcessorCount=2
+  SPRING_DATASOURCE_USERNAME: robomart
+  SPRING_DATASOURCE_PASSWORD: robomart_e2e_only
+  SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "4"
+  SPRING_DATA_REDIS_HOST: redis
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
+  KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
+  TRACING_SAMPLE_RATE: "0"
+  # Some configured readiness groups include kafka without a Kafka health contributor.
+  MANAGEMENT_ENDPOINT_HEALTH_VALIDATE_GROUP_MEMBERSHIP: "false"
+
+x-app: &app
+  init: true
+  mem_limit: 512m
+  stop_grace_period: 35s
+  depends_on:
+    postgres: {condition: service_healthy}
+    redis: {condition: service_healthy}
+    kafka: {condition: service_healthy}
+    schema-registry: {condition: service_healthy}
+    keycloak: {condition: service_healthy}
+
+services:
+  postgres:
+    image: robomart-e2e/postgres:17
+    build: {context: ../.., dockerfile: infra/e2e/Dockerfile.postgres}
+    mem_limit: 384m
+    environment:
+      POSTGRES_USER: robomart
+      POSTGRES_PASSWORD: robomart_e2e_only
+      POSTGRES_DB: postgres
+    command: [postgres, -c, shared_buffers=64MB, -c, max_connections=60]
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U robomart -d postgres]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    mem_limit: 128m
+    command: [redis-server, --maxmemory, 64mb, --maxmemory-policy, allkeys-lru]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.8
+    mem_limit: 1152m
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m -XX:ActiveProcessorCount=2
+    volumes: [elasticsearch-data:/usr/share/elasticsearch/data]
+    healthcheck:
+      test: [CMD-SHELL, "curl -fsS http://localhost:9200/_cluster/health?wait_for_status=yellow > /dev/null"]
+      interval: 10s
+      timeout: 10s
+      retries: 45
+      start_period: 30s
+
+  kafka:
+    image: confluentinc/cp-kafka:7.9.10
+    mem_limit: 896m
+    environment:
+      KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
+      KAFKA_JVM_PERFORMANCE_OPTS: -XX:ActiveProcessorCount=2
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:29093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+      KAFKA_NUM_PARTITIONS: "1"
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    volumes: [kafka-data:/var/lib/kafka/data]
+    healthcheck:
+      test: [CMD-SHELL, kafka-broker-api-versions --bootstrap-server localhost:9092 > /dev/null]
+      interval: 10s
+      timeout: 10s
+      retries: 45
+      start_period: 30s
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.9.10
+    mem_limit: 448m
+    depends_on:
+      kafka: {condition: service_healthy}
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8085
+      SCHEMA_REGISTRY_HEAP_OPTS: -Xms128m -Xmx256m
+      SCHEMA_REGISTRY_JVM_PERFORMANCE_OPTS: -XX:ActiveProcessorCount=2
+    healthcheck:
+      test: [CMD-SHELL, curl -fsS http://localhost:8085/subjects > /dev/null]
+      interval: 10s
+      timeout: 5s
+      retries: 45
+
+  keycloak:
+    image: robomart-e2e/keycloak:26.1.4
+    build: {context: ../.., dockerfile: infra/e2e/Dockerfile.keycloak}
+    mem_limit: 640m
+    depends_on:
+      postgres: {condition: service_healthy}
+    command: [start-dev, --import-realm]
+    ports: ["127.0.0.1:18180:8180"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin_e2e_only
+      KC_HTTP_PORT: "8180"
+      KC_HEALTH_ENABLED: "true"
+      KC_HOSTNAME: http://localhost:18180
+      KC_HOSTNAME_STRICT: "false"
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: robomart
+      KC_DB_PASSWORD: robomart_e2e_only
+      KC_DB_POOL_MAX_SIZE: "5"
+      JAVA_OPTS_KC_HEAP: -Xms128m -Xmx384m
+      JAVA_OPTS_APPEND: -XX:ActiveProcessorCount=2
+    healthcheck:
+      test: [CMD-SHELL, "bash -c 'exec 3<>/dev/tcp/localhost/9000; printf \"GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3; grep -q \"200 OK\" <&3'"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+
+  product-service:
+    <<: *app
+    mem_limit: 640m
+    image: robomart-e2e/product-service:java25
+    build:
+      context: ../..
+      dockerfile: infra/e2e/Dockerfile.app
+      args: {SERVICE: product-service}
+    depends_on:
+      postgres: {condition: service_healthy}
+      redis: {condition: service_healthy}
+      schema-registry: {condition: service_healthy}
+      keycloak: {condition: service_healthy}
+      elasticsearch: {condition: service_healthy}
+    environment:
+      <<: *app-env
+      SPRING_PROFILES_ACTIVE: "dev,demo"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product_db
+    healthcheck:
+      test: [CMD-SHELL, "curl -fsS http://localhost:8081/actuator/health > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 45
+      start_period: 60s
+
+  cart-service:
+    <<: *app
+    image: robomart-e2e/cart-service:java25
+    build:
+      context: ../..
+      dockerfile: infra/e2e/Dockerfile.app
+      args: {SERVICE: cart-service}
+    environment:
+      <<: *app-env
+    healthcheck:
+      test: [CMD-SHELL, "curl -fsS http://localhost:8082/actuator/health > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 45
+      start_period: 60s
+
+  inventory-service:
+    <<: *app
+    image: robomart-e2e/inventory-service:java25
+    build:
+      context: ../..
+      dockerfile: infra/e2e/Dockerfile.app
+      args: {SERVICE: inventory-service}
+    ports: ["127.0.0.1:18084:8084"]
+    environment:
+      <<: *app-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory_db
+      SPRING_PROFILES_ACTIVE: "dev,demo,chaos-monkey"
+      CHAOS_MONKEY_ENABLED: "false"
+      MANAGEMENT_ENDPOINT_CHAOSMONKEY_ACCESS: "unrestricted"
+      CHAOS_MONKEY_WATCHER_SERVICE: "true"
+      CHAOS_MONKEY_ASSAULTS_LATENCY_ACTIVE: "false"
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus,chaosmonkey"
+    healthcheck:
+      test: [CMD-SHELL, "curl -fsS http://localhost:8084/actuator/health > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 45
+      start_period: 60s
+
+  payment-service:
+    <<: *app
+    image: robomart-e2e/payment-service:java25
+    build:
+      context: ../..
+      dockerfile: infra/e2e/Dockerfile.app
+      args: {SERVICE: payment-service}
+    ports: ["127.0.0.1:18086:8086"]
+    environment:
+      <<: *app-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payment_db
+    healthcheck:
+      test: [CMD-SHELL, "curl -fsS http://localhost:8086/actuator/health > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 45
+      start_period: 60s
+
+  order-service:
+    <<: *app
+    image: robomart-e2e/order-service:java25
+    build:
+      context: ../..
+      dockerfile: infra/e2e/Dockerfile.app
+      args: {SERVICE: order-service}
+    ports: ["127.0.0.1:18083:8083"]
+    environment:
+      <<: *app-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_db
+      GRPC_CLIENT_INVENTORY_SERVICE_ADDRESS: "static://inventory-service:9094"
+      GRPC_CLIENT_PAYMENT_SERVICE_ADDRESS: "static://payment-service:9095"
+    healthcheck:
+      test: [CMD-SHELL, "curl -fsS http://localhost:8083/actuator/health > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 45
+      start_period: 60s
+
+  notification-service:
+    <<: *app
+    mem_limit: 640m
+    image: robomart-e2e/notification-service:java25
+    build:
+      context: ../..
+      dockerfile: infra/e2e/Dockerfile.app
+      args: {SERVICE: notification-service}
+    environment:
+      <<: *app-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/notification_db
+      ORDER_SERVICE_URL: "http://order-service:8083"
+      PRODUCT_SERVICE_URL: "http://product-service:8081"
+      CART_SERVICE_URL: "http://cart-service:8082"
+      INVENTORY_SERVICE_URL: "http://inventory-service:8084"
+      PAYMENT_SERVICE_URL: "http://payment-service:8086"
+      NOTIFICATION_SERVICE_URL: "http://notification-service:8087"
+      API_GATEWAY_URL: "http://api-gateway:8080"
+      NOTIFICATION_SERVICE_AUTH_ENABLED: "true"
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_NOTIFICATION_AUTHORIZATION_GRANT_TYPE: client_credentials
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_NOTIFICATION_CLIENT_ID: notification-service
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_NOTIFICATION_CLIENT_SECRET: e2e-notification-secret
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_NOTIFICATION_PROVIDER: keycloak
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/token
+    healthcheck:
+      test: [CMD-SHELL, "curl -fsS http://localhost:8087/actuator/health > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 45
+      start_period: 60s
+
+  api-gateway:
+    <<: *app
+    image: robomart-e2e/api-gateway:java25
+    build:
+      context: ../..
+      dockerfile: infra/e2e/Dockerfile.app
+      args: {SERVICE: api-gateway}
+    ports: ["127.0.0.1:18080:8080"]
+    environment:
+      <<: *app-env
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://localhost:18180/realms/robomart"
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "http://keycloak:8180/realms/robomart/protocol/openid-connect/certs"
+      GATEWAY_SERVICES_ORDER_SERVICE: "http://order-service:8083"
+      GATEWAY_SERVICES_PRODUCT_SERVICE: "http://product-service:8081"
+      GATEWAY_SERVICES_CART_SERVICE: "http://cart-service:8082"
+      GATEWAY_SERVICES_INVENTORY_SERVICE: "http://inventory-service:8084"
+      GATEWAY_SERVICES_PAYMENT_SERVICE: "http://payment-service:8086"
+      GATEWAY_SERVICES_NOTIFICATION_SERVICE: "http://notification-service:8087"
+    healthcheck:
+      test: [CMD-SHELL, "curl -fsS http://localhost:8080/actuator/health > /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 45
+      start_period: 60s
+
+volumes:
+  postgres-data:
+  elasticsearch-data:
+  kafka-data:

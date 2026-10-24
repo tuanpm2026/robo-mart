@@ -2,7 +2,6 @@ package com.robomart.payment.service;
 
 import java.math.BigDecimal;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,29 +19,22 @@ public class MockPaymentGateway {
     private volatile boolean simulatePermanentFailure = false;
     private volatile long simulatedDelayMs = 0;
 
-    /**
-     * Charges already settled, keyed by idempotency key. Models a real gateway's idempotency-key
-     * support (Stripe/Adyen-style): a repeated charge with the same key returns the original
-     * transaction instead of charging again. This is what prevents double-charge when the caller
-     * retries after a crash, or when two requests race concurrently with the same key.
-     */
-    private final ConcurrentHashMap<String, GatewayResult> chargesByKey = new ConcurrentHashMap<>();
+    private final MockGatewayLedger ledger;
 
-    /**
-     * Idempotent charge. Multiple calls with the same {@code idempotencyKey} charge the gateway
-     * exactly once and return the same transaction. Failures are NOT cached, so a transient failure
-     * may be retried.
-     */
+    public MockPaymentGateway(MockGatewayLedger ledger) {
+        this.ledger = ledger;
+    }
+
+    /** Replays durable settlement even after restart or an ambiguous caller transaction rollback. */
+    public GatewayResult processPayment(BigDecimal amount, String currency, String idempotencyKey,
+            String orderId, String userId) {
+        String identity = orderId.length() + ":" + orderId + userId.length() + ":" + userId;
+        return ledger.settle("charge:" + idempotencyKey, amount, currency, identity, orderId,
+                () -> charge(amount, currency));
+    }
+
     public GatewayResult processPayment(BigDecimal amount, String currency, String idempotencyKey) {
-        GatewayResult existing = chargesByKey.get(idempotencyKey);
-        if (existing != null) {
-            log.info("Idempotent charge replay for key={} — returning existing transactionId={}",
-                    idempotencyKey, existing.transactionId());
-            return existing;
-        }
-        // computeIfAbsent runs the charge at most once per key even under concurrency; if the
-        // mapping function throws (transient/declined) no entry is stored, allowing a later retry.
-        return chargesByKey.computeIfAbsent(idempotencyKey, key -> charge(amount, currency));
+        return processPayment(amount, currency, idempotencyKey, "", "");
     }
 
     /** @deprecated use {@link #processPayment(BigDecimal, String, String)} so charges are idempotent. */
@@ -72,6 +64,11 @@ public class MockPaymentGateway {
     }
 
     public GatewayResult refundPayment(String transactionId, BigDecimal amount) {
+        return ledger.settle("refund:" + transactionId, amount, "", transactionId,
+                () -> refund(transactionId, amount));
+    }
+
+    private GatewayResult refund(String transactionId, BigDecimal amount) {
         log.info("Processing refund: transactionId={}, amount={}", transactionId, amount);
 
         applyDelay();
@@ -107,7 +104,6 @@ public class MockPaymentGateway {
         this.simulateTransientFailure = false;
         this.simulatePermanentFailure = false;
         this.simulatedDelayMs = 0;
-        this.chargesByKey.clear();
     }
 
     private void applyDelay() {

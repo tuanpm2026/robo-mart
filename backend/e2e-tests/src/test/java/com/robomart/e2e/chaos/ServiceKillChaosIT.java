@@ -1,256 +1,328 @@
 package com.robomart.e2e.chaos;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.ResourceAccessException;
+
+import com.robomart.e2e.E2eSupport;
 
 import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.json.JsonMapper;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-
-/**
- * Chaos test: Simulates service kill and network latency injection.
- * Verifies system recovers within 60 seconds (NFR34, NFR61).
- *
- * <p>Requires full stack running + Docker CLI access (to stop/start containers).
- *
- * <p>Run: ./mvnw verify -pl :e2e-tests -DskipE2ETests=false -De2e.enabled=true -Dchaos.enabled=true
- *          -Dchaos.admin-token=<ROLE_ADMIN JWT>
- *
- * <p>AC4: Kill service → Circuit Breaker opens, DLQ captures events → recovery within 60s
- * AC5: Network latency injection via Chaos Monkey actuator endpoint
- */
+/** Real fault injection against the explicitly selected disposable Compose project. */
 @EnabledIfSystemProperty(named = "chaos.enabled", matches = "true")
 class ServiceKillChaosIT {
 
-    private static final String BASE_URL = System.getProperty("e2e.base-url", "http://localhost:8080");
-    // chaos.admin-token: JWT for a Keycloak ROLE_ADMIN user; required to place test orders
-    private static final String ADMIN_TOKEN = System.getProperty("chaos.admin-token", "");
-
-    // Container names as configured in docker-compose (profile: app)
-    private static final String PAYMENT_CONTAINER = "robomart-payment-service";
-    private static final String INVENTORY_DIRECT_URL = "http://localhost:8084";
-    private static final String PAYMENT_HEALTH_URL = "http://localhost:8086/actuator/health";
-    private static final String ORDER_HEALTH_URL = "http://localhost:8083/actuator/health";
-
-    private final JsonMapper jsonMapper = JsonMapper.builder().build();
-
-    private RestClient client;
-    // Track whether payment container was stopped so @AfterEach can restart it on failure
-    private boolean paymentContainerStopped = false;
-    // Track whether chaos latency was enabled so @AfterEach can disable it on failure
-    private boolean chaosLatencyEnabled = false;
+    private RestClient api;
+    private RestClient inventory;
+    private RestClient order;
+    private RestClient payment;
+    private String token;
+    private String paymentContainer;
+    private boolean paymentStopped;
+    private boolean chaosTouched;
+    private final List<Long> confirmedOrders = new ArrayList<>();
+    private final List<Long> recoveryOrders = new ArrayList<>();
 
     @BeforeEach
-    void setUp() {
-        assertThat(ADMIN_TOKEN).as("chaos.admin-token system property must be set").isNotBlank();
-        client = RestClient.builder()
-                .baseUrl(BASE_URL)
-                .defaultStatusHandler(HttpStatusCode::isError, (req, res) -> { })
-                .build();
+    void setUp() throws Exception {
+        assertThat(E2eSupport.env("E2E_COMPOSE_PROJECT", ""))
+                .as("Chaos may only mutate the dedicated disposable project")
+                .isEqualTo("robomart-java25-e2e-resume");
+        api = E2eSupport.api();
+        inventory = E2eSupport.client(E2eSupport.env("E2E_INVENTORY_URL", "http://localhost:18084"));
+        order = E2eSupport.client(E2eSupport.env("E2E_ORDER_URL", "http://localhost:18083"));
+        payment = E2eSupport.client(E2eSupport.env("E2E_PAYMENT_URL", "http://localhost:18086"));
+        token = E2eSupport.customerToken();
+        paymentContainer = E2eSupport.container("payment-service");
+        await().atMost(Duration.ofSeconds(60)).ignoreException(ResourceAccessException.class)
+                .untilAsserted(() -> assertHealthy(payment));
+        await().atMost(Duration.ofSeconds(60)).ignoreException(ResourceAccessException.class)
+                .untilAsserted(() -> assertHealthy(order));
     }
 
     @AfterEach
-    void tearDown() throws Exception {
-        // Ensure payment container is restarted if test failed mid-way
-        if (paymentContainerStopped) {
-            execDockerCommand("docker", "start", PAYMENT_CONTAINER);
-            paymentContainerStopped = false;
-        }
-        // Ensure chaos latency is disabled if test failed mid-way
-        if (chaosLatencyEnabled) {
-            disableChaosLatency();
-            chaosLatencyEnabled = false;
-        }
-    }
-
-    /**
-     * AC4: Kill payment-service mid-saga → verify Circuit Breaker opens and DLQ captures event.
-     * Recovery: payment-service restarts → services return to healthy state within 60s.
-     *
-     * <p>Test approach: Use docker CLI to stop/start payment-service container.
-     * Pre-condition: payment-service container name is "robomart-payment-service"
-     */
-    @Test
-    void shouldRecoverWhenPaymentServiceIsKilledDuringSaga() throws Exception {
-        // Step 1: Verify system is healthy before chaos
-        assertSystemHealthy();
-
-        // Step 2: Place an order (triggers saga: inventory reserve → payment charge)
-        String orderId = placeTestOrder();
-        assertThat(orderId).isNotNull().isNotBlank();
-
-        // Step 3: Kill payment-service container immediately after order placement
-        execDockerCommand("docker", "stop", PAYMENT_CONTAINER);
-        paymentContainerStopped = true;
-
-        // Step 4: Verify Circuit Breaker opens — order should not reach CONFIRMED while payment is down
-        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-            String status = getOrderStatus(orderId);
-            assertThat(status).isIn("PENDING", "CANCELLED");
-        });
-
-        // Step 5: Restart payment-service
-        execDockerCommand("docker", "start", PAYMENT_CONTAINER);
-        paymentContainerStopped = false;
-
-        // Step 6: Verify system recovers within 60 seconds (NFR34: recovery < 60s)
-        await().atMost(60, TimeUnit.SECONDS).pollInterval(3, TimeUnit.SECONDS)
-                .untilAsserted(this::assertSystemHealthy);
-
-        // Step 7: Verify all affected services report UP
-        assertServiceHealthy(PAYMENT_HEALTH_URL);
-        assertServiceHealthy(ORDER_HEALTH_URL);
-    }
-
-    /**
-     * AC5: Inject 500ms latency on inventory-service (gRPC target) via Chaos Monkey actuator.
-     * Verify: order-service continues operating with degraded performance, no data loss or timeouts.
-     *
-     * <p>Pre-condition: inventory-service must have chaos-monkey-spring-boot dependency on classpath
-     * (scope: runtime in pom.xml) and started with chaos profile active.
-     */
-    @Test
-    void shouldContinueOperatingWithNetworkLatency() throws Exception {
-        RestClient inventoryAdminClient = RestClient.builder()
-                .baseUrl(INVENTORY_DIRECT_URL)
-                .defaultStatusHandler(HttpStatusCode::isError, (req, res) -> { })
-                .build();
-
-        // Step 1: Enable 500ms latency assault on inventory-service via Chaos Monkey actuator
-        inventoryAdminClient.post()
-                .uri("/actuator/chaosmonkey/assaults")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body("""
-                        {
-                          "level": 5,
-                          "latencyActive": true,
-                          "latencyRangeStart": 500,
-                          "latencyRangeEnd": 500,
-                          "exceptionsActive": false,
-                          "killApplicationActive": false
+    void restoreFaultsAndCancelConfirmedOrders() throws Exception {
+        try {
+            if (paymentStopped) {
+                mutatePaymentContainer("start");
+                paymentStopped = false;
+                await().atMost(Duration.ofSeconds(60)).ignoreException(ResourceAccessException.class)
+                        .untilAsserted(() -> assertHealthy(payment));
+            }
+        } finally {
+            try {
+                if (chaosTouched) {
+                    assertStatus(inventory.post().uri("/actuator/chaosmonkey/disable")
+                            .retrieve().toEntity(String.class), 200);
+                    assertStatus(inventory.post().uri("/actuator/chaosmonkey/assaults")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .body(Map.of("latencyActive", false, "exceptionsActive", false,
+                                    "killApplicationActive", false, "memoryActive", false, "cpuActive", false))
+                            .retrieve().toEntity(String.class), 200);
+                    assertThat(body(inventory.get().uri("/actuator/chaosmonkey/status")
+                            .retrieve().toEntity(String.class), 200).path("enabled").asBoolean()).isFalse();
+                    chaosTouched = false;
+                }
+            } finally {
+                try {
+                    if (!recoveryOrders.isEmpty()) {
+                        await().atMost(Duration.ofSeconds(60)).pollInterval(Duration.ofSeconds(2))
+                                .untilAsserted(this::observeAllRecoveredOrders);
+                    }
+                } finally {
+                    AssertionError cleanupFailure = null;
+                    for (long id : confirmedOrders) {
+                        try {
+                            cancelAndAssertRefund(id);
+                        } catch (Exception | AssertionError failure) {
+                            if (cleanupFailure == null) {
+                                cleanupFailure = new AssertionError("Some confirmed orders could not be cleaned up");
+                            }
+                            cleanupFailure.addSuppressed(failure);
                         }
-                        """)
-                .retrieve()
-                .body(String.class);
-        chaosLatencyEnabled = true;
+                    }
+                    if (cleanupFailure != null) {
+                        throw cleanupFailure;
+                    }
+                }
+            }
+        }
+    }
 
-        // Step 2: Place an order while 500ms latency is injected on inventory gRPC path
-        String orderId = placeTestOrder();
-        assertThat(orderId).isNotNull().isNotBlank();
+    @Test
+    void paymentOutageAutomaticallyResumesTheSameOrdersWithoutDuplicateCharges() throws Exception {
+        E2eSupport.Product product = E2eSupport.availableProduct();
+        // Checkout orchestrates payment synchronously: stop BEFORE requesting checkout.
+        paymentStopped = true;
+        mutatePaymentContainer("stop");
+        for (int attempt = 0; attempt < 5; attempt++) {
+            ResponseEntity<String> response = createOrder(product);
+            JsonNode data = body(response, 202).path("data");
+            assertThat(data.path("status").asString()).isEqualTo("PAYMENT_PENDING");
+            long id = positiveOrderId(data);
+            recoveryOrders.add(id);
+            assertPendingWithoutPayment(id);
+        }
+        assertThat(recoveryOrders).hasSize(5).doesNotHaveDuplicates();
+        assertThat(metric(order, "resilience4j.circuitbreaker.state",
+                "name:payment-service", "state:open")).isEqualTo(1.0);
 
-        // Step 3: Verify order eventually completes — system is degraded but not broken (AC5)
-        // NFR: no data loss, no unhandled TimeoutExceptions; CONFIRMED expected under degraded conditions
-        await().atMost(30, TimeUnit.SECONDS).pollInterval(2, TimeUnit.SECONDS)
+        long restartStarted = System.nanoTime();
+        mutatePaymentContainer("start");
+        paymentStopped = false;
+        await().atMost(recoveryBudget(restartStarted)).ignoreException(ResourceAccessException.class)
+                .untilAsserted(() -> assertHealthy(payment));
+        // Only the scheduled recovery worker may probe the breaker and resume these orders.
+        // Do not submit a fresh checkout to trigger HALF_OPEN/CLOSED transitions.
+        await().pollInterval(Duration.ofSeconds(2)).atMost(recoveryBudget(restartStarted))
                 .untilAsserted(() -> {
-                    String status = getOrderStatus(orderId);
-                    // Order must reach CONFIRMED — system continues operating under latency
-                    assertThat(status).isEqualTo("CONFIRMED");
+                    observeAllRecoveredOrders();
+                    for (long id : recoveryOrders) {
+                        assertRecoveredExactlyOnce(id);
+                    }
+                    assertThat(metric(order, "resilience4j.circuitbreaker.state",
+                            "name:payment-service", "state:closed")).isEqualTo(1.0);
                 });
-
-        // Step 4: Disable latency assault after test
-        disableChaosLatency();
-        chaosLatencyEnabled = false;
+        assertThat(Duration.ofNanos(System.nanoTime() - restartStarted))
+                .as("The same five pending orders confirm and the breaker closes within 60s of restart")
+                .isLessThanOrEqualTo(Duration.ofSeconds(60));
+        assertThat(confirmedOrders).containsExactlyInAnyOrderElementsOf(recoveryOrders);
     }
 
-    private void disableChaosLatency() {
-        RestClient inventoryAdminClient = RestClient.builder()
-                .baseUrl(INVENTORY_DIRECT_URL)
-                .defaultStatusHandler(HttpStatusCode::isError, (req, res) -> { })
-                .build();
-        inventoryAdminClient.post()
-                .uri("/actuator/chaosmonkey/assaults")
-                .contentType(MediaType.APPLICATION_JSON)
-                .body("""
-                        {
-                          "level": 1,
-                          "latencyActive": false,
-                          "exceptionsActive": false
-                        }
-                        """)
-                .retrieve()
-                .body(String.class);
-    }
-
-    private void assertSystemHealthy() {
-        String health = client.get()
-                .uri("/actuator/health")
-                .retrieve()
-                .body(String.class);
-        assertThat(health).contains("\"status\":\"UP\"");
-    }
-
-    private void assertServiceHealthy(String healthUrl) {
-        RestClient direct = RestClient.builder()
-                .baseUrl(healthUrl)
-                .defaultStatusHandler(HttpStatusCode::isError, (req, res) -> { })
-                .build();
-        String health = direct.get().retrieve().body(String.class);
-        assertThat(health).contains("\"status\":\"UP\"");
-    }
-
-    private String placeTestOrder() throws Exception {
-        String res = client.post()
-                .uri("/api/v1/orders")
-                .contentType(MediaType.APPLICATION_JSON)
-                .header("Authorization", "Bearer " + ADMIN_TOKEN)
-                .body("""
-                        {
-                          "items": [{"productId": 1, "quantity": 1}],
-                          "shippingAddress": "1 Chaos Test St, Austin, TX, 75001, US"
-                        }
-                        """)
-                .retrieve()
-                .body(String.class);
-
-        JsonNode root = jsonMapper.readTree(res);
-        String orderId = root.path("data").path("id").asText();
-        return orderId.isBlank() ? null : orderId;
-    }
-
-    private String getOrderStatus(String orderId) throws IOException {
-        String res = client.get()
-                .uri("/api/v1/orders/" + orderId)
-                .header("Authorization", "Bearer " + ADMIN_TOKEN)
-                .retrieve()
-                .body(String.class);
-
-        JsonNode root = jsonMapper.readTree(res);
-        return root.path("data").path("status").asText("PENDING");
-    }
-
-    /**
-     * Execute a docker command, draining stdout/stderr to avoid subprocess blocking.
-     * Checks the exit code and fails with a clear message if the command does not succeed.
-     */
-    private void execDockerCommand(String... command) throws Exception {
-        Process process = Runtime.getRuntime().exec(command);
-        // Drain stdout and stderr to prevent subprocess blocking on pipe buffer
-        drainStream(process.getInputStream());
-        drainStream(process.getErrorStream());
-        boolean finished = process.waitFor(30, TimeUnit.SECONDS);
-        assertThat(finished)
-                .as("docker command timed out: %s", String.join(" ", command))
-                .isTrue();
-        assertThat(process.exitValue())
-                .as("docker command failed with exit code %d: %s", process.exitValue(), String.join(" ", command))
-                .isEqualTo(0);
-    }
-
-    private void drainStream(InputStream stream) throws IOException {
-        byte[] buffer = new byte[4096];
-        while (stream.read(buffer) != -1) {
-            // discard
+    private void observeAllRecoveredOrders() {
+        List<String> statuses = new ArrayList<>();
+        for (long id : recoveryOrders) {
+            String status = E2eSupport.query("postgres", "order_db", "SELECT status FROM orders WHERE id=" + id);
+            if ("CONFIRMED".equals(status) && !confirmedOrders.contains(id)) {
+                // Register cleanup immediately, even if a later order/assertion is still pending.
+                confirmedOrders.add(id);
+            }
+            statuses.add(status);
         }
+        assertThat(statuses).as("All original pending orders must resume automatically")
+                .containsOnly("CONFIRMED");
+    }
+
+    private void assertRecoveredExactlyOnce(long id) {
+        assertThat(E2eSupport.query("postgres", "payment_db",
+                "SELECT count(*) || '|' || count(*) FILTER (WHERE status='COMPLETED')"
+                        + " FROM payments WHERE order_id='" + id + "'"))
+                .as("Exactly one completed payment and no duplicate charge records for order %s", id)
+                .isEqualTo("1|1");
+        assertThat(E2eSupport.query("postgres", "payment_db",
+                "SELECT count(*) FROM mock_gateway_operations WHERE operation_key='charge:" + id
+                        + "' AND status='COMPLETED'"))
+                .as("Exactly one completed provider operation is recorded for order %s", id).isEqualTo("1");
+        assertThat(E2eSupport.query("postgres", "payment_db",
+                "SELECT count(*) FROM outbox_events WHERE event_type='payment_processed'"
+                        + " AND aggregate_id IN (SELECT id::text FROM payments WHERE order_id='" + id + "')"))
+                .as("Exactly one payment processed event is persisted for order %s", id).isEqualTo("1");
+        assertThat(E2eSupport.query("postgres", "inventory_db",
+                "SELECT count(*) || '|' || count(*) FILTER (WHERE quantity=1)"
+                        + " FROM stock_movements WHERE order_id='" + id + "' AND type='RESERVE'"))
+                .as("Recovery must reuse the original inventory reservation for order %s", id)
+                .isEqualTo("1|1");
+        assertThat(E2eSupport.query("postgres", "order_db",
+                "SELECT count(*) FILTER (WHERE step_name='ReserveInventory') || '|'"
+                        + " || count(*) FILTER (WHERE step_name='ProcessPayment')"
+                        + " FROM saga_audit_log WHERE order_id='" + id + "' AND status='SUCCESS'"))
+                .as("Both forward steps complete once for order %s", id).isEqualTo("1|1");
+        assertThat(E2eSupport.query("postgres", "order_db",
+                "SELECT count(*) FROM outbox_events WHERE aggregate_id='" + id
+                        + "' AND event_type='order_status_changed' AND payload->>'newStatus'='CONFIRMED'"))
+                .as("A single confirmation event is created for order %s", id).isEqualTo("1");
+        assertThat(E2eSupport.query("postgres", "order_db",
+                "SELECT count(*) FROM order_status_history WHERE order_id=" + id + " AND status='CONFIRMED'"))
+                .as("A single confirmation transition is persisted for order %s", id).isEqualTo("1");
+    }
+
+    @Test
+    void serviceLayerLatencyAssaultIsAppliedAndCheckoutStillConfirms() throws Exception {
+        E2eSupport.Product product = E2eSupport.availableProduct();
+        JsonNode originalStatus = body(inventory.get().uri("/actuator/chaosmonkey/status")
+                .retrieve().toEntity(String.class), 200);
+        assertThat(originalStatus.path("enabled").asBoolean()).isFalse();
+        chaosTouched = true;
+        assertStatus(inventory.post().uri("/actuator/chaosmonkey/watchers")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("service", true, "controller", false, "restController", false,
+                        "repository", false, "component", false))
+                .retrieve().toEntity(String.class), 200);
+        assertStatus(inventory.post().uri("/actuator/chaosmonkey/assaults")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("level", 1, "deterministic", true, "latencyActive", true,
+                        "latencyRangeStart", 500, "latencyRangeEnd", 500,
+                        "exceptionsActive", false, "killApplicationActive", false,
+                        "memoryActive", false, "cpuActive", false))
+                .retrieve().toEntity(String.class), 200);
+        assertThat(body(inventory.post().uri("/actuator/chaosmonkey/enable")
+                .retrieve().toEntity(String.class), 200).path("enabled").asBoolean()).isTrue();
+        JsonNode assault = body(inventory.get().uri("/actuator/chaosmonkey/assaults")
+                .retrieve().toEntity(String.class), 200);
+        assertThat(assault.path("latencyActive").asBoolean()).isTrue();
+        assertThat(assault.path("latencyRangeStart").asInt()).isEqualTo(500);
+        assertThat(assault.path("level").asInt()).isEqualTo(1);
+        assertThat(body(inventory.get().uri("/actuator/chaosmonkey/watchers")
+                .retrieve().toEntity(String.class), 200).path("service").asBoolean()).isTrue();
+
+        ResponseEntity<String> baseline = inventory.get()
+                .uri("/actuator/metrics/chaos.monkey.assault.latency.count").retrieve().toEntity(String.class);
+        double beforeAssaults;
+        if (baseline.getStatusCode().value() == 404) {
+            beforeAssaults = 0.0; // No latency assault has ever run in this fresh stack.
+        } else {
+            beforeAssaults = body(baseline, 200).path("measurements").get(0).path("value").asDouble();
+        }
+        long started = System.nanoTime();
+        JsonNode data = body(createOrder(product), 201).path("data");
+        long elapsedMillis = Duration.ofNanos(System.nanoTime() - started).toMillis();
+        long id = positiveOrderId(data);
+        confirmedOrders.add(id);
+        assertThat(elapsedMillis).as("Observed service-layer latency assault").isGreaterThanOrEqualTo(500);
+        assertThat(metric(inventory, "chaos.monkey.assault.latency.count"))
+                .as("A real latency assault must execute during checkout").isGreaterThan(beforeAssaults);
+        assertThat(data.path("status").asString()).isEqualTo("CONFIRMED");
+        assertThat(E2eSupport.query("postgres", "order_db", "SELECT status FROM orders WHERE id=" + id))
+                .isEqualTo("CONFIRMED");
+        assertThat(E2eSupport.query("postgres", "inventory_db",
+                "SELECT status FROM reservations WHERE order_id='" + id + "'")).isEqualTo("RESERVED");
+    }
+
+    private static Duration recoveryBudget(long restartStarted) {
+        Duration remaining = Duration.ofSeconds(60).minus(Duration.ofNanos(System.nanoTime() - restartStarted));
+        assertThat(remaining).as("The shared 60s recovery budget must not be exhausted").isPositive();
+        return remaining;
+    }
+
+    private ResponseEntity<String> createOrder(E2eSupport.Product product) {
+        return api.post().uri("/api/v1/orders").headers(h -> h.setBearerAuth(token))
+                .contentType(MediaType.APPLICATION_JSON).body(E2eSupport.orderPayload(product, 1))
+                .retrieve().toEntity(String.class);
+    }
+
+    private void assertPendingWithoutPayment(long id) throws Exception {
+        assertThat(E2eSupport.query("postgres", "order_db", "SELECT status FROM orders WHERE id=" + id))
+                .isEqualTo("PAYMENT_PENDING");
+        assertThat(E2eSupport.query("postgres", "inventory_db",
+                "SELECT status FROM reservations WHERE order_id='" + id + "'")).isEqualTo("RESERVED");
+        assertThat(E2eSupport.query("postgres", "payment_db",
+                "SELECT count(*) FROM payments WHERE order_id='" + id + "'")).isEqualTo("0");
+    }
+
+    private void cancelAndAssertRefund(long id) throws Exception {
+        assertStatus(api.post().uri("/api/v1/orders/" + id + "/cancel")
+                .headers(h -> h.setBearerAuth(token)).contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("reason", "Chaos verification cleanup")).retrieve().toEntity(String.class), 200);
+        assertThat(E2eSupport.query("postgres", "order_db", "SELECT status FROM orders WHERE id=" + id))
+                .isEqualTo("CANCELLED");
+        assertThat(E2eSupport.query("postgres", "payment_db",
+                "SELECT status FROM payments WHERE order_id='" + id + "'")).isEqualTo("REFUNDED");
+        assertThat(E2eSupport.query("postgres", "inventory_db",
+                "SELECT status FROM reservations WHERE order_id='" + id + "'")).isEqualTo("RELEASED");
+    }
+
+    private void mutatePaymentContainer(String action) throws Exception {
+        // Resolve the exact project/service labels again immediately before each mutation.
+        assertThat(E2eSupport.container("payment-service")).isEqualTo(paymentContainer);
+        Path output = Files.createTempFile("robomart-chaos-docker-", ".log");
+        try {
+            Process process = new ProcessBuilder("docker", action, paymentContainer)
+                    .redirectErrorStream(true).redirectOutput(output.toFile()).start();
+            if (!process.waitFor(45, java.util.concurrent.TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                throw new IllegalStateException("docker " + action + " timed out");
+            }
+            assertThat(process.exitValue()).as("docker %s: %s", action, Files.readString(output)).isZero();
+        } finally {
+            Files.deleteIfExists(output);
+        }
+    }
+
+    private static void assertHealthy(RestClient service) {
+        assertThat(body(service.get().uri("/actuator/health").retrieve().toEntity(String.class), 200)
+                .path("status").asString()).isEqualTo("UP");
+    }
+
+    private static double metric(RestClient service, String name, String... tags) {
+        JsonNode metric = body(service.get().uri(builder -> {
+            builder.path("/actuator/metrics/" + name);
+            for (String tag : tags) {
+                builder.queryParam("tag", tag);
+            }
+            return builder.build();
+        }).retrieve().toEntity(String.class), 200);
+        assertThat(metric.path("measurements").size()).isEqualTo(1);
+        return metric.path("measurements").get(0).path("value").asDouble();
+    }
+
+    private static long positiveOrderId(JsonNode data) {
+        long id = data.path("id").asLong();
+        assertThat(id).isPositive();
+        return id;
+    }
+
+    private static JsonNode body(ResponseEntity<String> response, int status) {
+        assertStatus(response, status);
+        assertThat(response.getBody()).isNotBlank();
+        return E2eSupport.json(response.getBody());
+    }
+
+    private static void assertStatus(ResponseEntity<String> response, int status) {
+        assertThat(response.getStatusCode().value()).as("Response: %s", response.getBody()).isEqualTo(status);
     }
 }
