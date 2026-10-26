@@ -2,6 +2,9 @@ package com.robomart.notification.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import com.robomart.common.exception.ExternalServiceException;
 import com.robomart.events.cart.CartExpiryWarningEvent;
 import com.robomart.notification.client.OrderDetailDto;
 import com.robomart.notification.client.OrderServiceClient;
@@ -34,6 +38,10 @@ public class NotificationService {
 
     @Value("${notification.admin-email}")
     private String adminEmail;
+
+    /** How long a PENDING claim is honoured before another delivery may take it over. */
+    @Value("${notification.email.claim-timeout:PT2M}")
+    private Duration claimTimeout = Duration.ofMinutes(2);
 
     public NotificationService(OrderServiceClient orderServiceClient,
                                ProductServiceClient productServiceClient,
@@ -82,36 +90,15 @@ public class NotificationService {
                 + "Threshold: " + threshold + " units\n\n"
                 + "Please restock via Admin Dashboard.";
 
-        NotificationLog notificationLog = new NotificationLog();
-        notificationLog.setRecipient(adminEmail);
-        notificationLog.setOrderId(null);  // No unique constraint for low-stock alerts
-        notificationLog.setNotificationType(NotificationType.LOW_STOCK_ALERT);
-        notificationLog.setChannel(NotificationChannel.EMAIL);
-        notificationLog.setSubject(subject);
-        notificationLog.setContent(body);
-        notificationLog.setTraceId(getTraceId());
-
-        try {
-            emailService.sendEmail(adminEmail, subject, body);
-            notificationLog.setStatus(NotificationStatus.SENT);
-        } catch (Exception e) {
-            log.error("Failed to send LOW_STOCK_ALERT for productId={}: {}", productId, e.getMessage());
-            notificationLog.setStatus(NotificationStatus.FAILED);
-            notificationLog.setErrorMessage(e.getMessage());
-        }
-        notificationLogRepository.save(notificationLog);
-        if (notificationLog.getStatus() == NotificationStatus.SENT) {
-            log.info("Low stock alert sent for productId={}, quantity={}, threshold={}", productId, currentQuantity, threshold);
-        } else {
-            log.warn("Low stock alert failed for productId={}, quantity={}, threshold={}", productId, currentQuantity, threshold);
-        }
+        // No dedup key for admin alerts (processed_events dedups the event); record, then deliver.
+        NotificationLog notificationLog = notificationLogRepository.saveAndFlush(
+                newPendingLog(adminEmail, null, NotificationType.LOW_STOCK_ALERT, subject, body));
+        deliver(notificationLog);
+        log.info("Low stock alert sent for productId={}, quantity={}, threshold={}",
+                productId, currentQuantity, threshold);
     }
 
     public void sendCartExpiryWarning(String cartId, String userId, CartExpiryWarningEvent event) {
-        if (notificationLogRepository.existsByOrderIdAndNotificationType(cartId, NotificationType.CART_EXPIRY_WARNING)) {
-            log.info("Cart expiry warning already sent for cartId={}, skipping", cartId);
-            return;
-        }
         String subject = "Your cart is expiring soon!";
         String body = buildCartExpiryBody(event);
         sendAndLog(userId, cartId, NotificationType.CART_EXPIRY_WARNING, subject, body);
@@ -142,34 +129,74 @@ public class NotificationService {
         return sb.toString();
     }
 
+    /**
+     * Claim, send, then record the outcome. A PENDING row is inserted first (the
+     * {@code (order_id, notification_type)} unique key is the claim), so a crash or DB failure after
+     * sending leaves PENDING rather than nothing. Only SENT short-circuits; FAILED and stale PENDING
+     * rows are re-claimed and retried. A send failure is recorded as FAILED and rethrown so the Kafka
+     * error handler retries / dead-letters the event and the consumer does not mark it processed.
+     */
     private void sendAndLog(String userId, String orderId, NotificationType type, String subject, String body) {
-        if (notificationLogRepository.existsByOrderIdAndNotificationType(orderId, type)) {
-            log.info("Notification already sent, skipping duplicate: orderId={}, type={}", orderId, type);
-            return;
+        NotificationLog claimed = claim(userId, orderId, type, subject, body);
+        if (claimed != null) {
+            deliver(claimed);
         }
+    }
 
+    /**
+     * @return the claimed row, or {@code null} when the notification was already SENT
+     * @throws IllegalStateException when another delivery currently holds a fresh claim (retryable)
+     */
+    private NotificationLog claim(String userId, String orderId, NotificationType type, String subject, String body) {
+        Optional<NotificationLog> existing = notificationLogRepository.findByOrderIdAndNotificationType(orderId, type);
+        if (existing.isEmpty()) {
+            try {
+                return notificationLogRepository.saveAndFlush(newPendingLog(userId, orderId, type, subject, body));
+            } catch (DataIntegrityViolationException e) {
+                throw new IllegalStateException("Concurrent delivery claim for orderId=" + orderId
+                        + ", type=" + type + "; will retry", e);
+            }
+        }
+        NotificationLog row = existing.get();
+        if (row.getStatus() == NotificationStatus.SENT) {
+            log.info("Notification already sent, skipping duplicate: orderId={}, type={}", orderId, type);
+            return null;
+        }
+        Instant now = Instant.now();
+        if (notificationLogRepository.reclaim(row.getId(), now, now.minus(claimTimeout)) == 0) {
+            throw new IllegalStateException("Notification delivery in progress for orderId=" + orderId
+                    + ", type=" + type + "; will retry");
+        }
+        log.info("Retrying {} notification for orderId={} (previous status {})", type, orderId, row.getStatus());
+        return row;
+    }
+
+    private void deliver(NotificationLog claimed) {
+        try {
+            emailService.sendEmail(claimed.getRecipient(), claimed.getSubject(), claimed.getContent());
+        } catch (RuntimeException e) {
+            log.error("Failed to send {} notification for orderId={}: {}",
+                    claimed.getNotificationType(), claimed.getOrderId(), e.getMessage());
+            notificationLogRepository.updateStatus(
+                    claimed.getId(), NotificationStatus.FAILED, e.getMessage(), Instant.now());
+            throw new ExternalServiceException("Email delivery failed for " + claimed.getNotificationType()
+                    + " notification, orderId=" + claimed.getOrderId(), e);
+        }
+        notificationLogRepository.updateStatus(claimed.getId(), NotificationStatus.SENT, null, Instant.now());
+    }
+
+    private NotificationLog newPendingLog(String recipient, String orderId, NotificationType type,
+                                          String subject, String body) {
         NotificationLog notificationLog = new NotificationLog();
-        notificationLog.setRecipient(userId);
+        notificationLog.setRecipient(recipient);
         notificationLog.setOrderId(orderId);
         notificationLog.setNotificationType(type);
         notificationLog.setChannel(NotificationChannel.EMAIL);
+        notificationLog.setStatus(NotificationStatus.PENDING);
         notificationLog.setSubject(subject);
         notificationLog.setContent(body);
         notificationLog.setTraceId(getTraceId());
-
-        try {
-            emailService.sendEmail(userId, subject, body);
-            notificationLog.setStatus(NotificationStatus.SENT);
-        } catch (Exception e) {
-            log.error("Failed to send {} notification for orderId={}: {}", type, orderId, e.getMessage());
-            notificationLog.setStatus(NotificationStatus.FAILED);
-            notificationLog.setErrorMessage(e.getMessage());
-        }
-        try {
-            notificationLogRepository.save(notificationLog);
-        } catch (DataIntegrityViolationException e) {
-            log.warn("Duplicate notification skipped (race condition): orderId={}, type={}", orderId, type);
-        }
+        return notificationLog;
     }
 
     private String getTraceId() {

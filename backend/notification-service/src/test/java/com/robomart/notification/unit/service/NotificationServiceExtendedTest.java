@@ -1,9 +1,11 @@
 package com.robomart.notification.unit.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -13,6 +15,7 @@ import static org.mockito.Mockito.when;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,8 +28,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.dao.DataIntegrityViolationException;
 
+import com.robomart.common.exception.ExternalServiceException;
 import com.robomart.events.cart.CartExpiryWarningEvent;
 import com.robomart.events.cart.CartItemSummary;
 import com.robomart.notification.client.OrderDetailDto;
@@ -78,6 +81,13 @@ class NotificationServiceExtendedTest {
     void setUp() {
         // @Value fields are not populated by Mockito — set them explicitly
         ReflectionTestUtils.setField(notificationService, "adminEmail", "admin@test.com");
+        when(notificationLogRepository.findByOrderIdAndNotificationType(anyString(), any()))
+                .thenReturn(Optional.empty());
+        when(notificationLogRepository.saveAndFlush(any(NotificationLog.class))).thenAnswer(inv -> {
+            NotificationLog saved = inv.getArgument(0);
+            saved.setId(42L);
+            return saved;
+        });
     }
 
     @Test
@@ -86,7 +96,7 @@ class NotificationServiceExtendedTest {
 
         notificationService.sendOrderConfirmedNotifications("order-99");
 
-        verify(notificationLogRepository, never()).save(any());
+        verify(notificationLogRepository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -95,7 +105,7 @@ class NotificationServiceExtendedTest {
 
         notificationService.sendPaymentFailure("order-99");
 
-        verify(notificationLogRepository, never()).save(any());
+        verify(notificationLogRepository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -105,45 +115,47 @@ class NotificationServiceExtendedTest {
 
         notificationService.sendLowStockAlert("7", 3, 10);
 
-        verify(emailService).sendEmail(anyString(), anyString(), anyString());
-        verify(notificationLogRepository).save(logCaptor.capture());
+        verify(emailService).sendEmail(eq("admin@test.com"), anyString(), anyString());
+        verify(notificationLogRepository).saveAndFlush(logCaptor.capture());
         NotificationLog log = logCaptor.getValue();
         assertThat(log.getNotificationType()).isEqualTo(NotificationType.LOW_STOCK_ALERT);
-        assertThat(log.getStatus()).isEqualTo(NotificationStatus.SENT);
+        assertThat(log.getStatus()).isEqualTo(NotificationStatus.PENDING);
         assertThat(log.getSubject()).contains("Widget X");
         assertThat(log.getContent()).contains("Current stock: 3").contains("Threshold: 10");
+        verify(notificationLogRepository).updateStatus(eq(42L), eq(NotificationStatus.SENT), isNull(), any());
     }
 
     @Test
-    void shouldMarkLowStockAlertAsFailedWhenEmailThrows() {
+    void shouldMarkLowStockAlertAsFailedAndThrowWhenEmailThrows() {
         when(productServiceClient.getProductName("7")).thenReturn("Widget X");
         when(tracer.currentSpan()).thenReturn(null);
         doThrow(new RuntimeException("SMTP error")).when(emailService).sendEmail(anyString(), anyString(), anyString());
 
-        notificationService.sendLowStockAlert("7", 3, 10);
+        assertThatThrownBy(() -> notificationService.sendLowStockAlert("7", 3, 10))
+                .isInstanceOf(ExternalServiceException.class);
 
-        verify(notificationLogRepository).save(logCaptor.capture());
-        assertThat(logCaptor.getValue().getStatus()).isEqualTo(NotificationStatus.FAILED);
-        assertThat(logCaptor.getValue().getErrorMessage()).isEqualTo("SMTP error");
+        verify(notificationLogRepository).updateStatus(eq(42L), eq(NotificationStatus.FAILED), eq("SMTP error"), any());
     }
 
     @Test
     void shouldSendCartExpiryWarningWhenNotDuplicate() {
-        when(notificationLogRepository.existsByOrderIdAndNotificationType(
-                eq("cart-1"), eq(NotificationType.CART_EXPIRY_WARNING))).thenReturn(false);
         when(tracer.currentSpan()).thenReturn(null);
 
         CartExpiryWarningEvent event = buildCartExpiryEvent("cart-1", "user-1", 3600L);
 
         notificationService.sendCartExpiryWarning("cart-1", "user-1", event);
 
-        verify(notificationLogRepository).save(any(NotificationLog.class));
+        verify(notificationLogRepository).saveAndFlush(any(NotificationLog.class));
+        verify(emailService).sendEmail(eq("user-1"), anyString(), anyString());
     }
 
     @Test
     void shouldSkipCartExpiryWarningWhenAlreadySent() {
-        when(notificationLogRepository.existsByOrderIdAndNotificationType(
-                "cart-1", NotificationType.CART_EXPIRY_WARNING)).thenReturn(true);
+        NotificationLog sent = new NotificationLog();
+        sent.setId(5L);
+        sent.setStatus(NotificationStatus.SENT);
+        when(notificationLogRepository.findByOrderIdAndNotificationType(
+                "cart-1", NotificationType.CART_EXPIRY_WARNING)).thenReturn(Optional.of(sent));
 
         CartExpiryWarningEvent event = buildCartExpiryEvent("cart-1", "user-1", 3600L);
 
@@ -154,15 +166,13 @@ class NotificationServiceExtendedTest {
 
     @Test
     void shouldBuildCartExpiryBodyWithLessThanOneMinuteMessage() {
-        when(notificationLogRepository.existsByOrderIdAndNotificationType(
-                eq("cart-2"), eq(NotificationType.CART_EXPIRY_WARNING))).thenReturn(false);
         when(tracer.currentSpan()).thenReturn(null);
 
         CartExpiryWarningEvent event = buildCartExpiryEvent("cart-2", "user-2", 30L);
 
         notificationService.sendCartExpiryWarning("cart-2", "user-2", event);
 
-        verify(notificationLogRepository).save(logCaptor.capture());
+        verify(notificationLogRepository).saveAndFlush(logCaptor.capture());
         assertThat(logCaptor.getValue().getContent()).contains("less than a minute");
     }
 
@@ -171,28 +181,16 @@ class NotificationServiceExtendedTest {
         OrderDetailDto order = new OrderDetailDto(1L, "user-123", Instant.now(),
                 new BigDecimal("50.00"), "CONFIRMED", null, List.of());
         when(orderServiceClient.getOrderDetail("order-dup")).thenReturn(order);
-        when(notificationLogRepository.existsByOrderIdAndNotificationType(
-                eq("order-dup"), any(NotificationType.class))).thenReturn(true);
+        NotificationLog sent = new NotificationLog();
+        sent.setId(5L);
+        sent.setStatus(NotificationStatus.SENT);
+        when(notificationLogRepository.findByOrderIdAndNotificationType(eq("order-dup"), any(NotificationType.class)))
+                .thenReturn(Optional.of(sent));
 
         notificationService.sendOrderConfirmedNotifications("order-dup");
 
         verify(emailService, never()).sendEmail(anyString(), anyString(), anyString());
-        verify(notificationLogRepository, never()).save(any());
-    }
-
-    @Test
-    void shouldHandleDataIntegrityViolationOnSave() {
-        OrderDetailDto order = new OrderDetailDto(1L, "user-123", Instant.now(),
-                new BigDecimal("50.00"), "CONFIRMED", null, List.of());
-        when(orderServiceClient.getOrderDetail("order-race")).thenReturn(order);
-        when(notificationLogRepository.existsByOrderIdAndNotificationType(
-                anyString(), any())).thenReturn(false);
-        when(tracer.currentSpan()).thenReturn(null);
-        doThrow(new DataIntegrityViolationException("duplicate key"))
-                .when(notificationLogRepository).save(any(NotificationLog.class));
-
-        // Should not throw — DataIntegrityViolationException is swallowed (race condition guard)
-        notificationService.sendPaymentFailure("order-race");
+        verify(notificationLogRepository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -204,7 +202,7 @@ class NotificationServiceExtendedTest {
 
         notificationService.sendLowStockAlert("7", 3, 10);
 
-        verify(notificationLogRepository).save(logCaptor.capture());
+        verify(notificationLogRepository).saveAndFlush(logCaptor.capture());
         assertThat(logCaptor.getValue().getTraceId()).isEqualTo("trace-abc");
     }
 
@@ -213,12 +211,11 @@ class NotificationServiceExtendedTest {
         OrderDetailDto order = new OrderDetailDto(1L, "user-null-items", Instant.now(),
                 new BigDecimal("0.00"), "CONFIRMED", null, null);
         when(orderServiceClient.getOrderDetail("order-nil")).thenReturn(order);
-        when(notificationLogRepository.existsByOrderIdAndNotificationType(anyString(), any())).thenReturn(false);
         when(tracer.currentSpan()).thenReturn(null);
 
         notificationService.sendOrderConfirmedNotifications("order-nil");
 
-        verify(notificationLogRepository, times(2)).save(any(NotificationLog.class));
+        verify(notificationLogRepository, times(2)).saveAndFlush(any(NotificationLog.class));
     }
 
     private CartExpiryWarningEvent buildCartExpiryEvent(String cartId, String userId, long expiresInSeconds) {
