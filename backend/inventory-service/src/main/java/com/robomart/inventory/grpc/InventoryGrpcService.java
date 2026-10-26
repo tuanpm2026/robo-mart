@@ -1,15 +1,13 @@
 package com.robomart.inventory.grpc;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.grpc.server.service.GrpcService;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import com.robomart.common.exception.ResourceNotFoundException;
 import com.robomart.inventory.entity.InventoryItem;
@@ -17,6 +15,7 @@ import com.robomart.inventory.entity.Reservation;
 import com.robomart.inventory.enums.ReservationStatus;
 import com.robomart.inventory.exception.InsufficientStockException;
 import com.robomart.inventory.exception.LockAcquisitionException;
+import com.robomart.inventory.exception.ReservationReleasedException;
 import com.robomart.inventory.service.InventoryService;
 import com.robomart.proto.inventory.GetInventoryRequest;
 import com.robomart.proto.inventory.GetInventoryResponse;
@@ -60,101 +59,66 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
             return;
         }
 
-        // Idempotency: a reserve that is retried or replayed after a saga-step timeout must not
-        // decrement stock twice. If a reservation already exists for this order, replay it.
-        Optional<Reservation> existing = inventoryService.findReservation(orderId);
-        if (existing.isPresent()) {
-            Reservation reservation = existing.get();
-            if (reservation.getStatus() == ReservationStatus.RELEASED) {
-                log.warn("reserveInventory rejected: reservation already released for orderId={}", orderId);
-                responseObserver.onError(Status.FAILED_PRECONDITION
-                        .withDescription("Reservation already released for order " + orderId)
-                        .asRuntimeException());
+        try {
+            // Fast path for retries/replays: answer from the existing reservation without taking any
+            // locks. reserveOrder re-checks atomically under the order_id unique key.
+            Optional<Reservation> existing = inventoryService.findReservation(orderId);
+            if (existing.isPresent()) {
+                Reservation reservation = existing.get();
+                if (reservation.getStatus() == ReservationStatus.RELEASED) {
+                    throw new ReservationReleasedException(orderId);
+                }
+                log.info("reserveInventory idempotent replay: returning existing reservationId={} for orderId={}",
+                        reservation.getReservationId(), orderId);
+                respondReserved(responseObserver, reservation.getReservationId(), true);
                 return;
             }
-            log.info("reserveInventory idempotent replay: returning existing reservationId={} for orderId={}",
-                    reservation.getReservationId(), orderId);
-            responseObserver.onNext(ReserveInventoryResponse.newBuilder()
-                    .setSuccess(true)
-                    .setMessage("Inventory already reserved")
-                    .setReservationId(reservation.getReservationId())
-                    .build());
-            responseObserver.onCompleted();
-            return;
-        }
 
-        // Track successfully reserved items for rollback on partial failure
-        List<ReservationItem> reservedItems = new ArrayList<>();
-
-        try {
+            // Validate the whole request before touching stock. Duplicate product lines are merged.
+            Map<Long, Integer> quantities = new LinkedHashMap<>();
             for (ReservationItem item : request.getItemsList()) {
                 Long productId = parseProductId(item.getProductId());
                 int quantity = item.getQuantity();
                 if (quantity <= 0) {
-                    throw new IllegalArgumentException("Quantity must be positive for product " + item.getProductId() + ", got: " + quantity);
+                    throw new IllegalArgumentException(
+                            "Quantity must be positive for product " + item.getProductId() + ", got: " + quantity);
                 }
-
-                log.debug("Reserving stock: productId={}, quantity={}, orderId={}", productId, quantity, orderId);
-                inventoryService.reserveStock(productId, quantity, orderId);
-                reservedItems.add(item);
+                quantities.merge(productId, quantity, Math::addExact);
             }
 
-            String reservationId = UUID.randomUUID().toString();
-
-            // Persist the reservation record AFTER decrementing stock (decrement-first keeps us
-            // oversell-safe). The order_id unique constraint guards against a concurrent duplicate
-            // reserve: the loser rolls back its decrements and replays the winner's reservation.
-            try {
-                inventoryService.recordReservation(orderId, reservationId);
-            } catch (DataIntegrityViolationException dup) {
-                log.warn("Concurrent duplicate reservation for orderId={} — rolling back and replaying", orderId);
-                rollbackReservations(reservedItems, orderId);
-                Optional<Reservation> winner = inventoryService.findReservation(orderId);
-                if (winner.isPresent() && winner.get().getStatus() == ReservationStatus.RESERVED) {
-                    responseObserver.onNext(ReserveInventoryResponse.newBuilder()
-                            .setSuccess(true)
-                            .setMessage("Inventory already reserved")
-                            .setReservationId(winner.get().getReservationId())
-                            .build());
-                    responseObserver.onCompleted();
-                    return;
-                }
-                responseObserver.onError(Status.ABORTED
-                        .withDescription("Concurrent reservation conflict, please retry")
-                        .asRuntimeException());
-                return;
+            // Reservation row, lines and all stock decrements commit in one transaction: a failure on
+            // any item rolls everything back, so there is nothing to compensate here.
+            InventoryService.ReservationResult result = inventoryService.reserveOrder(orderId, quantities);
+            if (result.replayed()) {
+                log.info("reserveInventory idempotent replay: returning existing reservationId={} for orderId={}",
+                        result.reservationId(), orderId);
+            } else {
+                log.info("All items reserved successfully: orderId={}, reservationId={}, itemCount={}",
+                        orderId, result.reservationId(), quantities.size());
             }
-
-            log.info("All items reserved successfully: orderId={}, reservationId={}, itemCount={}",
-                    orderId, reservationId, reservedItems.size());
-
-            ReserveInventoryResponse response = ReserveInventoryResponse.newBuilder()
-                    .setSuccess(true)
-                    .setMessage("Inventory reserved successfully")
-                    .setReservationId(reservationId)
-                    .build();
-
-            responseObserver.onNext(response);
-            responseObserver.onCompleted();
+            respondReserved(responseObserver, result.reservationId(), result.replayed());
 
         } catch (NumberFormatException e) {
             log.warn("Invalid product_id format in reserveInventory: orderId={}", orderId, e);
-            rollbackReservations(reservedItems, orderId);
             responseObserver.onError(Status.INVALID_ARGUMENT
                     .withDescription("Invalid product_id format: " + e.getMessage())
                     .withCause(e)
                     .asRuntimeException());
 
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | ArithmeticException e) {
             log.warn("Invalid argument in reserveInventory: orderId={}", orderId, e);
-            rollbackReservations(reservedItems, orderId);
             responseObserver.onError(Status.INVALID_ARGUMENT
+                    .withDescription(e.getMessage())
+                    .asRuntimeException());
+
+        } catch (ReservationReleasedException e) {
+            log.warn("reserveInventory rejected: reservation already released for orderId={}", orderId);
+            responseObserver.onError(Status.FAILED_PRECONDITION
                     .withDescription(e.getMessage())
                     .asRuntimeException());
 
         } catch (InsufficientStockException e) {
             log.warn("Insufficient stock in reserveInventory: orderId={}, productId={}", orderId, e.getProductId(), e);
-            rollbackReservations(reservedItems, orderId);
             responseObserver.onError(Status.FAILED_PRECONDITION
                     .withDescription(e.getMessage())
                     .withCause(e)
@@ -162,7 +126,6 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
 
         } catch (LockAcquisitionException e) {
             log.warn("Lock acquisition failed in reserveInventory: orderId={}, productId={}", orderId, e.getProductId(), e);
-            rollbackReservations(reservedItems, orderId);
             responseObserver.onError(Status.UNAVAILABLE
                     .withDescription(e.getMessage())
                     .withCause(e)
@@ -170,22 +133,19 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
 
         } catch (ResourceNotFoundException e) {
             log.warn("Resource not found in reserveInventory: orderId={}", orderId, e);
-            rollbackReservations(reservedItems, orderId);
             responseObserver.onError(Status.NOT_FOUND
                     .withDescription(e.getMessage())
                     .withCause(e)
                     .asRuntimeException());
 
-        } catch (ObjectOptimisticLockingFailureException e) {
-            log.warn("Optimistic lock failure in reserveInventory: orderId={}", orderId, e);
-            rollbackReservations(reservedItems, orderId);
+        } catch (ConcurrencyFailureException e) {
+            log.warn("Concurrency failure in reserveInventory: orderId={}", orderId, e);
             responseObserver.onError(Status.ABORTED
                     .withDescription("Concurrent modification detected, please retry")
                     .asRuntimeException());
 
         } catch (IllegalStateException e) {
             log.warn("Illegal state in reserveInventory: orderId={}", orderId, e);
-            rollbackReservations(reservedItems, orderId);
             responseObserver.onError(Status.FAILED_PRECONDITION
                     .withDescription(e.getMessage())
                     .withCause(e)
@@ -193,13 +153,18 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
 
         } catch (Exception e) {
             log.error("Unexpected error in reserveInventory: orderId={}", orderId, e);
-            rollbackReservations(reservedItems, orderId);
             responseObserver.onError(Status.INTERNAL
                     .withDescription("Internal error during inventory reservation")
                     .asRuntimeException());
         }
     }
 
+    /**
+     * Releases the order's reservation. Stock is restored ONLY from the reservation lines stored at
+     * reserve time; the request's items are ignored (they are informational and untrusted). Releasing
+     * an order that has no reservation records a RELEASED tombstone and restores nothing, so it is
+     * safe to call after a failed or timed-out reserve, and it also blocks a late reserve for that order.
+     */
     @Override
     public void releaseInventory(ReleaseInventoryRequest request,
                                  StreamObserver<ReleaseInventoryResponse> responseObserver) {
@@ -214,78 +179,29 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
                     .asRuntimeException());
             return;
         }
-        if (request.getItemsCount() == 0) {
-            responseObserver.onError(Status.INVALID_ARGUMENT
-                    .withDescription("At least one item is required")
-                    .asRuntimeException());
-            return;
-        }
-
-        // Idempotency: if this order's reservation is already released, do nothing. This makes
-        // compensation safe to retry and tolerates a release issued for an order whose reserve
-        // response was lost (the order-service releases by orderId, not by reservationId).
-        Optional<Reservation> existing = inventoryService.findReservation(orderId);
-        if (existing.isPresent() && existing.get().getStatus() == ReservationStatus.RELEASED) {
-            log.info("releaseInventory idempotent no-op: already released for orderId={}", orderId);
-            responseObserver.onNext(ReleaseInventoryResponse.newBuilder()
-                    .setSuccess(true)
-                    .setMessage("Inventory already released")
-                    .build());
-            responseObserver.onCompleted();
-            return;
-        }
 
         try {
-            for (ReservationItem item : request.getItemsList()) {
-                Long productId = parseProductId(item.getProductId());
-                int quantity = item.getQuantity();
-                if (quantity <= 0) {
-                    throw new IllegalArgumentException("Quantity must be positive for product " + item.getProductId() + ", got: " + quantity);
-                }
-
-                log.debug("Releasing stock: productId={}, quantity={}, orderId={}", productId, quantity, orderId);
-                inventoryService.releaseStock(productId, quantity, orderId);
+            InventoryService.ReleaseOutcome outcome = inventoryService.releaseReservation(orderId);
+            String message;
+            switch (outcome) {
+                case RELEASED:
+                    message = "Inventory released successfully";
+                    break;
+                case ALREADY_RELEASED:
+                    message = "Inventory already released";
+                    break;
+                default:
+                    message = "No reservation found; nothing to release";
+                    break;
             }
+            log.info("releaseInventory completed: orderId={}, reservationId={}, outcome={}",
+                    orderId, reservationId, outcome);
 
-            // Mark the reservation released so a subsequent release is an idempotent no-op.
-            inventoryService.markReservationReleased(orderId);
-
-            log.info("All items released successfully: orderId={}, reservationId={}", orderId, reservationId);
-
-            ReleaseInventoryResponse response = ReleaseInventoryResponse.newBuilder()
+            responseObserver.onNext(ReleaseInventoryResponse.newBuilder()
                     .setSuccess(true)
-                    .setMessage("Inventory released successfully")
-                    .build();
-
-            responseObserver.onNext(response);
+                    .setMessage(message)
+                    .build());
             responseObserver.onCompleted();
-
-        } catch (NumberFormatException e) {
-            log.warn("Invalid product_id format in releaseInventory: orderId={}", orderId, e);
-            responseObserver.onError(Status.INVALID_ARGUMENT
-                    .withDescription("Invalid product_id format: " + e.getMessage())
-                    .withCause(e)
-                    .asRuntimeException());
-
-        } catch (IllegalArgumentException e) {
-            log.warn("Invalid argument in releaseInventory: orderId={}", orderId, e);
-            responseObserver.onError(Status.INVALID_ARGUMENT
-                    .withDescription(e.getMessage())
-                    .asRuntimeException());
-
-        } catch (InsufficientStockException e) {
-            log.warn("Insufficient stock in releaseInventory: orderId={}", orderId, e);
-            responseObserver.onError(Status.FAILED_PRECONDITION
-                    .withDescription(e.getMessage())
-                    .withCause(e)
-                    .asRuntimeException());
-
-        } catch (LockAcquisitionException e) {
-            log.warn("Lock acquisition failed in releaseInventory: orderId={}, productId={}", orderId, e.getProductId(), e);
-            responseObserver.onError(Status.UNAVAILABLE
-                    .withDescription(e.getMessage())
-                    .withCause(e)
-                    .asRuntimeException());
 
         } catch (ResourceNotFoundException e) {
             log.warn("Resource not found in releaseInventory: orderId={}", orderId, e);
@@ -294,14 +210,14 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
                     .withCause(e)
                     .asRuntimeException());
 
-        } catch (ObjectOptimisticLockingFailureException e) {
-            log.warn("Optimistic lock failure in releaseInventory: orderId={}", orderId, e);
+        } catch (ConcurrencyFailureException e) {
+            log.warn("Concurrency failure in releaseInventory: orderId={}", orderId, e);
             responseObserver.onError(Status.ABORTED
                     .withDescription("Concurrent modification detected, please retry")
                     .asRuntimeException());
 
         } catch (IllegalStateException e) {
-            log.warn("Illegal state in releaseInventory: orderId={}", orderId, e);
+            log.error("Illegal state in releaseInventory: orderId={} — reservation left RESERVED", orderId, e);
             responseObserver.onError(Status.FAILED_PRECONDITION
                     .withDescription(e.getMessage())
                     .withCause(e)
@@ -371,29 +287,13 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
         return Long.parseLong(productId);
     }
 
-    /**
-     * Best-effort rollback of already-reserved items when a subsequent reservation fails.
-     * Each release is attempted independently; failures are logged but do not propagate,
-     * since this is a compensating action.
-     *
-     * @param reservedItems the list of ReservationItems that were successfully reserved
-     * @param orderId       the order ID used for the original reservation
-     */
-    private void rollbackReservations(List<ReservationItem> reservedItems, String orderId) {
-        if (reservedItems.isEmpty()) {
-            return;
-        }
-        log.warn("Rolling back {} previously reserved items for orderId={}", reservedItems.size(), orderId);
-        for (ReservationItem item : reservedItems) {
-            try {
-                Long productId = Long.parseLong(item.getProductId());
-                int quantity = item.getQuantity();
-                log.warn("Rollback: releasing productId={}, quantity={}, orderId={}", productId, quantity, orderId);
-                inventoryService.releaseStock(productId, quantity, orderId);
-            } catch (Exception e) {
-                log.error("Failed to rollback reservation for productId={}, orderId={}: manual intervention may be required",
-                        item.getProductId(), orderId, e);
-            }
-        }
+    private void respondReserved(StreamObserver<ReserveInventoryResponse> responseObserver,
+                                 String reservationId, boolean replayed) {
+        responseObserver.onNext(ReserveInventoryResponse.newBuilder()
+                .setSuccess(true)
+                .setMessage(replayed ? "Inventory already reserved" : "Inventory reserved successfully")
+                .setReservationId(reservationId)
+                .build());
+        responseObserver.onCompleted();
     }
 }
