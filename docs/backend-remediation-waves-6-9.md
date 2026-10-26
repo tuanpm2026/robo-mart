@@ -46,9 +46,9 @@ Aborted worktrees were removed after preserving tracked diffs, untracked files a
 | Order 1 | RPC deadlines, caller-thread steps, immutable results, uncertain payment hold | Implemented; validation recorded below |
 | Order 2 | Business status mapping, bounded transient retries, fallback outside retry, refund status handling | Implemented; known-payment NOT_FOUND remains an unresolved refund, ALREADY_EXISTS is idempotent success |
 | Order 3 | Propagate failed release and retain recoverable state until release acknowledgement | Implemented; applies to checkout failure, pending/confirmed cancellation and dead-saga recovery |
-| Order 4 | Max age/attempts and manual-review escalation for pending payment/refund | Pending; coordinate with reservation hold/expiry protocol |
-| Order 5 | Ordered asynchronous outbox, unknown-type metric and retention | Pending; include cross-replica aggregate eligibility |
-| Order 6 | Executor context propagation | No saga step executor remains; audit any other executors when implementing outbox |
+| Order 4 | Max age/attempts and manual-review escalation for pending payment/refund | Implemented: persisted per-phase budgets, ADMIN review/resume APIs, ERROR/metric; stock stays held |
+| Order 5 | Ordered asynchronous outbox, unknown-type metric and retention | Implemented: durable claims on aggregate heads, bounded async sends, poison retention, ShedLock cleanup |
+| Order 6 | Executor context propagation | Implemented: outbox executor uses Micrometer context snapshots plus correlation/trace MDC accessors; no saga step executor |
 | Inventory 1 | Atomic SQL reserve without Redis; bounded contention retry | Pending |
 | Inventory 2 | Commit/release consumer, deduplication/DLT, committed returns, expiry | Pending; payment uncertainty must block unsafe expiry |
 | Inventory 3 | Stable outbox IDs, complete event mapping, async ordering and retention | Pending |
@@ -117,3 +117,19 @@ No new schema, REST response fields, proto/Avro contract or infrastructure chang
 | 2. Confluent 8/KRaft and compatible consumer protocol | Pending; verify broker/client/schema compatibility |
 | 3. S3-compatible image storage and MinIO/AWS SDK v2 | Pending; provide migration/rollout path for existing images |
 | 4. Split common-core/common-web-starter, scoped errors and remove cart DB exclusions | Pending; preserve service security and configuration boundaries |
+
+### Order recovery/outbox continuation
+
+`./mvnw clean verify -pl :order-service -DskipE2ETests` passed on 2026-10-26 after adding the recovery and outbox changes. The outbox poller is now included in the JaCoCo gate. A prior incremental run had mismatched JaCoCo class data; the successful clean run has no such mismatch.
+
+New migrations: order V9 (`saga_recovery_state`, including backfill for existing held payments/refunds) and V10 (outbox leases and indexes). Recovery intents commit before RPCs. Pending payment row claims use `FOR NO KEY UPDATE` so the separate intent transaction can acquire its foreign-key key-share lock without blocking its own caller. Refund acknowledgements survive a crash before the order transition and allow recovery without another provider RPC.
+
+Operational controls:
+
+- `saga.payment-recovery.max-age=1h`, `max-attempts=120`; `saga.refund-recovery.max-age=1h`, `max-attempts=12`. Max age must be positive and below 24 hours. Escalation keeps the order non-terminal and does not release inventory.
+- ADMIN-only `GET /api/v1/admin/orders/recovery/manual-reviews?page=0&size=25` (maximum 100) lists held phases. `POST /api/v1/admin/orders/recovery/{orderId}/{PAYMENT|REFUND}/resume` grants a new budget; it does not change payment outcomes, cancel the order or release stock. Reconciliation retains the original idempotency key.
+- `outbox.publish-timeout=10s`, `outbox.claim-duration=2m`, `outbox.retention=7d`. Only one pending head per aggregate is eligible, even across replicas. Unknown/corrupt heads remain unpublished and block their own aggregate. Independent aggregates still advance. An uncertain send retains its lease; replay uses the stable existing event ID.
+- The new claim protocol requires old pollers to be drained before relying on its ordering guarantees. Old application versions ignore claim columns. For a strict cutover, stop/drain old order replicas before starting the new poller; the migrations alone do not make mixed-version pollers safe.
+- Retention deletes only published rows in batches of 10,000 under ShedLock. No unpublished rows are deleted. Producer/Schema Registry blocking and delivery timeouts are bounded.
+
+The overall Wave 7 scope remains incomplete; the remaining services are still pending in the table above. The successful whole-reactor run recorded earlier predates this continuation; new full-reactor validation will be recorded at the wave boundary.

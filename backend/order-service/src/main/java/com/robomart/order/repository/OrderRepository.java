@@ -23,8 +23,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Optional<Order> findById(Long id);
 
     @Query(value = "SELECT * FROM orders WHERE status = 'PAYMENT_PENDING' "
+            + "AND NOT EXISTS (SELECT 1 FROM saga_recovery_state s WHERE s.order_id=orders.id "
+            + "AND s.phase='PAYMENT' AND (s.manual_review_at IS NOT NULL OR s.completed_at IS NOT NULL)) "
             + "AND (next_payment_retry_at IS NULL OR next_payment_retry_at <= :now) "
-            + "ORDER BY next_payment_retry_at NULLS FIRST, id LIMIT 1 FOR UPDATE SKIP LOCKED", nativeQuery = true)
+            + "ORDER BY next_payment_retry_at NULLS FIRST, id LIMIT 1 FOR NO KEY UPDATE SKIP LOCKED", nativeQuery = true)
     Optional<Order> findNextPendingPaymentForUpdate(@Param("now") Instant now);
 
     @Query(value = "SELECT * FROM orders WHERE id = :id AND status = 'PAYMENT_PROCESSING' "

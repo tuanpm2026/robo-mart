@@ -208,8 +208,6 @@
                         <!-- Admin REST controllers: ADMIN-role glue using many repos, tested via integration tests -->
                         <exclude>**/controller/OrderAdminRestController.class</exclude>
                         <exclude>**/controller/ReportAdminRestController.class</exclude>
-                        <!-- Outbox poller: uses KafkaTemplate.send().get() blocking call, tested via integration tests -->
-                        <exclude>**/service/OutboxPollingService.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>

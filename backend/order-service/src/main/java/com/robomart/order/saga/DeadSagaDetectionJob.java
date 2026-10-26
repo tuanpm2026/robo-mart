@@ -3,7 +3,6 @@ package com.robomart.order.saga;
 import java.time.Instant;
 import java.util.List;
 
-import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -13,6 +12,8 @@ import com.robomart.order.config.SagaProperties;
 import com.robomart.order.entity.Order;
 import com.robomart.order.enums.OrderStatus;
 import com.robomart.order.repository.OrderRepository;
+
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 
 @Component
 public class DeadSagaDetectionJob {
@@ -35,13 +36,15 @@ public class DeadSagaDetectionJob {
     private final OrderRepository orderRepository;
     private final OrderSagaOrchestrator sagaOrchestrator;
     private final SagaProperties sagaProperties;
+    private final SagaRecoveryPolicy recoveryPolicy;
 
     public DeadSagaDetectionJob(OrderRepository orderRepository,
                                 OrderSagaOrchestrator sagaOrchestrator,
-                                SagaProperties sagaProperties) {
+                                SagaProperties sagaProperties, SagaRecoveryPolicy recoveryPolicy) {
         this.orderRepository = orderRepository;
         this.sagaOrchestrator = sagaOrchestrator;
         this.sagaProperties = sagaProperties;
+        this.recoveryPolicy = recoveryPolicy;
     }
 
     @Scheduled(
@@ -71,7 +74,9 @@ public class DeadSagaDetectionJob {
 
         for (Order order : stuckOrders) {
             try {
-                sagaOrchestrator.handleDeadSaga(order);
+                if (!recoveryPolicy.isManualReview(order.getId())) {
+                    sagaOrchestrator.handleDeadSaga(order);
+                }
             } catch (Exception e) {
                 log.error("Recovery failed for dead saga orderId={}: {}",
                           order.getId(), e.getMessage(), e);

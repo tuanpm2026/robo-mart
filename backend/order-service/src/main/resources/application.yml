@@ -68,6 +68,11 @@ saga:
     initial-delay-ms: 5000
     retry-delay: 30s
     batch-size: 20
+    max-age: 1h
+    max-attempts: 120
+  refund-recovery:
+    max-age: 1h
+    max-attempts: 12
   steps:
     default-timeout: 10s
     timeouts:

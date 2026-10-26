@@ -40,12 +40,15 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import com.robomart.common.dto.ApiResponse;
 import com.robomart.order.client.ProductCatalogClient;
 import com.robomart.order.client.ProductSnapshot;
+import com.robomart.order.config.SagaProperties;
 import com.robomart.order.entity.Order;
 import com.robomart.order.enums.OrderStatus;
 import com.robomart.order.repository.OrderRepository;
 import com.robomart.order.repository.OutboxEventRepository;
 import com.robomart.order.repository.SagaAuditLogRepository;
 import com.robomart.order.saga.OrderSagaOrchestrator;
+import com.robomart.order.saga.RecoveryPhase;
+import com.robomart.order.saga.SagaRecoveryPolicy;
 import com.robomart.order.service.OrderService;
 import com.robomart.order.service.PendingPaymentRecoveryService;
 import com.robomart.proto.inventory.InventoryServiceGrpc;
@@ -89,6 +92,8 @@ class PendingPaymentRecoveryIT {
     @Autowired private SagaAuditLogRepository sagaAuditLogRepository;
     @Autowired private CircuitBreakerRegistry circuitBreakerRegistry;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private SagaProperties sagaProperties;
+    @Autowired private SagaRecoveryPolicy recoveryPolicy;
 
     private final List<Long> createdIds = new ArrayList<>();
 
@@ -408,5 +413,42 @@ class PendingPaymentRecoveryIT {
     private static ProcessPaymentResponse success(String id) {
         return ProcessPaymentResponse.newBuilder().setSuccess(true).setPaymentId(id)
                 .setTransactionId("transaction-" + id).build();
+    }    @Test
+    void exhaustedPaymentBudgetStopsAutomaticCallsWithoutReleasingStock() {
+        when(paymentStub.processPayment(any())).thenThrow(Status.UNAVAILABLE.asRuntimeException());
+        Order pending = createPendingOrder();
+        reset(paymentStub);
+        when(paymentStub.processPayment(any())).thenThrow(Status.UNAVAILABLE.asRuntimeException());
+        int previous = sagaProperties.getPaymentRecovery().getMaxAttempts();
+        try {
+            sagaProperties.getPaymentRecovery().setMaxAttempts(1);
+            assertThat(recoveryService.resumeNextPayment()).isTrue();
+            assertThat(recoveryPolicy.isManualReview(pending.getId())).isTrue();
+            assertThat(recoveryService.resumeNextPayment()).isFalse();
+            assertThat(orderRepository.findById(pending.getId()).orElseThrow().getStatus())
+                    .isEqualTo(OrderStatus.PAYMENT_PENDING);
+            verify(paymentStub, times(3)).processPayment(org.mockito.ArgumentMatchers.argThat(request ->
+                    request.getIdempotencyKey().equals(pending.getId().toString())));
+            verify(inventoryStub, never()).releaseInventory(any());
+        } finally {
+            sagaProperties.getPaymentRecovery().setMaxAttempts(previous);
+        }
     }
+
+    @Test
+    void agedUncertainPaymentEscalatesBeforeAnotherRpc() {
+        when(paymentStub.processPayment(any())).thenThrow(Status.UNAVAILABLE.asRuntimeException());
+        Order pending = createPendingOrder();
+        reset(paymentStub);
+        jdbc.update("UPDATE orders SET created_at=now() - interval '2 hours' WHERE id=?", pending.getId());
+
+        assertThat(recoveryService.resumeNextPayment()).isTrue();
+        assertThat(recoveryPolicy.isManualReview(pending.getId())).isTrue();
+        assertThat(recoveryService.resumeNextPayment()).isFalse();
+        verify(paymentStub, never()).processPayment(any());
+        verify(inventoryStub, never()).releaseInventory(any());
+        assertThat(orderRepository.findById(pending.getId()).orElseThrow().getReservationId())
+                .isEqualTo("recovery-reservation");
+    }
+
 }

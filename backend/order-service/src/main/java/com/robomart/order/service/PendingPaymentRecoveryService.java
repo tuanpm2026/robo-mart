@@ -20,6 +20,8 @@ import com.robomart.order.repository.OrderRepository;
 import com.robomart.order.repository.OrderStatusHistoryRepository;
 import com.robomart.order.repository.OutboxEventRepository;
 import com.robomart.order.repository.SagaAuditLogRepository;
+import com.robomart.order.saga.RecoveryPhase;
+import com.robomart.order.saga.SagaRecoveryPolicy;
 import com.robomart.order.saga.steps.ReleaseInventoryStep;
 import com.robomart.proto.common.Money;
 import com.robomart.proto.payment.ProcessPaymentRequest;
@@ -40,10 +42,12 @@ public class PendingPaymentRecoveryService {
     private final ReleaseInventoryStep releaseInventory;
     private final SagaProperties properties;
     private final ObjectMapper mapper;
+    private final SagaRecoveryPolicy recoveryPolicy;
 
     public PendingPaymentRecoveryService(OrderRepository orders, OrderStatusHistoryRepository history,
             OutboxEventRepository outbox, SagaAuditLogRepository audit, PaymentGrpcClient payment,
-            ReleaseInventoryStep releaseInventory, SagaProperties properties, ObjectMapper mapper) {
+            ReleaseInventoryStep releaseInventory, SagaProperties properties, ObjectMapper mapper,
+            SagaRecoveryPolicy recoveryPolicy) {
         this.orders = orders;
         this.history = history;
         this.outbox = outbox;
@@ -52,6 +56,7 @@ public class PendingPaymentRecoveryService {
         this.releaseInventory = releaseInventory;
         this.properties = properties;
         this.mapper = mapper;
+        this.recoveryPolicy = recoveryPolicy;
     }
 
     /**
@@ -66,6 +71,9 @@ public class PendingPaymentRecoveryService {
             return false;
         }
         Order order = candidate.get();
+        if (!recoveryPolicy.tryBegin(order, RecoveryPhase.PAYMENT)) {
+            return true;
+        }
         order.setPaymentRetryCount(order.getPaymentRetryCount() + 1);
         order.setNextPaymentRetryAt(Instant.now().plus(properties.getPaymentRecovery().getRetryDelay()));
 
@@ -88,16 +96,19 @@ public class PendingPaymentRecoveryService {
             try {
                 releaseInventory.releaseForRecovery(order);
             } catch (RuntimeException unavailable) {
+                recoveryPolicy.failed(order.getId(), RecoveryPhase.PAYMENT, "Declined payment; release unavailable");
                 recordAttempt(order, "FAILED", "Declined payment; inventory release unavailable");
                 log.warn("Pending order {} awaits inventory release after payment decline", order.getId());
                 return true;
             }
             order.setCancellationReason("Payment declined");
+            recoveryPolicy.completed(order.getId(), RecoveryPhase.PAYMENT);
             finish(order, OrderStatus.CANCELLED);
             recordAttempt(order, "FAILED", "Payment declined");
             return true;
         } catch (RuntimeException uncertain) {
             // A timeout can hide a completed charge. Never release stock or generate a new key.
+            recoveryPolicy.failed(order.getId(), RecoveryPhase.PAYMENT, "Payment unavailable or result uncertain");
             recordAttempt(order, "FAILED", "Payment unavailable or result uncertain");
             log.info("Payment recovery deferred for order {} (attempt {})",
                     order.getId(), order.getPaymentRetryCount());
@@ -108,6 +119,7 @@ public class PendingPaymentRecoveryService {
         if (!audit.existsByIdempotencyKeyAndStatus(key, "SUCCESS")) {
             recordAttempt(order, "SUCCESS", null);
         }
+        recoveryPolicy.completed(order.getId(), RecoveryPhase.PAYMENT);
         finish(order, OrderStatus.CONFIRMED);
         log.info("Pending payment resumed for order {}", order.getId());
         return true;

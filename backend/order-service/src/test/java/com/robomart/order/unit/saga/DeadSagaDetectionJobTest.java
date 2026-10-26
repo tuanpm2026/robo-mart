@@ -32,11 +32,13 @@ import com.robomart.order.enums.OrderStatus;
 import com.robomart.order.repository.OrderRepository;
 import com.robomart.order.saga.DeadSagaDetectionJob;
 import com.robomart.order.saga.OrderSagaOrchestrator;
+import com.robomart.order.saga.SagaRecoveryPolicy;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("DeadSagaDetectionJob")
 class DeadSagaDetectionJobTest {
 
+    @Mock private SagaRecoveryPolicy recoveryPolicy;
     @Mock private OrderRepository orderRepository;
     @Mock private OrderSagaOrchestrator sagaOrchestrator;
 
@@ -46,7 +48,8 @@ class DeadSagaDetectionJobTest {
     @BeforeEach
     void setUp() {
         sagaProperties = new SagaProperties();
-        job = new DeadSagaDetectionJob(orderRepository, sagaOrchestrator, sagaProperties);
+        job = new DeadSagaDetectionJob(orderRepository, sagaOrchestrator, sagaProperties,
+                recoveryPolicy);
     }
 
     private Order buildStuckOrder(OrderStatus status) {
@@ -130,5 +133,15 @@ class DeadSagaDetectionJobTest {
         // Should not throw — must process order2 despite order1 failure
         assertDoesNotThrow(() -> job.detectAndRecoverDeadSagas());
         verify(sagaOrchestrator).handleDeadSaga(order2);
+    }    @Test
+    void manualReviewOrdersAreNotAutomaticallyRecovered() {
+        Order order = buildStuckOrder(OrderStatus.REFUND_FAILED);
+        when(orderRepository.findStuckSagas(anyList(), any())).thenReturn(List.of(order));
+        when(recoveryPolicy.isManualReview(order.getId())).thenReturn(true);
+
+        job.detectAndRecoverDeadSagas();
+
+        verify(sagaOrchestrator, never()).handleDeadSaga(any());
     }
+
 }

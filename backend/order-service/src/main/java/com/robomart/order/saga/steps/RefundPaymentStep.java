@@ -8,7 +8,9 @@ import com.robomart.order.entity.Order;
 import com.robomart.order.grpc.PaymentBusinessException;
 import com.robomart.order.grpc.PaymentGrpcClient;
 import com.robomart.order.grpc.PaymentServiceUnavailableException;
+import com.robomart.order.saga.RecoveryPhase;
 import com.robomart.order.saga.SagaContext;
+import com.robomart.order.saga.SagaRecoveryPolicy;
 import com.robomart.order.saga.SagaStep;
 import com.robomart.order.saga.SagaStepResult;
 import com.robomart.order.saga.exception.SagaStepException;
@@ -24,9 +26,11 @@ public class RefundPaymentStep implements SagaStep {
     private static final Logger log = LoggerFactory.getLogger(RefundPaymentStep.class);
 
     private final PaymentGrpcClient paymentClient;
+    private final SagaRecoveryPolicy recoveryPolicy;
 
-    public RefundPaymentStep(PaymentGrpcClient paymentClient) {
+    public RefundPaymentStep(PaymentGrpcClient paymentClient, SagaRecoveryPolicy recoveryPolicy) {
         this.paymentClient = paymentClient;
+        this.recoveryPolicy = recoveryPolicy;
     }
 
     @Override
@@ -43,6 +47,23 @@ public class RefundPaymentStep implements SagaStep {
             return SagaStepResult.NONE;
         }
 
+        if (recoveryPolicy.isCompleted(order.getId(), RecoveryPhase.REFUND)) {
+            return SagaStepResult.NONE;
+        }
+        if (!recoveryPolicy.tryBegin(order, RecoveryPhase.REFUND)) {
+            throw new SagaStepException("Refund recovery paused or requires manual review", false);
+        }
+        try {
+            SagaStepResult result = refund(order);
+            recoveryPolicy.completed(order.getId(), RecoveryPhase.REFUND);
+            return result;
+        } catch (RuntimeException failure) {
+            recoveryPolicy.failed(order.getId(), RecoveryPhase.REFUND, "Refund failed or result uncertain");
+            throw failure;
+        }
+    }
+
+    private SagaStepResult refund(Order order) {
         String reason = order.getCancellationReason() != null
                 ? order.getCancellationReason()
                 : "Order cancelled";

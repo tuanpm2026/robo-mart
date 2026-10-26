@@ -11,9 +11,18 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "saga")
 public class SagaProperties {
 
+    private RecoveryLimits refundRecovery = new RecoveryLimits();
     private Steps steps = new Steps();
     private PaymentRecovery paymentRecovery = new PaymentRecovery();
     private DeadSagaDetection deadSagaDetection = new DeadSagaDetection();
+
+    public RecoveryLimits getRefundRecovery() {
+        return refundRecovery;
+    }
+
+    public void setRefundRecovery(RecoveryLimits refundRecovery) {
+        this.refundRecovery = refundRecovery;
+    }
 
     public Steps getSteps() {
         return steps;
@@ -39,7 +48,39 @@ public class SagaProperties {
         this.paymentRecovery = paymentRecovery;
     }
 
-    public static class PaymentRecovery {
+    public static class RecoveryLimits {
+        private Duration maxAge = Duration.ofHours(1);
+        private int maxAttempts = 12;
+
+        public Duration getMaxAge() {
+            return maxAge;
+        }
+
+        public void setMaxAge(Duration maxAge) {
+            if (maxAge == null || maxAge.isNegative() || maxAge.isZero()
+                    || maxAge.compareTo(Duration.ofHours(24)) >= 0) {
+                throw new IllegalArgumentException("Recovery max age must be positive and less than 24 hours");
+            }
+            this.maxAge = maxAge;
+        }
+
+        public int getMaxAttempts() {
+            return maxAttempts;
+        }
+
+        public void setMaxAttempts(int maxAttempts) {
+            if (maxAttempts < 1 || maxAttempts > 10000) {
+                throw new IllegalArgumentException("Recovery attempts must be between 1 and 10000");
+            }
+            this.maxAttempts = maxAttempts;
+        }
+    }
+
+    public static class PaymentRecovery extends RecoveryLimits {
+        public PaymentRecovery() {
+            setMaxAttempts(120);
+        }
+
         private int batchSize = 20;
         private Duration retryDelay = Duration.ofSeconds(30);
 
