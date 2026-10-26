@@ -54,9 +54,9 @@ Aborted worktrees were removed after preserving tracked diffs, untracked files a
 | Inventory 3 | Stable outbox IDs, complete event mapping, async ordering and retention | Implemented: persisted UUID, aggregate-head claims, bounded async sends, unknown retention, ShedLock cleanup; dead restock writes retired with audit archive |
 | Inventory 4 | Low-stock threshold crossing and transaction boundaries | Implemented: crossing-only alert; alert write failure rolls back the reservation |
 | Inventory 5 | Quantity constraints, restock/list bounds | Implemented: nonnegative DB guards, restock maximum 1,000,000 and list maximum 100, checked integer arithmetic |
-| Cart 1 | Atomic Redis hash operations, TTL refresh and atomic merge | Pending |
-| Cart 2 | Product reverse index, per-field price updates and DLT | Pending |
-| Cart 3 | Distributed expiry-warning lock, warned marker, stable ID and expiry ZSET | Pending |
+| Cart 1 | Atomic Redis hash operations, TTL refresh and atomic merge | Implemented: Lua line operations and atomic guest transfer, immutable GET body, TTL refresh and legacy-hash conversion |
+| Cart 2 | Product reverse index, per-field price updates and DLT | Implemented: expiring product ZSET indexes, line-only monotonic price updates, latest snapshot during migration, Avro/raw-byte DLT |
+| Cart 3 | Distributed expiry-warning lock, warned marker, stable ID and expiry ZSET | Implemented: Redis token lease, acknowledged-generation marker, stable retry ID, expiry ZSET and failure cooldown |
 | Payment 1 | Resolve dead outbox writes/publisher | Pending; make and document the ownership decision |
 | Payment 2 | Intent/provider/result boundaries with idempotency preserved | Pending; requires crash-window tests |
 | Payment 3 | Partial-refund accounting, currency and INVALID_ARGUMENT | Pending |
@@ -167,3 +167,22 @@ Executed validation on JDK 25:
 - Both Compose configuration checks and Kustomize base/production/ingress-tls renders — passed.
 
 Earlier TTL integration assertions were blocked by the scheduler's minimum lock after its initial empty run; the logic tests now call the unwrapped job, while production retains ShedLock. A subsequent unit-test compilation failure from treating MeterRegistry as AutoCloseable was corrected. The successful inventory run still reports a Surefire forced fork shutdown after the cached Spring contexts take more than 30 seconds to close; all 122 executed tests and coverage pass. This shutdown warning remains to be investigated before the final Wave 7 reactor run. Full-stack E2E and live Keycloak provisioning have not been executed for this subset.
+
+
+### Atomic carts and expiry warnings
+
+Cart storage now uses one hash per cart, with one JSON field per product and metadata fields. Lua atomically adds (quantity cap 999), sets/removes a line, refreshes TTL and transfers guest → user. GET reads the current hash and refreshes expiry/index TTL without rewriting the cart body or updated timestamp. Reverse product indexes are expiring ZSETs, so product updates touch only affected lines, preserve concurrent quantities, ignore older price timestamps and remove stale memberships. A latest product snapshot with a bounded TTL closes the event window while legacy hashes are converted. Both Avro processing failures and corrupt original bytes have a verified DLT path.
+
+Spring Data Redis repositories and @RedisHash are removed. Existing Spring Data hashes retain their keys and are converted atomically on first access; this one-time storage migration is the exception to ordinary GET's immutable hash body. A bounded background batch drains the old `cart` repository set, creates reverse/expiry indexes and removes stale membership. Malformed hashes remain unchanged for operator review. The actual Spring Data Redis converter is used in migration tests, preserving names, decimal prices, quantities, user identity, timestamps and remaining TTL.
+
+Rollout: stop all old cart writers before starting the new format. The K8s cart Deployment uses Recreate for this migration; mixed old/new replicas would interpret the same hash differently and can lose data. Compose already replaces the old container. Expect a brief cart interruption during cutover. Do not roll back to a Spring Data writer against converted hashes; restore a compatible application or a separately verified Redis backup instead. No cart deletion/reset or Redis volume removal is part of this change.
+
+Warnings use a Redis lease with token-checked release, expire-time ZSET selection, at most five sends per pass, one-minute polling and a five-minute failure cooldown. A cart is marked warned only after Kafka acknowledgement; uncertain retries retain the event ID derived from cart + expiry generation. Successful/irrelevant candidates are removed without removing a concurrently refreshed generation. Activity creates a new expiry generation. The product reverse indexes and warning markers have TTLs; legacy repository memberships are no longer created. Kafka readiness is now backed by a real bounded probe.
+
+Executed on JDK25, with the VS Code Java language server temporarily suspended during Maven and automatically resumed afterwards (its background ECJ builder was overwriting target classes with unresolved-compilation stubs):
+
+- `./mvnw clean verify -pl :cart-service -DskipE2ETests` — success, 45 unit + 40 integration tests, coverage passed. Redis tests cover concurrent add/GET, capped sums, parallel repeated merge + user updates, price/quantity races, stale snapshots, real legacy conversion, migration event windows and warning acknowledgement/retry deduplication. Real Kafka tests cover retry → Avro DLT and exact original corrupt-byte delivery.
+- `./mvnw checkstyle:check -pl :cart-service` — success, existing naming warnings remain.
+- Both Compose config checks and Kustomize base/production/ingress-tls — passed.
+
+The first Kafka test attempt matched a nanosecond Instant against Avro's millisecond timestamp and therefore did not inject the intended failure; the fixture now uses millisecond precision. The successful run includes all suites and no forced JVM shutdown warning. TTL HTTP tests now assert configured TTL against Redis, shorten only the test key's expiry, and poll Redis existence rather than sleeping 150 seconds or refreshing TTL through HTTP polling. Test-profile-only immediate Tomcat shutdown and disabled outbound OTLP metrics avoid delayed cached-context teardown; production graceful shutdown is unchanged.

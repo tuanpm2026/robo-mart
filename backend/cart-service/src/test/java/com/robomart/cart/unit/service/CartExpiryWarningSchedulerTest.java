@@ -1,27 +1,19 @@
 package com.robomart.cart.unit.service;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.Duration;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.redis.core.Cursor;
-import org.springframework.data.redis.core.ScanOptions;
+import org.mockito.ArgumentCaptor;
+import org.springframework.data.redis.core.DefaultTypedTuple;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -32,127 +24,41 @@ import com.robomart.cart.repository.CartRepository;
 import com.robomart.cart.service.CartExpiryWarningScheduler;
 import com.robomart.events.cart.CartExpiryWarningEvent;
 
-@ExtendWith(MockitoExtension.class)
 class CartExpiryWarningSchedulerTest {
-
-    @Mock
-    private StringRedisTemplate stringRedisTemplate;
-
-    @Mock
-    private CartRepository cartRepository;
-
-    @Mock
-    private CartEventProducer cartEventProducer;
-
-    @Mock
-    private Cursor<String> cursor;
-
-    private CartExpiryWarningScheduler scheduler;
-
-    @BeforeEach
-    void setUp() {
-        scheduler = new CartExpiryWarningScheduler(stringRedisTemplate, cartRepository, cartEventProducer);
-        ReflectionTestUtils.setField(scheduler, "checkoutBaseUrl", "http://localhost:5173/cart");
-    }
-
-    private Cart buildCart(String cartId, String userId, boolean hasItems) {
-        Cart cart = new Cart(cartId);
-        cart.setUserId(userId);
-        if (hasItems) {
-            CartItem item = new CartItem(1L, "Test Product", new BigDecimal("19.99"), 2);
-            List<CartItem> items = new ArrayList<>();
-            items.add(item);
-            cart.setItems(items);
-        }
-        return cart;
-    }
-
-    @SuppressWarnings("unchecked")
-    private void setupCursorWithKey(String key) {
-        when(stringRedisTemplate.scan(any(ScanOptions.class))).thenReturn(cursor);
-        doAnswer(invocation -> {
-            Consumer<String> consumer = invocation.getArgument(0);
-            consumer.accept(key);
-            return null;
-        }).when(cursor).forEachRemaining(any(Consumer.class));
+    @Test
+    void globalLockPreventsConcurrentReplicaWarnings() {
+        StringRedisTemplate redis = mock(StringRedisTemplate.class, RETURNS_DEEP_STUBS);
+        CartRepository carts = mock(CartRepository.class);
+        CartEventProducer producer = mock(CartEventProducer.class);
+        when(redis.opsForValue().setIfAbsent(anyString(), anyString(), any(Duration.class))).thenReturn(false);
+        new CartExpiryWarningScheduler(redis, carts, producer).scanAndWarnExpiringCarts();
+        verifyNoInteractions(carts, producer);
     }
 
     @Test
-    void shouldPublishEventForCartWithTtlWithinThreshold() {
-        String cartId = "cart-123";
-        String key = "cart:" + cartId;
-
-        setupCursorWithKey(key);
-        when(stringRedisTemplate.getExpire(key, TimeUnit.SECONDS)).thenReturn(3600L);
-        when(cartRepository.findById(cartId)).thenReturn(Optional.of(buildCart(cartId, "user-456", true)));
-
+    void retryKeepsStableIdAndOnlySuccessfulSendGetsWarnedMarker() {
+        StringRedisTemplate redis = mock(StringRedisTemplate.class, RETURNS_DEEP_STUBS);
+        CartRepository carts = mock(CartRepository.class);
+        CartEventProducer producer = mock(CartEventProducer.class);
+        when(redis.opsForValue().setIfAbsent(anyString(), anyString(), any(Duration.class))).thenReturn(true);
+        when(redis.opsForZSet().rangeByScoreWithScores(eq(CartRepository.EXPIRY_KEY), anyDouble(), anyDouble(),
+                eq(0L), eq(100L))).thenReturn(Set.of(new DefaultTypedTuple<>("cart:u:user", 10000000000D)));
+        when(redis.getExpire("cart:u:user", TimeUnit.SECONDS)).thenReturn(3600L);
+        Cart cart = new Cart("u:user");
+        cart.setUserId("user");
+        cart.addItem(new CartItem(7L, "Robot", new BigDecimal("10.00"), 2));
+        when(carts.findById("u:user")).thenReturn(Optional.of(cart));
+        when(producer.send(anyString(), anyString(), any())).thenReturn(
+                CompletableFuture.failedFuture(new IllegalStateException("send failed")),
+                CompletableFuture.completedFuture(null));
+        var scheduler = new CartExpiryWarningScheduler(redis, carts, producer);
+        ReflectionTestUtils.setField(scheduler, "checkoutBaseUrl", "http://localhost/cart");
         scheduler.scanAndWarnExpiringCarts();
-
-        verify(cartEventProducer).send(eq(CartEventProducer.TOPIC_CART_EXPIRY_WARNING), eq(cartId),
-                any(CartExpiryWarningEvent.class));
-    }
-
-    @Test
-    void shouldSkipCartWithTtlAboveThreshold() {
-        String key = "cart:cart-999";
-
-        setupCursorWithKey(key);
-        when(stringRedisTemplate.getExpire(key, TimeUnit.SECONDS)).thenReturn(10000L);
-
+        verify(redis.opsForValue(), never()).set(eq("cart:warned:cart:u:user"), anyString(), any(Duration.class));
         scheduler.scanAndWarnExpiringCarts();
-
-        verify(cartEventProducer, never()).send(anyString(), anyString(), any());
-    }
-
-    @Test
-    void shouldSkipCartWithNullUserId() {
-        String cartId = "cart-no-user";
-        String key = "cart:" + cartId;
-
-        setupCursorWithKey(key);
-        when(stringRedisTemplate.getExpire(key, TimeUnit.SECONDS)).thenReturn(3600L);
-        Cart cart = buildCart(cartId, null, true);
-        when(cartRepository.findById(cartId)).thenReturn(Optional.of(cart));
-
-        scheduler.scanAndWarnExpiringCarts();
-
-        verify(cartEventProducer, never()).send(anyString(), anyString(), any());
-    }
-
-    @Test
-    void shouldSkipCartWithEmptyItems() {
-        String cartId = "cart-empty";
-        String key = "cart:" + cartId;
-
-        setupCursorWithKey(key);
-        when(stringRedisTemplate.getExpire(key, TimeUnit.SECONDS)).thenReturn(3600L);
-        Cart cart = buildCart(cartId, "user-456", false);
-        when(cartRepository.findById(cartId)).thenReturn(Optional.of(cart));
-
-        scheduler.scanAndWarnExpiringCarts();
-
-        verify(cartEventProducer, never()).send(anyString(), anyString(), any());
-    }
-
-    @Test
-    void shouldNotPropagateRedisScanException() {
-        when(stringRedisTemplate.scan(any(ScanOptions.class))).thenThrow(new RuntimeException("Redis connection refused"));
-
-        // Should not throw — exception is caught and logged
-        scheduler.scanAndWarnExpiringCarts();
-
-        verify(cartEventProducer, never()).send(anyString(), anyString(), any());
-    }
-
-    @Test
-    void shouldSkipCartWithNonPositiveTtl() {
-        String key = "cart:cart-expired";
-
-        setupCursorWithKey(key);
-        when(stringRedisTemplate.getExpire(key, TimeUnit.SECONDS)).thenReturn(-1L);
-
-        scheduler.scanAndWarnExpiringCarts();
-
-        verify(cartEventProducer, never()).send(anyString(), anyString(), any());
+        var events = ArgumentCaptor.forClass(CartExpiryWarningEvent.class);
+        verify(producer, times(2)).send(anyString(), eq("user"), events.capture());
+        assertThat(events.getAllValues().get(0).getEventId()).isEqualTo(events.getAllValues().get(1).getEventId());
+        verify(redis.opsForValue()).set("cart:warned:cart:u:user", "10000000000", Duration.ofSeconds(3600));
     }
 }

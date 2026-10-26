@@ -7,21 +7,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.redis.core.RedisHash;
-import org.springframework.data.redis.core.TimeToLive;
 
-@RedisHash("cart")
 public class Cart {
 
-    @Id
     private String id;
     private String userId;
     private List<CartItem> items = new ArrayList<>();
     private Instant createdAt;
     private Instant updatedAt;
 
-    @TimeToLive
     private Long timeToLive;
 
     public Cart() {

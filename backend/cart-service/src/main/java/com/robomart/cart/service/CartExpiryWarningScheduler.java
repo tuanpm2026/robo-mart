@@ -1,6 +1,8 @@
 package com.robomart.cart.service;
 
 import java.time.Instant;
+import java.time.Duration;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -8,9 +10,8 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.Cursor;
-import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -43,39 +44,65 @@ public class CartExpiryWarningScheduler {
         this.cartEventProducer = cartEventProducer;
     }
 
-    @Scheduled(fixedDelay = 1800000)  // every 30 minutes
+    @Scheduled(fixedDelayString = "${robomart.cart.warning-interval:PT1M}")
     public void scanAndWarnExpiringCarts() {
-        log.info("Scanning for expiring carts...");
-        ScanOptions options = ScanOptions.scanOptions().match(CART_KEY_PREFIX + "*").count(100).build();
-        try (Cursor<String> cursor = stringRedisTemplate.scan(options)) {
-            cursor.forEachRemaining(key -> {
+        String token = UUID.randomUUID().toString();
+        String lock = "cart:expiry-warning-lock";
+        if (!Boolean.TRUE.equals(stringRedisTemplate.opsForValue().setIfAbsent(lock, token, Duration.ofMinutes(2)))) {
+            return;
+        }
+        try {
+            long now = Instant.now().getEpochSecond();
+            stringRedisTemplate.opsForZSet().removeRangeByScore(CartRepository.EXPIRY_KEY, Double.NEGATIVE_INFINITY, now);
+            var candidates = stringRedisTemplate.opsForZSet().rangeByScoreWithScores(
+                    CartRepository.EXPIRY_KEY, now, now + WARN_THRESHOLD_SECONDS, 0, 100);
+            if (candidates == null) return;
+            int attempts = 0;
+            for (var candidate : candidates) {
+                String key = candidate.getValue();
+                String retry = "cart:warning-retry:" + key;
                 try {
-                    processCartKey(key);
-                } catch (Exception e) {
-                    log.error("Error processing cart key={}: {}", key, e.getMessage());
+                    if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(retry))) continue;
+                    String generation = String.valueOf(candidate.getScore().longValue());
+                    String marker = "cart:warned:" + key;
+                    if (generation.equals(stringRedisTemplate.opsForValue().get(marker))) {
+                        removeCandidate(key, generation);
+                        continue;
+                    }
+                    Long ttl = stringRedisTemplate.getExpire(key, TimeUnit.SECONDS);
+                    if (ttl == null || ttl <= 0 || ttl > WARN_THRESHOLD_SECONDS) continue;
+                    Cart cart = cartRepository.findById(key.substring(CART_KEY_PREFIX.length())).orElse(null);
+                    if (cart == null || cart.getUserId() == null || cart.getItems().isEmpty()) {
+                        removeCandidate(key, generation);
+                        continue;
+                    }
+                    if (attempts++ == 5) break;
+                    publishExpiryWarning(cart, ttl, generation);
+                    stringRedisTemplate.opsForValue().set(marker, generation, Duration.ofSeconds(ttl));
+                    removeCandidate(key, generation);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    return;
+                } catch (Exception failure) {
+                    stringRedisTemplate.opsForValue().set(retry, "retry", Duration.ofMinutes(5));
+                    log.error("Cart expiry warning failed; retry retains the same event ID", failure);
                 }
-            });
-        } catch (Exception e) {
-            log.error("Failed to scan cart keys", e);
+            }
+        } finally {
+            stringRedisTemplate.execute(new DefaultRedisScript<>(
+                    "if redis.call('GET',KEYS[1])==ARGV[1] then return redis.call('DEL',KEYS[1]) end return 0",
+                    Long.class), List.of(lock), token);
         }
     }
 
-    private void processCartKey(String key) {
-        Long ttl = stringRedisTemplate.getExpire(key, TimeUnit.SECONDS);
-        if (ttl == null || ttl <= 0 || ttl > WARN_THRESHOLD_SECONDS) {
-            return;
-        }
-        String cartId = key.substring(CART_KEY_PREFIX.length());
-        if (cartId.isEmpty()) return;
-
-        Cart cart = cartRepository.findById(cartId).orElse(null);
-        if (cart == null || cart.getUserId() == null || cart.getItems().isEmpty()) {
-            return;
-        }
-        publishExpiryWarning(cart, ttl);
+    private void removeCandidate(String key, String generation) {
+        stringRedisTemplate.execute(new DefaultRedisScript<>(
+                "if tonumber(redis.call('ZSCORE',KEYS[1],ARGV[1]))==tonumber(ARGV[2]) "
+                + "then return redis.call('ZREM',KEYS[1],ARGV[1]) end return 0", Long.class),
+                List.of(CartRepository.EXPIRY_KEY), key, generation);
     }
 
-    private void publishExpiryWarning(Cart cart, long ttlSeconds) {
+    private void publishExpiryWarning(Cart cart, long ttlSeconds, String generation) throws Exception {
         String publicCartId = CartKeys.publicId(cart.getId());
         List<CartItemSummary> items = cart.getItems().stream()
                 .map(item -> CartItemSummary.newBuilder()
@@ -88,7 +115,8 @@ public class CartExpiryWarningScheduler {
                 .toList();
 
         CartExpiryWarningEvent event = CartExpiryWarningEvent.newBuilder()
-                .setEventId(UUID.randomUUID().toString())
+                .setEventId(UUID.nameUUIDFromBytes((cart.getId() + ":" + generation)
+                        .getBytes(StandardCharsets.UTF_8)).toString())
                 .setEventType("CART_EXPIRY_WARNING")
                 .setAggregateId(publicCartId)
                 .setAggregateType("Cart")
@@ -101,8 +129,8 @@ public class CartExpiryWarningScheduler {
                 .setItems(items)
                 .build();
 
-        cartEventProducer.send(CartEventProducer.TOPIC_CART_EXPIRY_WARNING, publicCartId, event);
-        log.info("Published cart expiry warning: cartId={}, userId={}, ttl={}s",
-                publicCartId, cart.getUserId(), ttlSeconds);
+        cartEventProducer.send(CartEventProducer.TOPIC_CART_EXPIRY_WARNING, publicCartId, event)
+                .get(5, TimeUnit.SECONDS);
+        log.info("Published cart expiry warning, ttl={}s", ttlSeconds);
     }
 }
