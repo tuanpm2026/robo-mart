@@ -77,7 +77,20 @@ Aborted worktrees were removed after preserving tracked diffs, untracked files a
 
 ### Wave 7 validation
 
-Validation is still in progress. Targeted tests initially exposed obsolete expectations for one RPC attempt and cancellation after a failed release; those expectations have been corrected to assert bounded retries and recoverable states. Do not treat earlier failed attempts as successful verification.
+Executed on JDK 25 against implementation commit `423b37b52324c801a30ed069037146324ed6d665`:
+
+- `./mvnw verify -pl :order-service -DskipE2ETests` — BUILD SUCCESS; 173 unit tests and 39 integration tests, configured coverage gate passed.
+- `./mvnw verify -DskipE2ETests` — BUILD SUCCESS across the reactor, 721 unit tests and 188 integration tests (909 total), zero failures/errors/skips in the executed suites. All configured coverage gates passed. The final run completed at 15:11 on 2026-10-26 (Asia/Ho_Chi_Minh).
+- `./mvnw checkstyle:check` — BUILD SUCCESS; existing repository warnings remain.
+- `npm run lint --workspace=customer-website` — passed.
+- `npm run test:unit --workspace=customer-website -- --run` — 240 passed.
+- `npm run build --workspace=customer-website` — passed, including type checking.
+- `npx prettier --check customer-website/src/` and `git diff --check` — passed.
+- Full-stack E2E/chaos was not run.
+
+Regression coverage includes real gRPC transport cancellation for reserve/charge/refund, all five business status codes, bounded transient release retries, caller-thread result application, unacknowledged refund/release responses, all compensation entry points, PostgreSQL recovery after a failed stock release, HTTP 202 for ongoing compensation and storefront cancellation messages.
+
+Earlier validation attempts failed on obsolete retry/cancellation expectations, Mockito restubbing of a throwing method, and malformed test imports introduced during import cleanup. Those issues were fixed before the successful final reactor run; the failed attempts are not counted as passes.
 
 No new schema, REST response fields, proto/Avro contract or infrastructure changes are included in the current order-service subset. Checkout awaiting stock release returns HTTP 202 with its existing `INVENTORY_RELEASING` status; the storefront displays cancellation progress instead of confirmation or a delivery estimate. The deadline remains a per-attempt bound; a retried operation can take up to three deadlines plus the configured exponential backoff. Do not start Wave 8 or merge Wave 7 while the remaining correctness scope is incomplete.
 
