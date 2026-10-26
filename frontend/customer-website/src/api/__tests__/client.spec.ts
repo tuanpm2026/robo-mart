@@ -43,7 +43,7 @@ describe('apiClient', () => {
     expect(typeof id).toBe('string')
   })
 
-  it('should attach X-User-Id header for anonymous users', async () => {
+  it('should attach a UUID X-Cart-Id (not X-User-Id) for anonymous users', async () => {
     const adapter = vi
       .fn()
       .mockResolvedValue({ data: {}, status: 200, headers: {}, config: {}, statusText: 'OK' })
@@ -52,7 +52,10 @@ describe('apiClient', () => {
     await apiClient.get('/test')
 
     const config = adapter.mock.calls[0]![0]
-    expect(config.headers['X-User-Id']).toBeTruthy()
+    expect(config.headers['X-Cart-Id']).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    )
+    expect(config.headers['X-User-Id']).toBeUndefined()
     expect(config.headers['Authorization']).toBeUndefined()
   })
 
