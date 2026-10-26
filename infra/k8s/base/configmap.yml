@@ -37,7 +37,7 @@ data:
   INVENTORY_SERVICE_URL: "http://inventory-service:8084"
   PAYMENT_SERVICE_URL: "http://payment-service:8086"
   NOTIFICATION_SERVICE_URL: "http://notification-service:8087"
-  API_GATEWAY_URL: "http://api-gateway:8080"
+  API_GATEWAY_URL: "http://api-gateway-management:8090"  # actuator (health aggregator) lives on the management port
   # order-service gRPC client addresses (K8s DNS overrides localhost defaults)
   GRPC_CLIENT_INVENTORY_SERVICE_ADDRESS: "static://inventory-service:9094"
   GRPC_CLIENT_PAYMENT_SERVICE_ADDRESS: "static://payment-service:9095"

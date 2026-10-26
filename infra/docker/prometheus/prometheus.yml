@@ -6,7 +6,7 @@ scrape_configs:
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
-          - 'api-gateway:8080'
+          - 'api-gateway:8090'
           - 'product-service:8081'
           - 'cart-service:8082'
           - 'order-service:8083'

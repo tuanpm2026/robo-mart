@@ -15,10 +15,18 @@ spring:
 
   cloud:
     gateway:
-      globalcors:
-        add-to-simple-url-handler-mapping: true
-      default-filters:
-        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+      # Spring Cloud Gateway 5 reads only the server.webflux prefix; the legacy
+      # spring.cloud.gateway.* names are silently ignored.
+      server:
+        webflux:
+          globalcors:
+            add-to-simple-url-handler-mapping: true
+          default-filters:
+            - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+          httpclient:
+            connect-timeout: 2000  # ms
+            # Checkout runs the order saga synchronously (inventory + payment, ~20s worst case).
+            response-timeout: 30s
 
   lifecycle:
     timeout-per-shutdown-phase: 25s
@@ -50,8 +58,11 @@ gateway:
       burst-capacity: 60       # max tokens in bucket
       requested-tokens: 3      # 60 tokens/min ÷ 3 = 20 req/min
 
-# Actuator
+# Actuator — served on a separate, cluster-internal management port so that the public
+# listener (8080, fronted by the LoadBalancer/Ingress) exposes no actuator endpoints.
 management:
+  server:
+    port: 8090
   tracing:
     sampling:
       probability: ${TRACING_SAMPLE_RATE:1.0}
@@ -63,7 +74,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway,metrics,prometheus
+        include: health,info,metrics,prometheus
   health:
     probes:
       enabled: true
@@ -75,8 +86,9 @@ management:
           include: livenessState
         readiness:
           include: readinessState,redis
+    # Route-write operations (POST /actuator/gateway/routes/{id}) would allow traffic hijacking.
     gateway:
-      enabled: true
+      access: none
   metrics:
     distribution:
       percentiles-histogram:
