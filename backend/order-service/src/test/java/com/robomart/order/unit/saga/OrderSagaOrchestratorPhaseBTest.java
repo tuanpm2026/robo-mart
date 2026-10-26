@@ -81,6 +81,7 @@ class OrderSagaOrchestratorPhaseBTest {
                  .thenReturn(false);
         lenient().when(orderRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         lenient().when(orderRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
+        lenient().when(orderRepository.transitionStatus(any(), any(), any())).thenReturn(true);
         lenient().when(orderStatusHistoryRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         lenient().when(outboxEventRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
@@ -203,9 +204,11 @@ class OrderSagaOrchestratorPhaseBTest {
 
         orchestrator.executeSaga(order);
 
-        // The order must be flushed carrying the reservationId in the same step-success path.
-        verify(orderRepository, atLeastOnce()).saveAndFlush(
-            argThat(o -> o instanceof Order && "res-persisted-1".equals(((Order) o).getReservationId())));
+        // The reservationId is persisted in the step-success path, guarded on the saga still owning
+        // the order (status unchanged INVENTORY_RESERVING -> INVENTORY_RESERVING).
+        verify(orderRepository).transitionStatus(
+            argThat(o -> o instanceof Order && "res-persisted-1".equals(((Order) o).getReservationId())),
+            eq(OrderStatus.INVENTORY_RESERVING), eq(OrderStatus.INVENTORY_RESERVING));
     }
 
     @Test

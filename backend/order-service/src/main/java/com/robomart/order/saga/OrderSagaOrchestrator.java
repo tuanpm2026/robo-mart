@@ -11,14 +11,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 
 import jakarta.annotation.PreDestroy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.event.EventListener;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -28,6 +26,7 @@ import com.robomart.order.entity.OrderStatusHistory;
 import com.robomart.order.entity.OutboxEvent;
 import com.robomart.order.entity.SagaAuditLog;
 import com.robomart.order.enums.OrderStatus;
+import com.robomart.order.exception.OrderNotCancellableException;
 import com.robomart.order.repository.OrderRepository;
 import com.robomart.order.repository.OrderStatusHistoryRepository;
 import com.robomart.order.repository.OutboxEventRepository;
@@ -40,6 +39,13 @@ import com.robomart.order.saga.steps.ReserveInventoryStep;
 
 import tools.jackson.databind.ObjectMapper;
 
+/**
+ * Drives the order saga. Every status change is a compare-and-set ({@link #transition}): whoever
+ * moves the order out of a state owns it, and anyone who loses that race stops instead of acting on
+ * an order that cancellation or recovery has already taken over. Stale sagas are recovered only by
+ * the ShedLock-guarded {@link DeadSagaDetectionJob}, which applies an age cutoff; there is no
+ * startup sweep, because a starting replica cannot tell its peers' live sagas from dead ones.
+ */
 @Service
 public class OrderSagaOrchestrator {
 
@@ -105,7 +111,11 @@ public class OrderSagaOrchestrator {
             SagaStep step = forwardSteps.get(i);
             OrderStatus targetState = stepTargetStates[i];
 
-            updateOrderStatus(order, targetState);
+            // Losing this CAS means cancellation or recovery owns the order: run no further step.
+            if (!transition(order, order.getStatus(), targetState, null)) {
+                abortSaga(context, targetState, i > 0);
+                return;
+            }
 
             try {
                 executeStep(step, context, 0);
@@ -113,25 +123,73 @@ public class OrderSagaOrchestrator {
                 if (e.isShouldHoldAsPending()) {
                     order.setNextPaymentRetryAt(Instant.now()
                             .plus(sagaProperties.getPaymentRecovery().getRetryDelay()));
-                    updateOrderStatus(order, OrderStatus.PAYMENT_PENDING);
-                    publishStatusChangedEvent(order, targetState);
+                    if (!transition(order, targetState, OrderStatus.PAYMENT_PENDING, targetState)) {
+                        abortSaga(context, OrderStatus.PAYMENT_PENDING, true);
+                        return;
+                    }
                     log.info("Order held as PAYMENT_PENDING for orderId={}", sagaId);
                     return;
                 }
-                if (e.isShouldCompensate()) {
-                    runCompensation(context, sagaId);
-                }
-                updateOrderStatus(order, OrderStatus.CANCELLED);
-                publishStatusChangedEvent(order, targetState);
-                log.warn("Saga failed at step={} for sagaId={}, cancellationReason={}",
-                        step.getName(), sagaId, order.getCancellationReason());
+                failSaga(context, step, targetState, e.isShouldCompensate());
                 return;
             }
         }
 
-        updateOrderStatus(order, OrderStatus.CONFIRMED);
-        publishStatusChangedEvent(order, OrderStatus.PAYMENT_PROCESSING);
+        if (!transition(order, OrderStatus.PAYMENT_PROCESSING, OrderStatus.CONFIRMED,
+                OrderStatus.PAYMENT_PROCESSING)) {
+            abortSaga(context, OrderStatus.CONFIRMED, true);
+            return;
+        }
         log.info("Saga completed successfully for sagaId={}", sagaId);
+    }
+
+    /**
+     * Cancels the order after a failed forward step. When compensation is needed the order is first
+     * claimed as INVENTORY_RELEASING, so stock is released only by the actor that owns the order and a
+     * crash mid-release is still picked up by dead-saga recovery.
+     */
+    private void failSaga(SagaContext context, SagaStep step, OrderStatus stepState, boolean compensate) {
+        Order order = context.getOrder();
+        String sagaId = order.getId().toString();
+        if (compensate) {
+            if (!transition(order, stepState, OrderStatus.INVENTORY_RELEASING, null)) {
+                abortSaga(context, OrderStatus.INVENTORY_RELEASING, true);
+                return;
+            }
+            runCompensation(context, sagaId);
+        }
+        if (!transition(order, order.getStatus(), OrderStatus.CANCELLED, stepState)) {
+            abortSaga(context, OrderStatus.CANCELLED, !compensate);
+            return;
+        }
+        log.warn("Saga failed at step={} for sagaId={}, cancellationReason={}",
+                step.getName(), sagaId, order.getCancellationReason());
+    }
+
+    /**
+     * Stops a saga that lost a status CAS. The in-memory order adopts the persisted status so callers
+     * report what actually happened; no CONFIRMED (or any other) event is published by this saga.
+     */
+    private void abortSaga(SagaContext context, OrderStatus attempted, boolean inventoryMayBeReserved) {
+        Order order = context.getOrder();
+        OrderStatus actual = orderRepository.findStatusById(order.getId()).orElse(null);
+        log.warn("Saga aborted for orderId={}: could not move to {} because the order is now {} "
+                 + "(taken over by cancellation or recovery)", order.getId(), attempted, actual);
+        logSagaStep(order, "SAGA", "ABORTED", null, null,
+                    "Lost transition to " + attempted + "; current status " + actual, 0);
+        if (actual == null) {
+            return;
+        }
+        order.setStatus(actual);
+        if (actual == OrderStatus.CANCELLED && inventoryMayBeReserved) {
+            // The canceller may have released before this saga's reservation landed. Release is
+            // idempotent by orderId, so repeat it rather than leak stock.
+            runCompensation(context, order.getId().toString());
+        }
+        if (actual == OrderStatus.CANCELLED && order.getPaymentId() != null) {
+            log.error("Order {} was cancelled concurrently after payment {} was taken — refund requires "
+                      + "manual reconciliation", order.getId(), order.getPaymentId());
+        }
     }
 
     /**
@@ -202,67 +260,61 @@ public class OrderSagaOrchestrator {
         }
     }
 
-    private void updateOrderStatus(Order order, OrderStatus newStatus) {
-        try {
-            transactionTemplate.execute(status -> {
-                order.setStatus(newStatus);
-                Order saved = orderRepository.saveAndFlush(order);
-                order.setVersion(saved.getVersion());
-
-                OrderStatusHistory history = new OrderStatusHistory();
-                history.setOrder(order);
-                history.setStatus(newStatus);
-                history.setChangedAt(Instant.now());
-                orderStatusHistoryRepository.save(history);
-                return null;
-            });
-        } catch (ObjectOptimisticLockingFailureException e) {
-            Order reloaded = orderRepository.findById(order.getId())
-                .orElseThrow(() -> new IllegalStateException("Order not found: " + order.getId()));
-            log.warn("Optimistic lock conflict on order {} — current: {}, attempted: {}",
-                     order.getId(), reloaded.getStatus(), newStatus);
-            if (!reloaded.getStatus().isTerminal()) {
-                throw e;
-            }
-        }
+    /**
+     * Compare-and-set status change: only if the order is still {@code from}, moves it to {@code to}
+     * and writes the status history row plus (when {@code eventPreviousStatus} is non-null) the
+     * order_status_changed outbox event in the same transaction.
+     *
+     * @return {@code false}, with nothing written, if another actor moved the order first
+     */
+    private boolean transition(Order order, OrderStatus from, OrderStatus to, OrderStatus eventPreviousStatus) {
+        return transitionWithEvent(order, from, to, eventPreviousStatus == null ? null
+                : () -> statusChangedEvent(order, eventPreviousStatus, to));
     }
 
-    private void publishStatusChangedEvent(Order order, OrderStatus previousStatus) {
-        transactionTemplate.execute(status -> {
-            try {
-                Map<String, Object> payload = new HashMap<>();
-                payload.put("orderId", order.getId().toString());
-                payload.put("previousStatus", previousStatus.name());
-                payload.put("newStatus", order.getStatus().name());
-
-                OutboxEvent event = new OutboxEvent(
-                        "Order",
-                        order.getId().toString(),
-                        "order_status_changed",
-                        objectMapper.writeValueAsString(payload));
-                outboxEventRepository.save(event);
-            } catch (Exception e) {
-                log.error("Failed to create outbox event for orderId={}: {}",
-                          order.getId(), e.getMessage(), e);
-                throw new RuntimeException(e);
+    private boolean transitionWithEvent(Order order, OrderStatus from, OrderStatus to,
+            Supplier<OutboxEvent> event) {
+        return Boolean.TRUE.equals(transactionTemplate.execute(status -> {
+            if (!orderRepository.transitionStatus(order, from, to)) {
+                return false;
             }
-            return null;
-        });
+            order.setStatus(to);
+            OrderStatusHistory history = new OrderStatusHistory();
+            history.setOrder(order);
+            history.setStatus(to);
+            history.setChangedAt(Instant.now());
+            orderStatusHistoryRepository.save(history);
+            if (event != null) {
+                outboxEventRepository.save(event.get());
+            }
+            return true;
+        }));
+    }
+
+    private OutboxEvent statusChangedEvent(Order order, OrderStatus previousStatus, OrderStatus newStatus) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("orderId", order.getId().toString());
+        payload.put("previousStatus", previousStatus.name());
+        payload.put("newStatus", newStatus.name());
+        return new OutboxEvent("Order", order.getId().toString(), "order_status_changed",
+                objectMapper.writeValueAsString(payload));
     }
 
     /**
-     * Records a successful step by persisting the order and the SUCCESS audit log in one
-     * transaction. Persisting the order here durably captures step output (notably the
-     * {@code reservationId} set by {@link ReserveInventoryStep}) the moment the step succeeds, so a
-     * crash before the next status transition cannot lose it. Best-effort: a persistence failure is
-     * logged but does not abort the saga (the next status transition re-persists the order, and the
-     * inventory service can still be released by orderId during compensation).
+     * Records a successful step by persisting the step output (notably the {@code reservationId} set
+     * by {@link ReserveInventoryStep}) and the SUCCESS audit log in one transaction, so a crash before
+     * the next status transition cannot lose it. The output is written only while the order is still
+     * in this saga's state. Best-effort: a persistence failure is logged but does not abort the saga
+     * (the next transition re-persists the order, and inventory can still be released by orderId).
      */
     private void recordStepSuccess(Order order, String stepName, String idempotencyKey, int retryCount) {
+        OrderStatus current = order.getStatus();
         try {
             transactionTemplate.execute(status -> {
-                Order saved = orderRepository.saveAndFlush(order);
-                order.setVersion(saved.getVersion());
+                if (!orderRepository.transitionStatus(order, current, current)) {
+                    log.warn("Step {} succeeded for orderId={} but the order left {} — output not persisted",
+                             stepName, order.getId(), current);
+                }
                 sagaAuditLogRepository.save(
                         buildSagaAuditLog(order, stepName, "SUCCESS", idempotencyKey, null, null, retryCount));
                 return null;
@@ -301,6 +353,12 @@ public class OrderSagaOrchestrator {
     }
 
     public void cancelPendingSaga(Order order, String reason, String cancelledBy) {
+        // Win the cancellation before touching stock: releasing first could free a reservation that
+        // a concurrently advancing saga still depends on.
+        if (!finalizeCancellation(order, OrderStatus.PENDING, reason, cancelledBy)) {
+            throw notCancellable(order);
+        }
+
         if (order.getReservationId() != null) {
             logSagaStep(order, releaseInventoryStep.getName(), "STARTED", null, null, null, 0);
             try {
@@ -314,13 +372,18 @@ public class OrderSagaOrchestrator {
             }
         }
 
-        finalizeCancellation(order, reason, cancelledBy);
         log.info("Pending order cancelled for orderId={}", order.getId());
     }
 
     public void cancelConfirmedSaga(Order order, String reason, String cancelledBy) {
+        String previousReason = order.getCancellationReason();
         order.setCancellationReason(reason);
-        updateOrderStatus(order, OrderStatus.PAYMENT_REFUNDING);
+        // CAS from CONFIRMED: if the order was concurrently shipped or delivered, refuse rather than
+        // refund goods that have left the warehouse.
+        if (!transition(order, OrderStatus.CONFIRMED, OrderStatus.PAYMENT_REFUNDING, null)) {
+            order.setCancellationReason(previousReason);
+            throw notCancellable(order);
+        }
 
         if (!attemptRefund(order)) {
             // Refund failed — do NOT proceed to release/CANCELLED. Marking the order CANCELLED here
@@ -332,7 +395,11 @@ public class OrderSagaOrchestrator {
             return;
         }
 
-        updateOrderStatus(order, OrderStatus.INVENTORY_RELEASING);
+        if (!transition(order, OrderStatus.PAYMENT_REFUNDING, OrderStatus.INVENTORY_RELEASING,
+                null)) {
+            log.warn("Order {} left PAYMENT_REFUNDING during cancellation; recovery owns it now", order.getId());
+            return;
+        }
         logSagaStep(order, releaseInventoryStep.getName(), "STARTED", null, null, null, 0);
         try {
             releaseInventoryStep.compensate(new SagaContext(order));
@@ -344,41 +411,33 @@ public class OrderSagaOrchestrator {
                       order.getId(), e.getMessage(), e);
         }
 
-        finalizeCancellation(order, reason, cancelledBy);
+        finalizeCancellation(order, OrderStatus.INVENTORY_RELEASING, reason, cancelledBy);
         log.info("Confirmed order cancelled for orderId={}", order.getId());
     }
 
-    private void finalizeCancellation(Order order, String reason, String cancelledBy) {
-        transactionTemplate.execute(status -> {
-            order.setStatus(OrderStatus.CANCELLED);
-            order.setCancellationReason(reason);
-            Order saved = orderRepository.saveAndFlush(order);
-            order.setVersion(saved.getVersion());
+    private OrderNotCancellableException notCancellable(Order order) {
+        OrderStatus actual = orderRepository.findStatusById(order.getId()).orElse(null);
+        return new OrderNotCancellableException("Order " + order.getId() + " cannot be cancelled in state: "
+                + actual + " (concurrent modification — please retry)");
+    }
 
-            OrderStatusHistory history = new OrderStatusHistory();
-            history.setOrder(order);
-            history.setStatus(OrderStatus.CANCELLED);
-            history.setChangedAt(Instant.now());
-            orderStatusHistoryRepository.save(history);
-
-            try {
-                Map<String, Object> payload = new HashMap<>();
-                payload.put("orderId", order.getId().toString());
-                payload.put("reason", reason);
-                payload.put("cancelledBy", cancelledBy);
-                OutboxEvent event = new OutboxEvent(
-                        "Order",
-                        order.getId().toString(),
-                        "order_cancelled",
-                        objectMapper.writeValueAsString(payload));
-                outboxEventRepository.save(event);
-            } catch (Exception e) {
-                log.error("Failed to create order_cancelled outbox event for orderId={}: {}",
-                          order.getId(), e.getMessage(), e);
-                throw new RuntimeException(e);
-            }
-            return null;
+    /** CAS {@code from} → CANCELLED with history and the order_cancelled outbox event in one transaction. */
+    private boolean finalizeCancellation(Order order, OrderStatus from, String reason, String cancelledBy) {
+        String previousReason = order.getCancellationReason();
+        order.setCancellationReason(reason);
+        boolean cancelled = transitionWithEvent(order, from, OrderStatus.CANCELLED, () -> {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("orderId", order.getId().toString());
+            payload.put("reason", reason);
+            payload.put("cancelledBy", cancelledBy);
+            return new OutboxEvent("Order", order.getId().toString(), "order_cancelled",
+                    objectMapper.writeValueAsString(payload));
         });
+        if (!cancelled) {
+            order.setCancellationReason(previousReason);
+            log.warn("Cancellation of orderId={} from {} lost to a concurrent change", order.getId(), from);
+        }
+        return cancelled;
     }
 
     /**
@@ -409,16 +468,17 @@ public class OrderSagaOrchestrator {
                 markRefundFailed(order);
                 return;
             }
-            runCompensation(new SagaContext(order), sagaId);
-            finalizeCancellation(order, recoveryReason, "system");
-        } else if (order.getStatus() == OrderStatus.INVENTORY_RELEASING) {
-            runCompensation(new SagaContext(order), sagaId);
-            finalizeCancellation(order, recoveryReason, "system");
-        } else {
+        } else if (order.getStatus() == OrderStatus.INVENTORY_RESERVING) {
             order.setCancellationReason(recoveryReason);
-            runCompensation(new SagaContext(order), sagaId);
-            finalizeCancellation(order, recoveryReason, "system");
         }
+        // Claim the order before releasing stock; a saga still holding it would then lose its next CAS.
+        if (order.getStatus() != OrderStatus.INVENTORY_RELEASING
+                && !transition(order, order.getStatus(), OrderStatus.INVENTORY_RELEASING, null)) {
+            log.warn("Recovery skipped for orderId={}: it left {} concurrently", sagaId, staleStatus);
+            return;
+        }
+        runCompensation(new SagaContext(order), sagaId);
+        finalizeCancellation(order, OrderStatus.INVENTORY_RELEASING, recoveryReason, "system");
     }
 
     private void requeueUncertainPayment(Long orderId) {
@@ -480,36 +540,8 @@ public class OrderSagaOrchestrator {
             return;
         }
         OrderStatus previous = order.getStatus();
-        updateOrderStatus(order, OrderStatus.REFUND_FAILED);
-        publishStatusChangedEvent(order, previous);
-    }
-
-    @EventListener(ApplicationReadyEvent.class)
-    public void recoverStaleSagas() {
-        log.info("Checking for stale sagas to recover...");
-        List<Order> staleOrders = orderRepository.findByStatusIn(
-                List.of(OrderStatus.INVENTORY_RESERVING, OrderStatus.PAYMENT_PROCESSING,
-                        OrderStatus.PAYMENT_REFUNDING, OrderStatus.INVENTORY_RELEASING,
-                        OrderStatus.REFUND_FAILED));
-
-        if (staleOrders.isEmpty()) {
-            log.info("No stale sagas found.");
-            return;
-        }
-
-        log.warn("Found {} stale saga(s) to recover", staleOrders.size());
-        for (Order order : staleOrders) {
-            log.warn("Recovering stale saga for orderId={}, status={}", order.getId(), order.getStatus());
-            logSagaStep(order, "RECOVERY", "STARTED", null, null, null, 0);
-            boolean uncertainPayment = order.getStatus() == OrderStatus.PAYMENT_PROCESSING;
-            try {
-                recoverSingleSaga(order);
-                String recoveryStatus = uncertainPayment ? "CHECKED" : "COMPENSATED";
-                logSagaStep(order, "RECOVERY", recoveryStatus, null, null, null, 0);
-            } catch (Exception e) {
-                log.error("Recovery failed for orderId={}: {}", order.getId(), e.getMessage(), e);
-                logSagaStep(order, "RECOVERY", "FAILED", null, null, e.getMessage(), 0);
-            }
+        if (!transition(order, previous, OrderStatus.REFUND_FAILED, previous)) {
+            log.warn("Could not mark orderId={} REFUND_FAILED: it left {} concurrently", order.getId(), previous);
         }
     }
 }
