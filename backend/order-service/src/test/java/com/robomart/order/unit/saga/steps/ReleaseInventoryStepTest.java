@@ -90,34 +90,37 @@ class ReleaseInventoryStepTest {
     }
 
     @Test
-    void shouldLogAndContinueWhenReleaseThrowsStatusRuntimeException() {
+    void shouldPropagateWhenReleaseThrowsStatusRuntimeException() {
         SagaContext context = buildContext(true);
         when(inventoryClient.releaseInventory(any(ReleaseInventoryRequest.class)))
                 .thenThrow(new StatusRuntimeException(Status.UNAVAILABLE));
 
-        // Should not throw — best-effort compensation
-        step.compensate(context);
+        assertThatThrownBy(() -> step.compensate(context)).isInstanceOf(RuntimeException.class);
     }
 
     @Test
-    void shouldLogAndContinueWhenReleaseThrowsInventoryServiceUnavailableException() {
+    void shouldPropagateWhenReleaseThrowsInventoryServiceUnavailableException() {
         SagaContext context = buildContext(true);
         when(inventoryClient.releaseInventory(any(ReleaseInventoryRequest.class)))
                 .thenThrow(new InventoryServiceUnavailableException("Inventory unavailable", null));
 
-        // Should not throw — best-effort compensation
-        step.compensate(context);
+        assertThatThrownBy(() -> step.compensate(context)).isInstanceOf(RuntimeException.class);
     }
 
     @Test
-    void shouldLogAndContinueWhenReleaseThrowsInventoryBusinessException() {
+    void shouldPropagateWhenReleaseThrowsInventoryBusinessException() {
         SagaContext context = buildContext(true);
         when(inventoryClient.releaseInventory(any(ReleaseInventoryRequest.class)))
                 .thenThrow(new InventoryBusinessException("Already released",
                         new StatusRuntimeException(Status.FAILED_PRECONDITION)));
 
-        // Should not throw — business rejection on release is best-effort / idempotent
-        step.compensate(context);
+        assertThatThrownBy(() -> step.compensate(context)).isInstanceOf(InventoryBusinessException.class);
+    }
+
+    @Test
+    void unacknowledgedReleaseMustNotBeTreatedAsCompensated() {
+        when(inventoryClient.releaseInventory(any())).thenReturn(ReleaseInventoryResponse.getDefaultInstance());
+        assertThatThrownBy(() -> step.compensate(buildContext(true))).isInstanceOf(IllegalStateException.class);
     }
 
     private SagaContext buildContext(boolean withReservation) {

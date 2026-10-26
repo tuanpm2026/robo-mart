@@ -3,6 +3,7 @@ package com.robomart.order.unit.saga;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -35,6 +36,7 @@ import com.robomart.order.repository.OutboxEventRepository;
 import com.robomart.order.repository.SagaAuditLogRepository;
 import com.robomart.order.saga.OrderSagaOrchestrator;
 import com.robomart.order.saga.SagaContext;
+import com.robomart.order.saga.SagaStepResult;
 import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.order.saga.steps.ProcessPaymentStep;
 import com.robomart.order.saga.steps.RefundPaymentStep;
@@ -159,7 +161,7 @@ class OrderSagaOrchestratorCancelTest {
         @DisplayName("shouldCancelConfirmedOrderWithRefundAndRelease")
         void shouldCancelConfirmedOrderWithRefundAndRelease() {
             Order order = buildConfirmedOrder();
-            doNothing().when(refundPaymentStep).execute(any(SagaContext.class));
+            doReturn(SagaStepResult.NONE).when(refundPaymentStep).execute(any(SagaContext.class));
             doNothing().when(releaseInventoryStep).compensate(any(SagaContext.class));
 
             orchestrator.cancelConfirmedSaga(order, "Customer cancelled", "user-1");
@@ -201,7 +203,7 @@ class OrderSagaOrchestratorCancelTest {
         void shouldFinalizeCancelledWhenRefundSucceedsOnRecovery() {
             Order order = buildConfirmedOrder();
             order.setStatus(OrderStatus.REFUND_FAILED);
-            doNothing().when(refundPaymentStep).execute(any(SagaContext.class));
+            doReturn(SagaStepResult.NONE).when(refundPaymentStep).execute(any(SagaContext.class));
             doNothing().when(releaseInventoryStep).compensate(any(SagaContext.class));
 
             orchestrator.handleDeadSaga(order);

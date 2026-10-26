@@ -2,6 +2,7 @@ package com.robomart.order.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -77,10 +79,10 @@ class OrderCheckoutSafetyIT {
 
     private static final String ADDRESS = "1 Safety Way";
 
-    @MockitoBean
+    @MockitoBean(answers = Answers.RETURNS_SELF)
     private InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub;
 
-    @MockitoBean
+    @MockitoBean(answers = Answers.RETURNS_SELF)
     private PaymentServiceGrpc.PaymentServiceBlockingStub paymentStub;
 
     @MockitoBean
@@ -264,6 +266,28 @@ class OrderCheckoutSafetyIT {
                 .containsExactly("INVENTORY_RELEASING", "CANCELLED");
         verify(inventoryStub, never()).releaseInventory(org.mockito.ArgumentMatchers.argThat(
                 (ReleaseInventoryRequest request) -> request.getOrderId().equals(Long.toString(live))));
+    }
+
+    @Test
+    void failedReleaseRemainsRecoverableUntilStockReleaseSucceeds() {
+        when(paymentStub.processPayment(any())).thenThrow(io.grpc.Status.FAILED_PRECONDITION.asRuntimeException());
+        when(inventoryStub.releaseInventory(any())).thenThrow(io.grpc.Status.ABORTED.asRuntimeException());
+        Order order = orderService.createOrder("w7-release", List.of(
+                new OrderService.OrderItemRequest("10", null, 2, null)), ADDRESS, null);
+        leftovers.add(order.getId());
+
+        assertThat(statusOf(order.getId())).isEqualTo("INVENTORY_RELEASING");
+        assertThat(jdbc.queryForList("SELECT status FROM order_status_history WHERE order_id=?", String.class,
+                order.getId())).doesNotContain("CANCELLED");
+        verify(inventoryStub, times(3)).releaseInventory(any());
+        doReturn(ReleaseInventoryResponse.newBuilder().setSuccess(true).build())
+                .when(inventoryStub).releaseInventory(any());
+        jdbc.update("UPDATE orders SET updated_at=now() - interval '10 minutes' WHERE id=?", order.getId());
+
+        DeadSagaDetectionJob job = AopTestUtils.getTargetObject(deadSagaDetectionJob);
+        job.detectAndRecoverDeadSagas();
+
+        assertThat(statusOf(order.getId())).isEqualTo("CANCELLED");
     }
 
     private long insertReservingOrder(String age) {

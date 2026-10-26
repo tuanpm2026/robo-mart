@@ -3,8 +3,7 @@ package com.robomart.order.grpc;
 import io.grpc.StatusRuntimeException;
 
 /**
- * Wraps a deterministic business rejection from the Inventory service (gRPC
- * {@code FAILED_PRECONDITION}, e.g. insufficient stock).
+ * Wraps a deterministic application rejection from the Inventory service.
  *
  * <p>This is a distinct type from {@link StatusRuntimeException} on purpose: business rejections
  * must NOT be retried and must NOT trip the circuit breaker (retrying a deterministic rejection

@@ -174,6 +174,19 @@ class OrderRestControllerTest {
     }
 
     @Test
+    void createOrderAwaitingStockReleaseReturnsAccepted() {
+        CreateOrderRequest request = new CreateOrderRequest(
+                List.of(new CreateOrderItemRequest("1", null, 2, null)), "123 Main St");
+        Order order = buildOrder(13L, "user-1", OrderStatus.INVENTORY_RELEASING, new BigDecimal("99.98"));
+        when(orderService.createOrder(eq("user-1"), anyList(), eq("123 Main St"), isNull())).thenReturn(order);
+
+        var response = controller.createOrder(request, "user-1", null);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+        assertThat(response.getBody().data().status()).isEqualTo(OrderStatus.INVENTORY_RELEASING);
+    }
+
+    @Test
     @DisplayName("createOrder forwards the Idempotency-Key header and accepts lines without name or price")
     void createOrder_forwardsIdempotencyKey() {
         String userId = "user-1";

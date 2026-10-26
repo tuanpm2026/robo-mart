@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.robomart.order.config.SagaProperties;
 import com.robomart.order.grpc.PaymentGrpcClient;
 import com.robomart.proto.payment.PaymentServiceGrpc;
 import com.robomart.proto.payment.ProcessPaymentRequest;
@@ -22,14 +23,14 @@ import com.robomart.proto.payment.RefundPaymentResponse;
 @DisplayName("PaymentGrpcClient")
 class PaymentGrpcClientTest {
 
-    @Mock
+    @Mock(answer = org.mockito.Answers.RETURNS_SELF)
     private PaymentServiceGrpc.PaymentServiceBlockingStub stub;
 
     private PaymentGrpcClient client;
 
     @BeforeEach
     void setUp() {
-        client = new PaymentGrpcClient(stub);
+        client = new PaymentGrpcClient(stub, new SagaProperties());
     }
 
     @Test

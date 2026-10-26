@@ -4,7 +4,7 @@ public interface SagaStep {
 
     String getName();
 
-    void execute(SagaContext context);
+    SagaStepResult execute(SagaContext context);
 
     void compensate(SagaContext context);
 }

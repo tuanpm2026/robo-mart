@@ -12,6 +12,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -47,10 +48,10 @@ import io.grpc.StatusRuntimeException;
 @DisplayName("OrderCancellation Integration Tests")
 class OrderCancellationIT {
 
-    @MockitoBean
+    @MockitoBean(answers = Answers.RETURNS_SELF)
     private InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub;
 
-    @MockitoBean
+    @MockitoBean(answers = Answers.RETURNS_SELF)
     private PaymentServiceGrpc.PaymentServiceBlockingStub paymentStub;
 
     @MockitoBean

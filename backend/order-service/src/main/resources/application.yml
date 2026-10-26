@@ -119,6 +119,8 @@ management:
 
 resilience4j:
   circuitbreaker:
+    # Outer breaker/fallback sees the final result of the inner retry.
+    circuit-breaker-aspect-order: 1
     instances:
       inventory-service:
         sliding-window-type: COUNT_BASED
@@ -147,14 +149,14 @@ resilience4j:
         ignore-exceptions:
           - com.robomart.order.grpc.PaymentBusinessException
   retry:
+    retry-aspect-order: 2
     instances:
       inventory-service:
         max-attempts: 3
         wait-duration: 1s
         enable-exponential-backoff: true
         exponential-backoff-multiplier: 2
-        retry-exceptions:
-          - io.grpc.StatusRuntimeException
+        retry-exception-predicate: com.robomart.order.grpc.GrpcStatusClassifier
         # Business rejections are deterministic — retrying them wastes time and is pointless.
         ignore-exceptions:
           - com.robomart.order.grpc.InventoryBusinessException
@@ -163,8 +165,7 @@ resilience4j:
         wait-duration: 1s
         enable-exponential-backoff: true
         exponential-backoff-multiplier: 2
-        retry-exceptions:
-          - io.grpc.StatusRuntimeException
+        retry-exception-predicate: com.robomart.order.grpc.GrpcStatusClassifier
         # Business rejections are deterministic — retrying them wastes time and is pointless.
         ignore-exceptions:
           - com.robomart.order.grpc.PaymentBusinessException

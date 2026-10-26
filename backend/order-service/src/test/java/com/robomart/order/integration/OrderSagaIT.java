@@ -2,12 +2,9 @@ package com.robomart.order.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import org.mockito.Mockito;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -15,16 +12,18 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.client.RestClient;
-import org.springframework.context.annotation.Import;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.web.client.RestClient;
 
 import com.robomart.common.dto.ApiResponse;
 import com.robomart.order.client.ProductCatalogClient;
@@ -33,8 +32,8 @@ import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OutboxEvent;
 import com.robomart.order.entity.SagaAuditLog;
 import com.robomart.order.enums.OrderStatus;
-import com.robomart.order.repository.OrderRepository;
 import com.robomart.order.repository.OrderItemRepository;
+import com.robomart.order.repository.OrderRepository;
 import com.robomart.order.repository.OutboxEventRepository;
 import com.robomart.order.repository.SagaAuditLogRepository;
 import com.robomart.order.service.OrderService;
@@ -52,10 +51,9 @@ import com.robomart.test.PostgresContainerConfig;
 import com.robomart.test.security.TestJwt;
 import com.robomart.test.security.TestJwtDecoderConfig;
 
-import tools.jackson.databind.json.JsonMapper;
-
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import tools.jackson.databind.json.JsonMapper;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -63,10 +61,10 @@ import io.grpc.StatusRuntimeException;
 @DisplayName("OrderSaga Integration Tests")
 class OrderSagaIT {
 
-    @MockitoBean
+    @MockitoBean(answers = Answers.RETURNS_SELF)
     private InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub;
 
-    @MockitoBean
+    @MockitoBean(answers = Answers.RETURNS_SELF)
     private PaymentServiceGrpc.PaymentServiceBlockingStub paymentStub;
 
     @MockitoBean

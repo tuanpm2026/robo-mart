@@ -10,6 +10,7 @@ import com.robomart.order.grpc.PaymentGrpcClient;
 import com.robomart.order.grpc.PaymentServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
 import com.robomart.order.saga.SagaStep;
+import com.robomart.order.saga.SagaStepResult;
 import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.proto.common.Money;
 import com.robomart.proto.payment.RefundPaymentRequest;
@@ -34,12 +35,12 @@ public class RefundPaymentStep implements SagaStep {
     }
 
     @Override
-    public void execute(SagaContext context) {
+    public SagaStepResult execute(SagaContext context) {
         Order order = context.getOrder();
 
         if (order.getPaymentId() == null) {
             log.warn("RefundPaymentStep.execute() skipped — no paymentId for orderId={}", order.getId());
-            return;
+            return SagaStepResult.NONE;
         }
 
         String reason = order.getCancellationReason() != null
@@ -58,26 +59,26 @@ public class RefundPaymentStep implements SagaStep {
 
         try {
             var response = paymentClient.refundPayment(request);
-            log.info("Payment refunded for orderId={}, refundTxId={}", order.getId(), response.getRefundTransactionId());
-        } catch (StatusRuntimeException e) {
-            if (e.getStatus().getCode() == Status.Code.NOT_FOUND) {
-                log.warn("Payment not found for refund — skipping: paymentId={}, orderId={}",
-                        order.getPaymentId(), order.getId());
-                return;
+            if (!response.getSuccess()) {
+                throw new SagaStepException("Refund was not acknowledged", false);
             }
+            log.info("Payment refunded for orderId={}, refundTxId={}",
+                    order.getId(), response.getRefundTransactionId());
+            return SagaStepResult.NONE;
+        } catch (StatusRuntimeException e) {
             if (e.getStatus().getCode() == Status.Code.ALREADY_EXISTS) {
                 log.info("Refund already processed (idempotent) — treating as success: paymentId={}, orderId={}",
                         order.getPaymentId(), order.getId());
-                return;
+                return SagaStepResult.NONE;
             }
             log.error("Failed to refund payment for orderId={}: {}", order.getId(), e.getMessage());
             throw new SagaStepException("Refund failed: " + e.getMessage(), false);
         } catch (PaymentBusinessException e) {
-            // Deterministic business rejection on the refund path (gRPC FAILED_PRECONDITION, e.g. the
-            // payment is in a state that cannot be refunded). Re-throw as a SagaStepException with
-            // shouldCompensate=false: this is a forward-only cancellation step, so a refund rejection
-            // must not trigger further compensation — the orchestrator catches SagaStepException and
-            // continues cancelling (inventory release + finalizeCancellation still run).
+            if (e.getStatusCode() == Status.Code.ALREADY_EXISTS) {
+                log.info("Refund already processed for orderId={}", order.getId());
+                return SagaStepResult.NONE;
+            }
+            // NOT_FOUND cannot prove that a known charge was refunded; keep it recoverable.
             log.error("Payment refund rejected (business) for orderId={}: {}", order.getId(), e.getMessage());
             throw new SagaStepException("Refund rejected: " + e.getMessage(), e, false);
         } catch (PaymentServiceUnavailableException e) {

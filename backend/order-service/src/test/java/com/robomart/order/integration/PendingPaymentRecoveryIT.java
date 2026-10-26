@@ -1,5 +1,18 @@
 package com.robomart.order.integration;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -47,19 +61,6 @@ import com.robomart.test.PostgresContainerConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.grpc.Status;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 /** Exercises the recovery worker's real transactions, row claims, state transitions and outbox. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = "saga.payment-recovery.enabled=false")
@@ -67,10 +68,10 @@ import static org.mockito.Mockito.when;
 @Import(PostgresContainerConfig.class)
 class PendingPaymentRecoveryIT {
 
-    @MockitoBean
+    @MockitoBean(answers = Answers.RETURNS_SELF)
     private InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub;
 
-    @MockitoBean
+    @MockitoBean(answers = Answers.RETURNS_SELF)
     private PaymentServiceGrpc.PaymentServiceBlockingStub paymentStub;
 
     @MockitoBean
@@ -363,7 +364,7 @@ class PendingPaymentRecoveryIT {
         orchestrator.handleDeadSaga(orderRepository.findById(pending.getId()).orElseThrow());
 
         assertThat(orderRepository.findById(pending.getId()).orElseThrow().getStatus()).isEqualTo(OrderStatus.PAYMENT_PROCESSING);
-        verify(paymentStub, times(1)).processPayment(any(ProcessPaymentRequest.class));
+        verify(paymentStub, times(3)).processPayment(any(ProcessPaymentRequest.class));
         verify(inventoryStub, never()).releaseInventory(any(ReleaseInventoryRequest.class));
     }
 
@@ -380,7 +381,7 @@ class PendingPaymentRecoveryIT {
         orchestrator.handleDeadSaga(staleSnapshot);
 
         assertThat(orderRepository.findById(pending.getId()).orElseThrow().getStatus()).isEqualTo(OrderStatus.CONFIRMED);
-        verify(paymentStub, times(1)).processPayment(any(ProcessPaymentRequest.class));
+        verify(paymentStub, times(3)).processPayment(any(ProcessPaymentRequest.class));
         verify(inventoryStub, never()).releaseInventory(any(ReleaseInventoryRequest.class));
     }
 

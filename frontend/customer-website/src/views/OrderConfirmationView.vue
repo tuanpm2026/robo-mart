@@ -53,6 +53,25 @@ onMounted(async () => {
             Order received. Payment is being processed — we'll notify you when confirmed.
           </p>
         </template>
+        <template
+          v-else-if="
+            orderStore.currentOrder.status === 'INVENTORY_RELEASING' ||
+            orderStore.currentOrder.status === 'CANCELLED'
+          "
+        >
+          <div class="ocv__icon ocv__icon--pending" aria-hidden="true">ⓘ</div>
+          <h1 class="ocv__heading">
+            {{
+              orderStore.currentOrder.status === 'CANCELLED'
+                ? 'Order Cancelled'
+                : 'Order Cancellation in Progress'
+            }}
+          </h1>
+          <p class="ocv__order-number">Order #{{ orderStore.currentOrder.id }}</p>
+          <p class="ocv__payment-pending">
+            This order could not be completed. Track your order for the latest cancellation status.
+          </p>
+        </template>
         <template v-else>
           <div class="ocv__icon" aria-hidden="true">✓</div>
           <h1 class="ocv__heading">Order Confirmed!</h1>

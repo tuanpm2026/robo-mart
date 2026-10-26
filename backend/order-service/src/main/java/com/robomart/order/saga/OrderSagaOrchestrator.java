@@ -1,19 +1,11 @@
 package com.robomart.order.saga;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.Objects;
 import java.util.function.Supplier;
-
-import jakarta.annotation.PreDestroy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +29,7 @@ import com.robomart.order.saga.steps.RefundPaymentStep;
 import com.robomart.order.saga.steps.ReleaseInventoryStep;
 import com.robomart.order.saga.steps.ReserveInventoryStep;
 
+import io.grpc.Status;
 import tools.jackson.databind.ObjectMapper;
 
 /**
@@ -62,8 +55,6 @@ public class OrderSagaOrchestrator {
     private final ReleaseInventoryStep releaseInventoryStep;
     private final RefundPaymentStep refundPaymentStep;
 
-    private final ExecutorService stepExecutor = Executors.newVirtualThreadPerTaskExecutor();
-
     public OrderSagaOrchestrator(
             OrderRepository orderRepository,
             OrderStatusHistoryRepository orderStatusHistoryRepository,
@@ -88,19 +79,6 @@ public class OrderSagaOrchestrator {
         this.refundPaymentStep = refundPaymentStep;
     }
 
-    @PreDestroy
-    public void shutdownStepExecutor() {
-        stepExecutor.shutdown();
-        try {
-            if (!stepExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
-                stepExecutor.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            stepExecutor.shutdownNow();
-            Thread.currentThread().interrupt();
-        }
-    }
-
     public void executeSaga(Order order) {
         String sagaId = order.getId().toString();
         SagaContext context = new SagaContext(order);
@@ -120,6 +98,9 @@ public class OrderSagaOrchestrator {
             try {
                 executeStep(step, context, 0);
             } catch (SagaStepException e) {
+                if (e.getCancellationReason() != null) {
+                    order.setCancellationReason(e.getCancellationReason());
+                }
                 if (e.isShouldHoldAsPending()) {
                     order.setNextPaymentRetryAt(Instant.now()
                             .plus(sagaProperties.getPaymentRecovery().getRetryDelay()));
@@ -156,7 +137,9 @@ public class OrderSagaOrchestrator {
                 abortSaga(context, OrderStatus.INVENTORY_RELEASING, true);
                 return;
             }
-            runCompensation(context, sagaId);
+            if (!runCompensation(context, sagaId)) {
+                return;
+            }
         }
         if (!transition(order, order.getStatus(), OrderStatus.CANCELLED, stepState)) {
             abortSaga(context, OrderStatus.CANCELLED, !compensate);
@@ -193,7 +176,7 @@ public class OrderSagaOrchestrator {
     }
 
     /**
-     * Executes a saga step with idempotency check and configurable timeout.
+     * Executes a saga step on the caller thread with an RPC deadline and idempotency check.
      * Idempotency key: "{orderId}:{stepName}" prevents duplicate execution on retries.
      */
     private void executeStep(SagaStep step, SagaContext context, int retryCount) {
@@ -206,57 +189,42 @@ public class OrderSagaOrchestrator {
             return;
         }
 
-        Duration timeout = sagaProperties.getSteps().getTimeouts()
-            .getOrDefault(step.getName(), sagaProperties.getSteps().getDefaultTimeout());
-
         logSagaStep(context.getOrder(), step.getName(), "STARTED",
                     idempotencyKey, null, null, retryCount);
-
-        CompletableFuture<Void> future =
-            CompletableFuture.runAsync(() -> step.execute(context), stepExecutor);
-
+        // gRPC enforces the deadline; no background task can mutate this order after return.
         try {
-            future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-            recordStepSuccess(context.getOrder(), step.getName(), idempotencyKey, retryCount);
-
-        } catch (TimeoutException e) {
-            future.cancel(true);
-            logSagaStep(context.getOrder(), step.getName(), "TIMED_OUT",
-                        idempotencyKey, Instant.now(),
-                        "Step timed out after " + timeout.toSeconds() + "s", retryCount);
-            throw new SagaStepException(
-                "Saga step " + step.getName() + " timed out after " + timeout.toSeconds() + "s",
-                null, !(step instanceof ProcessPaymentStep), step instanceof ProcessPaymentStep);
-
-        } catch (ExecutionException e) {
-            Throwable cause = e.getCause();
-            logSagaStep(context.getOrder(), step.getName(), "FAILED",
-                        idempotencyKey, null,
-                        cause != null ? cause.getMessage() : e.getMessage(), retryCount);
-            if (cause instanceof SagaStepException sse) {
-                throw sse;
+            SagaStepResult result = Objects.requireNonNull(step.execute(context), "Missing saga step result");
+            if (result.reservationId() != null) {
+                context.getOrder().setReservationId(result.reservationId());
             }
-            throw new SagaStepException(
-                cause != null ? cause.getMessage() : "Step execution failed",
-                cause, true, false);
-
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new SagaStepException("Step execution interrupted", e,
-                    !(step instanceof ProcessPaymentStep), step instanceof ProcessPaymentStep);
+            if (result.paymentId() != null) {
+                context.getOrder().setPaymentId(result.paymentId());
+            }
+            recordStepSuccess(context.getOrder(), step.getName(), idempotencyKey, retryCount);
+        } catch (RuntimeException e) {
+            boolean timedOut = Status.fromThrowable(e).getCode() == Status.Code.DEADLINE_EXCEEDED;
+            logSagaStep(context.getOrder(), step.getName(), timedOut ? "TIMED_OUT" : "FAILED",
+                    idempotencyKey, timedOut ? Instant.now() : null, e.getMessage(), retryCount);
+            if (e instanceof SagaStepException failure) {
+                throw failure;
+            }
+            boolean payment = step instanceof ProcessPaymentStep;
+            throw new SagaStepException("Step execution failed", e, !payment, payment);
         }
     }
 
-    private void runCompensation(SagaContext context, String sagaId) {
+    private boolean runCompensation(SagaContext context, String sagaId) {
         Order order = context.getOrder();
         logSagaStep(order, releaseInventoryStep.getName(), "COMPENSATING", null, null, null, 0);
         try {
             releaseInventoryStep.compensate(context);
             logSagaStep(order, releaseInventoryStep.getName(), "COMPENSATED", null, null, null, 0);
+            return true;
         } catch (Exception e) {
             logSagaStep(order, releaseInventoryStep.getName(), "COMPENSATION_FAILED",
                         null, null, e.getMessage(), 0);
             log.error("Compensation failed for sagaId={}: {}", sagaId, e.getMessage(), e);
+            return false;
         }
     }
 
@@ -353,24 +321,22 @@ public class OrderSagaOrchestrator {
     }
 
     public void cancelPendingSaga(Order order, String reason, String cancelledBy) {
-        // Win the cancellation before touching stock: releasing first could free a reservation that
-        // a concurrently advancing saga still depends on.
-        if (!finalizeCancellation(order, OrderStatus.PENDING, reason, cancelledBy)) {
+        if (order.getReservationId() == null) {
+            if (!finalizeCancellation(order, OrderStatus.PENDING, reason, cancelledBy)) {
+                throw notCancellable(order);
+            }
+            return;
+        }
+        String previousReason = order.getCancellationReason();
+        order.setCancellationReason(reason);
+        if (!transition(order, OrderStatus.PENDING, OrderStatus.INVENTORY_RELEASING, null)) {
+            order.setCancellationReason(previousReason);
             throw notCancellable(order);
         }
-
-        if (order.getReservationId() != null) {
-            logSagaStep(order, releaseInventoryStep.getName(), "STARTED", null, null, null, 0);
-            try {
-                releaseInventoryStep.compensate(new SagaContext(order));
-                logSagaStep(order, releaseInventoryStep.getName(), "COMPENSATED", null, null, null, 0);
-            } catch (Exception e) {
-                logSagaStep(order, releaseInventoryStep.getName(), "COMPENSATION_FAILED",
-                            null, null, e.getMessage(), 0);
-                log.error("Failed to release inventory during pending cancellation for orderId={}: {}",
-                          order.getId(), e.getMessage(), e);
-            }
+        if (!runCompensation(new SagaContext(order), order.getId().toString())) {
+            return;
         }
+        finalizeCancellation(order, OrderStatus.INVENTORY_RELEASING, reason, cancelledBy);
 
         log.info("Pending order cancelled for orderId={}", order.getId());
     }
@@ -400,15 +366,8 @@ public class OrderSagaOrchestrator {
             log.warn("Order {} left PAYMENT_REFUNDING during cancellation; recovery owns it now", order.getId());
             return;
         }
-        logSagaStep(order, releaseInventoryStep.getName(), "STARTED", null, null, null, 0);
-        try {
-            releaseInventoryStep.compensate(new SagaContext(order));
-            logSagaStep(order, releaseInventoryStep.getName(), "COMPENSATED", null, null, null, 0);
-        } catch (Exception e) {
-            logSagaStep(order, releaseInventoryStep.getName(), "COMPENSATION_FAILED",
-                        null, null, e.getMessage(), 0);
-            log.error("Failed to release inventory during confirmed cancellation for orderId={}: {}",
-                      order.getId(), e.getMessage(), e);
+        if (!runCompensation(new SagaContext(order), order.getId().toString())) {
+            return;
         }
 
         finalizeCancellation(order, OrderStatus.INVENTORY_RELEASING, reason, cancelledBy);
@@ -477,7 +436,9 @@ public class OrderSagaOrchestrator {
             log.warn("Recovery skipped for orderId={}: it left {} concurrently", sagaId, staleStatus);
             return;
         }
-        runCompensation(new SagaContext(order), sagaId);
+        if (!runCompensation(new SagaContext(order), sagaId)) {
+            return;
+        }
         finalizeCancellation(order, OrderStatus.INVENTORY_RELEASING, recoveryReason, "system");
     }
 

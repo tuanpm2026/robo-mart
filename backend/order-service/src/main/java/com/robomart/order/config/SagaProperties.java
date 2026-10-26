@@ -75,6 +75,7 @@ public class SagaProperties {
         }
 
         public void setDefaultTimeout(Duration defaultTimeout) {
+            requirePositiveTimeout(defaultTimeout);
             this.defaultTimeout = defaultTimeout;
         }
 
@@ -83,7 +84,20 @@ public class SagaProperties {
         }
 
         public void setTimeouts(Map<String, Duration> timeouts) {
+            timeouts.values().forEach(Steps::requirePositiveTimeout);
             this.timeouts = timeouts;
+        }
+
+        public Duration timeoutFor(String stepName) {
+            Duration timeout = timeouts.getOrDefault(stepName, defaultTimeout);
+            requirePositiveTimeout(timeout);
+            return timeout;
+        }
+
+        private static void requirePositiveTimeout(Duration timeout) {
+            if (timeout == null || timeout.toMillis() < 1) {
+                throw new IllegalArgumentException("Saga step timeout must be at least one millisecond");
+            }
         }
     }
 
