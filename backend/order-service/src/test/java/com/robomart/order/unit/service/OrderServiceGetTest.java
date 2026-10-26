@@ -50,7 +50,7 @@ class OrderServiceGetTest {
     void setUp() {
         orderService = new OrderService(
                 orderRepository, orderItemRepository, orderStatusHistoryRepository,
-                orderSagaOrchestrator, transactionTemplate);
+                orderSagaOrchestrator, transactionTemplate, null);
     }
 
     // -----------------------------------------------------------------------
