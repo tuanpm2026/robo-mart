@@ -9,7 +9,6 @@ import org.springframework.grpc.server.lifecycle.GrpcServerLifecycle;
 import org.springframework.test.context.TestPropertySource;
 
 import com.robomart.payment.repository.IdempotencyKeyRepository;
-import com.robomart.payment.repository.OutboxEventRepository;
 import com.robomart.payment.repository.PaymentRepository;
 import com.robomart.payment.service.MockPaymentGateway;
 import com.robomart.proto.common.Money;
@@ -18,7 +17,10 @@ import com.robomart.proto.payment.ProcessPaymentRequest;
 import com.robomart.proto.payment.ProcessPaymentResponse;
 import com.robomart.proto.payment.RefundPaymentRequest;
 import com.robomart.proto.payment.RefundPaymentResponse;
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.PostgresContainerConfig;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -28,7 +30,9 @@ import io.grpc.StatusRuntimeException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@IntegrationTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
+@Import(PostgresContainerConfig.class)
 @TestPropertySource(properties = "spring.grpc.server.port=0")
 class PaymentGrpcIT {
 
@@ -47,8 +51,6 @@ class PaymentGrpcIT {
     @Autowired
     private IdempotencyKeyRepository idempotencyKeyRepository;
 
-    @Autowired
-    private OutboxEventRepository outboxEventRepository;
 
     private ManagedChannel channel;
     private PaymentServiceGrpc.PaymentServiceBlockingStub stub;
@@ -63,7 +65,8 @@ class PaymentGrpcIT {
 
         mockPaymentGateway.reset();
         jdbc.update("DELETE FROM mock_gateway_operations");
-        outboxEventRepository.deleteAll();
+        jdbc.update("DELETE FROM refund_intents");
+        jdbc.update("DELETE FROM retired_outbox_events");
         idempotencyKeyRepository.deleteAll();
         paymentRepository.deleteAll();
     }
@@ -207,4 +210,25 @@ class PaymentGrpcIT {
                 () -> stub.processPayment(request));
         assertThat(ex.getStatus().getCode()).isEqualTo(Status.Code.INVALID_ARGUMENT);
     }
+    @Test
+    void grpcPartialRefundKeysAndCurrencyValidationPreserveWireContract() {
+        var charge = stub.processPayment(ProcessPaymentRequest.newBuilder().setOrderId("grpc-partials")
+                .setUserId("user-1").setIdempotencyKey("grpc-partials-charge")
+                .setAmount(Money.newBuilder().setAmount("100.00").setCurrency("USD")).build());
+        var request = RefundPaymentRequest.newBuilder().setPaymentId(charge.getPaymentId()).setOrderId("grpc-partials")
+                .setAmount(Money.newBuilder().setAmount("20.00").setCurrency("USD"))
+                .setReason("partial").setIdempotencyKey("part-1").build();
+        var first = stub.refundPayment(request);
+        var second = stub.refundPayment(request.toBuilder().setIdempotencyKey("part-2").build());
+        assertThat(second.getRefundTransactionId()).isNotEqualTo(first.getRefundTransactionId());
+        assertThat(stub.refundPayment(request).getRefundTransactionId()).isEqualTo(first.getRefundTransactionId());
+        var wrongCurrency = request.toBuilder().setIdempotencyKey("part-3")
+                .setAmount(Money.newBuilder().setAmount("20.00").setCurrency("EUR")).build();
+        assertThat(assertThrows(StatusRuntimeException.class, () -> stub.refundPayment(wrongCurrency))
+                .getStatus().getCode()).isEqualTo(Status.Code.INVALID_ARGUMENT);
+        var payment = paymentRepository.findByOrderId("grpc-partials").orElseThrow();
+        assertThat(payment.getRefundedAmount()).isEqualByComparingTo("40.00");
+        assertThat(payment.getStatus()).isEqualTo(com.robomart.payment.enums.PaymentStatus.COMPLETED);
+    }
+
 }

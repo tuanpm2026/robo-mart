@@ -20,7 +20,7 @@ public class MockGatewayDataSourceConfig {
         provider.setPoolName("mock-payment-provider");
         provider.setMaximumPoolSize(2);
         provider.setMinimumIdle(0);
-        provider.setConnectionTimeout(10000);
+        provider.setConnectionTimeout(1000);
         return provider;
     }
 }

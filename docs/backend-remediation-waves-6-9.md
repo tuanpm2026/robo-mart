@@ -57,10 +57,10 @@ Aborted worktrees were removed after preserving tracked diffs, untracked files a
 | Cart 1 | Atomic Redis hash operations, TTL refresh and atomic merge | Implemented: Lua line operations and atomic guest transfer, immutable GET body, TTL refresh and legacy-hash conversion |
 | Cart 2 | Product reverse index, per-field price updates and DLT | Implemented: expiring product ZSET indexes, line-only monotonic price updates, latest snapshot during migration, Avro/raw-byte DLT |
 | Cart 3 | Distributed expiry-warning lock, warned marker, stable ID and expiry ZSET | Implemented: Redis token lease, acknowledged-generation marker, stable retry ID, expiry ZSET and failure cooldown |
-| Payment 1 | Resolve dead outbox writes/publisher | Pending; make and document the ownership decision |
-| Payment 2 | Intent/provider/result boundaries with idempotency preserved | Pending; requires crash-window tests |
-| Payment 3 | Partial-refund accounting, currency and INVALID_ARGUMENT | Pending |
-| Payment 4 | Page unbounded query | Pending |
+| Payment 1 | Resolve dead outbox writes/publisher | Implemented: stop unconsumed writes, preserve historical rows in retired_outbox_events; payment/provider ledgers remain authoritative |
+| Payment 2 | Intent/provider/result boundaries with idempotency preserved | Implemented: committed request intent, bounded fenced lease, provider outside application transactions, committed receipt; real crash-window and small-pool tests passed |
+| Payment 3 | Partial-refund accounting, currency and INVALID_ARGUMENT | Implemented: cumulative refunded_amount, per-request refund receipts/keys, currency validation and correct gRPC mapping |
+| Payment 4 | Page unbounded query | Implemented: reconciliation page/size <=100 with hasNext; existing payment-list payload fields retained |
 | Notification 1 | Authenticated admin clients, least-privilege GET roles, bounded pages, error results | Pending |
 | Notification 2 | Full DLQ record storage, byte replay, source-offset dedup and exponential backoff | Pending |
 | Notification 3 | Reconciliation lock, processed-event retention, HTTP timeouts and bounded name cache | Pending |
@@ -186,3 +186,29 @@ Executed on JDK25, with the VS Code Java language server temporarily suspended d
 - Both Compose config checks and Kustomize base/production/ingress-tls — passed.
 
 The first Kafka test attempt matched a nanosecond Instant against Avro's millisecond timestamp and therefore did not inject the intended failure; the fixture now uses millisecond precision. The successful run includes all suites and no forced JVM shutdown warning. TTL HTTP tests now assert configured TTL against Redis, shorten only the test key's expiry, and poll Redis existence rather than sleeping 150 seconds or refreshing TTL through HTTP polling. Test-profile-only immediate Tomcat shutdown and disabled outbound OTLP metrics avoid delayed cached-context teardown; production graceful shutdown is unchanged.
+
+
+Keycloak smoke verification: an isolated ephemeral Keycloak 26.1.4 container successfully imported the committed developer realm. With the secret supplied only through the container environment, client_credentials returned a token whose only realm role was INVENTORY_SERVICE; a wrong secret returned HTTP 401. The smoke container was stopped and removed afterwards. No live realm or persistent Keycloak database was modified. This validates import/client mapping, not a complete production deployment.
+
+
+### Payment intents, partial refunds and dead outbox retirement
+
+Payment now commits an immutable request binding and PROCESSING intent before calling the provider, then commits its receipt/cache in another short transaction. Application advisory locks remain in the same order/key namespaces and are never held across provider work. Caller transactions are suspended; intent/result transactions use REQUIRES_NEW. A database-time 60-second lease and UUID completion token bound competing attempts and fence late finalizers. Duplicate requests briefly wait outside transactions and then return retryable unavailability if the original operation is still busy. Provider settlement retains its independent durable idempotency/order-binding ledger and partial unique index; a process crash after settlement replays the same provider receipt. The mock provider admits at most two operations per instance, matching its pool, and connection acquisition is bounded to one second.
+
+Refund intents bind payment, key, currency and amount. Distinct partial refunds require distinct explicit keys; a retry must reuse the same key. The new optional proto field is additive: old clients retain the original single full-refund identity. Partial refunds without a key are rejected. Pending uncertain refunds reserve the remaining balance for their original key; competing requests cannot over-refund. Each successful receipt increments refunded_amount once; status becomes REFUNDED only when the captured amount is fully returned. Currency is validated against the payment and refund validation maps to INVALID_ARGUMENT.
+
+Payment V5 adds processing tokens/leases, refunded_amount with a captured-amount bound, and refund_intents. It derives historical refund amounts only from durable provider receipts. REFUNDED history without a receipt keeps a NULL amount rather than inventing one; old REFUNDED rows remain protected from further refunds and need operator reconciliation before any correction. Historically partial refunds incorrectly marked REFUNDED are not silently reopened. Reconcile their provider receipts and business order before changing historical state.
+
+The same migration renames the old outbox table to retired_outbox_events, preserving every historical row/payload. There is no publisher or consumer for payment_processed/payment_refunded, and synchronous Order orchestration already uses durable Payment/provider results. New dead writes and unused JPA outbox types are removed instead of creating an unowned event stream. Kafka/Avro dependencies, configuration and Compose startup dependencies are removed from payment; readiness now requires the database. E2E/chaos source assertions inspect finalized payment intent/provider receipts instead of dead outbox rows. Full-stack E2E/chaos has not been executed for this change.
+
+Reconciliation uses bounded page/size (maximum 100), retaining payments/generatedAt and adding page/size/hasNext. Notification must iterate these pages before Wave 7 can merge. Rollout must deploy a compatible application with V5; old payment writers reference the retired table and must be stopped before migration. Keep a database backup and verify the historical refund reconciliation before production rollout. No provider ledger or retired outbox rows are deleted by the migration.
+
+Executed on JDK25, with the Java language server temporarily suspended/resumed during Maven:
+
+- `./mvnw clean install -pl :proto -am -DskipTests -DskipITs -DskipE2ETests` — success, dependency installation only.
+- In backend/proto: `buf lint`; `buf breaking --against '../../.git#branch=main,subdir=backend/proto'` — passed, WIRE rules.
+- `./mvnw clean verify -pl :payment-service -DskipE2ETests` — success, 42 unit + 33 integration tests, coverage passed. Includes all 18 PaymentIdempotencyIT tests, process recreation, charge/refund finalization crashes, a two-connection application pool, caller rollback independence, exact request binding, equal partial amounts with distinct keys, competing partial refunds, currency rejection through real gRPC, and historical receipt/archive migration.
+- `./mvnw checkstyle:check -pl :payment-service,:proto` — success, existing warnings remain.
+- Both Compose configurations and Kustomize base/production/ingress-tls — passed.
+
+The payment integration fixtures now start PostgreSQL only because this service owns no Kafka, Redis or Elasticsearch behavior. No coverage or quality gates were disabled. The final verification completed in 27 seconds without test failures or forced JVM shutdown.

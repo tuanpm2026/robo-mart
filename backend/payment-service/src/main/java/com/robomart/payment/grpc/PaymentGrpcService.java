@@ -113,7 +113,7 @@ public class PaymentGrpcService extends PaymentServiceGrpc.PaymentServiceImplBas
             BigDecimal amount = new BigDecimal(request.getAmount().getAmount());
 
             PaymentResult result = paymentService.refundPayment(
-                    paymentId, orderId, amount, request.getReason());
+                    paymentId, orderId, amount, request.getAmount().getCurrency(), request.getReason(), request.getIdempotencyKey());
 
             RefundPaymentResponse response = RefundPaymentResponse.newBuilder()
                     .setSuccess(result.success())
@@ -124,10 +124,10 @@ public class PaymentGrpcService extends PaymentServiceGrpc.PaymentServiceImplBas
             responseObserver.onNext(response);
             responseObserver.onCompleted();
 
-        } catch (NumberFormatException e) {
-            log.warn("Invalid payment_id format: {}", paymentIdStr, e);
+        } catch (IllegalArgumentException e) {
+            log.warn("Invalid refund request: paymentId={}", paymentIdStr, e);
             responseObserver.onError(Status.INVALID_ARGUMENT
-                    .withDescription("Invalid payment_id format: " + e.getMessage())
+                    .withDescription(e.getMessage())
                     .asRuntimeException());
 
         } catch (ResourceNotFoundException e) {

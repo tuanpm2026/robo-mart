@@ -481,16 +481,10 @@ services:
     depends_on:
       postgres-payment:
         condition: service_healthy
-      kafka:
-        condition: service_healthy
-      schema-registry:
-        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payment:5432/payment_db
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-robomart}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-robomart}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
     networks:
       - robomart-network
     deploy:

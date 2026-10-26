@@ -2,6 +2,7 @@ package com.robomart.payment.controller;
 
 import io.micrometer.tracing.Tracer;
 import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
@@ -45,8 +46,10 @@ public class PaymentAdminRestController {
     }
 
     @GetMapping("/reconciliation-summary")
-    public ResponseEntity<ApiResponse<ReconciliationSummaryResponse>> getReconciliationSummary() {
-        return ResponseEntity.ok(new ApiResponse<>(paymentService.getReconciliationSummary(), getTraceId()));
+    public ResponseEntity<ApiResponse<ReconciliationSummaryResponse>> getReconciliationSummary(
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "100") @Min(1) @Max(100) int size) {
+        return ResponseEntity.ok(new ApiResponse<>(paymentService.getReconciliationSummary(page, size), getTraceId()));
     }
 
     @GetMapping("/order/{orderId}")

@@ -2,6 +2,7 @@ package com.robomart.payment.entity;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -50,6 +51,22 @@ public class Payment {
 
     @Column(name = "refund_transaction_id", length = 100)
     private String refundTransactionId;
+
+    @Column(name = "refunded_amount", precision = 19, scale = 2)
+    private BigDecimal refundedAmount = BigDecimal.ZERO;
+
+    @Column(name = "processing_token")
+    private UUID processingToken;
+
+    @Column(name = "processing_until")
+    private Instant processingUntil;
+
+    public BigDecimal getRefundedAmount() { return refundedAmount; }
+    public void setRefundedAmount(BigDecimal value) { refundedAmount = value; }
+    public UUID getProcessingToken() { return processingToken; }
+    public void setProcessingToken(UUID value) { processingToken = value; }
+    public Instant getProcessingUntil() { return processingUntil; }
+    public void setProcessingUntil(Instant value) { processingUntil = value; }
 
     @Version
     private Integer version;

@@ -9,23 +9,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.robomart.payment.entity.IdempotencyKey;
-import com.robomart.payment.entity.OutboxEvent;
 import com.robomart.payment.entity.Payment;
 import com.robomart.payment.enums.PaymentStatus;
 import com.robomart.payment.exception.PaymentDeclinedException;
 import com.robomart.payment.exception.PaymentTransientException;
 import com.robomart.payment.repository.IdempotencyKeyRepository;
-import com.robomart.payment.repository.OutboxEventRepository;
 import com.robomart.payment.repository.PaymentRepository;
 import com.robomart.payment.service.MockPaymentGateway;
 import com.robomart.payment.service.PaymentService;
 import com.robomart.payment.service.PaymentService.PaymentResult;
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.PostgresContainerConfig;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@IntegrationTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
+@Import(PostgresContainerConfig.class)
 class PaymentServiceIT {
 
     @Autowired
@@ -37,8 +40,6 @@ class PaymentServiceIT {
     @Autowired
     private IdempotencyKeyRepository idempotencyKeyRepository;
 
-    @Autowired
-    private OutboxEventRepository outboxEventRepository;
 
     @Autowired
     private MockPaymentGateway mockPaymentGateway;
@@ -50,7 +51,8 @@ class PaymentServiceIT {
     void setUp() {
         mockPaymentGateway.reset();
         jdbc.update("DELETE FROM mock_gateway_operations");
-        outboxEventRepository.deleteAll();
+        jdbc.update("DELETE FROM refund_intents");
+        jdbc.update("DELETE FROM retired_outbox_events");
         idempotencyKeyRepository.deleteAll();
         paymentRepository.deleteAll();
     }
@@ -79,11 +81,8 @@ class PaymentServiceIT {
         assertThat(idempotencyKey.getResponse()).isNotEmpty();
         assertThat(idempotencyKey.getExpiresAt()).isAfter(java.time.Instant.now());
 
-        // Assert: outbox event created
-        List<OutboxEvent> events = outboxEventRepository.findByPublishedFalseOrderByCreatedAtAsc();
-        assertThat(events).hasSize(1);
-        assertThat(events.getFirst().getEventType()).isEqualTo("payment_processed");
-        assertThat(events.getFirst().getAggregateType()).isEqualTo("Payment");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM retired_outbox_events", Integer.class)).isZero();
+
     }
 
     @Test
@@ -116,7 +115,7 @@ class PaymentServiceIT {
                 "order-it-3", "user-1", new BigDecimal("75.00"), "USD", "idem-key-refund");
         Long paymentId = Long.parseLong(processResult.paymentId());
 
-        outboxEventRepository.deleteAll(); // Clear process events
+        // Financial receipts are recorded in payment/provider ledgers.
 
         // Act: refund
         PaymentResult refundResult = paymentService.refundPayment(
@@ -130,10 +129,10 @@ class PaymentServiceIT {
         Payment payment = paymentRepository.findById(paymentId).orElseThrow();
         assertThat(payment.getStatus()).isEqualTo(PaymentStatus.REFUNDED);
 
-        // Assert: refund outbox event created
-        List<OutboxEvent> events = outboxEventRepository.findByPublishedFalseOrderByCreatedAtAsc();
-        assertThat(events).hasSize(1);
-        assertThat(events.getFirst().getEventType()).isEqualTo("payment_refunded");
+        assertThat(payment.getRefundedAmount()).isEqualByComparingTo("75.00");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM refund_intents WHERE status='COMPLETED'", Integer.class))
+                .isEqualTo(1);
+
     }
 
     @Test

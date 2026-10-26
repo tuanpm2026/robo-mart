@@ -169,9 +169,8 @@ class ServiceKillChaosIT {
                         + "' AND status='COMPLETED'"))
                 .as("Exactly one completed provider operation is recorded for order %s", id).isEqualTo("1");
         assertThat(E2eSupport.query("postgres", "payment_db",
-                "SELECT count(*) FROM outbox_events WHERE event_type='payment_processed'"
-                        + " AND aggregate_id IN (SELECT id::text FROM payments WHERE order_id='" + id + "')"))
-                .as("Exactly one payment processed event is persisted for order %s", id).isEqualTo("1");
+                "SELECT count(*) FROM payments WHERE order_id='" + id + "' AND processing_token IS NULL"))
+                .as("Recovered payment has a finalized durable intent for order %s", id).isEqualTo("1");
         assertThat(E2eSupport.query("postgres", "inventory_db",
                 "SELECT count(*) || '|' || count(*) FILTER (WHERE quantity=1)"
                         + " FROM stock_movements WHERE order_id='" + id + "' AND type='RESERVE'"))

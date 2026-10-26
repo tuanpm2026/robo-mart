@@ -22,10 +22,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.*;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.robomart.payment.repository.IdempotencyKeyRepository;
-import com.robomart.payment.repository.OutboxEventRepository;
+import com.robomart.payment.service.PaymentIntentStore;
 import com.robomart.payment.repository.PaymentRepository;
 import com.robomart.payment.service.MockGatewayLedger;
 import com.robomart.payment.service.GatewayResult;
@@ -48,8 +52,8 @@ class PaymentIdempotencyIT {
     @Autowired private PaymentService service;
     @Autowired private PaymentRepository payments;
     @Autowired private IdempotencyKeyRepository keys;
-    @Autowired private OutboxEventRepository outbox;
-    @Autowired private MockPaymentGateway gateway;
+    @MockitoSpyBean private PaymentIntentStore intents;
+    @MockitoSpyBean private MockPaymentGateway gateway;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private TransactionTemplate transactions;
     @Autowired private ObjectMapper mapper;
@@ -58,7 +62,8 @@ class PaymentIdempotencyIT {
     @BeforeEach
     void clearFixtures() {
         gateway.reset();
-        outbox.deleteAll();
+        jdbc.update("DELETE FROM refund_intents");
+        jdbc.update("DELETE FROM retired_outbox_events");
         keys.deleteAll();
         payments.deleteAll();
         jdbc.update("DELETE FROM mock_gateway_operations");
@@ -74,11 +79,11 @@ class PaymentIdempotencyIT {
         keys.deleteAll();
         gateway.reset(); // A process restart/fault reset must not erase settlement history.
         assertThat(pay("expiry", "key-expiry")).isEqualTo(first);
-        assertOneChargeAndEvent("expiry");
+        assertOneChargeAndPayment("expiry");
     }
 
     @Test
-    void concurrentReplaysUseOneChargeOnePaymentAndOneOutboxWithSmallApplicationPool() throws Exception {
+    void concurrentReplaysUseOneChargeOnePaymentWithSmallApplicationPool() throws Exception {
         gateway.setSimulatedDelayMs(100);
         CountDownLatch start = new CountDownLatch(1);
         try (var executor = Executors.newFixedThreadPool(4)) {
@@ -95,7 +100,7 @@ class PaymentIdempotencyIT {
                 assertThat(request.get(15, TimeUnit.SECONDS)).isEqualTo(first);
             }
         }
-        assertOneChargeAndEvent("concurrent");
+        assertOneChargeAndPayment("concurrent");
     }
 
     @Test
@@ -120,7 +125,7 @@ class PaymentIdempotencyIT {
             }
             assertThat(successes).isEqualTo(1);
         }
-        assertOneChargeAndEvent("one-order");
+        assertOneChargeAndPayment("one-order");
     }
 
     @Test
@@ -130,15 +135,15 @@ class PaymentIdempotencyIT {
             status.setRollbackOnly();
             return result;
         });
-        assertThat(payments.count()).isZero();
-        assertThat(outbox.count()).isZero();
+        assertThat(payments.count()).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM retired_outbox_events", Integer.class)).isZero();
         assertThat(operationCount("charge:%")).isEqualTo(1);
         var restartedGateway = new MockPaymentGateway(new MockGatewayLedger(providerDataSource));
-        var restartedService = new PaymentService(payments, keys, outbox, restartedGateway, transactions, mapper);
+        var restartedService = new PaymentService(intents, restartedGateway, payments);
         PaymentResult recovered = restartedService.processPayment("ambiguous", "user-1",
                 new BigDecimal("29.99"), "USD", "key-ambiguous");
         assertThat(recovered.transactionId()).isEqualTo(ambiguous.transactionId());
-        assertOneChargeAndEvent("ambiguous");
+        assertOneChargeAndPayment("ambiguous");
     }
 
     @Test
@@ -148,7 +153,7 @@ class PaymentIdempotencyIT {
                 new BigDecimal("29.99"), "USD", "key-bound")).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> service.processPayment("bound", "user-1",
                 new BigDecimal("30.99"), "USD", "key-bound")).isInstanceOf(IllegalArgumentException.class);
-        assertOneChargeAndEvent("bound");
+        assertOneChargeAndPayment("bound");
     }
 
     @Test
@@ -163,7 +168,7 @@ class PaymentIdempotencyIT {
                 .isInstanceOf(com.robomart.payment.exception.PaymentDeclinedException.class);
         assertThat(operationCount("charge:%")).isEqualTo(1);
         assertThat(operationCount("refund:%")).isEqualTo(1);
-        assertThat(outbox.count()).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM retired_outbox_events", Integer.class)).isZero();
     }
 
     @Test
@@ -201,13 +206,13 @@ class PaymentIdempotencyIT {
         // Even losing the caller's cache cannot turn the provider's definitive decline into a new charge.
         keys.deleteAll();
         var restarted = new MockPaymentGateway(new MockGatewayLedger(providerDataSource));
-        var restartedService = new PaymentService(payments, keys, outbox, restarted, transactions, mapper);
+        var restartedService = new PaymentService(intents, restarted, payments);
         assertThatThrownBy(() -> restartedService.processPayment("declined", "user-1",
                 new BigDecimal("29.99"), "USD", "key-declined"))
                 .isInstanceOf(PaymentDeclinedException.class);
         assertThat(jdbc.queryForObject("SELECT status FROM mock_gateway_operations WHERE operation_key=?",
                 String.class, "charge:key-declined")).isEqualTo("DECLINED");
-        assertThat(outbox.count()).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM retired_outbox_events", Integer.class)).isZero();
     }
 
     @Test
@@ -216,14 +221,14 @@ class PaymentIdempotencyIT {
             pay("unfinalized", "key-unfinalized");
             status.setRollbackOnly();
         });
-        assertThat(payments.count()).isZero();
+        assertThat(payments.count()).isEqualTo(1);
         var restarted = new MockPaymentGateway(new MockGatewayLedger(providerDataSource));
-        var restartedService = new PaymentService(payments, keys, outbox, restarted, transactions, mapper);
+        var restartedService = new PaymentService(intents, restarted, payments);
         assertThatThrownBy(() -> restartedService.processPayment("unfinalized", "another-user",
                 new BigDecimal("29.99"), "USD", "key-unfinalized"))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(operationCount("charge:%")).isEqualTo(1);
-        assertThat(payments.count()).isZero();
+        assertThat(payments.count()).isEqualTo(1);
     }
 
     @Test
@@ -236,12 +241,12 @@ class PaymentIdempotencyIT {
             return result;
         });
         var restarted = new MockPaymentGateway(new MockGatewayLedger(providerDataSource));
-        var restartedService = new PaymentService(payments, keys, outbox, restarted, transactions, mapper);
+        var restartedService = new PaymentService(intents, restarted, payments);
         PaymentResult recovered = restartedService.refundPayment(Long.valueOf(charge.paymentId()), "ambiguous-refund",
                 new BigDecimal("29.99"), "retry refund");
         assertThat(recovered.transactionId()).isEqualTo(ambiguous.transactionId());
         assertThat(operationCount("refund:%")).isEqualTo(1);
-        assertThat(outbox.count()).isEqualTo(2);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM retired_outbox_events", Integer.class)).isZero();
     }
 
     @Test
@@ -254,7 +259,7 @@ class PaymentIdempotencyIT {
         assertThat(replay.success()).isTrue();
         assertThat(replay.transactionId()).isEmpty();
         assertThat(operationCount("refund:%")).isZero();
-        assertThat(outbox.count()).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM retired_outbox_events", Integer.class)).isZero();
     }
 
     @Test
@@ -268,7 +273,7 @@ class PaymentIdempotencyIT {
         assertThat(operationCount("refund:%")).isZero();
         assertThat(payments.findByOrderId("refund-precision").orElseThrow().getStatus())
                 .isEqualTo(com.robomart.payment.enums.PaymentStatus.COMPLETED);
-        assertThat(outbox.count()).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM retired_outbox_events", Integer.class)).isZero();
     }
 
     @Test
@@ -277,13 +282,113 @@ class PaymentIdempotencyIT {
             pay("ambiguous-key-change", "key-original");
             status.setRollbackOnly();
         });
-        assertThat(payments.count()).isZero();
+        assertThat(payments.count()).isEqualTo(1);
         assertThatThrownBy(() -> pay("ambiguous-key-change", "key-replacement"))
-                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("already bound");
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("bound");
         assertThat(operationCount("charge:%")).isEqualTo(1);
-        assertThat(payments.count()).isZero();
+        assertThat(payments.count()).isEqualTo(1);
         assertThat(pay("ambiguous-key-change", "key-original").success()).isTrue();
-        assertOneChargeAndEvent("ambiguous-key-change");
+        assertOneChargeAndPayment("ambiguous-key-change");
+    }
+
+    @Test
+    void committedIntentReplaysProviderReceiptAfterChargeFinalizationCrash() {
+        doThrow(new IllegalStateException("simulated crash after charge")).doCallRealMethod()
+                .when(intents).finishCharge(any(), any(), isNull());
+        assertThatThrownBy(() -> pay("charge-crash", "charge-crash-key"))
+                .isInstanceOf(IllegalStateException.class);
+        var pending = payments.findByOrderId("charge-crash").orElseThrow();
+        assertThat(pending.getStatus()).isEqualTo(com.robomart.payment.enums.PaymentStatus.PROCESSING);
+        assertThat(pending.getProcessingToken()).isNotNull();
+        assertThat(operationCount("charge:%")).isEqualTo(1);
+        jdbc.update("UPDATE payments SET processing_until=now()-interval '1 second' WHERE id=?", pending.getId());
+        var recovered = new PaymentService(intents, new MockPaymentGateway(new MockGatewayLedger(providerDataSource)), payments)
+                .processPayment("charge-crash", "user-1", new BigDecimal("29.99"), "USD", "charge-crash-key");
+        assertThat(recovered.success()).isTrue();
+        assertOneChargeAndPayment("charge-crash");
+    }
+
+    @Test
+    void committedRefundIntentReplaysProviderReceiptAfterFinalizationCrash() {
+        PaymentResult charge = pay("refund-crash", "refund-crash-key");
+        doThrow(new IllegalStateException("simulated crash after refund")).doCallRealMethod()
+                .when(intents).finishRefund(any(), any(), isNull());
+        assertThatThrownBy(() -> service.refundPayment(Long.valueOf(charge.paymentId()), "refund-crash",
+                new BigDecimal("10.00"), "USD", "partial", "partial-1"))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(operationCount("refund:%")).isEqualTo(1);
+        assertThat(payments.findByOrderId("refund-crash").orElseThrow().getRefundedAmount()).isEqualByComparingTo("0");
+        jdbc.update("UPDATE refund_intents SET processing_until=now()-interval '1 second'");
+        PaymentResult recovered = service.refundPayment(Long.valueOf(charge.paymentId()), "refund-crash",
+                new BigDecimal("10.00"), "USD", "retry", "partial-1");
+        assertThat(recovered.success()).isTrue();
+        assertThat(operationCount("refund:%")).isEqualTo(1);
+        assertThat(payments.findByOrderId("refund-crash").orElseThrow().getRefundedAmount()).isEqualByComparingTo("10.00");
+    }
+
+    @Test
+    void gatewayCallHasNoApplicationTransactionEvenWhenCallerStartedOne() {
+        doAnswer(invocation -> {
+            assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM payments WHERE order_id='no-outer-lock' "
+                    + "AND status='PROCESSING' AND processing_token IS NOT NULL", Integer.class)).isEqualTo(1);
+            return invocation.callRealMethod();
+        }).when(gateway).processPayment(any(), anyString(), anyString(), eq("no-outer-lock"), anyString());
+        transactions.executeWithoutResult(status -> {
+            assertThat(pay("no-outer-lock", "no-outer-lock-key").success()).isTrue();
+            status.setRollbackOnly();
+        });
+        assertOneChargeAndPayment("no-outer-lock");
+    }
+
+    @Test
+    void equalPartialAmountsWithDifferentKeysAreDistinctAndReplaysDoNotAddTwice() {
+        PaymentResult charge = pay("partials", "partials-charge");
+        Long id = Long.valueOf(charge.paymentId());
+        PaymentResult first = service.refundPayment(id, "partials", new BigDecimal("10.00"), "USD", "first", "part-1");
+        PaymentResult second = service.refundPayment(id, "partials", new BigDecimal("10.00"), "USD", "second", "part-2");
+        assertThat(first.transactionId()).isNotEqualTo(second.transactionId());
+        assertThat(service.refundPayment(id, "partials", new BigDecimal("10.00"), "USD", "retry", "part-1"))
+                .isEqualTo(first);
+        var partial = payments.findById(id).orElseThrow();
+        assertThat(partial.getStatus()).isEqualTo(com.robomart.payment.enums.PaymentStatus.COMPLETED);
+        assertThat(partial.getRefundedAmount()).isEqualByComparingTo("20.00");
+        assertThatThrownBy(() -> service.refundPayment(id, "partials", new BigDecimal("10.00"), "USD", "over", "part-3"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.refundPayment(id, "partials", new BigDecimal("9.99"), "EUR", "wrong", "part-3"))
+                .isInstanceOf(IllegalArgumentException.class);
+        service.refundPayment(id, "partials", new BigDecimal("9.99"), "USD", "rest", "part-3");
+        assertThat(payments.findById(id).orElseThrow().getStatus())
+                .isEqualTo(com.robomart.payment.enums.PaymentStatus.REFUNDED);
+        assertThat(operationCount("refund:%")).isEqualTo(3);
+    }
+
+    @Test
+    void competingPartialRefundsCannotExceedCapturedAmount() throws Exception {
+        PaymentResult charge = pay("competing-refunds", "competing-refunds-charge");
+        Long id = Long.valueOf(charge.paymentId());
+        gateway.setSimulatedDelayMs(100);
+        CountDownLatch start = new CountDownLatch(1);
+        try (var pool = Executors.newFixedThreadPool(2)) {
+            List<Future<Boolean>> results = new ArrayList<>();
+            for (String key : List.of("partial-a", "partial-b")) {
+                results.add(pool.submit(() -> {
+                    start.await();
+                    try {
+                        return service.refundPayment(id, "competing-refunds", new BigDecimal("20.00"),
+                                "USD", "partial", key).success();
+                    } catch (IllegalArgumentException remainingBalance) {
+                        return false;
+                    }
+                }));
+            }
+            start.countDown();
+            int successes = 0;
+            for (var result : results) successes += result.get(10, TimeUnit.SECONDS) ? 1 : 0;
+            assertThat(successes).isEqualTo(1);
+        }
+        assertThat(payments.findById(id).orElseThrow().getRefundedAmount()).isEqualByComparingTo("20.00");
+        assertThat(operationCount("refund:%")).isEqualTo(1);
     }
 
     private PaymentResult pay(String order, String key) {
@@ -295,10 +400,10 @@ class PaymentIdempotencyIT {
                 Integer.class, keyPattern);
     }
 
-    private void assertOneChargeAndEvent(String order) {
+    private void assertOneChargeAndPayment(String order) {
         assertThat(payments.findByOrderId(order)).isPresent();
         assertThat(payments.count()).isEqualTo(1);
         assertThat(operationCount("charge:%")).isEqualTo(1);
-        assertThat(outbox.count()).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM retired_outbox_events", Integer.class)).isZero();
     }
 }
