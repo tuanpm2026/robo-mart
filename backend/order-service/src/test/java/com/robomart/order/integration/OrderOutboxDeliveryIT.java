@@ -41,7 +41,7 @@ import io.micrometer.core.instrument.MeterRegistry;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
         "saga.payment-recovery.enabled=false", "saga.dead-saga-detection.initial-delay-ms=3600000",
-        "outbox.initial-delay-ms=3600000", "outbox.publish-timeout=100ms"})
+        "outbox.initial-delay-ms=3600000", "outbox.publish-timeout=2s"})
 @ActiveProfiles("test")
 @Import(OrderOutboxDeliveryIT.Database.class)
 class OrderOutboxDeliveryIT {
