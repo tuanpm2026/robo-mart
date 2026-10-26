@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
@@ -161,15 +162,32 @@ class OrderRestControllerTest {
 
         Order mockOrder = buildOrder(10L, userId, OrderStatus.CONFIRMED, new BigDecimal("99.98"));
 
-        when(orderService.createOrder(eq(userId), anyList(), eq(request.shippingAddress())))
+        when(orderService.createOrder(eq(userId), anyList(), eq(request.shippingAddress()), isNull()))
                 .thenReturn(mockOrder);
 
-        ResponseEntity<ApiResponse<OrderSummaryResponse>> response = controller.createOrder(request, userId);
+        ResponseEntity<ApiResponse<OrderSummaryResponse>> response = controller.createOrder(request, userId, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().data().id()).isEqualTo(10L);
         assertThat(response.getBody().data().status()).isEqualTo(OrderStatus.CONFIRMED);
+    }
+
+    @Test
+    @DisplayName("createOrder forwards the Idempotency-Key header and accepts lines without name or price")
+    void createOrder_forwardsIdempotencyKey() {
+        String userId = "user-1";
+        CreateOrderRequest request = new CreateOrderRequest(
+                List.of(new CreateOrderItemRequest("1", null, 2, null)), "123 Main St");
+        Order mockOrder = buildOrder(13L, userId, OrderStatus.CONFIRMED, new BigDecimal("99.98"));
+        when(orderService.createOrder(eq(userId), anyList(), eq("123 Main St"), eq("idem-42")))
+                .thenReturn(mockOrder);
+
+        ResponseEntity<ApiResponse<OrderSummaryResponse>> response =
+                controller.createOrder(request, userId, "idem-42");
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody().data().id()).isEqualTo(13L);
     }
 
     @Test
@@ -179,7 +197,7 @@ class OrderRestControllerTest {
                 List.of(new CreateOrderItemRequest("1", "Product A", 1, new BigDecimal("10.00"))),
                 "123 Main St");
 
-        assertThatThrownBy(() -> controller.createOrder(request, null))
+        assertThatThrownBy(() -> controller.createOrder(request, null, null))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
@@ -194,10 +212,10 @@ class OrderRestControllerTest {
         Order cancelledOrder = buildOrder(11L, userId, OrderStatus.CANCELLED, new BigDecimal("10.00"));
         cancelledOrder.setCancellationReason("Payment declined");
 
-        when(orderService.createOrder(eq(userId), anyList(), anyString()))
+        when(orderService.createOrder(eq(userId), anyList(), anyString(), isNull()))
                 .thenReturn(cancelledOrder);
 
-        assertThatThrownBy(() -> controller.createOrder(request, userId))
+        assertThatThrownBy(() -> controller.createOrder(request, userId, null))
                 .isInstanceOf(com.robomart.order.exception.OrderPaymentFailedException.class)
                 .hasMessageContaining("Payment declined");
     }
@@ -213,10 +231,10 @@ class OrderRestControllerTest {
         Order cancelledOrder = buildOrder(12L, userId, OrderStatus.CANCELLED, new BigDecimal("10.00"));
         cancelledOrder.setCancellationReason("Insufficient stock");
 
-        when(orderService.createOrder(eq(userId), anyList(), anyString()))
+        when(orderService.createOrder(eq(userId), anyList(), anyString(), isNull()))
                 .thenReturn(cancelledOrder);
 
-        assertThatThrownBy(() -> controller.createOrder(request, userId))
+        assertThatThrownBy(() -> controller.createOrder(request, userId, null))
                 .isInstanceOf(com.robomart.order.exception.OrderInventoryFailedException.class)
                 .hasMessageContaining("Insufficient stock");
     }

@@ -38,13 +38,15 @@ public class OrderRestController {
         this.orderService = orderService;
     }
 
+    static final String IDEMPOTENCY_KEY_HEADER = "Idempotency-Key";
     private static final String INVENTORY_CANCELLATION_REASON = "Insufficient stock";
     private static final String INVENTORY_CIRCUIT_REASON = ReserveInventoryStep.CIRCUIT_OPEN_CANCELLATION_REASON;
 
     @PostMapping
     public ResponseEntity<ApiResponse<OrderSummaryResponse>> createOrder(
             @Valid @RequestBody CreateOrderRequest request,
-            @RequestHeader(value = "X-User-Id", required = false) String userId) {
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = IDEMPOTENCY_KEY_HEADER, required = false) String idempotencyKey) {
         if (userId == null || userId.isBlank()) {
             throw new ResourceNotFoundException("Unauthorized");
         }
@@ -52,7 +54,8 @@ public class OrderRestController {
                 .map(item -> new OrderService.OrderItemRequest(
                         item.productId(), item.productName(), item.quantity(), item.unitPrice()))
                 .toList();
-        Order order = orderService.createOrder(userId, items, request.shippingAddress());
+        // A replayed Idempotency-Key returns the original order; the response mirrors its current state.
+        Order order = orderService.createOrder(userId, items, request.shippingAddress(), idempotencyKey);
 
         if (order.getStatus() == OrderStatus.PAYMENT_PENDING) {
             // AC1: Payment circuit open — return 202 Accepted, customer informed to wait

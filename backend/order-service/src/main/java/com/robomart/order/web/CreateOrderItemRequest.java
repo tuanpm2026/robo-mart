@@ -2,14 +2,16 @@ package com.robomart.order.web;
 
 import java.math.BigDecimal;
 
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+/**
+ * One checkout line. {@code productName} and {@code unitPrice} are optional and ignored — they are
+ * still accepted so existing clients keep working, but the order is priced from product-service.
+ */
 public record CreateOrderItemRequest(
         @NotBlank String productId,
-        @NotBlank String productName,
+        String productName,
         @Positive int quantity,
-        @NotNull @DecimalMin("0.01") BigDecimal unitPrice) {
+        BigDecimal unitPrice) {
 }

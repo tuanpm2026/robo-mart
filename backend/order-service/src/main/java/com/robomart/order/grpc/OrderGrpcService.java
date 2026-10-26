@@ -1,16 +1,18 @@
 package com.robomart.order.grpc;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.grpc.server.service.GrpcService;
 
+import com.robomart.common.exception.ExternalServiceException;
 import com.robomart.common.exception.ResourceNotFoundException;
+import com.robomart.common.exception.ValidationException;
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderItem;
 import com.robomart.order.exception.OrderNotCancellableException;
+import com.robomart.order.exception.OrderProductUnavailableException;
 import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.order.service.OrderService;
 import com.robomart.proto.common.Address;
@@ -41,16 +43,16 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
     @Override
     public void createOrder(CreateOrderRequest request, StreamObserver<CreateOrderResponse> responseObserver) {
         try {
+            // product_name and unit_price stay in the proto for wire compatibility but are ignored:
+            // the order is priced from product-service.
             List<OrderService.OrderItemRequest> items = request.getItemsList().stream()
                     .map(item -> new OrderService.OrderItemRequest(
-                            item.getProductId(),
-                            item.getProductName(),
-                            item.getQuantity(),
-                            new BigDecimal(item.getUnitPrice().getAmount())))
+                            item.getProductId(), null, item.getQuantity(), null))
                     .toList();
 
             String shippingAddress = formatAddress(request.getShippingAddress());
-            Order order = orderService.createOrder(request.getUserId(), items, shippingAddress);
+            Order order = orderService.createOrder(request.getUserId(), items, shippingAddress,
+                    request.getIdempotencyKey());
 
             responseObserver.onNext(CreateOrderResponse.newBuilder()
                     .setSuccess(true)
@@ -62,8 +64,12 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
         } catch (SagaStepException e) {
             log.error("Saga failed for createOrder: {}", e.getMessage());
             responseObserver.onError(Status.INTERNAL.withDescription(e.getMessage()).asRuntimeException());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | ValidationException e) {
             responseObserver.onError(Status.INVALID_ARGUMENT.withDescription(e.getMessage()).asRuntimeException());
+        } catch (OrderProductUnavailableException e) {
+            responseObserver.onError(Status.FAILED_PRECONDITION.withDescription(e.getMessage()).asRuntimeException());
+        } catch (ExternalServiceException e) {
+            responseObserver.onError(Status.UNAVAILABLE.withDescription(e.getMessage()).asRuntimeException());
         } catch (Exception e) {
             log.error("Unexpected error in createOrder: {}", e.getMessage(), e);
             responseObserver.onError(Status.INTERNAL.withDescription("Internal error").asRuntimeException());

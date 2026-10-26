@@ -26,6 +26,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import com.robomart.common.dto.ApiResponse;
+import com.robomart.order.client.ProductCatalogClient;
+import com.robomart.order.client.ProductSnapshot;
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OutboxEvent;
 import com.robomart.order.entity.SagaAuditLog;
@@ -70,6 +73,9 @@ class OrderSagaIT {
     @SuppressWarnings("rawtypes")
     private KafkaTemplate kafkaTemplate;
 
+    @MockitoBean
+    private ProductCatalogClient productCatalogClient;
+
     @LocalServerPort
     private int port;
 
@@ -93,6 +99,8 @@ class OrderSagaIT {
     @BeforeEach
     void setUp() {
         Mockito.reset(inventoryStub, paymentStub);
+        when(productCatalogClient.getProduct(10L)).thenReturn(
+                new ApiResponse<>(new ProductSnapshot(10L, "Widget", new BigDecimal("49.99")), "trace"));
         sampleItems = List.of(
                 new OrderService.OrderItemRequest("10", "Widget", 2, new BigDecimal("49.99")));
     }
@@ -120,7 +128,7 @@ class OrderSagaIT {
         stubInventorySuccess();
         stubPaymentSuccess();
 
-        Order order = orderService.createOrder("user-1", sampleItems, "123 Main St, NY, NY, 10001, US");
+        Order order = orderService.createOrder("user-1", sampleItems, "123 Main St, NY, NY, 10001, US", null);
 
         Order persisted = orderRepository.findById(order.getId()).orElseThrow();
         assertThat(persisted.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
@@ -186,7 +194,7 @@ class OrderSagaIT {
                 .thenThrow(new StatusRuntimeException(
                         Status.FAILED_PRECONDITION.withDescription("Insufficient stock")));
 
-        Order order = orderService.createOrder("user-2", sampleItems, "456 Oak Ave, LA, CA, 90001, US");
+        Order order = orderService.createOrder("user-2", sampleItems, "456 Oak Ave, LA, CA, 90001, US", null);
 
         Order persisted = orderRepository.findById(order.getId()).orElseThrow();
         assertThat(persisted.getStatus()).isEqualTo(OrderStatus.CANCELLED);
@@ -205,7 +213,7 @@ class OrderSagaIT {
                 .thenThrow(new StatusRuntimeException(
                         Status.FAILED_PRECONDITION.withDescription("Payment declined")));
 
-        Order order = orderService.createOrder("user-3", sampleItems, "789 Pine Rd, CHI, IL, 60601, US");
+        Order order = orderService.createOrder("user-3", sampleItems, "789 Pine Rd, CHI, IL, 60601, US", null);
 
         Order persisted = orderRepository.findById(order.getId()).orElseThrow();
         assertThat(persisted.getStatus()).isEqualTo(OrderStatus.CANCELLED);
@@ -220,7 +228,7 @@ class OrderSagaIT {
         stubInventorySuccess();
         stubPaymentSuccess();
 
-        Order order = orderService.createOrder("user-4", sampleItems, "1 Test St, Test, TX, 75001, US");
+        Order order = orderService.createOrder("user-4", sampleItems, "1 Test St, Test, TX, 75001, US", null);
 
         List<SagaAuditLog> auditLogs = sagaAuditLogRepository
                 .findBySagaIdOrderByExecutedAtAsc(order.getId().toString());

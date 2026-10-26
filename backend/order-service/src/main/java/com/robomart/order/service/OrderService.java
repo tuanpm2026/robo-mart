@@ -4,13 +4,16 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +27,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import com.robomart.common.audit.AuditAction;
 import com.robomart.common.audit.Auditable;
 import com.robomart.common.exception.ResourceNotFoundException;
+import com.robomart.common.exception.ValidationException;
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderItem;
 import com.robomart.order.entity.OrderStatusHistory;
@@ -47,6 +51,8 @@ public class OrderService {
 
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
 
+    private static final int MAX_IDEMPOTENCY_KEY_LENGTH = 255;
+
     private static final Set<OrderStatus> CANCELLABLE_STATUSES = Set.of(OrderStatus.PENDING, OrderStatus.CONFIRMED);
 
     private static final Map<OrderStatus, OrderStatus> ADMIN_TRANSITIONS = Map.of(
@@ -58,55 +64,62 @@ public class OrderService {
     private final OrderStatusHistoryRepository orderStatusHistoryRepository;
     private final OrderSagaOrchestrator orderSagaOrchestrator;
     private final TransactionTemplate transactionTemplate;
+    private final ProductPricingService productPricingService;
 
     public OrderService(
             OrderRepository orderRepository,
             OrderItemRepository orderItemRepository,
             OrderStatusHistoryRepository orderStatusHistoryRepository,
             OrderSagaOrchestrator orderSagaOrchestrator,
-            TransactionTemplate transactionTemplate) {
+            TransactionTemplate transactionTemplate,
+            ProductPricingService productPricingService) {
         this.orderRepository = orderRepository;
         this.orderItemRepository = orderItemRepository;
         this.orderStatusHistoryRepository = orderStatusHistoryRepository;
         this.orderSagaOrchestrator = orderSagaOrchestrator;
         this.transactionTemplate = transactionTemplate;
+        this.productPricingService = productPricingService;
     }
 
+    /**
+     * Creates an order priced from product-service (client-supplied names and prices are ignored) and
+     * runs the checkout saga. With an {@code idempotencyKey}, a retry by the same user returns the
+     * order created by the first attempt instead of creating and charging a second one.
+     */
     @Auditable(action = AuditAction.CREATE, entityType = "Order", entityIdExpression = "#result?.id?.toString()")
-    public Order createOrder(String userId, List<OrderItemRequest> items, String shippingAddress) {
-        Order order = transactionTemplate.execute(status -> {
-            Order newOrder = new Order();
-            newOrder.setUserId(userId);
-            newOrder.setStatus(OrderStatus.PENDING);
-            newOrder.setShippingAddress(shippingAddress);
-
-            BigDecimal totalAmount = items.stream()
-                    .map(item -> item.unitPrice().multiply(BigDecimal.valueOf(item.quantity())))
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            newOrder.setTotalAmount(totalAmount);
-
-            Order savedOrder = orderRepository.save(newOrder);
-
-            for (OrderItemRequest itemReq : items) {
-                OrderItem orderItem = new OrderItem();
-                orderItem.setOrder(savedOrder);
-                orderItem.setProductId(Long.parseLong(itemReq.productId()));
-                orderItem.setProductName(itemReq.productName());
-                orderItem.setQuantity(itemReq.quantity());
-                orderItem.setUnitPrice(itemReq.unitPrice());
-                orderItem.setSubtotal(itemReq.unitPrice().multiply(BigDecimal.valueOf(itemReq.quantity())));
-                orderItemRepository.save(orderItem);
-                savedOrder.getItems().add(orderItem);
+    public Order createOrder(String userId, List<OrderItemRequest> items, String shippingAddress,
+            String idempotencyKey) {
+        String key = normalizeIdempotencyKey(idempotencyKey);
+        if (key != null) {
+            Optional<Order> existing = orderRepository.findByUserIdAndIdempotencyKey(userId, key);
+            if (existing.isPresent()) {
+                log.info("Idempotent replay of order creation: orderId={}", existing.get().getId());
+                return existing.get();
             }
+        }
 
-            OrderStatusHistory history = new OrderStatusHistory();
-            history.setOrder(savedOrder);
-            history.setStatus(OrderStatus.PENDING);
-            history.setChangedAt(Instant.now());
-            orderStatusHistoryRepository.save(history);
+        List<Long> productIds = items.stream().map(item -> parseProductId(item.productId())).toList();
+        for (OrderItemRequest item : items) {
+            if (item.quantity() <= 0) {
+                throw new ValidationException("Quantity must be positive for product " + item.productId());
+            }
+        }
+        // Remote lookups stay outside the creation transaction so no DB connection waits on the network.
+        Map<Long, ProductPricingService.PricedProduct> prices = productPricingService.currentPrices(productIds);
 
-            return savedOrder;
-        });
+        Order order;
+        try {
+            order = transactionTemplate.execute(status -> insertOrder(userId, items, productIds, prices,
+                    shippingAddress, key));
+        } catch (DataIntegrityViolationException e) {
+            // A concurrent request with the same key won the unique (user_id, idempotency_key) index.
+            if (key == null) {
+                throw e;
+            }
+            Order winner = orderRepository.findByUserIdAndIdempotencyKey(userId, key).orElseThrow(() -> e);
+            log.info("Concurrent idempotent create resolved to existing orderId={}", winner.getId());
+            return winner;
+        }
 
         // Items were initialized with the owning order in the creation transaction.
         try {
@@ -130,6 +143,66 @@ public class OrderService {
             throw e;
         }
         return order;
+    }
+
+    private Order insertOrder(String userId, List<OrderItemRequest> items, List<Long> productIds,
+            Map<Long, ProductPricingService.PricedProduct> prices, String shippingAddress, String idempotencyKey) {
+        Order newOrder = new Order();
+        newOrder.setUserId(userId);
+        newOrder.setStatus(OrderStatus.PENDING);
+        newOrder.setShippingAddress(shippingAddress);
+        newOrder.setIdempotencyKey(idempotencyKey);
+
+        List<OrderItem> orderItems = new ArrayList<>();
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        for (int i = 0; i < items.size(); i++) {
+            ProductPricingService.PricedProduct product = prices.get(productIds.get(i));
+            int quantity = items.get(i).quantity();
+            OrderItem orderItem = new OrderItem();
+            orderItem.setProductId(productIds.get(i));
+            orderItem.setProductName(product.name());
+            orderItem.setQuantity(quantity);
+            orderItem.setUnitPrice(product.unitPrice());
+            orderItem.setSubtotal(product.unitPrice().multiply(BigDecimal.valueOf(quantity)));
+            totalAmount = totalAmount.add(orderItem.getSubtotal());
+            orderItems.add(orderItem);
+        }
+        newOrder.setTotalAmount(totalAmount);
+
+        Order savedOrder = orderRepository.save(newOrder);
+        for (OrderItem orderItem : orderItems) {
+            orderItem.setOrder(savedOrder);
+            orderItemRepository.save(orderItem);
+            savedOrder.getItems().add(orderItem);
+        }
+
+        OrderStatusHistory history = new OrderStatusHistory();
+        history.setOrder(savedOrder);
+        history.setStatus(OrderStatus.PENDING);
+        history.setChangedAt(Instant.now());
+        orderStatusHistoryRepository.save(history);
+
+        return savedOrder;
+    }
+
+    private static String normalizeIdempotencyKey(String idempotencyKey) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return null;
+        }
+        String key = idempotencyKey.strip();
+        if (key.length() > MAX_IDEMPOTENCY_KEY_LENGTH) {
+            throw new ValidationException(
+                    "Idempotency key must be at most " + MAX_IDEMPOTENCY_KEY_LENGTH + " characters");
+        }
+        return key;
+    }
+
+    private static Long parseProductId(String productId) {
+        try {
+            return Long.valueOf(productId);
+        } catch (NumberFormatException e) {
+            throw new ValidationException("Invalid productId: " + productId);
+        }
     }
 
     public Order getOrder(Long orderId) {
@@ -338,6 +411,7 @@ public class OrderService {
         return orderStatusHistoryRepository.findByOrderIdOrderByChangedAtAsc(orderId);
     }
 
+    /** {@code productName} and {@code unitPrice} are accepted for compatibility but ignored: prices come from product-service. */
     public record OrderItemRequest(String productId, String productName, int quantity, BigDecimal unitPrice) {
     }
 }
