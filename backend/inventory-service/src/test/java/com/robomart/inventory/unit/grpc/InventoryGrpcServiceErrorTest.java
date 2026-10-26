@@ -12,7 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import com.robomart.common.exception.ResourceNotFoundException;
-import com.robomart.inventory.exception.LockAcquisitionException;
+import com.robomart.inventory.exception.InsufficientStockException;
 import com.robomart.inventory.grpc.InventoryGrpcService;
 import com.robomart.inventory.service.InventoryService;
 import com.robomart.proto.inventory.GetInventoryRequest;
@@ -30,8 +30,10 @@ import io.grpc.stub.StreamObserver;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -94,7 +96,7 @@ class InventoryGrpcServiceErrorTest {
 
         @Test
         void shouldReturnAbortedWhenOptimisticLockFails() {
-            when(inventoryService.reserveStock(anyLong(), anyInt(), anyString()))
+            when(inventoryService.reserveOrder(anyString(), anyMap()))
                     .thenThrow(new ObjectOptimisticLockingFailureException("InventoryItem", 1L));
 
             ReserveInventoryRequest request = ReserveInventoryRequest.newBuilder()
@@ -129,21 +131,8 @@ class InventoryGrpcServiceErrorTest {
         }
 
         @Test
-        void shouldReturnInvalidArgumentWhenNoItemsProvided() {
-            ReleaseInventoryRequest request = ReleaseInventoryRequest.newBuilder()
-                    .setOrderId("order-123")
-                    .build();
-
-            grpcService.releaseInventory(request, releaseObserver);
-
-            verify(releaseObserver).onError(errorCaptor.capture());
-            assertThat(((StatusRuntimeException) errorCaptor.getValue()).getStatus().getCode())
-                    .isEqualTo(Status.Code.INVALID_ARGUMENT);
-        }
-
-        @Test
         void shouldReturnNotFoundWhenProductNotFoundOnRelease() {
-            when(inventoryService.releaseStock(eq(5L), eq(3), eq("order-rel")))
+            when(inventoryService.releaseReservation("order-rel"))
                     .thenThrow(new ResourceNotFoundException("InventoryItem", 5L));
 
             ReleaseInventoryRequest request = ReleaseInventoryRequest.newBuilder()
@@ -159,9 +148,9 @@ class InventoryGrpcServiceErrorTest {
         }
 
         @Test
-        void shouldReturnUnavailableWhenLockFailsOnRelease() {
-            when(inventoryService.releaseStock(anyLong(), anyInt(), anyString()))
-                    .thenThrow(new LockAcquisitionException(2L, "inventory:lock:product:2"));
+        void shouldReturnFailedPreconditionWhenStoredLineCannotBeReleased() {
+            when(inventoryService.releaseReservation(anyString()))
+                    .thenThrow(new IllegalStateException("Cannot release 1 units for product 2: only 0 units reserved"));
 
             ReleaseInventoryRequest request = ReleaseInventoryRequest.newBuilder()
                     .setOrderId("order-lock")
@@ -172,28 +161,34 @@ class InventoryGrpcServiceErrorTest {
 
             verify(releaseObserver).onError(errorCaptor.capture());
             assertThat(((StatusRuntimeException) errorCaptor.getValue()).getStatus().getCode())
-                    .isEqualTo(Status.Code.UNAVAILABLE);
+                    .isEqualTo(Status.Code.FAILED_PRECONDITION);
         }
     }
 
     @Nested
-    @DisplayName("reserveInventory with rollback")
-    class ReserveWithRollback {
+    @DisplayName("reserveInventory validates the whole request first")
+    class ReserveValidatesBeforeStock {
 
         @Test
-        void shouldRollbackFirstItemWhenSecondItemReservationFails() {
-            com.robomart.inventory.entity.InventoryItem item =
-                    new com.robomart.inventory.entity.InventoryItem();
-            item.setProductId(1L);
-            item.setAvailableQuantity(90);
-            item.setReservedQuantity(10);
-            item.setTotalQuantity(100);
-            item.setLowStockThreshold(5);
+        void shouldNotTouchStockWhenALaterItemIsInvalid() {
+            ReserveInventoryRequest request = ReserveInventoryRequest.newBuilder()
+                    .setOrderId("order-multi")
+                    .addItems(ReservationItem.newBuilder().setProductId("1").setQuantity(5).build())
+                    .addItems(ReservationItem.newBuilder().setProductId("not-a-number").setQuantity(3).build())
+                    .build();
 
-            when(inventoryService.reserveStock(eq(1L), eq(5), eq("order-multi")))
-                    .thenReturn(item);
-            when(inventoryService.reserveStock(eq(2L), eq(3), eq("order-multi")))
-                    .thenThrow(new com.robomart.inventory.exception.InsufficientStockException(2L, 3, 1));
+            grpcService.reserveInventory(request, reserveObserver);
+
+            verify(reserveObserver).onError(errorCaptor.capture());
+            assertThat(((StatusRuntimeException) errorCaptor.getValue()).getStatus().getCode())
+                    .isEqualTo(Status.Code.INVALID_ARGUMENT);
+            verify(inventoryService, never()).reserveOrder(anyString(), anyMap());
+        }
+
+        @Test
+        void shouldReturnFailedPreconditionWhenAnItemHasInsufficientStock() {
+            when(inventoryService.reserveOrder(eq("order-multi"), anyMap()))
+                    .thenThrow(new InsufficientStockException(2L, 3, 1));
 
             ReserveInventoryRequest request = ReserveInventoryRequest.newBuilder()
                     .setOrderId("order-multi")
@@ -206,7 +201,8 @@ class InventoryGrpcServiceErrorTest {
             verify(reserveObserver).onError(errorCaptor.capture());
             assertThat(((StatusRuntimeException) errorCaptor.getValue()).getStatus().getCode())
                     .isEqualTo(Status.Code.FAILED_PRECONDITION);
-            verify(inventoryService).releaseStock(eq(1L), eq(5), eq("order-multi"));
+            // The service rolls the whole order back in one transaction: no per-item compensation.
+            verify(inventoryService, never()).releaseStock(anyLong(), anyInt(), anyString());
         }
     }
 
@@ -280,7 +276,7 @@ class InventoryGrpcServiceErrorTest {
 
         @Test
         void shouldReturnInternalWhenUnexpectedExceptionOccurs() {
-            when(inventoryService.reserveStock(anyLong(), anyInt(), anyString()))
+            when(inventoryService.reserveOrder(anyString(), anyMap()))
                     .thenThrow(new RuntimeException("Unexpected error"));
 
             ReserveInventoryRequest request = ReserveInventoryRequest.newBuilder()
@@ -301,22 +297,8 @@ class InventoryGrpcServiceErrorTest {
     class ReleaseAdditionalErrors {
 
         @Test
-        void shouldReturnInvalidArgumentWhenQuantityIsZero() {
-            ReleaseInventoryRequest request = ReleaseInventoryRequest.newBuilder()
-                    .setOrderId("order-123")
-                    .addItems(ReservationItem.newBuilder().setProductId("1").setQuantity(0).build())
-                    .build();
-
-            grpcService.releaseInventory(request, releaseObserver);
-
-            verify(releaseObserver).onError(errorCaptor.capture());
-            assertThat(((StatusRuntimeException) errorCaptor.getValue()).getStatus().getCode())
-                    .isEqualTo(Status.Code.INVALID_ARGUMENT);
-        }
-
-        @Test
         void shouldReturnAbortedWhenOptimisticLockFailsOnRelease() {
-            when(inventoryService.releaseStock(anyLong(), anyInt(), anyString()))
+            when(inventoryService.releaseReservation(anyString()))
                     .thenThrow(new org.springframework.orm.ObjectOptimisticLockingFailureException("InventoryItem", 1L));
 
             ReleaseInventoryRequest request = ReleaseInventoryRequest.newBuilder()
@@ -333,7 +315,7 @@ class InventoryGrpcServiceErrorTest {
 
         @Test
         void shouldReturnInternalWhenUnexpectedExceptionOccurs() {
-            when(inventoryService.releaseStock(anyLong(), anyInt(), anyString()))
+            when(inventoryService.releaseReservation(anyString()))
                     .thenThrow(new RuntimeException("Unexpected error"));
 
             ReleaseInventoryRequest request = ReleaseInventoryRequest.newBuilder()
