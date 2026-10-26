@@ -9,6 +9,7 @@ public final class TestJwt {
 
     public static final String ADMIN_TOKEN = "test-admin-token";
     public static final String CUSTOMER_TOKEN = "test-customer-token";
+    public static final String INVENTORY_TOKEN = "test-inventory-token";
     public static final String NOTIFICATION_TOKEN = "test-notification-token";
 
     private TestJwt() {

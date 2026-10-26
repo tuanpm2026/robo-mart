@@ -167,6 +167,7 @@ services:
       - start-dev
       - --import-realm
     environment:
+      INVENTORY_SERVICE_CLIENT_SECRET: ${INVENTORY_SERVICE_CLIENT_SECRET:-}
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:-admin}
       KC_HTTP_PORT: 8180
@@ -448,6 +449,9 @@ services:
       schema-registry:
         condition: service_healthy
     environment:
+      ORDER_SERVICE_URL: http://order-service:8083
+      INVENTORY_SERVICE_CLIENT_SECRET: ${INVENTORY_SERVICE_CLIENT_SECRET:-}
+      INVENTORY_SERVICE_TOKEN_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/token
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-inventory:5432/inventory_db
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-robomart}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-robomart}

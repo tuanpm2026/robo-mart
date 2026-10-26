@@ -230,8 +230,8 @@ class InventoryServiceIT {
         // Act: reserve stock
         inventoryService.reserveOrder("outbox-test-order", Map.of(productId, 1));
 
-        // Assert: at least one unpublished outbox event with eventType "stock_reserved"
-        List<OutboxEvent> events = outboxEventRepository.findByPublishedFalseOrderByCreatedAtAsc();
+        // Publication may race this assertion; the durable outbox row must exist either way.
+        List<OutboxEvent> events = outboxEventRepository.findAll();
 
         assertThat(events).isNotEmpty();
         assertThat(events)

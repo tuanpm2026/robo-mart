@@ -1,6 +1,7 @@
 package com.robomart.inventory.repository;
 
 import java.util.Optional;
+import java.time.Instant;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -38,4 +39,19 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     @Query(value = "UPDATE reservations SET status = 'RELEASED', updated_at = NOW() "
             + "WHERE order_id = :orderId AND status = 'RESERVED'", nativeQuery = true)
     int claimRelease(@Param("orderId") String orderId);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(value = "UPDATE reservations SET expires_at=:expires WHERE order_id=:orderId", nativeQuery = true)
+    void setExpiry(@Param("orderId") String orderId, @Param("expires") Instant expires);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(value = "UPDATE reservations SET status='COMMITTED', updated_at=now() "
+            + "WHERE order_id=:orderId AND status='RESERVED'", nativeQuery = true)
+    int claimCommit(@Param("orderId") String orderId);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(value = "UPDATE reservations SET status='RELEASED', updated_at=now() "
+            + "WHERE order_id=:orderId AND status='COMMITTED'", nativeQuery = true)
+    int claimCommittedReturn(@Param("orderId") String orderId);
+
 }

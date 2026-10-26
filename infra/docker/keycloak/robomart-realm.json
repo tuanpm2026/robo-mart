@@ -24,6 +24,10 @@
       {
         "name": "ADMIN",
         "description": "Admin role \u2014 full CRUD on products, inventory, orders, reports"
+      },
+      {
+        "name": "INVENTORY_SERVICE",
+        "description": "Read minimal order status for reservation expiry only"
       }
     ]
   },
@@ -97,6 +101,35 @@
       ],
       "webOrigins": [
         "http://localhost:8080"
+      ]
+    },
+    {
+      "clientId": "inventory-service",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${INVENTORY_SERVICE_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": false,
+      "defaultClientScopes": [],
+      "protocolMappers": [
+        {
+          "name": "inventory-role",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "realm_access.roles",
+            "claim.value": "[\"INVENTORY_SERVICE\"]",
+            "jsonType.label": "JSON",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        }
       ]
     }
   ],
@@ -1979,6 +2012,14 @@
       ],
       "realmRoles": [
         "CUSTOMER"
+      ]
+    },
+    {
+      "username": "service-account-inventory-service",
+      "enabled": true,
+      "serviceAccountClientId": "inventory-service",
+      "realmRoles": [
+        "INVENTORY_SERVICE"
       ]
     }
   ]

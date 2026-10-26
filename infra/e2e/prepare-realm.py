@@ -43,6 +43,10 @@ realm["users"].append({
     "serviceAccountClientId": "notification-service",
     "realmRoles": ["NOTIFICATION_SERVICE"],
 })
+# Test credentials are isolated fixtures; production imports use environment substitution.
+for client in realm["clients"]:
+    if client["clientId"] == "inventory-service":
+        client["secret"] = "e2e-inventory-secret"
 output = root / "infra/e2e/.runtime/robomart-realm.json"
 output.parent.mkdir(parents=True, exist_ok=True)
 output.write_text(json.dumps(realm, indent=2) + "\n")

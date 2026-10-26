@@ -97,6 +97,29 @@ class OrderAdminRestIT {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
+    @Test
+    void inventoryIdentityCanOnlyReadMinimalInternalStatus() {
+        Order order = persistOrderInState(OrderStatus.PAYMENT_PENDING, "expiry-customer");
+        RestClient inventory = RestClient.builder().baseUrl("http://localhost:" + port)
+                .defaultHeader("Authorization", "Bearer " + TestJwt.INVENTORY_TOKEN)
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { }).build();
+        String path = "/api/v1/internal/inventory/orders/" + order.getId() + "/status";
+        var status = inventory.get().uri(path).retrieve().toEntity(String.class);
+        assertThat(status.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(status.getBody()).contains("PAYMENT_PENDING").doesNotContain("expiry-customer");
+        assertThat(inventory.get().uri("/api/v1/admin/orders/" + order.getId()).retrieve()
+                .toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(inventory.post().uri("/api/v1/orders").contentType(MediaType.APPLICATION_JSON).body("{}")
+                .retrieve().toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(restClient.get().uri(path).retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+        RestClient customer = RestClient.builder().baseUrl("http://localhost:" + port)
+                .defaultHeader("Authorization", TestJwt.customerBearer())
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { }).build();
+        assertThat(customer.get().uri(path).retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
     private Order persistOrderInState(OrderStatus status, String userId) {
         return transactionTemplate.execute(txStatus -> {
             Order order = new Order();

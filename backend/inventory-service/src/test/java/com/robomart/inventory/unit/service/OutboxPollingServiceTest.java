@@ -1,22 +1,5 @@
 package com.robomart.inventory.unit.service;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import com.robomart.inventory.entity.OutboxEvent;
-import com.robomart.inventory.event.producer.InventoryEventProducer;
-import com.robomart.inventory.repository.OutboxEventRepository;
-import com.robomart.inventory.service.OutboxPollingService;
-
-import tools.jackson.databind.ObjectMapper;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -25,103 +8,132 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+import org.apache.avro.specific.SpecificRecord;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.MDC;
+
+import com.robomart.inventory.config.OutboxProperties;
+import com.robomart.inventory.event.producer.InventoryEventProducer;
+import com.robomart.inventory.service.InventoryOutboxStore.Delivery;
+import com.robomart.inventory.service.InventoryOutboxStore;
+import com.robomart.inventory.service.OutboxPollingService;
+
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import tools.jackson.databind.ObjectMapper;
+
 @ExtendWith(MockitoExtension.class)
 class OutboxPollingServiceTest {
-
-    @Mock
-    private OutboxEventRepository outboxEventRepository;
-
-    @Mock
-    private InventoryEventProducer inventoryEventProducer;
-
-    private OutboxPollingService outboxPollingService;
-
-    private ObjectMapper objectMapper;
+    @Mock private InventoryOutboxStore store;
+    @Mock private InventoryEventProducer producer;
+    private OutboxPollingService service;
+    private OutboxProperties properties;
+    private SimpleMeterRegistry meters;
 
     @BeforeEach
-    void setUp() {
-        objectMapper = new ObjectMapper();
-        outboxPollingService = new OutboxPollingService(
-                outboxEventRepository, inventoryEventProducer, objectMapper);
+    void setup() {
+        meters = new SimpleMeterRegistry();
+        properties = new OutboxProperties();
+        service = new OutboxPollingService(store, producer, new ObjectMapper(), properties, meters);
+    }
+
+    @AfterEach
+    void cleanup() {
+        service.shutdown();
+        meters.close();
+        MDC.clear();
+    }
+
+    private Delivery event(long id, String aggregate, String type) {
+        return new Delivery(id, aggregate, type,
+                "{\"orderId\":\"order-1\",\"productId\":\"" + aggregate
+                        + "\",\"quantity\":5,\"availableQuantity\":3,\"lowStockThreshold\":10}",
+                Instant.now(), UUID.randomUUID(), UUID.randomUUID());
     }
 
     @Test
-    void shouldDoNothingWhenNoUnpublishedEventsFound() {
-        when(outboxEventRepository.findUnpublishedSkipLocked(50))
-                .thenReturn(Collections.emptyList());
-
-        outboxPollingService.pollAndPublish();
-
-        verify(inventoryEventProducer, never()).send(anyString(), anyString(), any());
+    void mapsAllSupportedTypesWithPersistedIdsAcrossRetries() {
+        Delivery reserved = event(10, "1", "stock_reserved");
+        Delivery released = event(11, "2", "stock_released");
+        Delivery low = event(12, "3", "stock_low_alert");
+        when(store.claim(any(), any())).thenReturn(List.of(reserved, released, low));
+        when(producer.send(anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
+        service.pollAndPublish();
+        service.pollAndPublish();
+        var capture = ArgumentCaptor.forClass(SpecificRecord.class);
+        verify(producer, org.mockito.Mockito.times(6)).send(anyString(), anyString(), capture.capture());
+        for (var delivery : List.of(reserved, released, low)) {
+            assertThat(capture.getAllValues().stream()
+                    .filter(record -> record.get(0).toString().equals(delivery.eventId().toString())).count())
+                    .isEqualTo(2);
+        }
+        assertThat(capture.getAllValues()).extracting(record -> record.getSchema().getName())
+                .contains("StockReservedEvent", "StockReleasedEvent", "StockLowAlertEvent");
     }
 
     @Test
-    void shouldPublishStockReservedEventWhenEventTypeIsStockReserved() throws Exception {
-        String payload = "{\"orderId\":\"order-1\",\"productId\":\"42\",\"quantity\":5}";
-        OutboxEvent event = new OutboxEvent("InventoryItem", "42", "stock_reserved", payload);
-        when(outboxEventRepository.findUnpublishedSkipLocked(50)).thenReturn(List.of(event));
-        when(inventoryEventProducer.send(
-                eq(InventoryEventProducer.TOPIC_STOCK_RESERVED), anyString(), any()))
-                .thenReturn(CompletableFuture.completedFuture(null));
-
-        outboxPollingService.pollAndPublish();
-
-        verify(inventoryEventProducer).send(
-                eq(InventoryEventProducer.TOPIC_STOCK_RESERVED), anyString(), any());
-        assertThat(event.isPublished()).isTrue();
-        verify(outboxEventRepository).save(event);
+    void failedAggregateDoesNotBlockAcknowledgementOfIndependentAggregate() {
+        Delivery failed = event(1, "1", "stock_reserved");
+        Delivery succeeded = event(2, "2", "stock_reserved");
+        when(store.claim(any(), any())).thenReturn(List.of(failed, succeeded));
+        when(producer.send(anyString(), eq("1"), any())).thenReturn(
+                CompletableFuture.failedFuture(new IllegalStateException("Kafka unavailable")));
+        when(producer.send(anyString(), eq("2"), any())).thenReturn(CompletableFuture.completedFuture(null));
+        service.pollAndPublish();
+        verify(store).release(failed);
+        verify(store, never()).acknowledge(failed);
+        verify(store).acknowledge(succeeded);
     }
 
     @Test
-    void shouldPublishStockReleasedEventWhenEventTypeIsStockReleased() throws Exception {
-        String payload = "{\"orderId\":\"order-2\",\"productId\":\"10\",\"quantity\":3}";
-        OutboxEvent event = new OutboxEvent("InventoryItem", "10", "stock_released", payload);
-        when(outboxEventRepository.findUnpublishedSkipLocked(50)).thenReturn(List.of(event));
-        when(inventoryEventProducer.send(
-                eq(InventoryEventProducer.TOPIC_STOCK_RELEASED), anyString(), any()))
-                .thenReturn(CompletableFuture.completedFuture(null));
-
-        outboxPollingService.pollAndPublish();
-
-        verify(inventoryEventProducer).send(
-                eq(InventoryEventProducer.TOPIC_STOCK_RELEASED), anyString(), any());
-        assertThat(event.isPublished()).isTrue();
+    void unknownTypesAreRetainedAndCounted() {
+        Delivery poison = event(1, "1", "unknown");
+        when(store.claim(any(), any())).thenReturn(List.of(poison));
+        service.pollAndPublish();
+        verify(producer, never()).send(anyString(), anyString(), any());
+        verify(store, never()).acknowledge(any());
+        verify(store).release(poison);
+        assertThat(meters.counter("robomart.outbox.unmappable").count()).isEqualTo(1);
     }
 
     @Test
-    void shouldPublishStockLowAlertEventWhenEventTypeIsStockLowAlert() throws Exception {
-        String payload = "{\"productId\":\"7\",\"availableQuantity\":2,\"lowStockThreshold\":5}";
-        OutboxEvent event = new OutboxEvent("InventoryItem", "7", "stock_low_alert", payload);
-        when(outboxEventRepository.findUnpublishedSkipLocked(50)).thenReturn(List.of(event));
-        when(inventoryEventProducer.send(
-                eq(InventoryEventProducer.TOPIC_STOCK_LOW_ALERT), anyString(), any()))
-                .thenReturn(CompletableFuture.completedFuture(null));
-
-        outboxPollingService.pollAndPublish();
-
-        verify(inventoryEventProducer).send(
-                eq(InventoryEventProducer.TOPIC_STOCK_LOW_ALERT), anyString(), any());
-        assertThat(event.isPublished()).isTrue();
+    void oneBatchDeadlineRetainsUncertainLeaseAndAcknowledgesCompletedSend() {
+        properties.setPublishTimeout(Duration.ofMillis(100));
+        Delivery hanging = event(1, "1", "stock_reserved");
+        Delivery complete = event(2, "2", "stock_reserved");
+        when(store.claim(any(), any())).thenReturn(List.of(hanging, complete));
+        when(producer.send(anyString(), eq("1"), any())).thenReturn(new CompletableFuture<>());
+        when(producer.send(anyString(), eq("2"), any())).thenReturn(CompletableFuture.completedFuture(null));
+        long started = System.nanoTime();
+        service.pollAndPublish();
+        assertThat(Duration.ofNanos(System.nanoTime() - started)).isLessThan(Duration.ofSeconds(2));
+        verify(store).acknowledge(complete);
+        verify(store, never()).acknowledge(hanging);
+        verify(store, never()).release(hanging);
     }
 
     @Test
-    void shouldMarkEventPublishedAndSkipWhenEventTypeIsUnknown() {
-        String payload = "{}";
-        OutboxEvent event = new OutboxEvent("InventoryItem", "5", "unknown_type", payload);
-        when(outboxEventRepository.findUnpublishedSkipLocked(50)).thenReturn(List.of(event));
-
-        outboxPollingService.pollAndPublish();
-
-        verify(inventoryEventProducer, never()).send(anyString(), anyString(), any());
-    }
-
-    @Test
-    void shouldSkipAndLogWhenPayloadIsMalformed() {
-        OutboxEvent event = new OutboxEvent("InventoryItem", "5", "stock_reserved", "invalid-json");
-        when(outboxEventRepository.findUnpublishedSkipLocked(50)).thenReturn(List.of(event));
-
-        outboxPollingService.pollAndPublish();
-
-        verify(inventoryEventProducer, never()).send(anyString(), anyString(), any());
+    void propagatesCorrelationMdcToSendExecutor() {
+        Delivery event = event(1, "1", "stock_reserved");
+        when(store.claim(any(), any())).thenReturn(List.of(event));
+        when(producer.send(anyString(), anyString(), any())).thenAnswer(invocation -> {
+            assertThat(MDC.get("correlationId")).isEqualTo("correlation-test");
+            return CompletableFuture.completedFuture(null);
+        });
+        MDC.put("correlationId", "correlation-test");
+        service.pollAndPublish();
+        verify(store).acknowledge(event);
+        assertThat(MDC.get("correlationId")).isEqualTo("correlation-test");
     }
 }

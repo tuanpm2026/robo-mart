@@ -199,6 +199,9 @@ services:
       args: {SERVICE: inventory-service}
     ports: ["127.0.0.1:18084:8084"]
     environment:
+      ORDER_SERVICE_URL: http://order-service:8083
+      INVENTORY_SERVICE_CLIENT_SECRET: e2e-inventory-secret
+      INVENTORY_SERVICE_TOKEN_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/token
       <<: *app-env
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory_db
       SPRING_PROFILES_ACTIVE: "dev,demo,chaos-monkey"

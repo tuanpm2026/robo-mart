@@ -43,9 +43,13 @@ public class ResourceServerSecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/v1/admin/orders/{orderId:[0-9]+}")
                     .hasAnyRole("ADMIN", "NOTIFICATION_SERVICE")
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/v1/internal/inventory/orders/{orderId:[0-9]+}/status")
+                    .hasRole("INVENTORY_SERVICE")
+                .requestMatchers("/api/v1/internal/**").denyAll()
                 .anyRequest().access(AuthorizationManagers.allOf(
                         AuthenticatedAuthorizationManager.authenticated(),
-                        AuthorizationManagers.not(AuthorityAuthorizationManager.hasRole("NOTIFICATION_SERVICE")))))
+                        AuthorizationManagers.not(AuthorityAuthorizationManager.hasRole("NOTIFICATION_SERVICE")),
+                        AuthorizationManagers.not(AuthorityAuthorizationManager.hasRole("INVENTORY_SERVICE")))))
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
                 jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
         return http.build();

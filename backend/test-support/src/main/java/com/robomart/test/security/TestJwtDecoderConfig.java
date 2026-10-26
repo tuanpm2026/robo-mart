@@ -29,6 +29,7 @@ public class TestJwtDecoderConfig {
             List<String> roles = switch (token) {
                 case TestJwt.ADMIN_TOKEN -> List.of("ADMIN");
                 case TestJwt.CUSTOMER_TOKEN -> List.of("CUSTOMER");
+                case TestJwt.INVENTORY_TOKEN -> List.of("INVENTORY_SERVICE");
                 case TestJwt.NOTIFICATION_TOKEN -> List.of("NOTIFICATION_SERVICE");
                 default -> throw new BadJwtException("Unknown test token: " + token);
             };

@@ -21,6 +21,7 @@ import com.robomart.common.audit.AuditAction;
 import com.robomart.common.audit.Auditable;
 import com.robomart.common.exception.ResourceNotFoundException;
 import com.robomart.common.exception.ValidationException;
+import com.robomart.inventory.config.InventoryProperties;
 import com.robomart.inventory.dto.InventoryMetricsResponse;
 import com.robomart.inventory.dto.ReconciliationSummaryResponse;
 import com.robomart.inventory.entity.InventoryItem;
@@ -53,6 +54,7 @@ public class InventoryService {
     private final ReservationLineRepository reservationLineRepository;
     private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
+    private final InventoryProperties properties;
 
     public InventoryService(
             InventoryItemRepository inventoryItemRepository,
@@ -61,7 +63,8 @@ public class InventoryService {
             ReservationRepository reservationRepository,
             ReservationLineRepository reservationLineRepository,
             TransactionTemplate transactionTemplate,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            InventoryProperties properties
     ) {
         this.inventoryItemRepository = inventoryItemRepository;
         this.stockMovementRepository = stockMovementRepository;
@@ -70,6 +73,7 @@ public class InventoryService {
         this.reservationLineRepository = reservationLineRepository;
         this.transactionTemplate = transactionTemplate;
         this.objectMapper = objectMapper;
+        this.properties = properties;
     }
 
     /**
@@ -117,6 +121,9 @@ public class InventoryService {
     }
 
     private <T> T withContentionRetry(java.util.function.Supplier<T> operation) {
+        if (org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()) {
+            return operation.get();
+        }
         for (int attempt = 1; ; attempt++) {
             try {
                 return operation.get();
@@ -147,6 +154,8 @@ public class InventoryService {
                     existing.getReservationId(), orderId);
             return new ReservationResult(existing.getReservationId(), true);
         }
+
+        reservationRepository.setExpiry(orderId, java.time.Instant.now().plus(properties.getReservationTtl()));
 
         lines.forEach((productId, quantity) -> {
             if (inventoryItemRepository.reserveAvailable(productId, quantity) == 0) {
@@ -190,13 +199,11 @@ public class InventoryService {
         // the insert then conflicts and the second claim sees the committed RESERVED row.
         for (int attempt = 0; attempt < 2; attempt++) {
             if (reservationRepository.claimRelease(orderId) == 1) {
-                List<ReservationLine> lines = reservationLineRepository.findByOrderIdOrderByProductIdAsc(orderId);
-                for (ReservationLine line : lines) {
-                    InventoryItem item = inventoryItemRepository.findByProductIdForUpdate(line.getProductId())
-                            .orElseThrow(() -> new ResourceNotFoundException("InventoryItem", line.getProductId()));
-                    applyRelease(item, line.getQuantity(), orderId);
-                }
-                log.info("Reservation released: orderId={}, lineCount={}", orderId, lines.size());
+                restoreStoredLines(orderId, false);
+                return ReleaseOutcome.RELEASED;
+            }
+            if (reservationRepository.claimCommittedReturn(orderId) == 1) {
+                restoreStoredLines(orderId, true);
                 return ReleaseOutcome.RELEASED;
             }
 
@@ -217,6 +224,41 @@ public class InventoryService {
             }
         }
         throw new ConcurrencyFailureException("Concurrent reservation activity for order " + orderId + ", retry");
+    }
+
+    private void restoreStoredLines(String orderId, boolean committed) {
+        for (ReservationLine line : reservationLineRepository.findByOrderIdOrderByProductIdAsc(orderId)) {
+            InventoryItem item = inventoryItemRepository.findByProductIdForUpdate(line.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("InventoryItem", line.getProductId()));
+            applyRelease(item, line.getQuantity(), orderId, committed);
+        }
+    }
+
+    /** Confirmation consumes the reserved units exactly once, without changing available stock. */
+    public void commitReservation(String orderId) {
+        withContentionRetry(() -> transactionTemplate.execute(status -> {
+            if (reservationRepository.claimCommit(orderId) == 0) {
+                return null;
+            }
+            for (ReservationLine line : reservationLineRepository.findByOrderIdOrderByProductIdAsc(orderId)) {
+                InventoryItem item = inventoryItemRepository.findByProductIdForUpdate(line.getProductId())
+                        .orElseThrow(() -> new ResourceNotFoundException("InventoryItem", line.getProductId()));
+                if (item.getReservedQuantity() < line.getQuantity() || item.getTotalQuantity() < line.getQuantity()) {
+                    throw new IllegalStateException("Stored reservation exceeds inventory for " + line.getProductId());
+                }
+                item.setReservedQuantity(item.getReservedQuantity() - line.getQuantity());
+                item.setTotalQuantity(item.getTotalQuantity() - line.getQuantity());
+                inventoryItemRepository.save(item);
+                StockMovement movement = new StockMovement();
+                movement.setInventoryItemId(item.getId());
+                movement.setType(StockMovementType.COMMIT);
+                movement.setQuantity(line.getQuantity());
+                movement.setOrderId(orderId);
+                movement.setReason("Confirmed order consumes reserved stock");
+                stockMovementRepository.save(movement);
+            }
+            return null;
+        }));
     }
 
     /**
@@ -301,24 +343,7 @@ public class InventoryService {
         movement.setReason(reason != null ? reason : "Admin restock");
         stockMovementRepository.save(movement);
 
-        try {
-            Map<String, Object> payload = new HashMap<>();
-            payload.put("productId", productId);
-            payload.put("quantity", quantity);
-            payload.put("availableQuantity", saved.getAvailableQuantity());
-            payload.put("totalQuantity", saved.getTotalQuantity());
-
-            OutboxEvent event = new OutboxEvent(
-                    "InventoryItem",
-                    productId.toString(),
-                    "stock_restocked",
-                    objectMapper.writeValueAsString(payload)
-            );
-            outboxEventRepository.save(event);
-        } catch (Exception e) {
-            log.error("Failed to create stock_restocked outbox event", e);
-            throw new RuntimeException("Failed to create outbox event", e);
-        }
+        // RESTOCK movements are the durable audit; there is no external restock event contract.
 
         log.info("Stock restocked: productId={}, quantity={}, newAvailable={}, newTotal={}",
                 productId, quantity, saved.getAvailableQuantity(), saved.getTotalQuantity());
@@ -428,10 +453,10 @@ public class InventoryService {
      * increments available, decrements reserved, and writes the stock movement and the
      * {@code stock_released} outbox event. Must run inside a transaction.
      */
-    private InventoryItem applyRelease(InventoryItem item, int quantity, String orderId) {
+    private InventoryItem applyRelease(InventoryItem item, int quantity, String orderId, boolean committed) {
         Long productId = item.getProductId();
         // Validate sufficient reserved quantity
-        if (item.getReservedQuantity() < quantity) {
+        if (!committed && item.getReservedQuantity() < quantity) {
             throw new IllegalStateException(String.format(
                     "Cannot release %d units for product %d: only %d units reserved",
                     quantity, productId, item.getReservedQuantity()
@@ -439,8 +464,12 @@ public class InventoryService {
         }
 
         // Update quantities
-        item.setAvailableQuantity(item.getAvailableQuantity() + quantity);
-        item.setReservedQuantity(item.getReservedQuantity() - quantity);
+        item.setAvailableQuantity(Math.addExact(item.getAvailableQuantity(), quantity));
+        if (committed) {
+            item.setTotalQuantity(Math.addExact(item.getTotalQuantity(), quantity));
+        } else {
+            item.setReservedQuantity(item.getReservedQuantity() - quantity);
+        }
 
         // Save InventoryItem
         InventoryItem savedItem = inventoryItemRepository.save(item);
@@ -451,7 +480,7 @@ public class InventoryService {
         movement.setType(StockMovementType.RELEASE);
         movement.setQuantity(quantity);
         movement.setOrderId(orderId);
-        movement.setReason("Stock released from order " + orderId);
+        movement.setReason((committed ? "Committed stock returned from order " : "Stock released from order ") + orderId);
         stockMovementRepository.save(movement);
 
         // Create outbox event (stock_released)

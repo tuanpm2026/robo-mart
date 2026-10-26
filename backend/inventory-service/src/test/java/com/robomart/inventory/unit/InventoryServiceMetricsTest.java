@@ -40,7 +40,7 @@ class InventoryServiceMetricsTest {
         inventoryService = new InventoryService(
                 inventoryItemRepository, stockMovementRepository, outboxEventRepository,
                 reservationRepository, reservationLineRepository, transactionTemplate,
-                objectMapper);
+                objectMapper, new com.robomart.inventory.config.InventoryProperties());
     }
 
     @Test

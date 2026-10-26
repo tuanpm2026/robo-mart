@@ -50,8 +50,8 @@ Aborted worktrees were removed after preserving tracked diffs, untracked files a
 | Order 5 | Ordered asynchronous outbox, unknown-type metric and retention | Implemented: durable claims on aggregate heads, bounded async sends, poison retention, ShedLock cleanup |
 | Order 6 | Executor context propagation | Implemented: outbox executor uses Micrometer context snapshots plus correlation/trace MDC accessors; no saga step executor |
 | Inventory 1 | Atomic SQL reserve without Redis; bounded contention retry | Implemented: conditional SQL in sorted product order, full transaction rollback, up to three contention attempts; dead Redis code/dependency removed |
-| Inventory 2 | Commit/release consumer, deduplication/DLT, committed returns, expiry | Pending; payment uncertainty must block unsafe expiry |
-| Inventory 3 | Stable outbox IDs, complete event mapping, async ordering and retention | Pending |
+| Inventory 2 | Commit/release consumer, deduplication/DLT, committed returns, expiry | Implemented: transactional dedup, Avro/raw-byte DLT, committed returns, authenticated order reconciliation; uncertain expiry holds stock for review |
+| Inventory 3 | Stable outbox IDs, complete event mapping, async ordering and retention | Implemented: persisted UUID, aggregate-head claims, bounded async sends, unknown retention, ShedLock cleanup; dead restock writes retired with audit archive |
 | Inventory 4 | Low-stock threshold crossing and transaction boundaries | Implemented: crossing-only alert; alert write failure rolls back the reservation |
 | Inventory 5 | Quantity constraints, restock/list bounds | Implemented: nonnegative DB guards, restock maximum 1,000,000 and list maximum 100, checked integer arithmetic |
 | Cart 1 | Atomic Redis hash operations, TTL refresh and atomic merge | Pending |
@@ -147,3 +147,23 @@ Compose core/app and E2E no longer make inventory wait for Redis. Kubernetes inv
 Final inventory `./mvnw clean verify -pl :inventory-service -DskipE2ETests` passed (74 unit + 29 integration tests), including the coverage gate. Checkstyle passed. Both Compose configurations and Kustomize base/production/ingress-tls passed.
 
 CI found that the outbox database-lock probe's 100 ms test deadline was too short on the runner. That integration test now allows 2 seconds while retaining its transaction and `FOR UPDATE NOWAIT` assertions. The separate bounded-timeout unit regression is unchanged. `./mvnw verify -pl :order-service -Dit.test=OrderOutboxDeliveryIT -DskipE2ETests` passed after the fixture change.
+
+
+### Inventory lifecycle, expiry and outbox continuation
+
+Inventory V6 introduces reservation expiry timestamps (default 24 hours), processed-event deduplication and scheduler locks. CONFIRMED events atomically claim RESERVED → COMMITTED and consume reserved/total units from stored lines. CANCELLED returns RESERVED units or returns COMMITTED units to available/total; duplicate or late confirmation cannot resurrect a released reservation. Event deduplication commits with stock changes. Processing errors retry exponentially before DLT; malformed Avro retains original bytes.
+
+Inventory V7 persists an event UUID when inserting the outbox row and adds expiring delivery claims. It archives historical `stock_restocked` rows, with their original payload and retirement reason, in `retired_outbox_events`; new restocks retain the authoritative RESTOCK stock movement without emitting an event that has no Avro contract or consumer. Reserved/released/threshold alerts retain their existing contracts. Unknown types remain pending and block their aggregate; no event is silently acknowledged. Published-row retention defaults to seven days.
+
+Inventory V8 adds the durable expiry-review flag and next-check timestamp. A ShedLock job reconciles at most ten expired reservations per pass, outside database transactions. It authenticates via client credentials and reads only `GET /api/v1/internal/inventory/orders/{id}/status`. CANCELLED releases stock; CONFIRMED/SHIPPED/DELIVERED commits it. Every unknown, nonterminal or inaccessible order keeps stock held, gets an ERROR/metric once and is checked again after five minutes. The original TTL remains unchanged. The deliberate safety adjustment to the original plan is that elapsed time alone cannot release uncertain charges. Operators can inspect `expiry_review_at` and reconcile the Order recovery queue; never force-release an uncertain payment.
+
+The new INVENTORY_SERVICE role can only read that minimal internal endpoint; customer/admin order data and customer writes remain forbidden. The endpoint has no gateway route. Both order HTTP connect/read and token connect/read timeouts are bounded (1/2 seconds). Tokens are cached and no unauthenticated fallback exists. Compose receives the same `INVENTORY_SERVICE_CLIENT_SECRET` in Keycloak and Inventory; production imports use environment substitution, and E2E uses an isolated fixture credential. K8s adds `inventory-service-auth` and allows inventory → order:8083 only. Provision the role, confidential client and matching generated secret in existing realms before rollout: Keycloak startup import does not update existing realms. Apply the Secret before rolling Inventory. Missing/invalid credentials fail closed and cause expiry holds, not stock release.
+
+Executed validation on JDK 25:
+
+- `./mvnw install -pl :test-support -am -DskipTests -DskipITs -DskipE2ETests` — success; dependency installation only.
+- `./mvnw clean verify -pl :inventory-service -DskipE2ETests` — success, 75 unit + 47 integration tests, coverage passed. Includes commit/cancel races, transactional dedup rollback, real Kafka retry/DLT, original corrupt-byte retention, aggregate ordering/leases, stable IDs, archive migration, expiry holds and authenticated client token caching/failure behavior.
+- `./mvnw verify -pl :order-service -Dit.test=OrderAdminRestIT -DskipE2ETests` — success, 180 unit + 10 selected integration tests, coverage passed. Tests the restricted service role and rejects customer/admin access to the internal endpoint.
+- Both Compose configuration checks and Kustomize base/production/ingress-tls renders — passed.
+
+Earlier TTL integration assertions were blocked by the scheduler's minimum lock after its initial empty run; the logic tests now call the unwrapped job, while production retains ShedLock. A subsequent unit-test compilation failure from treating MeterRegistry as AutoCloseable was corrected. The successful inventory run still reports a Surefire forced fork shutdown after the cached Spring contexts take more than 30 seconds to close; all 122 executed tests and coverage pass. This shutdown warning remains to be investigated before the final Wave 7 reactor run. Full-stack E2E and live Keycloak provisioning have not been executed for this subset.

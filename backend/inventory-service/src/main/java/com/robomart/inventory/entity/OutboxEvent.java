@@ -1,6 +1,7 @@
 package com.robomart.inventory.entity;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,6 +20,9 @@ public class OutboxEvent {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "event_id", nullable = false, updatable = false)
+    private UUID eventId = UUID.randomUUID();
 
     @Column(name = "aggregate_type", nullable = false, length = 100)
     private String aggregateType;
@@ -52,6 +56,10 @@ public class OutboxEvent {
         this.payload = payload;
         this.createdAt = Instant.now();
         this.published = false;
+    }
+
+    public UUID getEventId() {
+        return eventId;
     }
 
     public Long getId() {

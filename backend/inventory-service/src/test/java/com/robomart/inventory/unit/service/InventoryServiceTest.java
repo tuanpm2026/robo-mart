@@ -97,7 +97,7 @@ class InventoryServiceTest {
                 reservationRepository,
                 reservationLineRepository,
                 transactionTemplate,
-                objectMapper
+                objectMapper, new com.robomart.inventory.config.InventoryProperties()
         );
     }
 
@@ -147,8 +147,6 @@ class InventoryServiceTest {
             when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
             lenient().when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
             when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
 
             // when
             InventoryItem result = inventoryService.restockItem(PRODUCT_ID, 20, "Manual restock");
@@ -188,8 +186,6 @@ class InventoryServiceTest {
             when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
             lenient().when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
             when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
 
             // when
             inventoryService.restockItem(PRODUCT_ID, 10, "Test restock");
@@ -202,27 +198,7 @@ class InventoryServiceTest {
             assertThat(captured.getReason()).isEqualTo("Test restock");
         }
 
-        @Test
-        @DisplayName("should create outbox event with stock_restocked type")
-        void restockItem_createsOutboxEventWithStockRestockedType() throws Exception {
-            // given
-            InventoryItem item = createTestInventoryItem(PRODUCT_ID, 50, 0, 50);
-            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-            lenient().when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(objectMapper.writeValueAsString(any())).thenReturn("{\"productId\":1}");
 
-            // when
-            inventoryService.restockItem(PRODUCT_ID, 10, null);
-
-            // then
-            verify(outboxEventRepository).save(outboxEventCaptor.capture());
-            OutboxEvent captured = outboxEventCaptor.getValue();
-            assertThat(captured.getEventType()).isEqualTo("stock_restocked");
-            assertThat(captured.getAggregateType()).isEqualTo("InventoryItem");
-            assertThat(captured.getAggregateId()).isEqualTo(PRODUCT_ID.toString());
-        }
 
         @Test
         @DisplayName("should use default reason when reason is null")
@@ -232,8 +208,6 @@ class InventoryServiceTest {
             when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
             lenient().when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
             when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
 
             // when
             inventoryService.restockItem(PRODUCT_ID, 10, null);
@@ -274,8 +248,6 @@ class InventoryServiceTest {
             when(inventoryItemRepository.findByProductId(productId2)).thenReturn(Optional.of(item2));
             lenient().when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
             when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
 
             // when
             var results = inventoryService.bulkRestock(List.of(PRODUCT_ID, productId2), 50, "Bulk");

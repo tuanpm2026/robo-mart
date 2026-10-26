@@ -42,6 +42,9 @@ public class Reservation {
     @Column(nullable = false, length = 20)
     private ReservationStatus status;
 
+    @Column(name = "expires_at", nullable = false)
+    private Instant expiresAt = Instant.now().plusSeconds(86400);
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -57,6 +60,10 @@ public class Reservation {
         this.reservationId = reservationId;
         this.orderId = orderId;
         this.status = status;
+    }
+
+    public Instant getExpiresAt() {
+        return expiresAt;
     }
 
     public Long getId() {
