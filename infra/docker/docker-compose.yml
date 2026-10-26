@@ -380,6 +380,7 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
       CHECKOUT_BASE_URL: http://localhost:5173/cart
+      PRODUCT_SERVICE_URL: http://product-service:8081
       SPRING_AUTOCONFIGURE_EXCLUDE: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
     networks:
       - robomart-network
@@ -417,6 +418,7 @@ services:
       SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
       GRPC_CLIENT_INVENTORY_SERVICE_ADDRESS: static://inventory-service:9094
       GRPC_CLIENT_PAYMENT_SERVICE_ADDRESS: static://payment-service:9095
+      PRODUCT_SERVICE_URL: http://product-service:8081
     networks:
       - robomart-network
     deploy:
@@ -523,6 +525,7 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
       KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
+      API_GATEWAY_URL: http://api-gateway:8090
     networks:
       - robomart-network
     deploy:

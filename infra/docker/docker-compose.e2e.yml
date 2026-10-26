@@ -11,6 +11,8 @@ x-app-env: &app-env
   SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
   SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
   KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
+  # Order and cart price items server-side from product-service.
+  PRODUCT_SERVICE_URL: http://product-service:8081
   TRACING_SAMPLE_RATE: "0"
   # Some configured readiness groups include kafka without a Kafka health contributor.
   MANAGEMENT_ENDPOINT_HEALTH_VALIDATE_GROUP_MEMBERSHIP: "false"
