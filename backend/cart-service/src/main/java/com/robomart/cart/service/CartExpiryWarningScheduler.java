@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import com.robomart.cart.entity.Cart;
+import com.robomart.cart.entity.CartKeys;
 import com.robomart.cart.event.producer.CartEventProducer;
 import com.robomart.cart.repository.CartRepository;
 import com.robomart.events.cart.CartExpiryWarningEvent;
@@ -75,6 +76,7 @@ public class CartExpiryWarningScheduler {
     }
 
     private void publishExpiryWarning(Cart cart, long ttlSeconds) {
+        String publicCartId = CartKeys.publicId(cart.getId());
         List<CartItemSummary> items = cart.getItems().stream()
                 .map(item -> CartItemSummary.newBuilder()
                         .setProductId(item.getProductId())
@@ -88,19 +90,19 @@ public class CartExpiryWarningScheduler {
         CartExpiryWarningEvent event = CartExpiryWarningEvent.newBuilder()
                 .setEventId(UUID.randomUUID().toString())
                 .setEventType("CART_EXPIRY_WARNING")
-                .setAggregateId(cart.getId())
+                .setAggregateId(publicCartId)
                 .setAggregateType("Cart")
                 .setTimestamp(Instant.now())
                 .setVersion(1)
-                .setCartId(cart.getId())
+                .setCartId(publicCartId)
                 .setUserId(cart.getUserId())
                 .setExpiresInSeconds(ttlSeconds)
                 .setCheckoutUrl(checkoutBaseUrl)
                 .setItems(items)
                 .build();
 
-        cartEventProducer.send(CartEventProducer.TOPIC_CART_EXPIRY_WARNING, cart.getId(), event);
+        cartEventProducer.send(CartEventProducer.TOPIC_CART_EXPIRY_WARNING, publicCartId, event);
         log.info("Published cart expiry warning: cartId={}, userId={}, ttl={}s",
-                cart.getId(), cart.getUserId(), ttlSeconds);
+                publicCartId, cart.getUserId(), ttlSeconds);
     }
 }

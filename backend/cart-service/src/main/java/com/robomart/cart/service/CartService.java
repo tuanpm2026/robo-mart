@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import com.robomart.cart.client.ProductSnapshot;
 import com.robomart.cart.config.CartProperties;
 import com.robomart.cart.dto.AddCartItemRequest;
 import com.robomart.cart.dto.CartResponse;
@@ -15,6 +16,9 @@ import com.robomart.cart.exception.CartNotFoundException;
 import com.robomart.cart.mapper.CartMapper;
 import com.robomart.cart.repository.CartRepository;
 
+/**
+ * Cart operations keyed by a namespaced cart key (see {@link com.robomart.cart.entity.CartKeys}).
+ */
 @Service
 public class CartService {
 
@@ -23,44 +27,53 @@ public class CartService {
     private final CartRepository cartRepository;
     private final CartMapper cartMapper;
     private final CartProperties cartProperties;
+    private final ProductCatalogService productCatalogService;
 
-    public CartService(CartRepository cartRepository, CartMapper cartMapper, CartProperties cartProperties) {
+    public CartService(CartRepository cartRepository, CartMapper cartMapper, CartProperties cartProperties,
+                       ProductCatalogService productCatalogService) {
         this.cartRepository = cartRepository;
         this.cartMapper = cartMapper;
         this.cartProperties = cartProperties;
+        this.productCatalogService = productCatalogService;
     }
 
-    public CartResponse addItem(String cartId, AddCartItemRequest request, String userId) {
-        log.debug("Adding item productId={} qty={} to cart={}", request.productId(), request.quantity(), cartId);
+    /**
+     * Adds a product to the cart using the name and price from product-service; any client-supplied
+     * {@code price}/{@code productName} in the request is ignored.
+     */
+    public CartResponse addItem(String cartKey, AddCartItemRequest request, String userId) {
+        log.debug("Adding item productId={} qty={} to cart={}", request.productId(), request.quantity(), cartKey);
 
-        Cart cart = cartRepository.findById(cartId)
+        ProductSnapshot product = productCatalogService.getProduct(request.productId());
+
+        Cart cart = cartRepository.findById(cartKey)
                 .orElseGet(() -> {
-                    Cart newCart = new Cart(cartId);
+                    Cart newCart = new Cart(cartKey);
                     if (userId != null) {
                         newCart.setUserId(userId);
                     }
                     return newCart;
                 });
 
-        var item = new CartItem(request.productId(), request.productName(),
-                request.price(), request.quantity());
+        var item = new CartItem(request.productId(), product.name(),
+                product.price(), request.quantity());
         cart.addItem(item);
 
         refreshTtl(cart);
         cartRepository.save(cart);
-        log.debug("Cart {} saved with {} items, TTL={}s", cartId, cart.getItems().size(), cart.getTimeToLive());
+        log.debug("Cart {} saved with {} items, TTL={}s", cartKey, cart.getItems().size(), cart.getTimeToLive());
 
         return cartMapper.toCartResponse(cart);
     }
 
-    public CartResponse updateItemQuantity(String cartId, Long productId, UpdateCartItemRequest request) {
-        log.debug("Updating item productId={} qty={} in cart={}", productId, request.quantity(), cartId);
+    public CartResponse updateItemQuantity(String cartKey, Long productId, UpdateCartItemRequest request) {
+        log.debug("Updating item productId={} qty={} in cart={}", productId, request.quantity(), cartKey);
 
-        Cart cart = cartRepository.findById(cartId)
-                .orElseThrow(() -> new CartNotFoundException(cartId));
+        Cart cart = cartRepository.findById(cartKey)
+                .orElseThrow(() -> new CartNotFoundException(cartKey));
 
         CartItem item = cart.findItem(productId)
-                .orElseThrow(() -> new CartItemNotFoundException(cartId, productId));
+                .orElseThrow(() -> new CartItemNotFoundException(cartKey, productId));
 
         item.setQuantity(request.quantity());
         cart.setUpdatedAt(java.time.Instant.now());
@@ -70,14 +83,14 @@ public class CartService {
         return cartMapper.toCartResponse(cart);
     }
 
-    public void removeItem(String cartId, Long productId) {
-        log.debug("Removing item productId={} from cart={}", productId, cartId);
+    public void removeItem(String cartKey, Long productId) {
+        log.debug("Removing item productId={} from cart={}", productId, cartKey);
 
-        Cart cart = cartRepository.findById(cartId)
-                .orElseThrow(() -> new CartNotFoundException(cartId));
+        Cart cart = cartRepository.findById(cartKey)
+                .orElseThrow(() -> new CartNotFoundException(cartKey));
 
         if (cart.findItem(productId).isEmpty()) {
-            throw new CartItemNotFoundException(cartId, productId);
+            throw new CartItemNotFoundException(cartKey, productId);
         }
 
         cart.removeItem(productId);
@@ -85,11 +98,11 @@ public class CartService {
         cartRepository.save(cart);
     }
 
-    public CartResponse getCart(String cartId) {
-        log.debug("Fetching cart={}", cartId);
+    public CartResponse getCart(String cartKey) {
+        log.debug("Fetching cart={}", cartKey);
 
-        Cart cart = cartRepository.findById(cartId)
-                .orElseThrow(() -> new CartNotFoundException(cartId));
+        Cart cart = cartRepository.findById(cartKey)
+                .orElseThrow(() -> new CartNotFoundException(cartKey));
 
         refreshTtl(cart);
         cartRepository.save(cart);
