@@ -17,7 +17,14 @@ export function getAnonymousUserId(): string {
     }
   } catch {
     if (!cachedAnonymousId) {
-      cachedAnonymousId = 'anon-' + Math.random().toString(36).slice(2, 11)
+      // cart-service only accepts UUID guest cart ids
+      cachedAnonymousId =
+        typeof crypto?.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+              const r = (Math.random() * 16) | 0
+              return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
+            })
     }
   }
   return cachedAnonymousId
@@ -46,7 +53,8 @@ export function setAuthAccessor(
 
 // UI store accessor — set by main.ts after store initialization
 let getUiState:
-  (() => { setDegradationTier: (tier: 'normal' | 'partial' | 'maintenance') => void }) | null = null
+  | (() => { setDegradationTier: (tier: 'normal' | 'partial' | 'maintenance') => void })
+  | null = null
 
 export function setUiAccessor(
   accessor: () => { setDegradationTier: (tier: 'normal' | 'partial' | 'maintenance') => void },
@@ -71,7 +79,8 @@ apiClient.interceptors.request.use((config) => {
     config.headers['Authorization'] = `Bearer ${auth.accessToken}`
     config.headers['X-User-Id'] = auth.userId || getAnonymousUserId()
   } else {
-    config.headers['X-User-Id'] = getAnonymousUserId()
+    // Guest cart id. The gateway strips client-supplied X-User-Id; only the JWT subject is relayed.
+    config.headers['X-Cart-Id'] = getAnonymousUserId()
   }
   return config
 })

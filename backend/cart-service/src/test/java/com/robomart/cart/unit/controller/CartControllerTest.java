@@ -6,6 +6,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
@@ -20,16 +21,25 @@ import com.robomart.cart.dto.UpdateCartItemRequest;
 import com.robomart.cart.service.CartMergeService;
 import com.robomart.cart.service.CartService;
 import com.robomart.common.dto.ApiResponse;
+import com.robomart.common.exception.ValidationException;
 import io.micrometer.tracing.Tracer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CartControllerTest {
+
+    private static final String USER_ID = "user-001";
+    private static final String USER_KEY = "u:user-001";
+    private static final String GUEST_ID = "550e8400-e29b-41d4-a716-446655440000";
+    private static final String GUEST_KEY = "g:" + GUEST_ID;
 
     @Mock
     private CartService cartService;
@@ -51,50 +61,67 @@ class CartControllerTest {
     }
 
     @Test
-    void shouldReturnCreatedWhenAddItemWithUserId() {
+    void shouldUseUserNamespaceWhenAddItemWithUserId() {
         AddCartItemRequest request = new AddCartItemRequest(1L, "Test Product", BigDecimal.valueOf(29.99), 2);
-        when(cartService.addItem(eq("user-001"), eq(request), eq("user-001")))
+        when(cartService.addItem(eq(USER_KEY), eq(request), eq(USER_ID)))
                 .thenReturn(sampleCartResponse);
 
         ResponseEntity<ApiResponse<CartResponse>> response =
-                controller.addItem(null, "user-001", request);
+                controller.addItem(null, USER_ID, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();
     }
 
     @Test
-    void shouldReturnCreatedWhenAddItemWithCartId() {
-        AddCartItemRequest request = new AddCartItemRequest(1L, "Test Product", BigDecimal.valueOf(29.99), 1);
-        when(cartService.addItem(eq("cart-abc"), eq(request), eq(null)))
+    void shouldUseGuestNamespaceWhenAddItemWithCartId() {
+        AddCartItemRequest request = new AddCartItemRequest(1L, 1);
+        when(cartService.addItem(eq(GUEST_KEY), eq(request), eq(null)))
                 .thenReturn(sampleCartResponse);
 
         ResponseEntity<ApiResponse<CartResponse>> response =
-                controller.addItem("cart-abc", null, request);
+                controller.addItem(GUEST_ID, null, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    }
+
+    @Test
+    void shouldIgnoreCartIdWhenAuthenticated() {
+        when(cartService.getCart(USER_KEY)).thenReturn(sampleCartResponse);
+
+        controller.getCart(GUEST_ID, USER_ID);
+
+        verify(cartService).getCart(USER_KEY);
+    }
+
+    @Test
+    void shouldRejectCartIdThatIsNotUuid() {
+        // A victim's JWT subject (or any non-UUID) must never address a cart via X-Cart-Id
+        assertThatThrownBy(() -> controller.getCart("victim-sub", null))
+                .isInstanceOf(ValidationException.class);
+        verifyNoInteractions(cartService);
+    }
+
+    @Test
+    void shouldNotReachUserCartThroughCartIdEvenWhenSubIsUuid() {
+        when(cartService.getCart(GUEST_KEY)).thenReturn(sampleCartResponse);
+
+        controller.getCart(GUEST_ID, null);
+
+        verify(cartService).getCart(GUEST_KEY);
     }
 
     @Test
     void shouldReturnOkWhenGetCartWithUserId() {
-        when(cartService.getCart("user-001")).thenReturn(sampleCartResponse);
+        when(cartService.getCart(USER_KEY)).thenReturn(sampleCartResponse);
 
         ResponseEntity<ApiResponse<CartResponse>> response =
-                controller.getCart(null, "user-001");
+                controller.getCart(null, USER_ID);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().data()).isEqualTo(sampleCartResponse);
-    }
-
-    @Test
-    void shouldReturnOkWhenGetCartWithCartId() {
-        when(cartService.getCart("cart-xyz")).thenReturn(sampleCartResponse);
-
-        ResponseEntity<ApiResponse<CartResponse>> response =
-                controller.getCart("cart-xyz", null);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getHeaders().getFirst(CartRestController.CART_ID_HEADER)).isEqualTo("cart-001");
     }
 
     @Test
@@ -102,42 +129,52 @@ class CartControllerTest {
         UpdateCartItemRequest request = new UpdateCartItemRequest(3);
         CartItemResponse item = new CartItemResponse(1L, "Test Product",
                 BigDecimal.valueOf(29.99), 3, BigDecimal.valueOf(89.97));
-        CartResponse updatedCart = new CartResponse("user-001", List.of(item), 3, BigDecimal.valueOf(89.97));
-        when(cartService.updateItemQuantity(eq("user-001"), eq(1L), eq(request)))
+        CartResponse updatedCart = new CartResponse(USER_ID, List.of(item), 3, BigDecimal.valueOf(89.97));
+        when(cartService.updateItemQuantity(eq(USER_KEY), eq(1L), eq(request)))
                 .thenReturn(updatedCart);
 
         ResponseEntity<ApiResponse<CartResponse>> response =
-                controller.updateItemQuantity(null, "user-001", 1L, request);
+                controller.updateItemQuantity(null, USER_ID, 1L, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody().data().totalItems()).isEqualTo(3);
     }
 
     @Test
-    void shouldReturnNoContentWhenRemoveItem() {
+    void shouldReturnNoContentWithPublicCartIdWhenRemoveItem() {
         ResponseEntity<Void> response =
-                controller.removeItem("cart-abc", null, 1L);
+                controller.removeItem(GUEST_ID, null, 1L);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        verify(cartService).removeItem("cart-abc", 1L);
+        assertThat(response.getHeaders().getFirst(CartRestController.CART_ID_HEADER)).isEqualTo(GUEST_ID);
+        verify(cartService).removeItem(GUEST_KEY, 1L);
     }
 
     @Test
     void shouldReturnOkWhenMergeCart() {
-        MergeCartRequest mergeRequest = new MergeCartRequest("anon-cart-123");
-        when(cartMergeService.mergeCart(eq("anon-cart-123"), eq("user-001")))
+        MergeCartRequest mergeRequest = new MergeCartRequest(GUEST_ID);
+        when(cartMergeService.mergeCart(eq(GUEST_ID), eq(USER_ID)))
                 .thenReturn(sampleCartResponse);
 
         ResponseEntity<ApiResponse<CartResponse>> response =
-                controller.mergeCart("user-001", mergeRequest);
+                controller.mergeCart(USER_ID, mergeRequest);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        verify(cartMergeService).mergeCart("anon-cart-123", "user-001");
+        verify(cartMergeService).mergeCart(GUEST_ID, USER_ID);
     }
 
     @Test
-    void shouldGenerateNewCartIdWhenNoUserIdAndNoCartId() {
-        AddCartItemRequest request = new AddCartItemRequest(1L, "Test Product", BigDecimal.valueOf(29.99), 1);
+    void shouldReturnUnauthorizedWhenMergeWithoutUserId() {
+        ResponseEntity<ApiResponse<CartResponse>> response =
+                controller.mergeCart(" ", new MergeCartRequest(GUEST_ID));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        verifyNoInteractions(cartMergeService);
+    }
+
+    @Test
+    void shouldGenerateNewGuestCartWhenNoUserIdAndNoCartId() {
+        AddCartItemRequest request = new AddCartItemRequest(1L, 1);
         when(cartService.addItem(anyString(), eq(request), eq(null)))
                 .thenReturn(sampleCartResponse);
 
@@ -145,6 +182,8 @@ class CartControllerTest {
                 controller.addItem(null, null, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-        verify(cartService).addItem(anyString(), eq(request), eq(null));
+        ArgumentCaptor<String> key = ArgumentCaptor.forClass(String.class);
+        verify(cartService).addItem(key.capture(), any(), eq(null));
+        assertThat(key.getValue()).matches("g:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}");
     }
 }

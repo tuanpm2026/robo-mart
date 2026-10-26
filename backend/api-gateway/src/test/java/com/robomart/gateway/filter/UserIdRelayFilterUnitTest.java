@@ -77,8 +77,8 @@ class UserIdRelayFilterUnitTest {
     }
 
     @Test
-    @DisplayName("leaves request untouched when authenticated JWT has no subject")
-    void leavesRequestUntouchedWhenJwtSubjectNull() {
+    @DisplayName("strips a client-supplied X-User-Id when the authenticated JWT has no subject")
+    void stripsUserIdWhenJwtSubjectNull() {
         Jwt jwt = Jwt.withTokenValue("token").header("alg", "none")
                 .claim("scope", "read").build();
         MockServerWebExchange exchange = exchangeWithHeaders(
@@ -86,13 +86,12 @@ class UserIdRelayFilterUnitTest {
 
         StepVerifier.create(runWithAuth(exchange, jwtAuthentication(jwt))).verifyComplete();
 
-        // sub == null -> withAuthenticatedUserId returns the exchange unchanged
-        assertThat(relayedUserId()).isEqualTo("client-supplied");
+        assertThat(relayedUserId()).isNull();
     }
 
     @Test
-    @DisplayName("falls through to anonymous handling when principal is not a JWT")
-    void fallsThroughWhenPrincipalNotJwt() {
+    @DisplayName("strips a client-supplied X-User-Id when the principal is not a JWT")
+    void stripsUserIdWhenPrincipalNotJwt() {
         Authentication nonJwt = new UsernamePasswordAuthenticationToken("plain-user", "n/a");
         MockServerWebExchange exchange = exchangeWithHeaders(
                 MockServerHttpRequest.get("/api/v1/cart/1")
@@ -100,40 +99,41 @@ class UserIdRelayFilterUnitTest {
 
         StepVerifier.create(runWithAuth(exchange, nonJwt)).verifyComplete();
 
-        // Not a Jwt -> filtered out -> anonymous path keeps the valid header
-        assertThat(relayedUserId()).isEqualTo("550e8400-e29b-41d4-a716-446655440000");
+        assertThat(relayedUserId()).isNull();
     }
 
     @Test
-    @DisplayName("passes through a valid anonymous X-User-Id when unauthenticated")
-    void passesThroughValidAnonymousUserId() {
+    @DisplayName("strips a client-supplied X-User-Id when the security context has no authentication")
+    void stripsUserIdWhenAuthenticationNull() {
         MockServerWebExchange exchange = exchangeWithHeaders(
-                MockServerHttpRequest.get("/api/v1/cart/1").header(X_USER_ID, "anon-valid-id"));
+                MockServerHttpRequest.get("/api/v1/cart/1").header(X_USER_ID, "victim-sub"));
+
+        StepVerifier.create(runWithAuth(exchange, null)).verifyComplete();
+
+        assertThat(relayedUserId()).isNull();
+    }
+
+    @Test
+    @DisplayName("strips a spoofed X-User-Id on anonymous requests (no security context)")
+    void stripsSpoofedAnonymousUserId() {
+        MockServerWebExchange exchange = exchangeWithHeaders(
+                MockServerHttpRequest.get("/api/v1/cart/1").header(X_USER_ID, "victim-sub"));
 
         StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
 
-        assertThat(relayedUserId()).isEqualTo("anon-valid-id");
+        assertThat(relayedUserId()).isNull();
+        assertThat(exchangeCaptor.getValue().getRequest().getHeaders().containsHeader(X_USER_ID)).isFalse();
     }
 
     @Test
-    @DisplayName("leaves request untouched when no X-User-Id header is present")
+    @DisplayName("passes the original exchange through when no X-User-Id header is present")
     void leavesRequestUntouchedWhenNoHeader() {
         MockServerWebExchange exchange = exchangeWithHeaders(
                 MockServerHttpRequest.get("/api/v1/cart/1"));
 
         StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
 
-        assertThat(relayedUserId()).isNull();
-    }
-
-    @Test
-    @DisplayName("strips an oversized anonymous X-User-Id")
-    void stripsOversizedAnonymousUserId() {
-        MockServerWebExchange exchange = exchangeWithHeaders(
-                MockServerHttpRequest.get("/api/v1/cart/1").header(X_USER_ID, "a".repeat(129)));
-
-        StepVerifier.create(filter.filter(exchange, chain)).verifyComplete();
-
+        assertThat(exchangeCaptor.getValue()).isSameAs(exchange);
         assertThat(relayedUserId()).isNull();
     }
 

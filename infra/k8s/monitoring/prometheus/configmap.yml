@@ -13,7 +13,7 @@ data:
         metrics_path: '/actuator/prometheus'
         static_configs:
           - targets:
-              - 'api-gateway.robomart.svc.cluster.local:8080'
+              - 'api-gateway-management.robomart.svc.cluster.local:8090'
               - 'product-service.robomart.svc.cluster.local:8081'
               - 'cart-service.robomart.svc.cluster.local:8082'
               - 'order-service.robomart.svc.cluster.local:8083'

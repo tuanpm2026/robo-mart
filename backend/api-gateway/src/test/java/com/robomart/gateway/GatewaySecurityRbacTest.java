@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.server.LocalManagementPort;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.security.oauth2.jwt.BadJwtException;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -34,6 +35,9 @@ class GatewaySecurityRbacTest {
 
     @LocalServerPort
     int port;
+
+    @LocalManagementPort
+    int managementPort;
 
     WebTestClient webTestClient;
 
@@ -101,10 +105,47 @@ class GatewaySecurityRbacTest {
         }
 
         @Test
-        void shouldAllowHealthWithoutToken() {
-            webTestClient.get().uri("/actuator/health")
+        void shouldAllowHealthWithoutTokenOnManagementPort() {
+            WebTestClient.bindToServer()
+                    .baseUrl("http://localhost:" + managementPort)
+                    .build()
+                    .get().uri("/actuator/health")
                     .exchange()
                     .expectStatus().isOk();
+        }
+
+        @Test
+        void shouldAllowWebSocketHandshakeWithoutToken() {
+            // SockJS sends the JWT only in the STOMP CONNECT frame (validated by notification-service)
+            expectNotAuthBlocked(
+                    webTestClient.get().uri("/ws/info")
+                            .exchange());
+        }
+    }
+
+    @Nested
+    class ActuatorOnPublicPort {
+
+        @Test
+        void shouldReturn401ForPrometheusWithoutToken() {
+            webTestClient.get().uri("/actuator/prometheus")
+                    .exchange()
+                    .expectStatus().isUnauthorized();
+        }
+
+        @Test
+        void shouldReturn403ForActuatorEvenWithAdminToken() {
+            webTestClient.get().uri("/actuator/metrics")
+                    .headers(h -> h.setBearerAuth(ADMIN_TOKEN))
+                    .exchange()
+                    .expectStatus().isForbidden();
+        }
+
+        @Test
+        void shouldReturn401ForGatewayRouteWriteWithoutToken() {
+            webTestClient.post().uri("/actuator/gateway/routes/hijack")
+                    .exchange()
+                    .expectStatus().isUnauthorized();
         }
     }
 

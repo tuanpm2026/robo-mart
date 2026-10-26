@@ -87,7 +87,8 @@ public class Cart {
                 .findFirst();
     }
 
-    private static final int MAX_ITEM_QUANTITY = 9999;
+    /** Per-line quantity cap (matches the storefront quantity input). */
+    public static final int MAX_ITEM_QUANTITY = 999;
 
     public void addItem(CartItem item) {
         Optional<CartItem> existing = findItem(item.getProductId());
