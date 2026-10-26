@@ -17,7 +17,6 @@ import com.robomart.inventory.repository.OutboxEventRepository;
 import com.robomart.inventory.repository.ReservationLineRepository;
 import com.robomart.inventory.repository.ReservationRepository;
 import com.robomart.inventory.repository.StockMovementRepository;
-import com.robomart.inventory.service.DistributedLockService;
 import com.robomart.inventory.service.InventoryService;
 
 import tools.jackson.databind.ObjectMapper;
@@ -31,7 +30,6 @@ class InventoryServiceMetricsTest {
     @Mock private OutboxEventRepository outboxEventRepository;
     @Mock private ReservationRepository reservationRepository;
     @Mock private ReservationLineRepository reservationLineRepository;
-    @Mock private DistributedLockService distributedLockService;
     @Mock private TransactionTemplate transactionTemplate;
     @Mock private ObjectMapper objectMapper;
 
@@ -41,7 +39,7 @@ class InventoryServiceMetricsTest {
     void setUp() {
         inventoryService = new InventoryService(
                 inventoryItemRepository, stockMovementRepository, outboxEventRepository,
-                reservationRepository, reservationLineRepository, distributedLockService, transactionTemplate,
+                reservationRepository, reservationLineRepository, transactionTemplate,
                 objectMapper);
     }
 

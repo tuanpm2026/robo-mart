@@ -18,10 +18,6 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-  data:
-    redis:
-      host: localhost
-      port: 6379
   kafka:
     bootstrap-servers: localhost:29092
     properties:
@@ -69,7 +65,7 @@ management:
         liveness:
           include: livenessState
         readiness:
-          include: readinessState,db,redis,kafka
+          include: readinessState,db,kafka
   metrics:
     distribution:
       percentiles-histogram:

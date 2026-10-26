@@ -187,6 +187,11 @@ services:
 
   inventory-service:
     <<: *app
+    depends_on:
+      postgres: {condition: service_healthy}
+      kafka: {condition: service_healthy}
+      schema-registry: {condition: service_healthy}
+      keycloak: {condition: service_healthy}
     image: robomart-e2e/inventory-service:java25
     build:
       context: ../..

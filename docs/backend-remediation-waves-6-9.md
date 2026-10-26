@@ -49,11 +49,11 @@ Aborted worktrees were removed after preserving tracked diffs, untracked files a
 | Order 4 | Max age/attempts and manual-review escalation for pending payment/refund | Implemented: persisted per-phase budgets, ADMIN review/resume APIs, ERROR/metric; stock stays held |
 | Order 5 | Ordered asynchronous outbox, unknown-type metric and retention | Implemented: durable claims on aggregate heads, bounded async sends, poison retention, ShedLock cleanup |
 | Order 6 | Executor context propagation | Implemented: outbox executor uses Micrometer context snapshots plus correlation/trace MDC accessors; no saga step executor |
-| Inventory 1 | Atomic SQL reserve without Redis; bounded contention retry | Pending |
+| Inventory 1 | Atomic SQL reserve without Redis; bounded contention retry | Implemented: conditional SQL in sorted product order, full transaction rollback, up to three contention attempts; dead Redis code/dependency removed |
 | Inventory 2 | Commit/release consumer, deduplication/DLT, committed returns, expiry | Pending; payment uncertainty must block unsafe expiry |
 | Inventory 3 | Stable outbox IDs, complete event mapping, async ordering and retention | Pending |
-| Inventory 4 | Low-stock threshold crossing and transaction boundaries | Pending |
-| Inventory 5 | Quantity constraints, restock/list bounds | Pending |
+| Inventory 4 | Low-stock threshold crossing and transaction boundaries | Implemented: crossing-only alert; alert write failure rolls back the reservation |
+| Inventory 5 | Quantity constraints, restock/list bounds | Implemented: nonnegative DB guards, restock maximum 1,000,000 and list maximum 100, checked integer arithmetic |
 | Cart 1 | Atomic Redis hash operations, TTL refresh and atomic merge | Pending |
 | Cart 2 | Product reverse index, per-field price updates and DLT | Pending |
 | Cart 3 | Distributed expiry-warning lock, warned marker, stable ID and expiry ZSET | Pending |
@@ -133,3 +133,17 @@ Operational controls:
 - Retention deletes only published rows in batches of 10,000 under ShedLock. No unpublished rows are deleted. Producer/Schema Registry blocking and delivery timeouts are bounded.
 
 The overall Wave 7 scope remains incomplete; the remaining services are still pending in the table above. The successful whole-reactor run recorded earlier predates this continuation; new full-reactor validation will be recorded at the wave boundary.
+
+### Inventory atomic-reserve continuation
+
+Inventory no longer uses Redis for stock locking. The order reservation, stored lines, sorted conditional stock updates, movements and outbox writes share one PostgreSQL transaction. A failed line or alert write rolls back all earlier lines. Database contention is retried at most three times with bounded backoff. Releases continue to use stored reservation lines and retain release tombstones.
+
+Migration inventory V5 adds nonnegative available/reserved constraints. It intentionally does not repair historical data: deployment fails if existing stock is negative and requires reconciliation first. No total-quantity equality constraint is introduced before the commit/return lifecycle is implemented and verified.
+
+Dead per-item reserve/release methods, Redis lock configuration/service/exception and their implementation-specific tests were removed. Existing persistence/concurrency tests now exercise the same order-level path as gRPC. The oversell regression requires exactly ten successful reservations when only ten units exist; new regressions cover later-line rollback, alert failure rollback, threshold crossing and database constraints.
+
+Compose core/app and E2E no longer make inventory wait for Redis. Kubernetes inventory readiness lists db/Kafka without Redis. Shared Redis configuration for other services remains unchanged. Restock DTO fields remain compatible with the storefront/admin clients; validation now caps restock quantity at 1,000,000 and product lists at 100. Overflow fails validation before mutating the item.
+
+Final inventory `./mvnw clean verify -pl :inventory-service -DskipE2ETests` passed (74 unit + 29 integration tests), including the coverage gate. Checkstyle passed. Both Compose configurations and Kustomize base/production/ingress-tls passed.
+
+CI found that the outbox database-lock probe's 100 ms test deadline was too short on the runner. That integration test now allows 2 seconds while retaining its transaction and `FOR UPDATE NOWAIT` assertions. The separate bounded-timeout unit regression is unchanged. `./mvnw verify -pl :order-service -Dit.test=OrderOutboxDeliveryIT -DskipE2ETests` passed after the fixture change.

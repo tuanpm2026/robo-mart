@@ -1,8 +1,10 @@
 package com.robomart.inventory.integration;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -10,19 +12,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.robomart.common.exception.ResourceNotFoundException;
-import com.robomart.inventory.config.RedisLockConfig;
 import com.robomart.inventory.entity.InventoryItem;
 import com.robomart.inventory.entity.OutboxEvent;
 import com.robomart.inventory.entity.StockMovement;
 import com.robomart.inventory.enums.StockMovementType;
 import com.robomart.inventory.exception.InsufficientStockException;
-import com.robomart.inventory.exception.LockAcquisitionException;
 import com.robomart.inventory.repository.InventoryItemRepository;
 import com.robomart.inventory.repository.OutboxEventRepository;
 import com.robomart.inventory.repository.ReservationLineRepository;
@@ -31,20 +31,20 @@ import com.robomart.inventory.repository.StockMovementRepository;
 import com.robomart.inventory.service.InventoryService;
 import com.robomart.test.IntegrationTest;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 /**
- * Integration tests for {@link InventoryService} with real PostgreSQL and Redis via Testcontainers.
+ * Integration tests for {@link InventoryService} with real PostgreSQL via Testcontainers.
  *
  * <p>These tests verify end-to-end behavior of stock reservation and release operations,
  * concurrency safety, audit trail creation, and outbox event publishing.
  *
  * <p>Seed data provides ~50 inventory items (product IDs 1-50). Tests use various product IDs
- * to avoid interference between tests, and each test cleans up Redis lock keys beforehand.
+ * to avoid interference between tests.
  */
 @IntegrationTest
 class InventoryServiceIT {
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     @Autowired
     private InventoryService inventoryService;
@@ -64,18 +64,6 @@ class InventoryServiceIT {
     @Autowired
     private ReservationLineRepository reservationLineRepository;
 
-    @Autowired
-    private StringRedisTemplate stringRedisTemplate;
-
-    @BeforeEach
-    void cleanUpRedisLocks() {
-        // Clean up any leftover Redis lock keys from previous test runs
-        Set<String> lockKeys = stringRedisTemplate.keys(RedisLockConfig.LOCK_KEY_PREFIX + "*");
-        if (lockKeys != null && !lockKeys.isEmpty()) {
-            stringRedisTemplate.delete(lockKeys);
-        }
-    }
-
     @Test
     void shouldReserveAndReleaseStockEndToEnd() {
         // Arrange: get an existing inventory item from seed data (product_id=1, available=250)
@@ -85,14 +73,16 @@ class InventoryServiceIT {
         int originalReserved = original.getReservedQuantity();
 
         // Act: reserve 2 units
-        InventoryItem afterReserve = inventoryService.reserveStock(productId, 2, "test-order-1");
+        inventoryService.reserveOrder("test-order-1", Map.of(productId, 2));
+        InventoryItem afterReserve = inventoryService.getInventory(productId);
 
         // Assert: available decreased by 2, reserved increased by 2
         assertThat(afterReserve.getAvailableQuantity()).isEqualTo(originalAvailable - 2);
         assertThat(afterReserve.getReservedQuantity()).isEqualTo(originalReserved + 2);
 
         // Act: release 2 units
-        InventoryItem afterRelease = inventoryService.releaseStock(productId, 2, "test-order-1");
+        inventoryService.releaseReservation("test-order-1");
+        InventoryItem afterRelease = inventoryService.getInventory(productId);
 
         // Assert: quantities restored to original
         assertThat(afterRelease.getAvailableQuantity()).isEqualTo(originalAvailable);
@@ -106,6 +96,7 @@ class InventoryServiceIT {
         InventoryItem item = inventoryItemRepository.findByProductId(productId).orElseThrow();
         item.setAvailableQuantity(10);
         item.setReservedQuantity(0);
+        item.setTotalQuantity(10);
         inventoryItemRepository.save(item);
 
         int threadCount = 20;
@@ -121,9 +112,9 @@ class InventoryServiceIT {
             executor.submit(() -> {
                 try {
                     startLatch.await();
-                    inventoryService.reserveStock(productId, 1, "concurrent-order-" + index);
+                    inventoryService.reserveOrder("concurrent-order-" + index, Map.of(productId, 1));
                     successes.incrementAndGet();
-                } catch (InsufficientStockException | LockAcquisitionException e) {
+                } catch (InsufficientStockException e) {
                     failures.incrementAndGet();
                 } catch (Exception e) {
                     failures.incrementAndGet();
@@ -140,7 +131,8 @@ class InventoryServiceIT {
         executor.awaitTermination(5, TimeUnit.SECONDS);
 
         // Assert: at most 10 reservations succeeded (no oversell)
-        assertThat(successes.get()).isLessThanOrEqualTo(10);
+        assertThat(successes.get()).isEqualTo(10);
+        assertThat(failures.get()).isEqualTo(10);
         assertThat(successes.get() + failures.get()).isEqualTo(threadCount);
 
         // Conservation: every successful reservation moved exactly one unit, failures moved none
@@ -217,7 +209,7 @@ class InventoryServiceIT {
         Long productId = 3L;
 
         // Act: reserve stock
-        inventoryService.reserveStock(productId, 1, "audit-trail-order");
+        inventoryService.reserveOrder("audit-trail-order", Map.of(productId, 1));
 
         // Assert: at least one stock movement with type RESERVE exists for this item
         InventoryItem item = inventoryItemRepository.findByProductId(productId).orElseThrow();
@@ -236,7 +228,7 @@ class InventoryServiceIT {
         Long productId = 4L;
 
         // Act: reserve stock
-        inventoryService.reserveStock(productId, 1, "outbox-test-order");
+        inventoryService.reserveOrder("outbox-test-order", Map.of(productId, 1));
 
         // Assert: at least one unpublished outbox event with eventType "stock_reserved"
         List<OutboxEvent> events = outboxEventRepository.findByPublishedFalseOrderByCreatedAtAsc();
@@ -253,14 +245,79 @@ class InventoryServiceIT {
         Long productId = 49L;
 
         // Act & Assert: try to reserve more than available
-        assertThatThrownBy(() -> inventoryService.reserveStock(productId, 1, "insufficient-order"))
+        assertThatThrownBy(() -> inventoryService.reserveOrder("insufficient-order", Map.of(productId, 1)))
                 .isInstanceOf(InsufficientStockException.class);
     }
 
     @Test
     void shouldThrowResourceNotFoundWhenProductNotExists() {
         // Act & Assert: non-existent product ID
-        assertThatThrownBy(() -> inventoryService.reserveStock(99999L, 1, "not-found-order"))
+        assertThatThrownBy(() -> inventoryService.reserveOrder("not-found-order", Map.of(99999L, 1)))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }    private long stockFixture(int available) {
+        long productId = 900000 + java.util.concurrent.ThreadLocalRandom.current().nextInt(900000);
+        InventoryItem item = new InventoryItem();
+        item.setProductId(productId);
+        item.setAvailableQuantity(available);
+        item.setReservedQuantity(0);
+        item.setTotalQuantity(available);
+        item.setLowStockThreshold(10);
+        inventoryItemRepository.saveAndFlush(item);
+        return productId;
     }
+
+    @Test
+    void laterInsufficientLineRollsBackReservationStockMovementsAndEvents() {
+        long first = stockFixture(20);
+        long second = stockFixture(1);
+        long lower = Math.min(first, second);
+        long higher = Math.max(first, second);
+        jdbc.update("UPDATE inventory_items SET available_quantity=20,total_quantity=20 WHERE product_id=?", lower);
+        jdbc.update("UPDATE inventory_items SET available_quantity=1,total_quantity=1 WHERE product_id=?", higher);
+        String order = "atomic-rollback-" + java.util.UUID.randomUUID();
+        assertThatThrownBy(() -> inventoryService.reserveOrder(order, Map.of(lower, 2, higher, 2)))
+                .isInstanceOf(InsufficientStockException.class);
+        assertThat(inventoryService.getInventory(lower).getAvailableQuantity()).isEqualTo(20);
+        assertThat(reservationRepository.findByOrderId(order)).isEmpty();
+        assertThat(reservationLineRepository.findByOrderIdOrderByProductIdAsc(order)).isEmpty();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM stock_movements WHERE order_id=?", Integer.class, order))
+                .isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM outbox_events WHERE payload->>'orderId'=?",
+                Integer.class, order)).isZero();
+    }
+
+    @Test
+    void lowStockIsEmittedOnlyOnThresholdCrossing() {
+        long product = stockFixture(11);
+        inventoryService.reserveOrder("crossing-" + java.util.UUID.randomUUID(), Map.of(product, 2));
+        inventoryService.reserveOrder("below-" + java.util.UUID.randomUUID(), Map.of(product, 1));
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM outbox_events WHERE aggregate_id=? "
+                + "AND event_type='stock_low_alert'", Integer.class, Long.toString(product))).isEqualTo(1);
+    }
+
+    @Test
+    void alertWriteFailureRollsBackTheWholeReservation() {
+        long product = stockFixture(11);
+        String order = "alert-rollback-" + java.util.UUID.randomUUID();
+        jdbc.execute("ALTER TABLE outbox_events ADD CONSTRAINT reject_test_alert CHECK "
+                + "(event_type <> 'stock_low_alert' OR aggregate_id <> '" + product + "') NOT VALID");
+        try {
+            assertThatThrownBy(() -> inventoryService.reserveOrder(order, Map.of(product, 2)))
+                    .isInstanceOf(DataIntegrityViolationException.class);
+            assertThat(inventoryService.getInventory(product).getAvailableQuantity()).isEqualTo(11);
+            assertThat(reservationRepository.findByOrderId(order)).isEmpty();
+        } finally {
+            jdbc.execute("ALTER TABLE outbox_events DROP CONSTRAINT reject_test_alert");
+        }
+    }
+
+    @Test
+    void databaseRejectsNegativeAvailableAndReservedQuantities() {
+        long product = stockFixture(10);
+        assertThatThrownBy(() -> jdbc.update("UPDATE inventory_items SET available_quantity=-1 WHERE product_id=?", product))
+                .isInstanceOf(DataIntegrityViolationException.class);
+        assertThatThrownBy(() -> jdbc.update("UPDATE inventory_items SET reserved_quantity=-1 WHERE product_id=?", product))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
 }

@@ -14,7 +14,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,14 +42,12 @@ import com.robomart.inventory.entity.StockMovement;
 import com.robomart.inventory.enums.ReservationStatus;
 import com.robomart.inventory.enums.StockMovementType;
 import com.robomart.inventory.exception.InsufficientStockException;
-import com.robomart.inventory.exception.LockAcquisitionException;
 import com.robomart.inventory.exception.ReservationReleasedException;
 import com.robomart.inventory.repository.InventoryItemRepository;
 import com.robomart.inventory.repository.OutboxEventRepository;
 import com.robomart.inventory.repository.ReservationLineRepository;
 import com.robomart.inventory.repository.ReservationRepository;
 import com.robomart.inventory.repository.StockMovementRepository;
-import com.robomart.inventory.service.DistributedLockService;
 import com.robomart.inventory.service.InventoryService;
 
 import tools.jackson.databind.ObjectMapper;
@@ -75,9 +72,6 @@ class InventoryServiceTest {
     private ReservationLineRepository reservationLineRepository;
 
     @Mock
-    private DistributedLockService distributedLockService;
-
-    @Mock
     private TransactionTemplate transactionTemplate;
 
     @Mock
@@ -93,7 +87,6 @@ class InventoryServiceTest {
 
     private static final Long PRODUCT_ID = 1L;
     private static final String ORDER_ID = "order-123";
-    private static final String LOCK_VALUE = "test-lock-value";
 
     @BeforeEach
     void setUp() {
@@ -103,30 +96,9 @@ class InventoryServiceTest {
                 outboxEventRepository,
                 reservationRepository,
                 reservationLineRepository,
-                distributedLockService,
                 transactionTemplate,
                 objectMapper
         );
-    }
-
-    /**
-     * Sets up standard mocking for distributed lock acquisition and transaction execution.
-     * The TransactionTemplate mock is configured to actually invoke the callback.
-     */
-    @SuppressWarnings("unchecked")
-    private void setupLockAndTransactionMocks() {
-        when(distributedLockService.generateLockValue()).thenReturn(LOCK_VALUE);
-        when(distributedLockService.acquireLock(anyString(), eq(LOCK_VALUE), any(Duration.class)))
-                .thenReturn(true);
-        lenient().when(distributedLockService.isLockHeld(anyString(), eq(LOCK_VALUE)))
-                .thenReturn(true);
-        lenient().when(distributedLockService.releaseLock(anyString(), eq(LOCK_VALUE)))
-                .thenReturn(true);
-        when(transactionTemplate.execute(any(TransactionCallback.class)))
-                .thenAnswer(invocation -> {
-                    TransactionCallback<?> callback = invocation.getArgument(0);
-                    return callback.doInTransaction(null);
-                });
     }
 
     /**
@@ -140,225 +112,6 @@ class InventoryServiceTest {
         item.setTotalQuantity(total);
         item.setLowStockThreshold(10);
         return item;
-    }
-
-    @Nested
-    @DisplayName("reserveStock")
-    class ReserveStock {
-
-        @Test
-        @DisplayName("should reserve stock when sufficient quantity is available")
-        void shouldReserveStockWhenSufficientQuantity() throws Exception {
-            // given
-            setupLockAndTransactionMocks();
-            InventoryItem item = createTestInventoryItem(PRODUCT_ID, 100, 0, 100);
-            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
-            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
-
-            // when
-            InventoryItem result = inventoryService.reserveStock(PRODUCT_ID, 5, ORDER_ID);
-
-            // then
-            assertThat(result.getAvailableQuantity()).isEqualTo(95);
-            assertThat(result.getReservedQuantity()).isEqualTo(5);
-        }
-
-        @Test
-        @DisplayName("should throw InsufficientStockException when not enough quantity available")
-        void shouldThrowInsufficientStockWhenNotEnoughQuantity() throws Exception {
-            // given
-            setupLockAndTransactionMocks();
-            InventoryItem item = createTestInventoryItem(PRODUCT_ID, 3, 0, 3);
-            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-
-            // when/then
-            assertThatThrownBy(() -> inventoryService.reserveStock(PRODUCT_ID, 5, ORDER_ID))
-                    .isInstanceOf(InsufficientStockException.class);
-        }
-
-        @Test
-        @DisplayName("should throw LockAcquisitionException when lock is unavailable")
-        void shouldThrowLockAcquisitionExceptionWhenLockUnavailable() {
-            // given
-            when(distributedLockService.generateLockValue()).thenReturn(LOCK_VALUE);
-            when(distributedLockService.acquireLock(anyString(), eq(LOCK_VALUE), any(Duration.class)))
-                    .thenReturn(false);
-
-            // when/then
-            assertThatThrownBy(() -> inventoryService.reserveStock(PRODUCT_ID, 5, ORDER_ID))
-                    .isInstanceOf(LockAcquisitionException.class);
-        }
-
-        @Test
-        @DisplayName("should create StockMovement with RESERVE type on successful reservation")
-        void shouldCreateStockMovementOnReserve() throws Exception {
-            // given
-            setupLockAndTransactionMocks();
-            InventoryItem item = createTestInventoryItem(PRODUCT_ID, 100, 0, 100);
-            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
-            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
-
-            // when
-            inventoryService.reserveStock(PRODUCT_ID, 5, ORDER_ID);
-
-            // then
-            verify(stockMovementRepository).save(stockMovementCaptor.capture());
-            StockMovement captured = stockMovementCaptor.getValue();
-            assertThat(captured.getType()).isEqualTo(StockMovementType.RESERVE);
-            assertThat(captured.getQuantity()).isEqualTo(5);
-            assertThat(captured.getOrderId()).isEqualTo(ORDER_ID);
-        }
-
-        @Test
-        @DisplayName("should publish outbox event with type stock_reserved on successful reservation")
-        void shouldPublishOutboxEventOnReserve() throws Exception {
-            // given
-            setupLockAndTransactionMocks();
-            InventoryItem item = createTestInventoryItem(PRODUCT_ID, 100, 0, 100);
-            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
-            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
-
-            // when
-            inventoryService.reserveStock(PRODUCT_ID, 5, ORDER_ID);
-
-            // then
-            verify(outboxEventRepository).save(outboxEventCaptor.capture());
-            OutboxEvent captured = outboxEventCaptor.getValue();
-            assertThat(captured.getEventType()).isEqualTo("stock_reserved");
-            assertThat(captured.getAggregateType()).isEqualTo("InventoryItem");
-            assertThat(captured.getAggregateId()).isEqualTo(PRODUCT_ID.toString());
-        }
-
-        @Test
-        @DisplayName("should publish low stock alert when available drops below threshold")
-        void shouldPublishLowStockAlertWhenBelowThreshold() throws Exception {
-            // given
-            setupLockAndTransactionMocks();
-            InventoryItem item = createTestInventoryItem(PRODUCT_ID, 12, 0, 12);
-            item.setLowStockThreshold(10);
-            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
-            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
-
-            // when
-            inventoryService.reserveStock(PRODUCT_ID, 5, ORDER_ID);
-
-            // then — available becomes 7, which is below threshold of 10
-            // Expect 2 outbox events: stock_reserved + stock_low_alert
-            verify(outboxEventRepository, times(2)).save(outboxEventCaptor.capture());
-            assertThat(outboxEventCaptor.getAllValues())
-                    .extracting(OutboxEvent::getEventType)
-                    .containsExactly("stock_reserved", "stock_low_alert");
-        }
-
-        @Test
-        @DisplayName("should not publish low stock alert when available stays above threshold")
-        void shouldNotPublishLowStockAlertWhenAboveThreshold() throws Exception {
-            // given
-            setupLockAndTransactionMocks();
-            InventoryItem item = createTestInventoryItem(PRODUCT_ID, 100, 0, 100);
-            item.setLowStockThreshold(10);
-            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
-            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
-
-            // when
-            inventoryService.reserveStock(PRODUCT_ID, 5, ORDER_ID);
-
-            // then — available becomes 95, which is above threshold of 10
-            // Expect only 1 outbox event: stock_reserved
-            verify(outboxEventRepository, times(1)).save(outboxEventCaptor.capture());
-            assertThat(outboxEventCaptor.getValue().getEventType()).isEqualTo("stock_reserved");
-        }
-
-        @Test
-        @DisplayName("should compensate and throw when lock expires during transaction")
-        @SuppressWarnings("unchecked")
-        void shouldCompensateWhenLockExpiresDuringTransaction() throws Exception {
-            // given — setup lock that works for acquire but reports expired after transaction
-            when(distributedLockService.generateLockValue()).thenReturn(LOCK_VALUE);
-            when(distributedLockService.acquireLock(anyString(), eq(LOCK_VALUE), any(Duration.class)))
-                    .thenReturn(true);
-            when(distributedLockService.isLockHeld(anyString(), eq(LOCK_VALUE)))
-                    .thenReturn(false)  // First call: lock expired (triggers compensation)
-                    .thenReturn(true);  // Subsequent calls: lock held (compensation completes normally)
-            lenient().when(distributedLockService.releaseLock(anyString(), eq(LOCK_VALUE)))
-                    .thenReturn(true);
-            when(transactionTemplate.execute(any(TransactionCallback.class)))
-                    .thenAnswer(invocation -> {
-                        TransactionCallback<?> callback = invocation.getArgument(0);
-                        return callback.doInTransaction(null);
-                    });
-
-            InventoryItem item = createTestInventoryItem(PRODUCT_ID, 100, 0, 100);
-            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
-            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
-
-            // when/then — should throw RuntimeException about lock expiry
-            assertThatThrownBy(() -> inventoryService.reserveStock(PRODUCT_ID, 5, ORDER_ID))
-                    .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("Lock expired");
-        }
-    }
-
-    @Nested
-    @DisplayName("releaseStock")
-    class ReleaseStock {
-
-        @Test
-        @DisplayName("should release stock and publish stock_released event")
-        void shouldReleaseStockAndPublishEvent() throws Exception {
-            // given
-            setupLockAndTransactionMocks();
-            InventoryItem item = createTestInventoryItem(PRODUCT_ID, 90, 10, 100);
-            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(objectMapper.writeValueAsString(any())).thenReturn("{}");
-            when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
-            when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
-
-            // when
-            InventoryItem result = inventoryService.releaseStock(PRODUCT_ID, 5, ORDER_ID);
-
-            // then
-            assertThat(result.getAvailableQuantity()).isEqualTo(95);
-            assertThat(result.getReservedQuantity()).isEqualTo(5);
-
-            verify(outboxEventRepository).save(outboxEventCaptor.capture());
-            assertThat(outboxEventCaptor.getValue().getEventType()).isEqualTo("stock_released");
-
-            verify(stockMovementRepository).save(stockMovementCaptor.capture());
-            assertThat(stockMovementCaptor.getValue().getType()).isEqualTo(StockMovementType.RELEASE);
-        }
-
-        @Test
-        @DisplayName("should throw IllegalStateException when releasing more than reserved")
-        void shouldThrowExceptionWhenReleasingMoreThanReserved() throws Exception {
-            // given
-            setupLockAndTransactionMocks();
-            InventoryItem item = createTestInventoryItem(PRODUCT_ID, 97, 3, 100);
-            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-
-            // when/then
-            assertThatThrownBy(() -> inventoryService.releaseStock(PRODUCT_ID, 5, ORDER_ID))
-                    .isInstanceOf(IllegalStateException.class);
-        }
     }
 
     @Nested
@@ -392,7 +145,7 @@ class InventoryServiceTest {
             // given
             InventoryItem item = createTestInventoryItem(PRODUCT_ID, 50, 5, 55);
             when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
+            lenient().when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
             when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
             when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
             when(objectMapper.writeValueAsString(any())).thenReturn("{}");
@@ -410,7 +163,7 @@ class InventoryServiceTest {
         void restockItem_invalidQuantity_throwsIllegalArgumentException() {
             assertThatThrownBy(() -> inventoryService.restockItem(PRODUCT_ID, 0, null))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Quantity must be positive");
+                    .hasMessageContaining("Restock quantity must be between");
 
             assertThatThrownBy(() -> inventoryService.restockItem(PRODUCT_ID, -5, null))
                     .isInstanceOf(IllegalArgumentException.class);
@@ -433,7 +186,7 @@ class InventoryServiceTest {
             // given
             InventoryItem item = createTestInventoryItem(PRODUCT_ID, 50, 0, 50);
             when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
+            lenient().when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
             when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
             when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
             when(objectMapper.writeValueAsString(any())).thenReturn("{}");
@@ -455,7 +208,7 @@ class InventoryServiceTest {
             // given
             InventoryItem item = createTestInventoryItem(PRODUCT_ID, 50, 0, 50);
             when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
+            lenient().when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
             when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
             when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
             when(objectMapper.writeValueAsString(any())).thenReturn("{\"productId\":1}");
@@ -477,7 +230,7 @@ class InventoryServiceTest {
             // given
             InventoryItem item = createTestInventoryItem(PRODUCT_ID, 50, 0, 50);
             when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
+            lenient().when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
             when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
             when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
             when(objectMapper.writeValueAsString(any())).thenReturn("{}");
@@ -519,7 +272,7 @@ class InventoryServiceTest {
             InventoryItem item2 = createTestInventoryItem(productId2, 10, 0, 10);
             when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item1));
             when(inventoryItemRepository.findByProductId(productId2)).thenReturn(Optional.of(item2));
-            when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
+            lenient().when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
             when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
             when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
             when(objectMapper.writeValueAsString(any())).thenReturn("{}");
@@ -562,7 +315,7 @@ class InventoryServiceTest {
     }
 
     private void stubStockWrites() {
-        when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
         when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
         when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -577,13 +330,15 @@ class InventoryServiceTest {
         @Test
         @DisplayName("reserves every line in one transaction and stores the lines")
         void reservesAllLinesAndStoresThem() {
-            setupLockAndTransactionMocks();
+            setupTransactionOnly();
             stubStockWrites();
-            InventoryItem item1 = createTestInventoryItem(PRODUCT_ID, 100, 0, 100);
-            InventoryItem item2 = createTestInventoryItem(PRODUCT_2, 50, 0, 50);
+            InventoryItem item1 = createTestInventoryItem(PRODUCT_ID, 95, 5, 100);
+            InventoryItem item2 = createTestInventoryItem(PRODUCT_2, 47, 3, 50);
             when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RESERVED"))).thenReturn(1);
-            when(inventoryItemRepository.findByProductIdForUpdate(PRODUCT_ID)).thenReturn(Optional.of(item1));
-            when(inventoryItemRepository.findByProductIdForUpdate(PRODUCT_2)).thenReturn(Optional.of(item2));
+            when(inventoryItemRepository.reserveAvailable(PRODUCT_ID, 5)).thenReturn(1);
+            when(inventoryItemRepository.reserveAvailable(PRODUCT_2, 3)).thenReturn(1);
+            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item1));
+            when(inventoryItemRepository.findByProductId(PRODUCT_2)).thenReturn(Optional.of(item2));
 
             Map<Long, Integer> quantities = new LinkedHashMap<>();
             quantities.put(PRODUCT_2, 3);
@@ -603,18 +358,17 @@ class InventoryServiceTest {
                     .extracting(ReservationLine::getProductId, ReservationLine::getQuantity)
                     .containsExactly(tuple(PRODUCT_ID, 5), tuple(PRODUCT_2, 3));
 
-            // Locks are taken in product-id order and all released afterwards
-            InOrder inOrder = inOrder(distributedLockService);
-            inOrder.verify(distributedLockService).acquireLock(eq("inventory:lock:product:1"), eq(LOCK_VALUE), any(Duration.class));
-            inOrder.verify(distributedLockService).acquireLock(eq("inventory:lock:product:2"), eq(LOCK_VALUE), any(Duration.class));
-            verify(distributedLockService).releaseLock("inventory:lock:product:1", LOCK_VALUE);
-            verify(distributedLockService).releaseLock("inventory:lock:product:2", LOCK_VALUE);
+            InOrder updates = inOrder(inventoryItemRepository);
+            updates.verify(inventoryItemRepository).reserveAvailable(PRODUCT_ID, 5);
+            updates.verify(inventoryItemRepository).findByProductId(PRODUCT_ID);
+            updates.verify(inventoryItemRepository).reserveAvailable(PRODUCT_2, 3);
+
         }
 
         @Test
         @DisplayName("replays an existing RESERVED reservation without touching stock")
         void replaysExistingReservation() {
-            setupLockAndTransactionMocks();
+            setupTransactionOnly();
             when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RESERVED"))).thenReturn(0);
             when(reservationRepository.findByOrderId(ORDER_ID))
                     .thenReturn(Optional.of(new Reservation("existing", ORDER_ID, ReservationStatus.RESERVED)));
@@ -623,14 +377,14 @@ class InventoryServiceTest {
 
             assertThat(result.replayed()).isTrue();
             assertThat(result.reservationId()).isEqualTo("existing");
-            verify(inventoryItemRepository, never()).findByProductIdForUpdate(anyLong());
+            verify(inventoryItemRepository, never()).findByProductId(anyLong());
             verify(reservationLineRepository, never()).save(any(ReservationLine.class));
         }
 
         @Test
         @DisplayName("rejects a reserve after a RELEASED tombstone without touching stock")
         void rejectsAfterReleasedTombstone() {
-            setupLockAndTransactionMocks();
+            setupTransactionOnly();
             when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RESERVED"))).thenReturn(0);
             when(reservationRepository.findByOrderId(ORDER_ID))
                     .thenReturn(Optional.of(new Reservation("tomb", ORDER_ID, ReservationStatus.RELEASED)));
@@ -638,33 +392,17 @@ class InventoryServiceTest {
             assertThatThrownBy(() -> inventoryService.reserveOrder(ORDER_ID, Map.of(PRODUCT_ID, 5)))
                     .isInstanceOf(ReservationReleasedException.class);
 
-            verify(inventoryItemRepository, never()).findByProductIdForUpdate(anyLong());
-            verify(distributedLockService).releaseLock("inventory:lock:product:1", LOCK_VALUE);
+            verify(inventoryItemRepository, never()).findByProductId(anyLong());
         }
 
-        @Test
-        @DisplayName("fails fast and releases already-acquired locks when a lock is unavailable")
-        void releasesAcquiredLocksWhenALockIsUnavailable() {
-            when(distributedLockService.generateLockValue()).thenReturn(LOCK_VALUE);
-            when(distributedLockService.acquireLock(eq("inventory:lock:product:1"), eq(LOCK_VALUE), any(Duration.class)))
-                    .thenReturn(true);
-            when(distributedLockService.acquireLock(eq("inventory:lock:product:2"), eq(LOCK_VALUE), any(Duration.class)))
-                    .thenReturn(false);
 
-            assertThatThrownBy(() -> inventoryService.reserveOrder(ORDER_ID, Map.of(PRODUCT_ID, 1, PRODUCT_2, 1)))
-                    .isInstanceOf(LockAcquisitionException.class);
-
-            verify(distributedLockService).releaseLock("inventory:lock:product:1", LOCK_VALUE);
-            verify(distributedLockService, never()).releaseLock("inventory:lock:product:2", LOCK_VALUE);
-            verify(transactionTemplate, never()).execute(any());
-        }
 
         @Test
         @DisplayName("propagates InsufficientStockException so the whole transaction rolls back")
         void propagatesInsufficientStock() {
-            setupLockAndTransactionMocks();
+            setupTransactionOnly();
             when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RESERVED"))).thenReturn(1);
-            when(inventoryItemRepository.findByProductIdForUpdate(PRODUCT_ID))
+            when(inventoryItemRepository.findByProductId(PRODUCT_ID))
                     .thenReturn(Optional.of(createTestInventoryItem(PRODUCT_ID, 2, 0, 2)));
 
             assertThatThrownBy(() -> inventoryService.reserveOrder(ORDER_ID, Map.of(PRODUCT_ID, 5)))
@@ -675,28 +413,15 @@ class InventoryServiceTest {
         @Test
         @DisplayName("throws ResourceNotFoundException for an unknown product")
         void throwsNotFoundForUnknownProduct() {
-            setupLockAndTransactionMocks();
+            setupTransactionOnly();
             when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RESERVED"))).thenReturn(1);
-            when(inventoryItemRepository.findByProductIdForUpdate(PRODUCT_ID)).thenReturn(Optional.empty());
+            when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> inventoryService.reserveOrder(ORDER_ID, Map.of(PRODUCT_ID, 5)))
                     .isInstanceOf(ResourceNotFoundException.class);
         }
 
-        @Test
-        @DisplayName("still succeeds (row locks held) when a Redis lock expired during the transaction")
-        void succeedsWhenRedisLockExpired() {
-            setupLockAndTransactionMocks();
-            stubStockWrites();
-            when(distributedLockService.isLockHeld(anyString(), eq(LOCK_VALUE))).thenReturn(false);
-            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RESERVED"))).thenReturn(1);
-            when(inventoryItemRepository.findByProductIdForUpdate(PRODUCT_ID))
-                    .thenReturn(Optional.of(createTestInventoryItem(PRODUCT_ID, 100, 0, 100)));
 
-            InventoryService.ReservationResult result = inventoryService.reserveOrder(ORDER_ID, Map.of(PRODUCT_ID, 5));
-
-            assertThat(result.replayed()).isFalse();
-        }
 
         @Test
         @DisplayName("rejects empty or non-positive lines before taking any lock")
@@ -705,7 +430,6 @@ class InventoryServiceTest {
                     .isInstanceOf(IllegalArgumentException.class);
             assertThatThrownBy(() -> inventoryService.reserveOrder(ORDER_ID, Map.of(PRODUCT_ID, 0)))
                     .isInstanceOf(IllegalArgumentException.class);
-            verify(distributedLockService, never()).acquireLock(anyString(), anyString(), any(Duration.class));
         }
     }
 
@@ -732,7 +456,6 @@ class InventoryServiceTest {
             verify(stockMovementRepository).save(stockMovementCaptor.capture());
             assertThat(stockMovementCaptor.getValue().getType()).isEqualTo(StockMovementType.RELEASE);
             assertThat(stockMovementCaptor.getValue().getQuantity()).isEqualTo(4);
-            verify(distributedLockService, never()).acquireLock(anyString(), anyString(), any(Duration.class));
         }
 
         @Test
@@ -816,5 +539,30 @@ class InventoryServiceTest {
             assertThatThrownBy(() -> inventoryService.releaseReservation(ORDER_ID))
                     .isInstanceOf(IllegalStateException.class);
         }
+    }    @Test
+    void retriesDatabaseContentionWithBoundedAttempts() {
+        when(transactionTemplate.execute(any())).thenThrow(new ConcurrencyFailureException("deadlock"));
+        assertThatThrownBy(() -> inventoryService.reserveOrder(ORDER_ID, Map.of(PRODUCT_ID, 1)))
+                .isInstanceOf(ConcurrencyFailureException.class);
+        verify(transactionTemplate, times(3)).execute(any());
     }
+
+    @Test
+    void restockGuardsRejectOversizedMutation() {
+        assertThatThrownBy(() -> inventoryService.restockItem(PRODUCT_ID, 1000001, null))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> inventoryService.bulkRestock(java.util.Collections.nCopies(101, PRODUCT_ID), 1, null))
+                .isInstanceOf(IllegalArgumentException.class);
+        verify(inventoryItemRepository, never()).save(any());
+    }
+    @Test
+    void rejectsQuantityOverflowBeforeMutatingStock() {
+        InventoryItem item = createTestInventoryItem(PRODUCT_ID, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
+        when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
+        assertThatThrownBy(() -> inventoryService.restockItem(PRODUCT_ID, 1, null))
+                .isInstanceOf(com.robomart.common.exception.ValidationException.class);
+        assertThat(item.getAvailableQuantity()).isEqualTo(Integer.MAX_VALUE);
+        verify(inventoryItemRepository, never()).save(any());
+    }
+
 }

@@ -54,6 +54,8 @@ spec:
         - secretRef:
             name: inventory-db-secret
         env:
+        - name: MANAGEMENT_ENDPOINT_HEALTH_GROUP_READINESS_INCLUDE
+          value: "readinessState,db,kafka"
         - name: GRPC_SERVER_PORT
           value: "9094"
         volumeMounts:
