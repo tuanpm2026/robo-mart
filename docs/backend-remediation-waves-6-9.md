@@ -212,3 +212,6 @@ Executed on JDK25, with the Java language server temporarily suspended/resumed d
 - Both Compose configurations and Kustomize base/production/ingress-tls — passed.
 
 The payment integration fixtures now start PostgreSQL only because this service owns no Kafka, Redis or Elasticsearch behavior. No coverage or quality gates were disabled. The final verification completed in 27 seconds without test failures or forced JVM shutdown.
+
+
+Inventory publisher follow-up: `./mvnw clean verify -pl :inventory-service -DskipE2ETests` passed with 75 unit + 48 integration tests and coverage. A real Kafka stock-reserved round trip now verifies the persisted outbox UUID and payload. Test-only background polling starts after an hour; delivery tests explicitly invoke the real poller, keeping unrelated persistence contexts isolated. Cached-context JVM teardown still exceeds Surefire's grace period; test success does not imply that warning is resolved.

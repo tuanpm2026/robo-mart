@@ -136,3 +136,20 @@ management:
     health:
       # This profile intentionally disables Kafka listeners in PostgreSQL-only tests.
       validate-group-membership: false
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+server:
+  shutdown: immediate
+management:
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
+outbox:
+  # Persistence tests invoke the real poller explicitly; unrelated contexts must not publish in the background.
+  initial-delay-ms: 3600000

@@ -49,6 +49,10 @@ class OrderLifecycleKafkaIT {
     @Value("${spring.kafka.bootstrap-servers}") private String bootstrap;
     @Autowired private KafkaTemplate<String, SpecificRecord> kafka;
     @MockitoSpyBean private OrderLifecycleService lifecycle;
+    @Autowired private com.robomart.inventory.service.InventoryService inventory;
+    @Autowired private com.robomart.inventory.repository.InventoryItemRepository items;
+    @Autowired private com.robomart.inventory.service.OutboxPollingService poller;
+    @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     private KafkaConsumer<String, byte[]> dltConsumer() {
         KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(Map.of(
@@ -107,4 +111,41 @@ class OrderLifecycleKafkaIT {
             assertThat(awaitRecord(consumer, key).value()).isEqualTo(corrupt);
         }
     }
+    @Test
+    void realOutboxPublishesThePersistedEventIdentityToKafka() throws Exception {
+        long product = 12345678L;
+        var item = new com.robomart.inventory.entity.InventoryItem();
+        item.setProductId(product);
+        item.setAvailableQuantity(10);
+        item.setReservedQuantity(0);
+        item.setTotalQuantity(10);
+        item.setLowStockThreshold(1);
+        items.saveAndFlush(item);
+        String order = UUID.randomUUID().toString();
+        inventory.reserveOrder(order, Map.of(product, 2));
+        String eventId = jdbc.queryForObject("SELECT event_id::text FROM outbox_events "
+                + "WHERE event_type='stock_reserved' AND payload->>'orderId'=?", String.class, order);
+        String topic = "inventory.stock.reserved";
+        try (var consumer = new KafkaConsumer<String, byte[]>(Map.of(
+                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap,
+                ConsumerConfig.GROUP_ID_CONFIG, "inventory-stock-test-" + UUID.randomUUID(),
+                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class,
+                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class,
+                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest"));
+                var deserializer = new io.confluent.kafka.serializers.KafkaAvroDeserializer()) {
+            consumer.subscribe(java.util.List.of(topic));
+            deserializer.configure(Map.of("schema.registry.url", "mock://test-schema-registry", "specific.avro.reader", true), false);
+            await().atMost(15, TimeUnit.SECONDS).untilAsserted(() -> {
+                poller.pollAndPublish();
+                assertThat(jdbc.queryForObject("SELECT published FROM outbox_events WHERE event_id::text=?",
+                        Boolean.class, eventId)).isTrue();
+            });
+            var received = awaitRecord(consumer, String.valueOf(product));
+            var event = (com.robomart.events.inventory.StockReservedEvent) deserializer.deserialize(topic, received.value());
+            assertThat(event.getEventId()).isEqualTo(eventId);
+            assertThat(event.getOrderId()).isEqualTo(order);
+            assertThat(event.getQuantity()).isEqualTo(2);
+        }
+    }
+
 }
