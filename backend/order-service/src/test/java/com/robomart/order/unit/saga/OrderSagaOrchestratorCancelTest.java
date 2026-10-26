@@ -78,6 +78,7 @@ class OrderSagaOrchestratorCancelTest {
         });
         lenient().when(sagaAuditLogRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         lenient().when(orderRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
+        lenient().when(orderRepository.transitionStatus(any(), any(), any())).thenReturn(true);
         lenient().when(orderStatusHistoryRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         lenient().when(outboxEventRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         lenient().when(releaseInventoryStep.getName()).thenReturn("ReleaseInventory");

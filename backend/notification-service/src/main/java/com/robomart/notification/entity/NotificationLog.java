@@ -57,9 +57,18 @@ public class NotificationLog {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    /** Last claim/status transition; a PENDING row older than the claim timeout may be re-claimed. */
+    @Column(name = "updated_at", nullable = false)
+    private Instant updatedAt;
+
+    /** Number of delivery claims (first attempt plus re-claims after FAILED / stale PENDING). */
+    @Column(nullable = false)
+    private int attempts = 1;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = Instant.now();
+        this.updatedAt = this.createdAt;
     }
 
     public Long getId() {
@@ -148,5 +157,21 @@ public class NotificationLog {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public int getAttempts() {
+        return attempts;
+    }
+
+    public void setAttempts(int attempts) {
+        this.attempts = attempts;
     }
 }

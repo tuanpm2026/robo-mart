@@ -1,6 +1,8 @@
 package com.robomart.cart.unit;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +12,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.robomart.cart.client.ProductSnapshot;
 import com.robomart.cart.config.CartProperties;
 import com.robomart.cart.dto.AddCartItemRequest;
 import com.robomart.cart.dto.CartResponse;
@@ -18,14 +21,19 @@ import com.robomart.cart.entity.Cart;
 import com.robomart.cart.entity.CartItem;
 import com.robomart.cart.exception.CartItemNotFoundException;
 import com.robomart.cart.exception.CartNotFoundException;
+import com.robomart.cart.exception.ProductNotFoundException;
 import com.robomart.cart.mapper.CartMapper;
 import com.robomart.cart.mapper.CartMapperImpl;
 import com.robomart.cart.repository.CartRepository;
 import com.robomart.cart.service.CartService;
+import com.robomart.cart.service.ProductCatalogService;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -34,6 +42,12 @@ class CartServiceTest {
 
     @Mock
     private CartRepository cartRepository;
+
+    @Mock
+    private ProductCatalogService productCatalogService;
+
+    /** Server-side product catalog as seen through product-service. */
+    private final Map<Long, ProductSnapshot> catalog = new HashMap<>();
 
     private CartMapper cartMapper;
     private CartProperties cartProperties;
@@ -44,12 +58,72 @@ class CartServiceTest {
         cartMapper = new CartMapperImpl();
         cartProperties = new CartProperties();
         cartProperties.setTtlMinutes(1440);
-        cartService = new CartService(cartRepository, cartMapper, cartProperties);
+        cartService = new CartService(cartRepository, cartMapper, cartProperties, productCatalogService);
+        catalog.put(1L, new ProductSnapshot(1L, "Product", new BigDecimal("10.00")));
+        catalog.put(2L, new ProductSnapshot(2L, "Product B", new BigDecimal("20.00")));
+        lenient().when(productCatalogService.getProduct(anyLong())).thenAnswer(inv -> {
+            Long productId = inv.getArgument(0);
+            ProductSnapshot product = catalog.get(productId);
+            if (product == null) {
+                throw new ProductNotFoundException(productId);
+            }
+            return product;
+        });
+    }
+
+    @Test
+    void shouldUseServerPriceAndNameAndIgnoreClientSuppliedValues() {
+        String cartId = "g:550e8400-e29b-41d4-a716-446655440000";
+        catalog.put(7L, new ProductSnapshot(7L, "Server Name", new BigDecimal("99.99")));
+        var request = new AddCartItemRequest(7L, "Client Name", new BigDecimal("0.01"), 2);
+        when(cartRepository.findById(cartId)).thenReturn(Optional.empty());
+        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CartResponse response = cartService.addItem(cartId, request, null);
+
+        assertThat(response.items().getFirst().productName()).isEqualTo("Server Name");
+        assertThat(response.items().getFirst().price()).isEqualByComparingTo("99.99");
+        assertThat(response.totalPrice()).isEqualByComparingTo("199.98");
+    }
+
+    @Test
+    void shouldRefreshExistingLinePriceFromServerOnAdd() {
+        String cartId = "g:550e8400-e29b-41d4-a716-446655440000";
+        Cart existingCart = new Cart(cartId);
+        existingCart.addItem(new CartItem(2L, "Stale", new BigDecimal("0.01"), 1));
+        when(cartRepository.findById(cartId)).thenReturn(Optional.of(existingCart));
+        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CartResponse response = cartService.addItem(cartId, new AddCartItemRequest(2L, 1), null);
+
+        assertThat(response.items().getFirst().price()).isEqualByComparingTo("20.00");
+        assertThat(response.totalPrice()).isEqualByComparingTo("40.00");
+    }
+
+    @Test
+    void shouldRejectUnknownProductWithoutTouchingCart() {
+        var request = new AddCartItemRequest(404L, "Ghost", new BigDecimal("1.00"), 1);
+
+        assertThatThrownBy(() -> cartService.addItem("g:550e8400-e29b-41d4-a716-446655440000", request, null))
+                .isInstanceOf(ProductNotFoundException.class);
+        verify(cartRepository, never()).save(any(Cart.class));
+    }
+
+    @Test
+    void shouldReturnPublicCartIdWithoutNamespacePrefix() {
+        String cartKey = "u:user-42";
+        when(cartRepository.findById(cartKey)).thenReturn(Optional.empty());
+        when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CartResponse response = cartService.addItem(cartKey, new AddCartItemRequest(1L, 1), "user-42");
+
+        assertThat(response.cartId()).isEqualTo("user-42");
     }
 
     @Test
     void shouldCreateNewCartWhenAddingItemToNonExistentCart() {
         String cartId = "cart-123";
+        catalog.put(1L, new ProductSnapshot(1L, "Test Product", new BigDecimal("29.99")));
         var request = new AddCartItemRequest(1L, "Test Product", new BigDecimal("29.99"), 2);
         when(cartRepository.findById(cartId)).thenReturn(Optional.empty());
         when(cartRepository.save(any(Cart.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -280,7 +354,8 @@ class CartServiceTest {
     @Test
     void shouldUseTtlFromProperties() {
         cartProperties.setTtlMinutes(30);
-        CartService serviceWith30MinTtl = new CartService(cartRepository, cartMapper, cartProperties);
+        CartService serviceWith30MinTtl = new CartService(cartRepository, cartMapper, cartProperties,
+                productCatalogService);
 
         String cartId = "cart-custom-ttl";
         var request = new AddCartItemRequest(1L, "Product", new BigDecimal("10.00"), 1);

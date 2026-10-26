@@ -39,6 +39,10 @@ spec:
         ports:
         - containerPort: 8080
           name: http
+        # Actuator (health probes, Prometheus) — cluster-internal only, exposed via the
+        # ClusterIP api-gateway-management Service, never through the LB/Ingress.
+        - containerPort: 8090
+          name: management
         resources:
           requests:
             memory: "256Mi"
@@ -55,7 +59,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
-            port: 8080
+            port: management
           initialDelaySeconds: 90
           periodSeconds: 10
           timeoutSeconds: 5
@@ -63,7 +67,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /actuator/health/readiness
-            port: 8080
+            port: management
           initialDelaySeconds: 60
           periodSeconds: 5
           timeoutSeconds: 3

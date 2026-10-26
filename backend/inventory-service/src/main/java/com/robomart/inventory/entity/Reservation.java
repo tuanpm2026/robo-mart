@@ -20,7 +20,9 @@ import com.robomart.inventory.enums.ReservationStatus;
  * Per-order inventory reservation record. The {@code orderId} unique constraint is the idempotency
  * key: a reserve gRPC call that is retried (or replayed after a saga-step timeout) finds the
  * existing row and replays the original {@code reservationId} instead of decrementing stock again,
- * and a release call short-circuits once the row is {@link ReservationStatus#RELEASED}.
+ * and a release call short-circuits once the row is {@link ReservationStatus#RELEASED}. A release
+ * for an order with no reservation inserts a RELEASED tombstone row, so a late reserve for that
+ * order is rejected. The reserved quantities live in {@link ReservationLine}.
  */
 @Entity
 @Table(name = "reservations")

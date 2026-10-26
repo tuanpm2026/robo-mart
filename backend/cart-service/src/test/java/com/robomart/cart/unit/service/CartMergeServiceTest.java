@@ -18,12 +18,14 @@ import com.robomart.cart.mapper.CartMapper;
 import com.robomart.cart.mapper.CartMapperImpl;
 import com.robomart.cart.repository.CartRepository;
 import com.robomart.cart.service.CartMergeService;
+import com.robomart.common.exception.ValidationException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -38,8 +40,10 @@ class CartMergeServiceTest {
 
     private CartMergeService cartMergeService;
 
-    private static final String ANONYMOUS_ID = "anon-uuid-123";
+    private static final String ANONYMOUS_ID = "550e8400-e29b-41d4-a716-446655440000";
+    private static final String GUEST_KEY = "g:" + ANONYMOUS_ID;
     private static final String AUTH_USER_ID = "auth-user-uuid-456";
+    private static final String USER_KEY = "u:" + AUTH_USER_ID;
 
     @BeforeEach
     void setUp() {
@@ -50,36 +54,36 @@ class CartMergeServiceTest {
 
     @Test
     void shouldMergeAnonymousCartIntoAuthenticatedCartWhenBothExist() {
-        Cart anonCart = createCart(ANONYMOUS_ID);
+        Cart anonCart = createCart(GUEST_KEY);
         anonCart.addItem(new CartItem(1L, "Product A", BigDecimal.valueOf(10.00), 2));
         anonCart.addItem(new CartItem(2L, "Product B", BigDecimal.valueOf(20.00), 1));
 
-        Cart authCart = createCart(AUTH_USER_ID);
+        Cart authCart = createCart(USER_KEY);
         authCart.setUserId(AUTH_USER_ID);
         authCart.addItem(new CartItem(3L, "Product C", BigDecimal.valueOf(30.00), 1));
 
-        when(cartRepository.findById(ANONYMOUS_ID)).thenReturn(Optional.of(anonCart));
-        when(cartRepository.findById(AUTH_USER_ID)).thenReturn(Optional.of(authCart));
+        when(cartRepository.findById(GUEST_KEY)).thenReturn(Optional.of(anonCart));
+        when(cartRepository.findById(USER_KEY)).thenReturn(Optional.of(authCart));
 
         CartResponse result = cartMergeService.mergeCart(ANONYMOUS_ID, AUTH_USER_ID);
 
         assertThat(result.cartId()).isEqualTo(AUTH_USER_ID);
         assertThat(result.items()).hasSize(3);
         verify(cartRepository).save(authCart);
-        verify(cartRepository).deleteById(ANONYMOUS_ID);
+        verify(cartRepository).deleteById(GUEST_KEY);
     }
 
     @Test
     void shouldSumQuantitiesWhenDuplicateProductExists() {
-        Cart anonCart = createCart(ANONYMOUS_ID);
+        Cart anonCart = createCart(GUEST_KEY);
         anonCart.addItem(new CartItem(1L, "Product A", BigDecimal.valueOf(10.00), 3));
 
-        Cart authCart = createCart(AUTH_USER_ID);
+        Cart authCart = createCart(USER_KEY);
         authCart.setUserId(AUTH_USER_ID);
         authCart.addItem(new CartItem(1L, "Product A", BigDecimal.valueOf(10.00), 2));
 
-        when(cartRepository.findById(ANONYMOUS_ID)).thenReturn(Optional.of(anonCart));
-        when(cartRepository.findById(AUTH_USER_ID)).thenReturn(Optional.of(authCart));
+        when(cartRepository.findById(GUEST_KEY)).thenReturn(Optional.of(anonCart));
+        when(cartRepository.findById(USER_KEY)).thenReturn(Optional.of(authCart));
 
         CartResponse result = cartMergeService.mergeCart(ANONYMOUS_ID, AUTH_USER_ID);
 
@@ -90,15 +94,15 @@ class CartMergeServiceTest {
 
     @Test
     void shouldAddUniqueProductsWhenNoDuplicates() {
-        Cart anonCart = createCart(ANONYMOUS_ID);
+        Cart anonCart = createCart(GUEST_KEY);
         anonCart.addItem(new CartItem(1L, "Product A", BigDecimal.valueOf(10.00), 1));
 
-        Cart authCart = createCart(AUTH_USER_ID);
+        Cart authCart = createCart(USER_KEY);
         authCart.setUserId(AUTH_USER_ID);
         authCart.addItem(new CartItem(2L, "Product B", BigDecimal.valueOf(20.00), 1));
 
-        when(cartRepository.findById(ANONYMOUS_ID)).thenReturn(Optional.of(anonCart));
-        when(cartRepository.findById(AUTH_USER_ID)).thenReturn(Optional.of(authCart));
+        when(cartRepository.findById(GUEST_KEY)).thenReturn(Optional.of(anonCart));
+        when(cartRepository.findById(USER_KEY)).thenReturn(Optional.of(authCart));
 
         CartResponse result = cartMergeService.mergeCart(ANONYMOUS_ID, AUTH_USER_ID);
 
@@ -107,25 +111,25 @@ class CartMergeServiceTest {
 
     @Test
     void shouldDeleteAnonymousCartAfterSuccessfulMerge() {
-        Cart anonCart = createCart(ANONYMOUS_ID);
+        Cart anonCart = createCart(GUEST_KEY);
         anonCart.addItem(new CartItem(1L, "Product A", BigDecimal.valueOf(10.00), 1));
 
-        when(cartRepository.findById(ANONYMOUS_ID)).thenReturn(Optional.of(anonCart));
-        when(cartRepository.findById(AUTH_USER_ID)).thenReturn(Optional.empty());
+        when(cartRepository.findById(GUEST_KEY)).thenReturn(Optional.of(anonCart));
+        when(cartRepository.findById(USER_KEY)).thenReturn(Optional.empty());
 
         cartMergeService.mergeCart(ANONYMOUS_ID, AUTH_USER_ID);
 
-        verify(cartRepository).deleteById(ANONYMOUS_ID);
+        verify(cartRepository).deleteById(GUEST_KEY);
     }
 
     @Test
     void shouldReturnAuthenticatedCartWhenAnonymousCartNotFound() {
-        Cart authCart = createCart(AUTH_USER_ID);
+        Cart authCart = createCart(USER_KEY);
         authCart.setUserId(AUTH_USER_ID);
         authCart.addItem(new CartItem(1L, "Product A", BigDecimal.valueOf(10.00), 2));
 
-        when(cartRepository.findById(ANONYMOUS_ID)).thenReturn(Optional.empty());
-        when(cartRepository.findById(AUTH_USER_ID)).thenReturn(Optional.of(authCart));
+        when(cartRepository.findById(GUEST_KEY)).thenReturn(Optional.empty());
+        when(cartRepository.findById(USER_KEY)).thenReturn(Optional.of(authCart));
 
         CartResponse result = cartMergeService.mergeCart(ANONYMOUS_ID, AUTH_USER_ID);
 
@@ -136,66 +140,87 @@ class CartMergeServiceTest {
 
     @Test
     void shouldReturnAuthenticatedCartWhenAnonymousCartEmpty() {
-        Cart anonCart = createCart(ANONYMOUS_ID);
+        Cart anonCart = createCart(GUEST_KEY);
         // empty — no items
 
-        Cart authCart = createCart(AUTH_USER_ID);
+        Cart authCart = createCart(USER_KEY);
         authCart.setUserId(AUTH_USER_ID);
         authCart.addItem(new CartItem(1L, "Product A", BigDecimal.valueOf(10.00), 1));
 
-        when(cartRepository.findById(ANONYMOUS_ID)).thenReturn(Optional.of(anonCart));
-        when(cartRepository.findById(AUTH_USER_ID)).thenReturn(Optional.of(authCart));
+        when(cartRepository.findById(GUEST_KEY)).thenReturn(Optional.of(anonCart));
+        when(cartRepository.findById(USER_KEY)).thenReturn(Optional.of(authCart));
 
         CartResponse result = cartMergeService.mergeCart(ANONYMOUS_ID, AUTH_USER_ID);
 
         assertThat(result.cartId()).isEqualTo(AUTH_USER_ID);
         assertThat(result.items()).hasSize(1);
-        verify(cartRepository).deleteById(ANONYMOUS_ID);
+        verify(cartRepository).deleteById(GUEST_KEY);
     }
 
     @Test
-    void shouldNoOpWhenAnonymousIdEqualsAuthenticatedId() {
-        Cart cart = createCart(AUTH_USER_ID);
-        cart.setUserId(AUTH_USER_ID);
-        cart.addItem(new CartItem(1L, "Product A", BigDecimal.valueOf(10.00), 1));
+    void shouldRejectNonUuidGuestIdSuchAsAnotherUsersSub() {
+        // IDOR guard: a victim's user id can never be used as a merge source
+        assertThatThrownBy(() -> cartMergeService.mergeCart("victim-user-sub", AUTH_USER_ID))
+                .isInstanceOf(ValidationException.class);
+        verifyNoInteractions(cartRepository);
+    }
 
-        when(cartRepository.findById(AUTH_USER_ID)).thenReturn(Optional.of(cart));
+    @Test
+    void shouldOnlyReadAndDeleteGuestNamespaceEvenWhenIdLooksLikeUserSub() {
+        // Keycloak subs are UUIDs too: a UUID guest id must still resolve to g:{uuid}, never u:{uuid}
+        String victimSub = "123e4567-e89b-12d3-a456-426614174000";
+        when(cartRepository.findById("g:" + victimSub)).thenReturn(Optional.empty());
+        when(cartRepository.findById(USER_KEY)).thenReturn(Optional.of(createCart(USER_KEY)));
 
-        CartResponse result = cartMergeService.mergeCart(AUTH_USER_ID, AUTH_USER_ID);
+        cartMergeService.mergeCart(victimSub, AUTH_USER_ID);
 
-        assertThat(result.cartId()).isEqualTo(AUTH_USER_ID);
+        verify(cartRepository, never()).findById("u:" + victimSub);
         verify(cartRepository, never()).deleteById(any());
-        // findById called once for self-merge getOrCreateCart, never for merge logic
     }
 
     @Test
-    void shouldCapQuantityAt9999WhenMergingDuplicates() {
-        Cart anonCart = createCart(ANONYMOUS_ID);
-        anonCart.addItem(new CartItem(1L, "Product A", BigDecimal.valueOf(10.00), 5000));
+    void shouldReturnOwnCartWhenGuestIdEqualsOwnSub() {
+        String ownSub = "123e4567-e89b-12d3-a456-426614174000";
+        Cart userCart = createCart("u:" + ownSub);
+        userCart.addItem(new CartItem(1L, "Product A", BigDecimal.valueOf(10.00), 1));
+        when(cartRepository.findById("g:" + ownSub)).thenReturn(Optional.empty());
+        when(cartRepository.findById("u:" + ownSub)).thenReturn(Optional.of(userCart));
 
-        Cart authCart = createCart(AUTH_USER_ID);
+        CartResponse result = cartMergeService.mergeCart(ownSub, ownSub);
+
+        assertThat(result.cartId()).isEqualTo(ownSub);
+        assertThat(result.items()).hasSize(1);
+        verify(cartRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void shouldCapQuantityWhenMergingDuplicates() {
+        Cart anonCart = createCart(GUEST_KEY);
+        anonCart.addItem(new CartItem(1L, "Product A", BigDecimal.valueOf(10.00), 600));
+
+        Cart authCart = createCart(USER_KEY);
         authCart.setUserId(AUTH_USER_ID);
-        authCart.addItem(new CartItem(1L, "Product A", BigDecimal.valueOf(10.00), 5000));
+        authCart.addItem(new CartItem(1L, "Product A", BigDecimal.valueOf(10.00), 600));
 
-        when(cartRepository.findById(ANONYMOUS_ID)).thenReturn(Optional.of(anonCart));
-        when(cartRepository.findById(AUTH_USER_ID)).thenReturn(Optional.of(authCart));
+        when(cartRepository.findById(GUEST_KEY)).thenReturn(Optional.of(anonCart));
+        when(cartRepository.findById(USER_KEY)).thenReturn(Optional.of(authCart));
 
         CartResponse result = cartMergeService.mergeCart(ANONYMOUS_ID, AUTH_USER_ID);
 
         assertThat(result.items()).hasSize(1);
-        assertThat(result.items().getFirst().quantity()).isEqualTo(9999);
+        assertThat(result.items().getFirst().quantity()).isEqualTo(Cart.MAX_ITEM_QUANTITY);
     }
 
     @Test
     void shouldRefreshTtlOnMergedCart() {
-        Cart anonCart = createCart(ANONYMOUS_ID);
+        Cart anonCart = createCart(GUEST_KEY);
         anonCart.addItem(new CartItem(1L, "Product A", BigDecimal.valueOf(10.00), 1));
 
-        Cart authCart = createCart(AUTH_USER_ID);
+        Cart authCart = createCart(USER_KEY);
         authCart.setUserId(AUTH_USER_ID);
 
-        when(cartRepository.findById(ANONYMOUS_ID)).thenReturn(Optional.of(anonCart));
-        when(cartRepository.findById(AUTH_USER_ID)).thenReturn(Optional.of(authCart));
+        when(cartRepository.findById(GUEST_KEY)).thenReturn(Optional.of(anonCart));
+        when(cartRepository.findById(USER_KEY)).thenReturn(Optional.of(authCart));
 
         cartMergeService.mergeCart(ANONYMOUS_ID, AUTH_USER_ID);
 
@@ -206,12 +231,12 @@ class CartMergeServiceTest {
 
     @Test
     void shouldCreateNewCartForAuthenticatedUserWhenNoneExists() {
-        Cart anonCart = createCart(ANONYMOUS_ID);
+        Cart anonCart = createCart(GUEST_KEY);
         anonCart.addItem(new CartItem(1L, "Product A", BigDecimal.valueOf(10.00), 2));
         anonCart.addItem(new CartItem(2L, "Product B", BigDecimal.valueOf(20.00), 1));
 
-        when(cartRepository.findById(ANONYMOUS_ID)).thenReturn(Optional.of(anonCart));
-        when(cartRepository.findById(AUTH_USER_ID)).thenReturn(Optional.empty());
+        when(cartRepository.findById(GUEST_KEY)).thenReturn(Optional.of(anonCart));
+        when(cartRepository.findById(USER_KEY)).thenReturn(Optional.empty());
 
         CartResponse result = cartMergeService.mergeCart(ANONYMOUS_ID, AUTH_USER_ID);
 
@@ -222,7 +247,7 @@ class CartMergeServiceTest {
         verify(cartRepository).save(captor.capture());
         Cart savedCart = captor.getValue();
         assertThat(savedCart.getUserId()).isEqualTo(AUTH_USER_ID);
-        assertThat(savedCart.getId()).isEqualTo(AUTH_USER_ID);
+        assertThat(savedCart.getId()).isEqualTo(USER_KEY);
     }
 
     private Cart createCart(String id) {

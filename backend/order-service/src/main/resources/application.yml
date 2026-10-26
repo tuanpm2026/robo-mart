@@ -49,6 +49,17 @@ spring:
             enabled: false
   lifecycle:
     timeout-per-shutdown-phase: 25s
+  http:
+    serviceclient:
+      # Declarative ProductCatalogClient (@ImportHttpServices group) used to price orders server-side.
+      product-service:
+        base-url: ${robomart.product-service.url}
+        connect-timeout: 2s
+        read-timeout: 3s
+
+robomart:
+  product-service:
+    url: ${PRODUCT_SERVICE_URL:http://localhost:8081}
 
 saga:
   payment-recovery:

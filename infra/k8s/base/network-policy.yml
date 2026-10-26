@@ -7,6 +7,7 @@
 #   - api-gateway        → all services (REST proxy; the only JWT/RBAC-enforcing edge)
 #   - order-service      → inventory:9094, payment:9095 (gRPC saga calls)
 #   - notification-service → product:8081, order:8083 (REST clients)
+#   - order-service, cart-service → product:8081 (REST server-side pricing)
 #   - monitoring ns      → all services' HTTP port (Prometheus scrapes /actuator/prometheus)
 # Egress is intentionally NOT restricted, so services keep reaching Postgres/Kafka/
 # Redis/Elasticsearch/Schema Registry/Keycloak without extra rules.
@@ -39,6 +40,12 @@ spec:
         - podSelector:
             matchLabels:
               app: notification-service
+        - podSelector:
+            matchLabels:
+              app: order-service
+        - podSelector:
+            matchLabels:
+              app: cart-service
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: monitoring

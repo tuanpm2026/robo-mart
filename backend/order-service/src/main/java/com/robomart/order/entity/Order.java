@@ -50,6 +50,9 @@ public class Order extends BaseEntity {
     @Column(name = "next_payment_retry_at")
     private Instant nextPaymentRetryAt;
 
+    @Column(name = "idempotency_key", length = 255)
+    private String idempotencyKey;
+
     @Version
     private Integer version;
 
@@ -129,6 +132,14 @@ public class Order extends BaseEntity {
 
     public void setNextPaymentRetryAt(Instant nextPaymentRetryAt) {
         this.nextPaymentRetryAt = nextPaymentRetryAt;
+    }
+
+    public String getIdempotencyKey() {
+        return idempotencyKey;
+    }
+
+    public void setIdempotencyKey(String idempotencyKey) {
+        this.idempotencyKey = idempotencyKey;
     }
 
     public Integer getVersion() {

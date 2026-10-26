@@ -1,14 +1,19 @@
 package com.robomart.cart.integration;
 
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.client.RestClient;
 
+import com.robomart.cart.integration.support.ProductServiceStub;
 import com.robomart.test.IntegrationTest;
 
 import tools.jackson.databind.JsonNode;
@@ -19,6 +24,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 @IntegrationTest
 @TestPropertySource(properties = "robomart.cart.ttl-minutes=1")
 class CartIntegrationIT {
+
+    /** Server-side catalog: the cart must use these names/prices whatever the client sends. */
+    private static final ProductServiceStub PRODUCT_SERVICE = ProductServiceStub.start()
+            .product(1, "Product A", "10.00")
+            .product(2, "Product B", "20.00")
+            .product(3, "Product C", "30.00")
+            .product(5, "Gadget", "25.00")
+            .product(10, "Widget", "15.50")
+            .product(42, "Persistent Item", "99.99")
+            .product(50, "Anon Item", "15.00")
+            .product(88, "Refreshing Item", "12.00")
+            .product(99, "Expiring Item", "5.00")
+            .product(100, "User Cart Item", "49.99");
+
+    @DynamicPropertySource
+    static void productServiceUrl(DynamicPropertyRegistry registry) {
+        registry.add("robomart.product-service.url", PRODUCT_SERVICE::url);
+    }
 
     @LocalServerPort
     private int port;
@@ -55,7 +78,7 @@ class CartIntegrationIT {
         assertThat(response.getBody()).contains("\"traceId\"");
         assertThat(response.getBody()).contains("\"cartId\"");
         assertThat(response.getBody()).contains("\"totalItems\":2");
-        assertThat(response.getBody()).contains("\"Test Product\"");
+        assertThat(response.getBody()).contains("\"Product A\"");
     }
 
     @Test
@@ -185,7 +208,7 @@ class CartIntegrationIT {
                 .toEntity(String.class);
 
         assertThat(getResponse.getBody()).contains("\"totalItems\":1");
-        assertThat(getResponse.getBody()).contains("\"Item B\"");
+        assertThat(getResponse.getBody()).contains("\"Product B\"");
     }
 
     @Test
@@ -218,7 +241,7 @@ class CartIntegrationIT {
     void shouldReturn404WhenGetNonExistentCart() {
         var response = restClient.get()
                 .uri("/api/v1/cart")
-                .header("X-Cart-Id", "nonexistent-cart-id")
+                .header("X-Cart-Id", UUID.randomUUID().toString())
                 .retrieve()
                 .toEntity(String.class);
 
@@ -334,8 +357,8 @@ class CartIntegrationIT {
                 .toEntity(String.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody()).contains("\"Item A\"");
-        assertThat(response.getBody()).contains("\"Item B\"");
+        assertThat(response.getBody()).contains("\"Product A\"");
+        assertThat(response.getBody()).contains("\"Product B\"");
         assertThat(response.getBody()).contains("\"totalItems\":2");
     }
 
@@ -401,7 +424,7 @@ class CartIntegrationIT {
 
     @Test
     void shouldMergeAnonymousCartIntoAuthenticatedUserCart() {
-        String anonymousId = "anon-merge-test-" + System.nanoTime();
+        String anonymousId = UUID.randomUUID().toString();
         String userId = "user-merge-test-" + System.nanoTime();
 
         // Create anonymous cart with 2 items
@@ -449,7 +472,7 @@ class CartIntegrationIT {
         JsonNode mergeData = jsonMapper.readTree(mergeResponse.getBody()).get("data");
         assertThat(mergeData.get("totalItems").intValue()).isEqualTo(4);
         assertThat(mergeData.get("items").toString())
-                .contains("Anon Item A", "Anon Item B", "Auth Item C");
+                .contains("Product A", "Product B", "Product C");
 
         // Verify anonymous cart is deleted
         var anonCartResponse = restClient.get()
@@ -463,7 +486,7 @@ class CartIntegrationIT {
 
     @Test
     void shouldSumDuplicateProductQuantitiesOnMerge() {
-        String anonymousId = "anon-dup-test-" + System.nanoTime();
+        String anonymousId = UUID.randomUUID().toString();
         String userId = "user-dup-test-" + System.nanoTime();
 
         // Same product in both carts
@@ -521,7 +544,7 @@ class CartIntegrationIT {
                 .header("X-User-Id", userId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .body("""
-                        {"anonymousCartId": "nonexistent-anon-id"}
+                        {"anonymousCartId": "00000000-0000-4000-8000-000000000000"}
                         """)
                 .retrieve()
                 .toEntity(String.class);
@@ -529,12 +552,12 @@ class CartIntegrationIT {
         assertThat(mergeResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
         JsonNode noAnonData = jsonMapper.readTree(mergeResponse.getBody()).get("data");
         assertThat(noAnonData.get("totalItems").intValue()).isEqualTo(1);
-        assertThat(noAnonData.get("items").toString()).contains("Existing Item");
+        assertThat(noAnonData.get("items").toString()).contains("Product A");
     }
 
     @Test
     void shouldHandleIdempotentMergeCalls() {
-        String anonymousId = "anon-idempotent-" + System.nanoTime();
+        String anonymousId = UUID.randomUUID().toString();
         String userId = "user-idempotent-" + System.nanoTime();
 
         // Create anonymous cart
@@ -611,5 +634,183 @@ class CartIntegrationIT {
                 .retrieve()
                 .toEntity(String.class);
         assertThat(stillAliveResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    // === Wave 6: server-authoritative pricing & cart ownership ===
+
+    @Test
+    void shouldIgnoreClientSuppliedPriceAndName() {
+        var response = restClient.post()
+                .uri("/api/v1/cart/items")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 1, "productName": "Free Robot", "price": 0.01, "quantity": 2}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        JsonNode data = jsonMapper.readTree(response.getBody()).get("data");
+        assertThat(data.get("items").get(0).get("productName").asString()).isEqualTo("Product A");
+        assertThat(data.get("items").get(0).get("price").decimalValue()).isEqualByComparingTo("10.00");
+        assertThat(data.get("totalPrice").decimalValue()).isEqualByComparingTo("20.00");
+    }
+
+    @Test
+    void shouldAcceptRequestWithoutPriceAndName() {
+        var response = restClient.post()
+                .uri("/api/v1/cart/items")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 2, "quantity": 1}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+        assertThat(response.getBody()).contains("\"Product B\"");
+    }
+
+    @Test
+    void shouldReturn404ForUnknownProduct() {
+        var response = restClient.post()
+                .uri("/api/v1/cart/items")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 777777, "productName": "Ghost", "price": 1.00, "quantity": 1}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).contains("PRODUCT_NOT_FOUND");
+    }
+
+    @Test
+    void shouldReturn400WhenQuantityExceedsCap() {
+        var response = restClient.post()
+                .uri("/api/v1/cart/items")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 1, "quantity": 1000}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void shouldReturn400WhenCartIdIsNotUuid() {
+        var response = restClient.get()
+                .uri("/api/v1/cart")
+                .header("X-Cart-Id", "user-persist-test")
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void shouldNotExposeUserCartThroughCartIdHeader() {
+        // Keycloak subjects are UUIDs, so a victim's sub is a syntactically valid guest id
+        String victimSub = UUID.randomUUID().toString();
+        restClient.post()
+                .uri("/api/v1/cart/items")
+                .header("X-User-Id", victimSub)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 3, "quantity": 1}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        var read = restClient.get()
+                .uri("/api/v1/cart")
+                .header("X-Cart-Id", victimSub)
+                .retrieve()
+                .toEntity(String.class);
+        assertThat(read.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+
+        var write = restClient.post()
+                .uri("/api/v1/cart/items")
+                .header("X-Cart-Id", victimSub)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 1, "quantity": 5}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+        assertThat(write.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+
+        var victimCart = restClient.get()
+                .uri("/api/v1/cart")
+                .header("X-User-Id", victimSub)
+                .retrieve()
+                .toEntity(String.class);
+        JsonNode data = jsonMapper.readTree(victimCart.getBody()).get("data");
+        assertThat(data.get("totalItems").intValue()).isEqualTo(1);
+        assertThat(data.get("items").toString()).contains("Product C").doesNotContain("Product A");
+    }
+
+    @Test
+    void shouldNotMergeOrDeleteAnotherUsersCart() {
+        String victimSub = UUID.randomUUID().toString();
+        String attackerSub = "attacker-" + System.nanoTime();
+        restClient.post()
+                .uri("/api/v1/cart/items")
+                .header("X-User-Id", victimSub)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"productId": 3, "quantity": 2}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        var merge = restClient.post()
+                .uri("/api/v1/cart/merge")
+                .header("X-User-Id", attackerSub)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"anonymousCartId\": \"" + victimSub + "\"}")
+                .retrieve()
+                .toEntity(String.class);
+        assertThat(merge.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(jsonMapper.readTree(merge.getBody()).get("data").get("totalItems").intValue()).isZero();
+
+        var victimCart = restClient.get()
+                .uri("/api/v1/cart")
+                .header("X-User-Id", victimSub)
+                .retrieve()
+                .toEntity(String.class);
+        assertThat(victimCart.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(jsonMapper.readTree(victimCart.getBody()).get("data").get("totalItems").intValue())
+                .isEqualTo(2);
+    }
+
+    @Test
+    void shouldReturn400WhenMergeSourceIsNotGuestUuid() {
+        var response = restClient.post()
+                .uri("/api/v1/cart/merge")
+                .header("X-User-Id", "user-" + System.nanoTime())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("""
+                        {"anonymousCartId": "some-other-user-sub"}
+                        """)
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void shouldReturn401WhenMergeWithoutUserId() {
+        var response = restClient.post()
+                .uri("/api/v1/cart/merge")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body("{\"anonymousCartId\": \"" + UUID.randomUUID() + "\"}")
+                .retrieve()
+                .toEntity(String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 }

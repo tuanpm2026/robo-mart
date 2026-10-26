@@ -49,9 +49,9 @@ USER robomart
 COPY --from=builder /workspace/app.jar app.jar
 
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-  CMD wget -qO- http://localhost:8080/actuator/health/liveness || exit 1
+  CMD wget -qO- http://localhost:8090/actuator/health/liveness || exit 1
 
-EXPOSE 8080
+EXPOSE 8080 8090
 ENTRYPOINT ["java", \
   "-XX:+UseContainerSupport", \
   "-XX:MaxRAMPercentage=75.0", \

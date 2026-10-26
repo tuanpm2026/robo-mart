@@ -23,6 +23,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import com.robomart.common.dto.ApiResponse;
+import com.robomart.order.client.ProductCatalogClient;
+import com.robomart.order.client.ProductSnapshot;
 import com.robomart.order.entity.Order;
 import com.robomart.order.enums.OrderStatus;
 import com.robomart.order.repository.OrderRepository;
@@ -74,6 +77,9 @@ class PendingPaymentRecoveryIT {
     @SuppressWarnings("rawtypes")
     private KafkaTemplate kafkaTemplate;
 
+    @MockitoBean
+    private ProductCatalogClient productCatalogClient;
+
     @Autowired private OrderService orderService;
     @Autowired private OrderSagaOrchestrator orchestrator;
     @Autowired private PendingPaymentRecoveryService recoveryService;
@@ -88,6 +94,8 @@ class PendingPaymentRecoveryIT {
     @BeforeEach
     void setUp() {
         reset(inventoryStub, paymentStub);
+        when(productCatalogClient.getProduct(1L)).thenReturn(
+                new ApiResponse<>(new ProductSnapshot(1L, "Recovery Widget", new BigDecimal("25.00")), "trace"));
         resetBreakers();
         lenient().when(paymentStub.withDeadlineAfter(anyLong(), any(TimeUnit.class))).thenReturn(paymentStub);
         lenient().when(inventoryStub.withDeadlineAfter(anyLong(), any(TimeUnit.class))).thenReturn(inventoryStub);
@@ -379,7 +387,7 @@ class PendingPaymentRecoveryIT {
     private Order createPendingOrder() {
         Order order = orderService.createOrder("payment-recovery-test", List.of(
                 new OrderService.OrderItemRequest("1", "Recovery Widget", 1, new BigDecimal("25.00"))),
-                "1 Recovery Test St");
+                "1 Recovery Test St", null);
         createdIds.add(order.getId());
         assertThat(orderRepository.findById(order.getId()).orElseThrow().getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
         makeDue(order.getId());

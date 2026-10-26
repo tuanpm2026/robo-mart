@@ -13,7 +13,8 @@ import com.robomart.cart.entity.CartItem;
 @Mapper(componentModel = "spring")
 public interface CartMapper {
 
-    @Mapping(source = "id", target = "cartId")
+    /** Exposes the public cart id (namespace prefix stripped), never the internal Redis key. */
+    @Mapping(target = "cartId", expression = "java(com.robomart.cart.entity.CartKeys.publicId(cart.getId()))")
     CartResponse toCartResponse(Cart cart);
 
     CartItemResponse toCartItemResponse(CartItem item);

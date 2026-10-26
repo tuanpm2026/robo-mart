@@ -18,6 +18,13 @@ spring:
       observation-enabled: true
   lifecycle:
     timeout-per-shutdown-phase: 25s
+  http:
+    serviceclient:
+      # @HttpExchange ProductServiceClient — prices/names are always looked up server-side
+      product-service:
+        base-url: ${robomart.product-service.url}
+        connect-timeout: 2s
+        read-timeout: 3s
 
 server:
   port: 8082
@@ -26,6 +33,8 @@ server:
 robomart:
   cart:
     ttl-minutes: 1440
+  product-service:
+    url: ${PRODUCT_SERVICE_URL:http://localhost:8081}
 
 notification:
   checkout-base-url: ${CHECKOUT_BASE_URL:http://localhost:5173/cart}

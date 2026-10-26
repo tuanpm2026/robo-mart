@@ -1,6 +1,7 @@
 package com.robomart.cart.integration.event;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,9 +10,12 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.web.client.RestClient;
 
 import com.robomart.cart.event.consumer.ProductEventConsumer;
+import com.robomart.cart.integration.support.ProductServiceStub;
 import com.robomart.events.product.ProductUpdatedEvent;
 import com.robomart.test.IntegrationTest;
 
@@ -19,6 +23,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
 class CartPriceUpdateIT {
+
+    private static final ProductServiceStub PRODUCT_SERVICE = ProductServiceStub.start()
+            .product(10, "Product A", "10.00")
+            .product(20, "Product B", "20.00")
+            .product(42, "Test Product", "29.99")
+            .product(50, "My Product", "25.00");
+
+    @DynamicPropertySource
+    static void productServiceUrl(DynamicPropertyRegistry registry) {
+        registry.add("robomart.product-service.url", PRODUCT_SERVICE::url);
+    }
 
     @LocalServerPort
     private int port;
@@ -38,7 +53,7 @@ class CartPriceUpdateIT {
 
     @Test
     void shouldUpdateCartPriceWhenProductPriceChanges() {
-        String cartId = "price-update-test-" + System.nanoTime();
+        String cartId = UUID.randomUUID().toString();
 
         // Create cart with a product at original price
         var createResponse = restClient.post()
@@ -87,7 +102,7 @@ class CartPriceUpdateIT {
 
     @Test
     void shouldUpdatePriceInMultipleItemCart() {
-        String cartId = "multi-item-price-test-" + System.nanoTime();
+        String cartId = UUID.randomUUID().toString();
 
         // Add two different products
         restClient.post()
@@ -145,7 +160,7 @@ class CartPriceUpdateIT {
 
     @Test
     void shouldNotAffectCartWhenUnrelatedProductUpdated() {
-        String cartId = "unrelated-price-test-" + System.nanoTime();
+        String cartId = UUID.randomUUID().toString();
 
         // Create cart with product 50
         restClient.post()

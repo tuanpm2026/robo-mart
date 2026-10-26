@@ -78,6 +78,11 @@ notification:
   api-gateway:
     url: ${API_GATEWAY_URL:http://localhost:8080}
   admin-email: ${ADMIN_EMAIL:admin@robomart.local}
+  email:
+    # Only 'mock' (log metadata, no delivery) exists; any other value fails startup.
+    provider: ${NOTIFICATION_EMAIL_PROVIDER:mock}
+    # A PENDING delivery claim older than this is assumed abandoned and may be re-claimed.
+    claim-timeout: ${NOTIFICATION_EMAIL_CLAIM_TIMEOUT:PT2M}
   reconciliation:
     cron: "0 0 2 * * *"
     payment-cron: "0 30 2 * * *"

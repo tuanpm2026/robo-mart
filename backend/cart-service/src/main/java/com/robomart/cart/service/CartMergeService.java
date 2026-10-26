@@ -8,6 +8,7 @@ import com.robomart.cart.config.CartProperties;
 import com.robomart.cart.dto.CartResponse;
 import com.robomart.cart.entity.Cart;
 import com.robomart.cart.entity.CartItem;
+import com.robomart.cart.entity.CartKeys;
 import com.robomart.cart.mapper.CartMapper;
 import com.robomart.cart.repository.CartRepository;
 
@@ -26,55 +27,61 @@ public class CartMergeService {
         this.cartProperties = cartProperties;
     }
 
-    public CartResponse mergeCart(String anonymousCartId, String authenticatedUserId) {
-        log.debug("Merging anonymous cart={} into authenticated user={}", anonymousCartId, authenticatedUserId);
+    /**
+     * Merges a guest cart into the authenticated user's cart and deletes the guest cart.
+     *
+     * <p>Only guest carts ({@code g:{uuid}}) can be merged from, and only into the caller's own user
+     * cart ({@code u:{sub}}): the guest id is validated as a UUID and resolved in the guest
+     * namespace, so another user's cart can never be read, merged or deleted through this call.
+     *
+     * @param guestCartId         public guest cart id (UUID) held by the client
+     * @param authenticatedUserId JWT subject relayed by the gateway
+     */
+    public CartResponse mergeCart(String guestCartId, String authenticatedUserId) {
+        String userKey = CartKeys.forUser(authenticatedUserId);
+        String guestKey = CartKeys.forGuest(guestCartId);
+        log.debug("Merging guest cart into authenticated user cart");
 
-        // Self-merge is a no-op
-        if (anonymousCartId.equals(authenticatedUserId)) {
-            log.debug("Self-merge detected, returning existing cart for user={}", authenticatedUserId);
-            return getOrCreateCart(authenticatedUserId);
+        var guestCartOpt = cartRepository.findById(guestKey);
+        if (guestCartOpt.isEmpty()) {
+            log.debug("Guest cart not found, returning user cart");
+            return getOrCreateCart(userKey, authenticatedUserId);
         }
 
-        var anonymousCartOpt = cartRepository.findById(anonymousCartId);
-        if (anonymousCartOpt.isEmpty()) {
-            log.debug("Anonymous cart={} not found, returning authenticated cart", anonymousCartId);
-            return getOrCreateCart(authenticatedUserId);
+        Cart guestCart = guestCartOpt.get();
+        if (guestCart.getItems().isEmpty()) {
+            log.debug("Guest cart is empty, deleting and returning user cart");
+            cartRepository.deleteById(guestKey);
+            return getOrCreateCart(userKey, authenticatedUserId);
         }
 
-        Cart anonymousCart = anonymousCartOpt.get();
-        if (anonymousCart.getItems().isEmpty()) {
-            log.debug("Anonymous cart={} is empty, deleting and returning authenticated cart", anonymousCartId);
-            cartRepository.deleteById(anonymousCartId);
-            return getOrCreateCart(authenticatedUserId);
-        }
-
-        Cart authCart = cartRepository.findById(authenticatedUserId)
+        Cart userCart = cartRepository.findById(userKey)
                 .orElseGet(() -> {
-                    Cart newCart = new Cart(authenticatedUserId);
+                    Cart newCart = new Cart(userKey);
                     newCart.setUserId(authenticatedUserId);
                     return newCart;
                 });
 
-        // Reuse Cart.addItem() which handles duplicate detection and quantity summing (caps at 9999)
-        for (CartItem item : anonymousCart.getItems()) {
-            authCart.addItem(new CartItem(item.getProductId(), item.getProductName(),
+        // Reuse Cart.addItem() which handles duplicate detection and quantity summing (capped)
+        for (CartItem item : guestCart.getItems()) {
+            userCart.addItem(new CartItem(item.getProductId(), item.getProductName(),
                     item.getPrice(), item.getQuantity()));
         }
 
-        authCart.setTimeToLive(cartProperties.getTtlSeconds());
-        cartRepository.save(authCart);
+        userCart.setTimeToLive(cartProperties.getTtlSeconds());
+        cartRepository.save(userCart);
 
-        cartRepository.deleteById(anonymousCartId);
-        log.info("Merged {} items from anonymous cart={} into user={}, total items={}",
-                anonymousCart.getItems().size(), anonymousCartId, authenticatedUserId, authCart.getTotalItems());
+        cartRepository.deleteById(guestKey);
+        log.info("Merged {} items from guest cart into user cart, total items={}",
+                guestCart.getItems().size(), userCart.getTotalItems());
 
-        return cartMapper.toCartResponse(authCart);
+        return cartMapper.toCartResponse(userCart);
     }
 
-    private CartResponse getOrCreateCart(String userId) {
-        Cart cart = cartRepository.findById(userId)
+    private CartResponse getOrCreateCart(String userKey, String userId) {
+        Cart cart = cartRepository.findById(userKey)
                 .orElseGet(() -> {
-                    Cart newCart = new Cart(userId);
+                    Cart newCart = new Cart(userKey);
                     newCart.setUserId(userId);
                     newCart.setTimeToLive(cartProperties.getTtlSeconds());
                     cartRepository.save(newCart);

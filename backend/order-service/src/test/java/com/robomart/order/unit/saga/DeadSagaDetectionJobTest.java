@@ -1,5 +1,6 @@
 package com.robomart.order.unit.saga;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -10,16 +11,20 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.event.EventListener;
 
 import com.robomart.order.config.SagaProperties;
 import com.robomart.order.entity.Order;
@@ -70,6 +75,25 @@ class DeadSagaDetectionJobTest {
         job.detectAndRecoverDeadSagas();
 
         verify(sagaOrchestrator).handleDeadSaga(stuck);
+    }
+
+    @Test
+    @DisplayName("onlyOrdersIdleLongerThanTheThresholdAreRecovered")
+    void onlyOrdersIdleLongerThanTheThresholdAreRecovered() {
+        sagaProperties.getDeadSagaDetection().setStuckThreshold(Duration.ofMinutes(5));
+        when(orderRepository.findStuckSagas(anyList(), any(Instant.class))).thenReturn(List.of());
+
+        Instant before = Instant.now();
+        job.detectAndRecoverDeadSagas();
+        Instant after = Instant.now();
+
+        // Recovery is the only path that touches in-flight states, so a live saga (recently updated)
+        // must fall outside the cutoff; there is no startup sweep without one.
+        ArgumentCaptor<Instant> cutoff = ArgumentCaptor.forClass(Instant.class);
+        verify(orderRepository).findStuckSagas(anyList(), cutoff.capture());
+        assertThat(cutoff.getValue()).isBetween(before.minus(Duration.ofMinutes(5)), after.minus(Duration.ofMinutes(5)));
+        assertThat(Arrays.stream(OrderSagaOrchestrator.class.getMethods())
+                .filter(m -> m.isAnnotationPresent(EventListener.class))).isEmpty();
     }
 
     @Test

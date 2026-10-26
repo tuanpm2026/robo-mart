@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,11 +21,14 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.robomart.common.exception.ExternalServiceException;
 import com.robomart.common.exception.ResourceNotFoundException;
+import com.robomart.common.exception.ValidationException;
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderItem;
 import com.robomart.order.enums.OrderStatus;
 import com.robomart.order.exception.OrderNotCancellableException;
+import com.robomart.order.exception.OrderProductUnavailableException;
 import com.robomart.order.grpc.OrderGrpcService;
 import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.order.service.OrderService;
@@ -132,7 +136,7 @@ class OrderGrpcServiceTest {
         @Test
         void shouldReturnSuccessWhenOrderCreated() {
             Order order = buildOrder("user-1", OrderStatus.PENDING);
-            when(orderService.createOrder(anyString(), anyList(), anyString())).thenReturn(order);
+            when(orderService.createOrder(anyString(), anyList(), anyString(), anyString())).thenReturn(order);
 
             grpcService.createOrder(buildCreateRequest("user-1"), createObserver);
 
@@ -144,7 +148,7 @@ class OrderGrpcServiceTest {
 
         @Test
         void shouldReturnInternalWhenSagaFails() {
-            when(orderService.createOrder(anyString(), anyList(), anyString()))
+            when(orderService.createOrder(anyString(), anyList(), anyString(), anyString()))
                     .thenThrow(new SagaStepException("Inventory unavailable", false));
 
             grpcService.createOrder(buildCreateRequest("user-1"), createObserver);
@@ -156,7 +160,7 @@ class OrderGrpcServiceTest {
 
         @Test
         void shouldReturnInvalidArgumentWhenIllegalArgument() {
-            when(orderService.createOrder(anyString(), anyList(), anyString()))
+            when(orderService.createOrder(anyString(), anyList(), anyString(), anyString()))
                     .thenThrow(new IllegalArgumentException("Items cannot be empty"));
 
             grpcService.createOrder(buildCreateRequest("user-1"), createObserver);
@@ -167,8 +171,53 @@ class OrderGrpcServiceTest {
         }
 
         @Test
+        @SuppressWarnings("unchecked")
+        void shouldForwardIdempotencyKeyAndIgnoreClientPrice() {
+            Order order = buildOrder("user-1", OrderStatus.CONFIRMED);
+            when(orderService.createOrder(anyString(), anyList(), anyString(), anyString())).thenReturn(order);
+
+            grpcService.createOrder(buildCreateRequest("user-1").toBuilder().setIdempotencyKey("idem-1").build(),
+                    createObserver);
+
+            ArgumentCaptor<List<OrderService.OrderItemRequest>> items = ArgumentCaptor.forClass(List.class);
+            verify(orderService).createOrder(eq("user-1"), items.capture(), anyString(), eq("idem-1"));
+            assertThat(items.getValue()).singleElement().satisfies(item -> {
+                assertThat(item.productId()).isEqualTo("1");
+                assertThat(item.quantity()).isEqualTo(2);
+                assertThat(item.unitPrice()).isNull();
+                assertThat(item.productName()).isNull();
+            });
+        }
+
+        @Test
+        void shouldMapUnavailableProductToFailedPrecondition() {
+            when(orderService.createOrder(anyString(), anyList(), anyString(), anyString()))
+                    .thenThrow(new OrderProductUnavailableException("Product 1 is not available"));
+
+            grpcService.createOrder(buildCreateRequest("user-1"), createObserver);
+
+            verify(createObserver).onError(errorCaptor.capture());
+            assertThat(((StatusRuntimeException) errorCaptor.getValue()).getStatus().getCode())
+                    .isEqualTo(Status.Code.FAILED_PRECONDITION);
+        }
+
+        @Test
+        void shouldMapCatalogOutageToUnavailableAndValidationToInvalidArgument() {
+            when(orderService.createOrder(anyString(), anyList(), anyString(), anyString()))
+                    .thenThrow(new ExternalServiceException("Product catalog is temporarily unavailable"))
+                    .thenThrow(new ValidationException("Quantity must be positive"));
+
+            grpcService.createOrder(buildCreateRequest("user-1"), createObserver);
+            grpcService.createOrder(buildCreateRequest("user-1"), createObserver);
+
+            verify(createObserver, org.mockito.Mockito.times(2)).onError(errorCaptor.capture());
+            assertThat(errorCaptor.getAllValues()).extracting(e -> ((StatusRuntimeException) e).getStatus().getCode())
+                    .containsExactly(Status.Code.UNAVAILABLE, Status.Code.INVALID_ARGUMENT);
+        }
+
+        @Test
         void shouldReturnInternalWhenUnexpectedExceptionOccurs() {
-            when(orderService.createOrder(anyString(), anyList(), anyString()))
+            when(orderService.createOrder(anyString(), anyList(), anyString(), anyString()))
                     .thenThrow(new RuntimeException("DB connection lost"));
 
             grpcService.createOrder(buildCreateRequest("user-1"), createObserver);

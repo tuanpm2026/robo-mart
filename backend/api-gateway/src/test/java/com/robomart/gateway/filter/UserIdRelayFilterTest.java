@@ -65,19 +65,10 @@ class UserIdRelayFilterTest {
     }
 
     @Test
-    void shouldPassThroughValidAnonymousUserId() {
+    void shouldNotBlockAnonymousRequestCarryingSpoofedUserId() {
         expectNotAuthBlocked(
                 webTestClient.get().uri("/api/v1/cart/test")
                         .header("X-User-Id", "550e8400-e29b-41d4-a716-446655440000")
-                        .exchange());
-    }
-
-    @Test
-    void shouldStripAnonymousUserIdExceedingMaxLength() {
-        String longId = "a".repeat(129);
-        expectNotAuthBlocked(
-                webTestClient.get().uri("/api/v1/cart/test")
-                        .header("X-User-Id", longId)
                         .exchange());
     }
 
@@ -92,21 +83,5 @@ class UserIdRelayFilterTest {
     void shouldValidateFilterOrder() {
         var filter = new UserIdRelayFilter();
         assertThat(filter.getOrder()).isEqualTo(Integer.MAX_VALUE - 1);
-    }
-
-    @Test
-    void shouldRejectControlCharactersInValidation() {
-        var filter = new UserIdRelayFilter();
-        assertThat(filter.isValidAnonymousUserId("valid-uuid")).isTrue();
-        assertThat(filter.isValidAnonymousUserId("bad\u0000id")).isFalse();
-        assertThat(filter.isValidAnonymousUserId("bad\nid")).isFalse();
-        assertThat(filter.isValidAnonymousUserId("bad\rid")).isFalse();
-    }
-
-    @Test
-    void shouldRejectOversizedUserIdInValidation() {
-        var filter = new UserIdRelayFilter();
-        assertThat(filter.isValidAnonymousUserId("a".repeat(128))).isTrue();
-        assertThat(filter.isValidAnonymousUserId("a".repeat(129))).isFalse();
     }
 }

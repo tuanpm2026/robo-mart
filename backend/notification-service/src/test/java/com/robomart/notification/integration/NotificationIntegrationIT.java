@@ -3,7 +3,10 @@ package com.robomart.notification.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.math.BigDecimal;
@@ -128,6 +131,41 @@ class NotificationIntegrationIT {
             assertThat(log.getRecipient()).isEqualTo("user-integration-2");
             assertThat(log.getContent()).contains("Payment couldn't be processed");
         });
+    }
+
+    @Test
+    void shouldRetryFailedEmailOnRedeliveryForRecoveredPaymentCancellation() {
+        String orderId = "1004";
+        org.mockito.Mockito.when(orderServiceClient.getOrderDetail(orderId))
+                .thenReturn(createTestOrder(orderId, "user-integration-4"));
+        // First attempt fails -> row FAILED + exception -> Kafka retry re-claims and succeeds.
+        doThrow(new RuntimeException("SMTP down")).doNothing()
+                .when(emailService).sendEmail(eq("user-integration-4"), anyString(), anyString());
+
+        OrderStatusChangedEvent event = OrderStatusChangedEvent.newBuilder()
+                .setEventId("evt-it-4")
+                .setEventType("order_status_changed")
+                .setAggregateId(orderId)
+                .setAggregateType("Order")
+                .setTimestamp(java.time.Instant.now())
+                .setVersion(1)
+                .setOrderId(orderId)
+                .setPreviousStatus("PAYMENT_PENDING")
+                .setNewStatus("CANCELLED")
+                .build();
+
+        kafkaTemplate.send("order.order.status-changed", orderId, event);
+
+        await().atMost(30, TimeUnit.SECONDS).untilAsserted(() -> {
+            List<NotificationLog> logs = notificationLogRepository.findByOrderId(orderId);
+            assertThat(logs).hasSize(1);
+            NotificationLog log = logs.getFirst();
+            assertThat(log.getNotificationType()).isEqualTo(NotificationType.PAYMENT_FAILED);
+            assertThat(log.getStatus()).isEqualTo(NotificationStatus.SENT);
+            assertThat(log.getAttempts()).isEqualTo(2);
+            assertThat(log.getErrorMessage()).isNull();
+        });
+        verify(emailService, times(2)).sendEmail(eq("user-integration-4"), anyString(), anyString());
     }
 
     @Test
