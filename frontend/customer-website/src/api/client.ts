@@ -7,24 +7,29 @@ export function clearAnonymousIdCache(): void {
   cachedAnonymousId = null
 }
 
+function newGuestId(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  // getRandomValues also works on HTTP origins where randomUUID is unavailable.
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  bytes[6] = (bytes[6]! & 0x0f) | 0x40
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+}
+
 export function getAnonymousUserId(): string {
   if (cachedAnonymousId) return cachedAnonymousId
   try {
     cachedAnonymousId = localStorage.getItem('robomart-user-id')
-    if (!cachedAnonymousId) {
-      cachedAnonymousId = crypto.randomUUID()
-      localStorage.setItem('robomart-user-id', cachedAnonymousId)
-    }
   } catch {
-    if (!cachedAnonymousId) {
-      // cart-service only accepts UUID guest cart ids
-      cachedAnonymousId =
-        typeof crypto?.randomUUID === 'function'
-          ? crypto.randomUUID()
-          : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-              const r = (Math.random() * 16) | 0
-              return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16)
-            })
+    // Keep an in-memory guest cart when browser storage is unavailable.
+  }
+  if (!cachedAnonymousId) {
+    cachedAnonymousId = newGuestId()
+    try {
+      localStorage.setItem('robomart-user-id', cachedAnonymousId)
+    } catch {
+      // The cached ID still persists for the lifetime of this page.
     }
   }
   return cachedAnonymousId

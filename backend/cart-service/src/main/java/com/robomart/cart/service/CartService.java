@@ -42,7 +42,7 @@ public class CartService {
      * {@code price}/{@code productName} in the request is ignored.
      */
     public CartResponse addItem(String cartKey, AddCartItemRequest request, String userId) {
-        log.debug("Adding item productId={} qty={} to cart={}", request.productId(), request.quantity(), cartKey);
+        log.debug("Adding item productId={} qty={}", request.productId(), request.quantity());
 
         ProductSnapshot product = productCatalogService.getProduct(request.productId());
 
@@ -61,13 +61,13 @@ public class CartService {
 
         refreshTtl(cart);
         cartRepository.save(cart);
-        log.debug("Cart {} saved with {} items, TTL={}s", cartKey, cart.getItems().size(), cart.getTimeToLive());
+        log.debug("Cart saved with {} items, TTL={}s", cart.getItems().size(), cart.getTimeToLive());
 
         return cartMapper.toCartResponse(cart);
     }
 
     public CartResponse updateItemQuantity(String cartKey, Long productId, UpdateCartItemRequest request) {
-        log.debug("Updating item productId={} qty={} in cart={}", productId, request.quantity(), cartKey);
+        log.debug("Updating item productId={} qty={}", productId, request.quantity());
 
         Cart cart = cartRepository.findById(cartKey)
                 .orElseThrow(() -> new CartNotFoundException(cartKey));
@@ -84,7 +84,7 @@ public class CartService {
     }
 
     public void removeItem(String cartKey, Long productId) {
-        log.debug("Removing item productId={} from cart={}", productId, cartKey);
+        log.debug("Removing item productId={}", productId);
 
         Cart cart = cartRepository.findById(cartKey)
                 .orElseThrow(() -> new CartNotFoundException(cartKey));
@@ -99,7 +99,7 @@ public class CartService {
     }
 
     public CartResponse getCart(String cartKey) {
-        log.debug("Fetching cart={}", cartKey);
+        log.debug("Fetching cart");
 
         Cart cart = cartRepository.findById(cartKey)
                 .orElseThrow(() -> new CartNotFoundException(cartKey));

@@ -40,17 +40,17 @@ public class CartMergeService {
     public CartResponse mergeCart(String guestCartId, String authenticatedUserId) {
         String userKey = CartKeys.forUser(authenticatedUserId);
         String guestKey = CartKeys.forGuest(guestCartId);
-        log.debug("Merging guest cart={} into user cart={}", guestKey, userKey);
+        log.debug("Merging guest cart into authenticated user cart");
 
         var guestCartOpt = cartRepository.findById(guestKey);
         if (guestCartOpt.isEmpty()) {
-            log.debug("Guest cart={} not found, returning user cart", guestKey);
+            log.debug("Guest cart not found, returning user cart");
             return getOrCreateCart(userKey, authenticatedUserId);
         }
 
         Cart guestCart = guestCartOpt.get();
         if (guestCart.getItems().isEmpty()) {
-            log.debug("Guest cart={} is empty, deleting and returning user cart", guestKey);
+            log.debug("Guest cart is empty, deleting and returning user cart");
             cartRepository.deleteById(guestKey);
             return getOrCreateCart(userKey, authenticatedUserId);
         }
@@ -72,8 +72,8 @@ public class CartMergeService {
         cartRepository.save(userCart);
 
         cartRepository.deleteById(guestKey);
-        log.info("Merged {} items from guest cart={} into user cart={}, total items={}",
-                guestCart.getItems().size(), guestKey, userKey, userCart.getTotalItems());
+        log.info("Merged {} items from guest cart into user cart, total items={}",
+                guestCart.getItems().size(), userCart.getTotalItems());
 
         return cartMapper.toCartResponse(userCart);
     }

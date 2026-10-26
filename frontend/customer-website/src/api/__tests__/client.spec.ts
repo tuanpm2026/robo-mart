@@ -31,6 +31,7 @@ describe('apiClient', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
+    vi.unstubAllGlobals()
   })
 
   it('should have correct baseURL', () => {
@@ -41,6 +42,21 @@ describe('apiClient', () => {
     const id = getAnonymousUserId()
     expect(id).toBeTruthy()
     expect(typeof id).toBe('string')
+  })
+
+  it('uses secure UUID generation when randomUUID and localStorage are unavailable', () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('Storage blocked')
+    })
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('Storage blocked')
+    })
+    const getRandomValues = vi.fn((bytes: Uint8Array) => bytes.fill(255))
+    vi.stubGlobal('crypto', { getRandomValues })
+    const id = getAnonymousUserId()
+    expect(id).toBe('ffffffff-ffff-4fff-bfff-ffffffffffff')
+    expect(getAnonymousUserId()).toBe(id)
+    expect(getRandomValues).toHaveBeenCalledTimes(1)
   })
 
   it('should attach a UUID X-Cart-Id (not X-User-Id) for anonymous users', async () => {
