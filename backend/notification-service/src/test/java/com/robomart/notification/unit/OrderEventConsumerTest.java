@@ -1,5 +1,9 @@
 package com.robomart.notification.unit;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -10,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.robomart.common.exception.ExternalServiceException;
 import com.robomart.events.order.OrderStatusChangedEvent;
 import com.robomart.notification.event.OrderEventConsumer;
 import com.robomart.notification.service.AdminPushService;
@@ -61,6 +66,28 @@ class OrderEventConsumerTest {
         orderEventConsumer.onOrderStatusChanged(event);
 
         verify(notificationService).sendPaymentFailure("200");
+        verify(processedEventService).markProcessed("notification-order-status-group", "evt-1");
+    }
+
+    @Test
+    void shouldSendPaymentFailureWhenCancelledFromPaymentPendingRecovery() {
+        OrderStatusChangedEvent event = buildEvent("210", "PAYMENT_PENDING", "CANCELLED");
+
+        orderEventConsumer.onOrderStatusChanged(event);
+
+        verify(notificationService).sendPaymentFailure("210");
+        verify(adminPushService).pushOrderEvent(event);
+    }
+
+    @Test
+    void shouldNotMarkProcessedWhenNotificationDeliveryFails() {
+        OrderStatusChangedEvent event = buildEvent("220", "PAYMENT_PENDING", "CANCELLED");
+        doThrow(new ExternalServiceException("SMTP down")).when(notificationService).sendPaymentFailure("220");
+
+        assertThatThrownBy(() -> orderEventConsumer.onOrderStatusChanged(event))
+                .isInstanceOf(ExternalServiceException.class);
+
+        verify(processedEventService, never()).markProcessed(anyString(), anyString());
     }
 
     @Test

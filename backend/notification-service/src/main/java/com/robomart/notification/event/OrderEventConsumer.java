@@ -46,12 +46,20 @@ public class OrderEventConsumer {
 
         if ("CONFIRMED".equals(newStatus)) {
             notificationService.sendOrderConfirmedNotifications(orderId);
-        } else if ("CANCELLED".equals(newStatus) && "PAYMENT_PROCESSING".equals(previousStatus)) {
+        } else if ("CANCELLED".equals(newStatus) && isPaymentStage(previousStatus)) {
             notificationService.sendPaymentFailure(orderId);
         }
 
         adminPushService.pushOrderEvent(event);
 
         processedEventService.markProcessed(CONSUMER_GROUP, eventId);
+    }
+
+    /**
+     * A cancellation out of a payment stage means the payment failed: PAYMENT_PROCESSING for the
+     * synchronous saga, PAYMENT_PENDING when order-service's pending-payment recovery gets a decline.
+     */
+    private static boolean isPaymentStage(String previousStatus) {
+        return "PAYMENT_PROCESSING".equals(previousStatus) || "PAYMENT_PENDING".equals(previousStatus);
     }
 }
