@@ -1,8 +1,9 @@
 package com.robomart.inventory.integration;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,6 +25,8 @@ import com.robomart.inventory.exception.InsufficientStockException;
 import com.robomart.inventory.exception.LockAcquisitionException;
 import com.robomart.inventory.repository.InventoryItemRepository;
 import com.robomart.inventory.repository.OutboxEventRepository;
+import com.robomart.inventory.repository.ReservationLineRepository;
+import com.robomart.inventory.repository.ReservationRepository;
 import com.robomart.inventory.repository.StockMovementRepository;
 import com.robomart.inventory.service.InventoryService;
 import com.robomart.test.IntegrationTest;
@@ -54,6 +57,12 @@ class InventoryServiceIT {
 
     @Autowired
     private OutboxEventRepository outboxEventRepository;
+
+    @Autowired
+    private ReservationRepository reservationRepository;
+
+    @Autowired
+    private ReservationLineRepository reservationLineRepository;
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
@@ -132,10 +141,74 @@ class InventoryServiceIT {
 
         // Assert: at most 10 reservations succeeded (no oversell)
         assertThat(successes.get()).isLessThanOrEqualTo(10);
+        assertThat(successes.get() + failures.get()).isEqualTo(threadCount);
 
-        // Refresh the item from DB and verify no negative available quantity
+        // Conservation: every successful reservation moved exactly one unit, failures moved none
         InventoryItem refreshed = inventoryItemRepository.findByProductId(productId).orElseThrow();
-        assertThat(refreshed.getAvailableQuantity()).isGreaterThanOrEqualTo(0);
+        assertThat(refreshed.getAvailableQuantity()).isEqualTo(10 - successes.get());
+        assertThat(refreshed.getReservedQuantity()).isEqualTo(successes.get());
+    }
+
+    @Test
+    void shouldConserveStockWithConcurrentOrderReservations() throws InterruptedException {
+        // Arrange: two products, 10 units each; every order reserves one of each
+        Long productA = 9L;
+        Long productB = 10L;
+        for (Long productId : List.of(productA, productB)) {
+            InventoryItem item = inventoryItemRepository.findByProductId(productId).orElseThrow();
+            item.setAvailableQuantity(10);
+            item.setReservedQuantity(0);
+            inventoryItemRepository.save(item);
+        }
+
+        int threadCount = 20;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+        List<String> reservedOrders = new CopyOnWriteArrayList<>();
+
+        // Act: 20 orders reserve concurrently (lock contention makes some fail fast)
+        for (int i = 0; i < threadCount; i++) {
+            final String orderId = "concurrent-multi-order-" + i;
+            executor.submit(() -> {
+                try {
+                    startLatch.await();
+                    inventoryService.reserveOrder(orderId, Map.of(productA, 1, productB, 1));
+                    reservedOrders.add(orderId);
+                } catch (Exception e) {
+                    // insufficient stock / lock contention: must leave no trace
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+        startLatch.countDown();
+        assertThat(doneLatch.await(30, TimeUnit.SECONDS)).isTrue();
+        executor.shutdown();
+
+        // Assert: conservation on both products, and a reservation + lines only for the winners
+        int successes = reservedOrders.size();
+        assertThat(successes).isLessThanOrEqualTo(10);
+        for (Long productId : List.of(productA, productB)) {
+            InventoryItem refreshed = inventoryItemRepository.findByProductId(productId).orElseThrow();
+            assertThat(refreshed.getAvailableQuantity()).isEqualTo(10 - successes);
+            assertThat(refreshed.getReservedQuantity()).isEqualTo(successes);
+        }
+        for (int i = 0; i < threadCount; i++) {
+            String orderId = "concurrent-multi-order-" + i;
+            boolean won = reservedOrders.contains(orderId);
+            assertThat(reservationRepository.findByOrderId(orderId).isPresent()).isEqualTo(won);
+            assertThat(reservationLineRepository.findByOrderIdOrderByProductIdAsc(orderId)).hasSize(won ? 2 : 0);
+        }
+
+        // Releasing every winner restores the initial stock exactly
+        reservedOrders.forEach(orderId -> assertThat(inventoryService.releaseReservation(orderId))
+                .isEqualTo(InventoryService.ReleaseOutcome.RELEASED));
+        for (Long productId : List.of(productA, productB)) {
+            InventoryItem refreshed = inventoryItemRepository.findByProductId(productId).orElseThrow();
+            assertThat(refreshed.getAvailableQuantity()).isEqualTo(10);
+            assertThat(refreshed.getReservedQuantity()).isZero();
+        }
     }
 
     @Test

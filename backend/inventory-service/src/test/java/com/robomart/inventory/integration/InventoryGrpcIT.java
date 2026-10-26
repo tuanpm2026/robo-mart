@@ -1,6 +1,13 @@
 package com.robomart.inventory.integration;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,7 +19,12 @@ import org.springframework.test.context.TestPropertySource;
 
 import com.robomart.inventory.config.RedisLockConfig;
 import com.robomart.inventory.entity.InventoryItem;
+import com.robomart.inventory.entity.Reservation;
+import com.robomart.inventory.entity.ReservationLine;
+import com.robomart.inventory.enums.ReservationStatus;
 import com.robomart.inventory.repository.InventoryItemRepository;
+import com.robomart.inventory.repository.ReservationLineRepository;
+import com.robomart.inventory.repository.ReservationRepository;
 import com.robomart.proto.inventory.GetInventoryRequest;
 import com.robomart.proto.inventory.GetInventoryResponse;
 import com.robomart.proto.inventory.InventoryServiceGrpc;
@@ -29,6 +41,7 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -53,6 +66,12 @@ class InventoryGrpcIT {
 
     @Autowired
     private InventoryItemRepository inventoryItemRepository;
+
+    @Autowired
+    private ReservationRepository reservationRepository;
+
+    @Autowired
+    private ReservationLineRepository reservationLineRepository;
 
     private ManagedChannel channel;
     private InventoryServiceGrpc.InventoryServiceBlockingStub stub;
@@ -274,6 +293,120 @@ class InventoryGrpcIT {
     }
 
     @Test
+    void shouldTombstoneReleaseWithoutReservationAndBlockLateReserve() {
+        // Arrange: another order legitimately holds 4 units of the product
+        Long productId = 14L;
+        resetStock(productId, 100);
+        stub.reserveInventory(ReserveInventoryRequest.newBuilder()
+                .setOrderId("grpc-tomb-other-order")
+                .addItems(ReservationItem.newBuilder().setProductId("14").setQuantity(4).build())
+                .build());
+
+        // Act: the saga compensates an order whose reserve never happened (e.g. reserve was
+        // UNAVAILABLE). Its release request lists items, which must NOT be released.
+        String orderId = "grpc-tomb-order-1";
+        ReleaseInventoryResponse release = stub.releaseInventory(ReleaseInventoryRequest.newBuilder()
+                .setOrderId(orderId)
+                .addItems(ReservationItem.newBuilder().setProductId("14").setQuantity(4).build())
+                .build());
+
+        // Assert: success, nothing released (the other order's 4 units stay reserved), tombstone stored
+        assertThat(release.getSuccess()).isTrue();
+        assertStock(productId, 96, 4);
+        Reservation tombstone = reservationRepository.findByOrderId(orderId).orElseThrow();
+        assertThat(tombstone.getStatus()).isEqualTo(ReservationStatus.RELEASED);
+        assertThat(reservationLineRepository.findByOrderIdOrderByProductIdAsc(orderId)).isEmpty();
+
+        // Act: the original reserve arrives late for the same order
+        StatusRuntimeException late = assertThrows(StatusRuntimeException.class,
+                () -> stub.reserveInventory(ReserveInventoryRequest.newBuilder()
+                        .setOrderId(orderId)
+                        .addItems(ReservationItem.newBuilder().setProductId("14").setQuantity(2).build())
+                        .build()));
+
+        // Assert: rejected and no stock reserved for it
+        assertThat(late.getStatus().getCode()).isEqualTo(Status.Code.FAILED_PRECONDITION);
+        assertStock(productId, 96, 4);
+    }
+
+    @Test
+    void shouldRestoreStockExactlyOnceUnderConcurrentReleases() throws Exception {
+        // Arrange
+        Long productId = 15L;
+        resetStock(productId, 100);
+        String orderId = "grpc-concurrent-release-1";
+        ReserveInventoryResponse reserved = stub.reserveInventory(ReserveInventoryRequest.newBuilder()
+                .setOrderId(orderId)
+                .addItems(ReservationItem.newBuilder().setProductId("15").setQuantity(7).build())
+                .build());
+        assertStock(productId, 93, 7);
+
+        ReleaseInventoryRequest releaseRequest = ReleaseInventoryRequest.newBuilder()
+                .setOrderId(orderId)
+                .setReservationId(reserved.getReservationId())
+                .addItems(ReservationItem.newBuilder().setProductId("15").setQuantity(7).build())
+                .build();
+
+        // Act: saga compensation, recovery and retries all release the same order at once
+        int threads = 8;
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+        CountDownLatch start = new CountDownLatch(1);
+        List<Future<ReleaseInventoryResponse>> results = new ArrayList<>();
+        for (int i = 0; i < threads; i++) {
+            results.add(executor.submit(() -> {
+                start.await();
+                return stub.releaseInventory(releaseRequest);
+            }));
+        }
+        start.countDown();
+        for (Future<ReleaseInventoryResponse> result : results) {
+            assertThat(result.get(30, TimeUnit.SECONDS).getSuccess()).isTrue();
+        }
+        executor.shutdown();
+
+        // Assert: restored exactly once
+        assertStock(productId, 100, 0);
+        assertThat(reservationRepository.findByOrderId(orderId).orElseThrow().getStatus())
+                .isEqualTo(ReservationStatus.RELEASED);
+    }
+
+    @Test
+    void shouldReleaseStoredLinesNotRequestItems() {
+        // Arrange: reserve 2 products; another order also holds units of a third product
+        resetStock(16L, 100);
+        resetStock(17L, 100);
+        resetStock(18L, 100);
+        stub.reserveInventory(ReserveInventoryRequest.newBuilder()
+                .setOrderId("grpc-lines-other-order")
+                .addItems(ReservationItem.newBuilder().setProductId("18").setQuantity(9).build())
+                .build());
+        String orderId = "grpc-lines-order-1";
+        stub.reserveInventory(ReserveInventoryRequest.newBuilder()
+                .setOrderId(orderId)
+                .addItems(ReservationItem.newBuilder().setProductId("16").setQuantity(2).build())
+                .addItems(ReservationItem.newBuilder().setProductId("17").setQuantity(3).build())
+                .addItems(ReservationItem.newBuilder().setProductId("16").setQuantity(1).build())
+                .build());
+        assertThat(reservationLineRepository.findByOrderIdOrderByProductIdAsc(orderId))
+                .extracting(ReservationLine::getProductId, ReservationLine::getQuantity)
+                .containsExactly(tuple(16L, 3), tuple(17L, 3));
+
+        // Act: release with items that differ from what was reserved (wrong quantity, a product that
+        // belongs to another order, one reserved product missing)
+        ReleaseInventoryResponse response = stub.releaseInventory(ReleaseInventoryRequest.newBuilder()
+                .setOrderId(orderId)
+                .addItems(ReservationItem.newBuilder().setProductId("16").setQuantity(50).build())
+                .addItems(ReservationItem.newBuilder().setProductId("18").setQuantity(9).build())
+                .build());
+
+        // Assert: exactly the stored lines were restored; the other order's units are untouched
+        assertThat(response.getSuccess()).isTrue();
+        assertStock(16L, 100, 0);
+        assertStock(17L, 100, 0);
+        assertStock(18L, 91, 9);
+    }
+
+    @Test
     void shouldReturnInvalidArgumentForBadProductId() {
         // Arrange: product_id is not a valid number
         ReserveInventoryRequest request = ReserveInventoryRequest.newBuilder()
@@ -289,5 +422,18 @@ class InventoryGrpcIT {
                 () -> stub.reserveInventory(request));
 
         assertThat(ex.getStatus().getCode()).isEqualTo(Status.Code.INVALID_ARGUMENT);
+    }
+
+    private void resetStock(Long productId, int available) {
+        InventoryItem item = inventoryItemRepository.findByProductId(productId).orElseThrow();
+        item.setAvailableQuantity(available);
+        item.setReservedQuantity(0);
+        inventoryItemRepository.save(item);
+    }
+
+    private void assertStock(Long productId, int available, int reserved) {
+        InventoryItem item = inventoryItemRepository.findByProductId(productId).orElseThrow();
+        assertThat(item.getAvailableQuantity()).as("available of product %d", productId).isEqualTo(available);
+        assertThat(item.getReservedQuantity()).as("reserved of product %d", productId).isEqualTo(reserved);
     }
 }
