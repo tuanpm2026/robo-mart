@@ -99,14 +99,14 @@ No new schema, REST response fields, proto/Avro contract or infrastructure chang
 | Finding | Status / dependency |
 | --- | --- |
 | 1. Modern Checkstyle engine bound to validate | Implemented: Checkstyle 12.3.1 runs at validate; existing advisory severity retained |
-| 2. OSIV off, virtual threads, explicit pools and gRPC executor | Implemented configuration; Order/Inventory and real HTTP/gRPC virtual-thread checks passed; final full-service validation remains |
+| 2. OSIV off, virtual threads, explicit pools and gRPC executor | Implemented and verified: OSIV off including real HTTP fallback; servlet/gRPC virtual execution, bounded pools; full reactor and E2E passed |
 | 3. ProblemDetail and Spring 4xx handling | Implemented RFC 9457 with legacy error envelope; real MVC 400/403/405/415 tests passed |
-| 4. Boot-managed Kafka factories, observations and DLT | Implemented; Product DLT/baggage and full Notification replay/archive tests passed; final reactor remains |
+| 4. Boot-managed Kafka factories, observations and DLT | Implemented and verified: Boot factories/customizers, per-record baggage, raw/Avro DLT, terminal archive retry; full reactor and E2E passed |
 | 5. Structured logging, baggage, remove duplicate tracing, OTLP setting, tracing test alignment | Implemented: Boot ECS, OTel in tests, scoped HTTP/Kafka baggage; actual propagation regression passed |
-| 6. Dockerfile alignment/layers/AOT/JVM flags/image digests | Implemented shared Dockerfile renderer, pinned images, layers, JVM flags and isolated core-context AOT training; final image/E2E checks in progress |
+| 6. Dockerfile alignment/layers/AOT/JVM flags/image digests | Implemented and verified: all9 rendered files, source/CD/prebuilt builds, pinned layers/JVM flags, isolated training, actual cache mapping in all7 E2E JVMs |
 | 7. Spring resilience primitives, gateway breaker, JSpecify/NullAway | Implemented: Framework retries/concurrency, Gateway transport breaker, JSpecify contracts and compile-time NullAway errors |
-| 8. JWT issuer/audience and realm mapper alignment | Implemented issuer/audience/JWK configuration and realm mappers; real signed-token Gateway tests passed; E2E realm reconciliation still needs execution |
-| 9. Service-specific integration-test infrastructure | Implemented resource-specific fixtures; Order/Inventory/Notification runs no longer show forced fork shutdown |
+| 8. JWT issuer/audience and realm mapper alignment | Implemented issuer/audience/JWK validation; signed-token Gateway tests, retained E2E mapper reconciliation and actual service-identity RBAC checks passed |
+| 9. Service-specific integration-test infrastructure | Implemented and verified: resource-specific JVM-owned fixtures; no forced fork shutdown in final full reactor |
 | 10. Remove active dev profile, Locale.ROOT, security coverage exclusions, Keycloak CORS origin and proxy spoofing | Implemented; role/CORS/forwarded-header regressions and coverage including config passed |
 
 ## Wave 9: pending
@@ -473,3 +473,15 @@ All13 containers became healthy. Read-only probes verified UID1001 and an actual
 Product's fallback now opens a read-only TransactionTemplate only around the PostgreSQL query and DTO mapping; Elasticsearch I/O stays outside it. Existing degraded-mode filter semantics and connection-only fallback classification are unchanged. A new real HTTP ProductSearchFallbackIT forces an Elasticsearch connection failure, asserts no database transaction during that I/O, and verifies category/image DTO fields from PostgreSQL with OSIV disabled. Unit cache fixtures now supply the newly explicit transaction-manager dependency. ./mvnw -B -ntp clean verify -pl :product-service -Dit.test=ProductSearchFallbackIT -DskipE2ETests passed103 unit+1 targeted IT and coverage. The initial attempt found the missing transaction-manager mock in the cache-only unit context; it was corrected before the successful run.
 
 E2E explicitly addresses Elasticsearch through container DNS. Its45second search budget is unchanged, with3second polling that respects the actual anonymous token rate. New Product source/prebuilt images and the retained-data E2E stack are being verified before the final post-fix reactor/CI gate.
+
+
+### Wave 8 isolated E2E and data cleanup completed
+
+After the fallback/Elasticsearch configuration fixes, infra/e2e/stack.sh up passed with all13 containers healthy, and audience reconciliation reported0 updates on repeat. infra/e2e/stack.sh test passed all3 real tests (full flow9.618s, both chaos65.49s, Maven1m16s). The original60second recovery assertion is unchanged: five orders created during Payment outage recover automatically with the same keys and no duplicate charges. Latency injection and asynchronous confirmation, cancellation/refund, audit and reconciliation paths passed.
+
+Read-only post-test SQL attributed only orders22–28 beyond the baseline21: all7 CANCELLED, each payment fully REFUNDED (179.99), every reservation RELEASED, and exactly7 RESERVE/7 COMMIT/7 RELEASE movements. No earlier order was removed. Teardown stopped/removed only the isolated project's containers/network, retained all volumes and left unrelated ivysport-mysql running. The first failing E2E attempt had created no orders. The full post-fallback reactor/CI gates remain before merge.
+
+
+### Wave 8 final post-fallback gate
+
+The final ./mvnw -B -ntp clean verify -DskipE2ETests passed all15 modules in6m35s after the E2E-discovered fallback fix:698 unit+287 IT=985, zero failures/errors/skips, all configured coverage gates passed. Product includes82 IT with the new real HTTP degraded-search regression. Explicit Checkstyle passed all15 modules; dependency installation then succeeded with tests intentionally skipped and the IDE compiler still suspended. No forced-fork-exit or Boot3 introspection warning remained. All3 isolated E2E/chaos tests had already passed on the same implementation, with verified refunds/stock cleanup. The final validation report consolidates evidence and limits. PR CI and squash merge remain.

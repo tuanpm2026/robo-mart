@@ -1,55 +1,14 @@
 # Wave 8 platform validation — 2026-10-27
 
-Branch: `wave8/platform`, based on Wave 7 squash `7f9167b099e1c7167c61267d5a1584b2d7aa1d3b`.
+Branch: `wave8/platform`, based on Wave7 and rebased over the two subsequent main image-tag commits. Implementation decisions and intermediate investigations remain in [the remediation record](../../docs/backend-remediation-waves-6-9.md). PR CI/merge status will be added after execution.
 
-This report is in progress. The full reactor and style gates have passed; image/E2E and PR checks remain. Detailed implementation decisions and intermediate failures are recorded in `docs/backend-remediation-waves-6-9.md`.
+## Final verification
 
-## Focused checks completed
+All Maven commands used JDK25 and `backend/mvnw`. Background IDE compilation was suspended during Maven compilation/testing and resumed afterwards. Testcontainers modules ran sequentially on the8GiB Docker engine; the full E2E stack did not run concurrently with them.
 
-All Maven commands used JDK25 and `backend/mvnw`. Background IDE compilation was suspended during Maven compilation/testing and resumed afterwards. Coverage gates remained enabled.
+`./mvnw -B -ntp clean verify -DskipE2ETests` passed all15 modules in6m35s after the final search-fallback fix: **698 unit +287 integration tests =985**, zero failures/errors/skips. Every configured coverage gate passed, including configuration/security code. There were no forced-fork-exit or Boot3 introspection warnings.
 
-| Scope | Executed command | Result |
-| --- | --- | --- |
-| Style lifecycle | `./mvnw validate` | All 14 then-existing reactor modules passed Checkstyle12.3.1 |
-| Order foundation | `./mvnw clean verify -pl :order-service -DskipE2ETests` | 180 unit +57 IT, coverage passed; before Framework retry migration |
-| Inventory foundation | `./mvnw clean verify -pl :inventory-service -DskipE2ETests` | 75 unit +49 IT, coverage passed; real gRPC virtual-thread assertion |
-| Product propagation | `./mvnw clean verify -pl :product-service -Dit.test=PlatformBaggageIT -DskipE2ETests` | 103 unit +2 real HTTP/Kafka IT and coverage passed |
-| Notification | `./mvnw clean verify -pl :notification-service -DskipE2ETests` | 116 unit +22 IT, coverage passed; archive failure/retry, malformed bytes, replay |
-| Payment | `./mvnw clean verify -pl :payment-service -DskipE2ETests` | 44 unit +34 IT, coverage passed; Framework concurrency control |
-| Gateway | `./mvnw clean verify -pl :api-gateway -DskipITs -DskipE2ETests` | 62 tests and coverage passed; real JWT decoder, transport breaker, preserved upstream errors and timeout |
-| Null-safety | `./mvnw -B -ntp clean verify -pl :common-lib,:security-lib -DskipITs -DskipE2ETests` | 44+17 tests and coverage passed; compiler negative probe rejected null contract violation, probe removed |
-| Training isolation | `./mvnw -B -ntp clean verify -pl :build-support -DskipITs -DskipE2ETests` | 1 test and coverage passed; only explicit minimal framework configuration beans |
-| Image-input packaging | `./mvnw -B -ntp clean install -DskipTests -DskipITs -DskipE2ETests` | All15 modules passed; tests intentionally skipped, not a test result |
-
-The service-specific fixture changes eliminated forced-fork-exit warnings in the focused full Order/Inventory/Payment/Notification runs. Final reactor confirmation is pending.
-
-## Images
-
-`python3 backend/scripts/render-dockerfiles.py --check` passed for all9 generated Dockerfiles. Both source and prebuilt entry points retain their previous contexts/targets, including existing CD paths. Base-image multi-platform index digests were resolved with `docker buildx imagetools inspect` and are pinned in the renderer.
-
-`docker build --progress=plain -f backend/Dockerfile.prebuilt --target product-service -t robo-w8-product-aot backend` passed. BuildKit created a 38,862,848-byte AOT cache with networking disabled. A second isolated container loaded that cache: `Opened AOT cache application.aot`, `Mapped static region`, `Using AOT-linked classes: true`. Compact object headers were enabled in training and reuse. This is core-context warming only; no full-service startup performance claim is made.
-
-## Frontend and configuration
-
-On the installed lockfile dependency graph, both apps passed:
-
-- `npm run type-check --workspaces --if-present`
-- `npm run test:unit --workspaces --if-present -- --run` — Customer240 +Admin87 tests
-- `npm run build --workspaces --if-present`
-- `npx prettier --check customer-website/src/ admin-dashboard/src/`
-
-Compose core+app and isolated E2E `config --quiet` passed. Kustomize rendered base, production and ingress-tls overlays successfully. Shell syntax and renderer compilation passed. No cluster was changed. The user confirmed auto-deploy is currently disabled; deployment provisioning is separate from the authorized merge workflow.
-
-## Still required
-
-Final whole-reactor tests, explicit Checkstyle, all application images and remaining source-build paths, actual AOT reuse by application startup, isolated persisted-realm reconciliation, real E2E/chaos, PR CI and squash merge. Proto buf lint/breaking against main passed; the initial reactor Avro compatibility suite passed3 cases.
-
-The initial whole-reactor run failed only the Order404 Pact media-type expectation before reaching later services. Both pact declaration and committed provider contract were corrected to application/problem+json. Two focused Notification consumer tests passed using the actual typed OrderServiceClient. A fresh whole-reactor verification follows that correction.
-
-
-## Final reactor and style gates
-
-After the Pact and reactive-adapter corrections, ./mvnw -B -ntp clean verify -DskipE2ETests passed all15 modules in6m29s. Maven execution summaries and individual XML testcase elements agree: **698 unit +286 integration tests =984**, zero failures/errors/skips. Three JUnit nested-class XML suite headers undercount their testcase elements, so counts use actual testcase elements and Maven execution summaries rather than summing only root attributes. Every configured coverage gate passed, including security/configuration classes. There was no forced-fork-exit warning.
+Counts agree between Maven execution summaries and actual XML testcase elements. Some nested JUnit XML suite headers undercount their testcase elements; counts do not rely only on those root attributes. No raw test XML properties or credentials are included here.
 
 | Module | Unit | Integration |
 | --- | ---: | ---: |
@@ -58,7 +17,7 @@ After the Pact and reactive-adapter corrections, ./mvnw -B -ntp clean verify -Ds
 | Security | 17 | 0 |
 | Proto | 8 | 0 |
 | Events | 2 | 3 |
-| Product | 103 | 81 |
+| Product | 103 | 82 |
 | Cart | 45 | 40 |
 | Gateway | 63 | 0 |
 | Order | 180 | 57 |
@@ -66,22 +25,62 @@ After the Pact and reactive-adapter corrections, ./mvnw -B -ntp clean verify -Ds
 | Payment | 44 | 34 |
 | Notification | 116 | 22 |
 
-./mvnw -B -ntp checkstyle:check then passed all15 modules. Existing advisory warnings remain at their existing severity; no checker/coverage gate was disabled. Proto buf lint and wire-breaking comparison against main passed. Events' real Kafka/Schema Registry Avro compatibility suite passed3 tests in the final reactor.
+`./mvnw -B -ntp checkstyle:check` passed all15 modules. Checkstyle12.3.1 also runs during validate; existing advisory severity remains unchanged. `./mvnw -B -ntp install -DskipTests -DskipITs -DskipE2ETests` subsequently installed the exact dependencies with IDE compilation still paused. That installation intentionally skipped tests and is not a separate test result.
 
+Proto `buf lint` and `buf breaking --against '../../.git#branch=main,subdir=backend/proto'` passed. All3 real Kafka/Schema Registry Avro compatibility IT passed in the reactor. No proto/Avro business schema changed.
 
-## Application image startup follow-up
+## Regression evidence
 
-The full source reactor image (backend/Dockerfile target api-gateway), Product/Gateway per-service CD paths, and all7 prebuilt isolated application images built successfully. Source builds include actual Linux proto/gRPC generation and active NullAway; they intentionally skip tests because the host reactor already runs them.
+- Real MVC tests cover unreadable JSON, missing headers, type mismatch,403/405/415, preserved Allow header and the legacy error envelope within RFC9457 responses.
+- Real HTTP/gRPC probes assert virtual execution. A final real HTTP fallback regression forces an Elasticsearch connection failure, asserts no DB transaction during that I/O, and reads category/lazy image DTO fields inside the subsequent read-only PostgreSQL transaction with OSIV disabled.
+- Actual Kafka scopes carry distinct and then absent baggage per record, with no leaked MDC; configured producer interceptors remain active. DLT tests preserve Avro/raw bytes and source metadata. Terminal archive failure retries twice and then persists rather than acknowledging a lost record.
+- Real signed JWTs/local JWK server verify issuer, audience, expiry and signature failures, valid-token acceptance and lazy JWK retrieval.
+- Production gRPC proxies verify bounded retry counts, business-error classification, fallback ordering and zero calls through OPEN. Provider concurrency tests share2 permits across charge/refund, reject overload and reuse permits after exceptions.
+- Gateway transport tests cover OPEN/half-open recovery, unchanged upstream502 body and an order response longer than1second without the library's implicit TimeLimiter. The reactive-only regression verifies no blocking factory and working Boot4 circuit metrics.
+- NullAway is an ERROR-level production compiler gate in marked Common/Security packages. A temporary source deliberately returning null failed compilation with NullAway; it was removed and positive clean verification passed. No blanket nullability suppression was added.
 
-The first actual Gateway main smoke loaded AOT-linked classes and reached liveness UP, but logged a Boot3 class reference in the unused Cloud5.0.3 blocking adapter's annotation metadata. Gateway now excludes only that blocking auto-configuration. Reactive-only factory selection and working Micrometer circuit metrics are covered by a new test; ./mvnw -B -ntp clean verify -pl :api-gateway -DskipITs -DskipE2ETests passed63 tests and coverage. Rebuilt CD/prebuilt Gateway images again loaded AOT-linked classes and reached liveness UP with no Boot3 introspection warning. The final repeated reactor passed698 unit+286 IT, all coverage gates and Checkstyle; no Boot3 introspection or forced-fork-exit warnings remained.
+## Images and configuration
 
+`python3 backend/scripts/render-dockerfiles.py --check` passed all9 generated entry points. The source/CD/prebuilt contexts and targets are preserved without workflow edits.
 
-## Retained-data E2E findings
+Executed successfully:
 
-The first guarded stack start stopped before applications because the retained isolated realm lacked Inventory's Wave7 service client. A one-time guarded fixture provisioner verified the exact Compose labels/loopback Keycloak, created only the missing Inventory client from the committed fixture and its intended service-account grant, and preserved existing identities/secrets/data. The normal audience-only reconciler then completed. Both service identities received canonical-issuer/robomart-api tokens with exactly their intended role; Inventory could read the minimal internal order-status endpoint (200) and could not list admin orders (403). No production realm/cluster was changed. The reconciler remains audience-only and refuses missing clients.
+- `docker build --progress=plain -f backend/Dockerfile --target api-gateway -t robo-w8-all-source-gateway backend` — all15 source modules packaged, including Linux proto/gRPC generation.
+- `docker build --progress=plain -f infra/docker/product-service/Dockerfile -t robo-w8-product-source .` — repeated successfully after the final Product fix.
+- `docker build --progress=plain -f infra/docker/api-gateway/Dockerfile -t robo-w8-gateway-cd .` — repeated successfully after the reactive-adapter correction.
+- `infra/e2e/stack.sh build` — all7 actual prebuilt production application targets built serially, along with the isolated PostgreSQL/Keycloak fixtures. The final Product target was rebuilt again after its fix.
 
-All13 containers became healthy. Read-only probes verified UID1001 and an actually memory-mapped nonempty AOT cache in every application JVM (under Compose's init process). The first E2E run nevertheless failed all3 tests before creating an order: the stack lacked SPRING_ELASTICSEARCH_URIS, and PostgreSQL degraded search mapped lazy images after its repository transaction closed under OSIV=false. Aggressive100ms search polling exhausted anonymous rate-limit tokens and obscured the initial500 with429. No test-created order existed beyond the baseline21.
+Every image creates its AOT cache with BuildKit networking disabled, the exact pinned runtime JRE and actual extracted classpath. Training starts only an isolated aot-training core context: no application scan, auto-configuration, migrations, consumers, schedulers, seeders or outbound clients. Its configuration is excluded from normal app scans by profile. This warms core Spring only and makes no quantified startup-performance claim.
 
-Product's fallback now opens a read-only TransactionTemplate only around the PostgreSQL query and DTO mapping; Elasticsearch I/O stays outside it. Existing degraded-mode filter semantics and connection-only fallback classification are unchanged. A new real HTTP ProductSearchFallbackIT forces an Elasticsearch connection failure, asserts no database transaction during that I/O, and verifies category/image DTO fields from PostgreSQL with OSIV disabled. Unit cache fixtures now supply the newly explicit transaction-manager dependency. ./mvnw -B -ntp clean verify -pl :product-service -Dit.test=ProductSearchFallbackIT -DskipE2ETests passed103 unit+1 targeted IT and coverage. The initial attempt found the missing transaction-manager mock in the cache-only unit context; it was corrected before the successful run.
+An actual Gateway main smoke loaded AOT-linked classes and reached liveness UP in a512MiB container with192MiB heap. Read-only probes of all7 running E2E JVMs verified UID1001 and a nonempty, memory-mapped application.aot. Probes resolve Java below Compose's init process rather than assuming PID1 is Java.
 
-E2E explicitly addresses Elasticsearch through container DNS. Its45second search budget is unchanged, with3second polling that respects the actual anonymous token rate. New Product source/prebuilt images and the retained-data E2E stack are being verified before the final post-fix reactor/CI gate.
+Compose core+app, isolated E2E, and base+full monitoring overlay config checks passed. Kustomize rendered base, production and ingress-tls successfully. Renderer compilation and shell syntax checks passed. No cluster was changed.
+
+## Isolated persisted-data E2E
+
+Commands: `infra/e2e/stack.sh up`, `infra/e2e/stack.sh test`, guarded read-only SQL, `infra/e2e/stack.sh down`.
+
+All13 containers became healthy. **All3 real E2E/chaos tests passed**, zero failures/errors/skips: full flow9.618s, both chaos65.49s, Maven1m16s. Five original orders created during Payment outage recovered automatically within the unchanged60second recovery budget, with the same keys and no duplicate charges. The full flow verifies search, carts, checkout, asynchronous confirmation, refund cancellation, service-authenticated audit/reconciliation; latency injection also passed.
+
+The retained isolated realm lacked the earlier Inventory fixture client. The audience-only guard stopped before starting apps. A separate one-time provisioner verified exact Compose project/service labels and the loopback Keycloak port, created only that missing fixture client/intended grant, and preserved existing identities/secrets/data. Normal mapper reconciliation then completed; repeat startup reported0 updates. The committed reconciler remains audience-only and refuses missing clients.
+
+Both service identities received canonical-public-issuer/API-audience tokens with exactly their intended role. Inventory's signed token received200 from the minimal internal order-status endpoint and403 from admin order listing. No production realm, cluster or credential was changed.
+
+The first E2E attempt failed before creating orders: the stack lacked its Elasticsearch URI, and OSIV=false exposed detached lazy images in PostgreSQL fallback. Fast polling obscured the original500 with rate-limit429. The fallback transaction, explicit container URI and3second polling were corrected; the45second search budget and production rate limits were unchanged.
+
+Post-success SQL attributed only orders22–28 beyond baseline21:
+
+- 7 CANCELLED orders;
+- 7 fully REFUNDED payments, amount=refunded_amount=179.99 each;
+- 7 RELEASED reservations;
+- exactly7 RESERVE,7 COMMIT and7 RELEASE movements.
+
+Teardown removed only this project's containers/network. Every data volume was retained; unrelated ivysport-mysql remained running. No earlier order was removed.
+
+## Frontend, rollout and limits
+
+Both apps passed workspace type-check, unit tests (Customer240 +Admin87), production builds and read-only Prettier checks, on the installed lockfile dependency graph. No frontend source changed in this wave.
+
+No new Flyway migration. Existing deployed realms need the API audience mapper before enabling enforcement, preserving the canonical public issuer and independent private JWK URI. Host dev profiles are explicit. Anonymous rate limiting uses the socket peer; behind ingress, anonymous users share that peer bucket until trusted proxy ranges are deliberately configured.
+
+The user confirmed auto-deploy is disabled. This work prepares code/configuration and the authorized PR merge, not a live deployment. AOT caches must be rebuilt with application/JRE/architecture changes. External email delivery is not exercised: the dev profile uses the configured mock email service. Performance/load testing is outside these functional gates.
