@@ -53,3 +53,6 @@ Wave 8's rebuilt production image targets passed all3 E2E/chaos tests on2026-10-
 
 
 Wave9 upgrades the retained Kafka/Schema Registry data to pinned Confluent8.2.4 images. Before apps start, configure-kafka.py verifies the fixed isolated labels/image/volume/cluster and enables only group.version1 after a dry-run; it never finalizes metadata or formats storage and first enablement requires stopped apps. E2E opts into KIP-848 consumer mode. Developer/production defaults remain classic until explicitly prepared. See [Kafka8 rollout](../../docs/kafka-8-upgrade.md) for the tested retained-data boundary and feature controls.
+
+
+Wave9's rebuilt stack passed4 E2E/chaos tests on2026-10-27, adding real Gateway-admin image upload/public S3 read/deletion. All8 application groups were Consumer/Stable against retained Kafka data; feature/audience reconciliation made0 changes on repeat. Orders29–35 were cancelled, fully refunded and released, all inventory quantities returned to baseline, and existing123 image rows were preserved. All7 JVMs mapped AOT caches. Teardown retained every volume. See [Wave9 validation](../../_bmad-output/test-artifacts/wave9-data-infra-validation-2026-10-27.md).

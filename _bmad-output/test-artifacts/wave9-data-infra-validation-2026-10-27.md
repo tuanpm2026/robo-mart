@@ -1,6 +1,6 @@
 # Wave 9 data infrastructure validation — 2026-10-27
 
-Status: implementation and final local reactor/style verification complete; image/E2E/PR merge checks in progress. Branch `wave9/data-infra`.
+Status: implementation and all local reactor/style/image/E2E verification complete. PR CI and merge are tracked in the associated Wave9 pull request. Branch `wave9/data-infra`.
 
 ## Changes and operational boundaries
 
@@ -52,4 +52,15 @@ The actual repository-root CD/source Product image built successfully, including
 | proto | 8 | 0 | n/a |
 | security-lib | 17 | 0 | 85.3% |
 
-Final isolated image/E2E and PR CI evidence follow below. Operator rollout prerequisites remain in `docs/kafka-8-upgrade.md` and `docs/product-object-storage.md`; deployment is not automated in the user's current environment.
+Final isolated image/E2E evidence follows below; PR CI/merge remain the final repository gate. Operator rollout prerequisites remain in `docs/kafka-8-upgrade.md` and `docs/product-object-storage.md`; deployment is not automated in the user's current environment.
+
+
+## Final retained-data E2E
+
+`infra/e2e/stack.sh build` built all7 actual production/prebuilt application targets plus the dependency fixtures. `infra/e2e/stack.sh up` reached14 healthy running containers; the one-shot bucket initializer exited0. Retained Kafka reported group.version1/metadata.version3.9-IV0 with0 feature updates; retained realm audience reconciliation reported0 updates. Ownership-guarded probes verified UID1001 and actually memory-mapped nonempty AOT caches in all7 application JVMs.
+
+With JDK25, `infra/e2e/stack.sh test` passed4 real tests (zero failures/errors/skips, Maven1m26s): checkout/refund13.86s, image upload/public read/committed deletion0.358s, and both chaos70.69s. The original60second pending-payment recovery budget remains unchanged. The same five held orders recovered automatically after Payment restart; new synchronous checkout was not needed to trigger them.
+
+Read-only SQL attributed only orders29–35 beyond the captured baseline28. All7 were CANCELLED, payments fully REFUNDED at179.99 each and reservations RELEASED, with exactly7 RESERVE/7 COMMIT/7 RELEASE movements. Every inventory quantity matched the before-test snapshot. Image rows returned to the baseline123, preserving existing external seed-image URLs; the newly uploaded object and cached detail reference were removed. Kafka CLI confirmed all8 application groups are type Consumer and Stable (1–3 members), exercising KIP-848 against retained data.
+
+`infra/e2e/stack.sh down` retains every project volume and stops/removes only this isolated project's containers/network; unrelated ivysport-mysql is preserved. No developer/live-cluster data was changed. The explicit empty-volume CLI result is not presented as a production migration; real nonempty copy/conflict behavior is covered by the separate MinIO integration fixtures.
