@@ -15,6 +15,11 @@
     <description>Shopping cart management with Redis storage</description>
 
     <dependencies>
+        <dependency>
+            <groupId>com.robomart</groupId>
+            <artifactId>build-support</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- Internal -->
         <dependency>
             <groupId>com.robomart</groupId>

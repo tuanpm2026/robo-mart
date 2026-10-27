@@ -15,6 +15,11 @@
     <description>Order management microservice with Saga orchestration</description>
 
     <dependencies>
+        <dependency>
+            <groupId>com.robomart</groupId>
+            <artifactId>build-support</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- Chaos Monkey's optional HTTP instrumentation requires Boot's RestClient module. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

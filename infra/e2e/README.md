@@ -17,7 +17,7 @@ infra/e2e/stack.sh logs
 infra/e2e/stack.sh down
 ```
 
-`build` generates an ignored `.runtime/robomart-realm.json` from the committed main realm, replacing only Inventory/Notification secrets with isolated public test fixtures. The main import already contains both service clients/roles. These fixture secrets and all database/admin credentials here are unsuitable for deployment. The generator leaves the source realm unchanged. Application images install `curl` explicitly for healthchecks.
+`build` generates an ignored `.runtime/robomart-realm.json` from the committed main realm, replacing only Inventory/Notification secrets with isolated public test fixtures. The main import already contains both service clients/roles. These fixture secrets and all database/admin credentials here are unsuitable for deployment. The generator leaves the source realm unchanged. Application images use the production `backend/Dockerfile.prebuilt` targets, including layered extraction, pinned JRE, compact headers and side-effect-free AOT training. They install `curl` explicitly for healthchecks. The build first checks generated Dockerfiles for drift.
 
 Notification background authentication is enabled by default and explicit in this stack. Its cached client-credentials token permits only the required GET order detail, reconciliation summaries and source audit logs; it grants no general admin/customer writes. Inventory uses its separate `INVENTORY_SERVICE` client to read the minimal internal order-status endpoint for safe reservation expiry. Existing live realms need separately provisioned matching roles, confidential clients and generated secrets; startup realm import does not update them.
 

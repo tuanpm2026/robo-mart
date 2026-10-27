@@ -12,6 +12,7 @@ case "${1:-}" in
     "${COMPOSE[@]}" config --quiet
     ;;
   build)
+    python3 "$ROOT/backend/scripts/render-dockerfiles.py" --check
     "$0" prepare
     for service in "${SERVICES[@]}"; do
       test -s "$ROOT/backend/$service/target/$service-0.0.1-SNAPSHOT.jar" || {

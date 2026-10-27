@@ -151,9 +151,9 @@ services:
     mem_limit: 640m
     image: robomart-e2e/product-service:java25
     build:
-      context: ../..
-      dockerfile: infra/e2e/Dockerfile.app
-      args: {SERVICE: product-service}
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: product-service
     depends_on:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
@@ -181,9 +181,9 @@ services:
     <<: *app
     image: robomart-e2e/cart-service:java25
     build:
-      context: ../..
-      dockerfile: infra/e2e/Dockerfile.app
-      args: {SERVICE: cart-service}
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: cart-service
     environment:
       <<: *app-env
     healthcheck:
@@ -202,9 +202,9 @@ services:
       keycloak: {condition: service_healthy}
     image: robomart-e2e/inventory-service:java25
     build:
-      context: ../..
-      dockerfile: infra/e2e/Dockerfile.app
-      args: {SERVICE: inventory-service}
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: inventory-service
     ports: ["127.0.0.1:18084:8084"]
     environment:
       ORDER_SERVICE_URL: http://order-service:8083
@@ -232,9 +232,9 @@ services:
       keycloak: {condition: service_healthy}
     image: robomart-e2e/payment-service:java25
     build:
-      context: ../..
-      dockerfile: infra/e2e/Dockerfile.app
-      args: {SERVICE: payment-service}
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: payment-service
     ports: ["127.0.0.1:18086:8086"]
     environment:
       <<: *app-env
@@ -250,9 +250,9 @@ services:
     <<: *app
     image: robomart-e2e/order-service:java25
     build:
-      context: ../..
-      dockerfile: infra/e2e/Dockerfile.app
-      args: {SERVICE: order-service}
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: order-service
     ports: ["127.0.0.1:18083:8083"]
     environment:
       <<: *app-env
@@ -271,9 +271,9 @@ services:
     mem_limit: 640m
     image: robomart-e2e/notification-service:java25
     build:
-      context: ../..
-      dockerfile: infra/e2e/Dockerfile.app
-      args: {SERVICE: notification-service}
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: notification-service
     environment:
       <<: *app-env
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/notification_db
@@ -301,9 +301,9 @@ services:
     <<: *app
     image: robomart-e2e/api-gateway:java25
     build:
-      context: ../..
-      dockerfile: infra/e2e/Dockerfile.app
-      args: {SERVICE: api-gateway}
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: api-gateway
     ports: ["127.0.0.1:18080:8080"]
     environment:
       <<: *app-env
