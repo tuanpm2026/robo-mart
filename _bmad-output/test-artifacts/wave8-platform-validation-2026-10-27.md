@@ -1,6 +1,6 @@
 # Wave 8 platform validation — 2026-10-27
 
-Branch: `wave8/platform`, based on Wave7 and rebased over the two subsequent main image-tag commits. Implementation decisions and intermediate investigations remain in [the remediation record](../../docs/backend-remediation-waves-6-9.md). PR CI/merge status will be added after execution.
+Branch: `wave8/platform`, based on Wave7 and rebased over the two subsequent main image-tag commits. Implementation decisions and intermediate investigations remain in [the remediation record](../../docs/backend-remediation-waves-6-9.md). PR [#46](https://github.com/tuanpm2026/robo-mart/pull/46) merged as c6d72677b7e8cdc1c23e83942c97d1f2d2030e9f after all15 CI checks passed on a1c5e71291a04eb044f9e0cf05eb031c377a2e33. No CodeQL alert remained open for the PR; none was dismissed. The unrelated existing frontend dependency findings were not modified by this backend-only wave.
 
 ## Final verification
 

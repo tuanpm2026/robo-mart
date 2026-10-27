@@ -94,7 +94,9 @@ Earlier validation attempts failed on obsolete retry/cancellation expectations, 
 
 No new schema, REST response fields, proto/Avro contract or infrastructure changes are included in the current order-service subset. Checkout awaiting stock release returns HTTP 202 with its existing `INVENTORY_RELEASING` status; the storefront displays cancellation progress instead of confirmation or a delivery estimate. The deadline remains a per-attempt bound; a retried operation can take up to three deadlines plus the configured exponential backoff. Do not start Wave 8 or merge Wave 7 while the remaining correctness scope is incomplete.
 
-## Wave 8: in progress on `wave8/platform`
+## Wave 8: merged
+
+PR [#46](https://github.com/tuanpm2026/robo-mart/pull/46), squash commit `c6d72677b7e8cdc1c23e83942c97d1f2d2030e9f`. All15 CI checks passed on head a1c5e71291a04eb044f9e0cf05eb031c377a2e33; no open CodeQL alert on the PR merge ref, none dismissed. Final local gates:985 backend tests +3 real E2E/chaos +327 frontend tests, coverage/style/schema/configuration passed. No new Flyway migration; production audience provisioning and manual rollout remain operational prerequisites.
 
 | Finding | Status / dependency |
 | --- | --- |
@@ -109,7 +111,7 @@ No new schema, REST response fields, proto/Avro contract or infrastructure chang
 | 9. Service-specific integration-test infrastructure | Implemented and verified: resource-specific JVM-owned fixtures; no forced fork shutdown in final full reactor |
 | 10. Remove active dev profile, Locale.ROOT, security coverage exclusions, Keycloak CORS origin and proxy spoofing | Implemented; role/CORS/forwarded-header regressions and coverage including config passed |
 
-## Wave 9: pending
+## Wave 9: in progress on `wave9/data-infra`
 
 | Finding | Status / dependency |
 | --- | --- |
