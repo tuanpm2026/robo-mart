@@ -37,9 +37,9 @@ Executed validation:
 
 Aborted worktrees were removed after preserving tracked diffs, untracked files and a manifest under `/private/tmp/robo-mart-aborted-worktrees-20261026`. Three worktrees contained uncommitted Wave 7 drafts; they were not assumed complete or copied into production wholesale. The backup is local and temporary, and is not a substitute for committed implementation.
 
-## Wave 7: in progress on `wave7/correctness`
+## Wave 7: merged
 
-“Implemented” below means present on this branch, not merged. Pending items retain the original scope; none is implicitly waived.
+Merged as PR #45, squash commit `7f9167b099e1c7167c61267d5a1584b2d7aa1d3b`. All implementation findings below are included. Final validation: 974 reactor tests, 3 isolated E2E/chaos tests and 327 frontend tests; all 16 CI checks passed. The user confirmed on 2026-10-27 that auto-deploy is not currently running, resolving the pre-merge deployment dependency. Keep the documented live provisioning/cutover requirements for the eventual rollout.
 
 | Area | Finding | Status |
 | --- | --- | --- |
@@ -94,7 +94,7 @@ Earlier validation attempts failed on obsolete retry/cancellation expectations, 
 
 No new schema, REST response fields, proto/Avro contract or infrastructure changes are included in the current order-service subset. Checkout awaiting stock release returns HTTP 202 with its existing `INVENTORY_RELEASING` status; the storefront displays cancellation progress instead of confirmation or a delivery estimate. The deadline remains a per-attempt bound; a retried operation can take up to three deadlines plus the configured exponential backoff. Do not start Wave 8 or merge Wave 7 while the remaining correctness scope is incomplete.
 
-## Wave 8: pending
+## Wave 8: in progress on `wave8/platform`
 
 | Finding | Status / dependency |
 | --- | --- |
@@ -349,7 +349,7 @@ Kafka integration fixtures explicitly own listener start/stop. Other Product tes
 
 ### Wave 7 boundary verification and coordinated cutover
 
-On 2026-10-27, JDK25 `./mvnw clean verify -DskipE2ETests` passed the whole reactor and configured coverage gates: Maven execution summaries report 691 unit tests and 282 integration tests (973 total), with no failures/errors/skips in executed suites. E2E was intentionally excluded. `./mvnw checkstyle:check` passed. The Order, Inventory and Payment forks still reported delayed shutdown after successful tests; the shared-container lifecycle investigation is tracked for Wave8's fixture work rather than disabling shutdown or coverage checks.
+On 2026-10-27, JDK25 `./mvnw clean verify -DskipE2ETests` passed the whole reactor and configured coverage gates: Maven execution summaries report 691 unit tests and 282 integration tests (973 total), with no failures/errors/skips in executed suites. E2E was intentionally excluded. `./mvnw checkstyle:check` passed. The Order, Inventory and Payment forks still reported delayed shutdown after successful tests; the shared-container lifecycle investigation is tracked for Wave 8's fixture work rather than disabling shutdown or coverage checks.
 
 In frontend/, `npm ci`, `npm run type-check --workspaces --if-present`, `npm run test:unit --workspaces --if-present -- --run`, `npm run build --workspaces --if-present`, and read-only Prettier checks for both app source trees passed. Customer ran240 tests and Admin87 (327 total). Proto `buf lint` and `buf breaking --against '../../.git#branch=main,subdir=backend/proto'` passed. Compose core/app and E2E configuration plus Kustomize base/production/ingress-tls rendered successfully.
 
@@ -362,4 +362,32 @@ Before admitting the new applications, provision the two confidential Keycloak c
 Base Compose Notification now supplies the same downstream service DNS URLs as E2E/Kubernetes; localhost defaults would otherwise break its new authenticated aggregation clients inside the container.
 
 
-Post-fix boundary result: `./mvnw clean verify -DskipE2ETests` passed 691 unit + 283 integration tests (974), all coverage gates and Checkstyle. Rebuilt isolated E2E/chaos passed 3 tests with no failures/errors/skips, preserving the 60-second restart recovery assertion. Read-only cleanup checks found all 7 new orders cancelled, all 7 payments fully refunded and all 7 reservations released, with 7 movements each of RESERVE/COMMIT/RELEASE. The stack was stopped without removing volumes; unrelated MySQL remained running. CI passed every check on implementation head 75b83d2. See [the final Wave 7 validation report](../_bmad-output/test-artifacts/wave7-correctness-validation-2026-10-27.md) for exact commands, coverage, failed-first-run evidence and deployment limits. Merge still requires the live cutover prerequisites described above to be established; Wave 8/9 have not started.
+Post-fix boundary result: `./mvnw clean verify -DskipE2ETests` passed 691 unit + 283 integration tests (974), all coverage gates and Checkstyle. Rebuilt isolated E2E/chaos passed 3 tests with no failures/errors/skips, preserving the 60-second restart recovery assertion. Read-only cleanup checks found all 7 new orders cancelled, all 7 payments fully refunded and all 7 reservations released, with 7 movements each of RESERVE/COMMIT/RELEASE. The stack was stopped without removing volumes; unrelated MySQL remained running. CI passed every check on implementation head 75b83d2. See [the final Wave 7 validation report](../_bmad-output/test-artifacts/wave7-correctness-validation-2026-10-27.md) for exact commands, coverage, failed-first-run evidence and deployment limits. At this verification snapshot, merge was waiting for live cutover status; the merged status above records its resolution.
+
+
+### Wave 8 platform foundation
+
+Started from updated main at Wave 7 squash 7f9167b. User confirmed auto-deploy is not currently running; no live deployment or Kubernetes mutation is part of this continuation.
+
+Checkstyle 12.3.1 is explicitly provided to the Maven plugin and check is bound to validate in the inherited active build. The existing rule severity is unchanged; validate passed all 14 modules with the modern parser and existing advisory warnings. The module configuration requires no removed-rule substitutions. Version reference: https://checkstyle.org/release-notes.html#Release_12.3.1.
+
+IntegrationTest now supplies only common Spring test behavior. ProductIntegrationTest starts PostgreSQL/Kafka/Elasticsearch/Redis; CartIntegrationTest starts Kafka/Redis; InventoryIntegrationTest starts PostgreSQL/Kafka. Existing Order/Payment/Notification tests retain their explicit resource selections. Shared JVM-owned containers register connection properties rather than container beans, avoiding Boot closing shared infrastructure with one cached context while other contexts still use it. Testcontainers/Ryuk owns final process cleanup; reuse is not required. Class-owned isolated containers retain their context/class lifecycle. This specifically addresses the Wave 7 teardown warning without reducing shutdown timeouts or disabling health checks.
+
+OSIV is disabled in every JPA service; all six servlet services enable virtual threads. Main Hikari pools default to maximum 10/minimum 2 with a 3-second acquisition timeout, configurable through DB_POOL_MAX_SIZE/DB_POOL_MIN_IDLE/DB_CONNECTION_TIMEOUT_MS. Payment's independent mock-provider pool remains 2 with a 1-second acquisition timeout and semaphore 2. These are explicit starting limits, not load-test sizing claims. Native gRPC does not inherit the servlet executor; Order/Inventory/Payment use Boot's GrpcServerExecutorProvider with a context-propagating managed virtual-thread executor. Inventory's real gRPC integration test captures the service execution thread and verifies isVirtual(). Boot owns gRPC observations; duplicate custom TracingConfig was removed.
+
+Removed hard-coded active dev profiles; host development now needs an explicit dev profile, while Compose/K8s use their supplied connection settings and E2E already selects dev/demo explicitly. Locale-independent role normalization is verified under tr-TR. JaCoCo no longer excludes config packages, including security configuration. Gateway no longer admits Keycloak as a browser CORS origin. Anonymous rate limits use the socket peer with framework forwarding disabled, so arbitrary Forwarded/X-Forwarded-For headers cannot create new buckets. Behind an ingress, anonymous users share the ingress peer bucket; introducing trusted proxy ranges requires an explicit, verified network boundary rather than a global trusted-hop count.
+
+The shared error response extends ProblemDetail with RFC 9457 status/title/detail/instance and code/traceId properties, while retaining error.code/error.message/error.details/timestamp for existing frontend readers. GlobalExceptionHandler extends ResponseEntityExceptionHandler, preserves framework response headers and committed-response behavior, and handles authorization denials without exposing internal details. Product's local advice uses the same response type. Standard missing headers, unreadable JSON, type mismatch, unsupported media and method errors retain their 4xx statuses. Initial MVC tests expected an explicit about:blank type, but Framework 7 correctly omits that RFC default; the assertions now validate the actual required status/detail/content type and compatibility fields.
+
+Executed JDK25 validation for this foundation (not the complete Wave 8 gate):
+
+- ./mvnw validate — all 14 modules passed with Checkstyle 12.3.1.
+- ./mvnw clean install -pl :test-support -am -DskipTests -DskipITs -DskipE2ETests — dependency installation passed; no test claim.
+- ./mvnw clean verify -pl :order-service -DskipE2ETests — 180 unit + 57 IT and coverage passed, no forced fork-exit warning.
+- ./mvnw clean verify -pl :inventory-service -DskipE2ETests — 75 unit + 49 IT and coverage passed, including the real virtual-thread assertion; no forced fork-exit warning.
+- ./mvnw clean verify -pl :common-lib,:security-lib,:api-gateway -DskipITs -DskipE2ETests — Common 48 and Security 16 passed their expanded coverage gate; Gateway initially failed due to a misplaced YAML property. The property was corrected at the root server section.
+- ./mvnw clean verify -pl :api-gateway -DskipITs -DskipE2ETests — 58 tests and coverage passed after that correction.
+
+./mvnw clean verify -pl :common-lib -DskipITs -DskipE2ETests passed 54 tests and coverage after the ProblemDetail change, including six real MVC status/content-type/envelope/header cases.
+
+Kafka/observability, remaining runtime validation, image/JVM/AOT work, resilience, null-safety and JWT hardening continue before a Wave 8 PR. No Wave 8 merge or completed-wave claim is made by these focused results.

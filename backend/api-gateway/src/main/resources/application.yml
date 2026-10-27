@@ -32,6 +32,7 @@ spring:
     timeout-per-shutdown-phase: 25s
 
 server:
+  forward-headers-strategy: none
   port: 8080
   shutdown: graceful
 
@@ -47,7 +48,6 @@ gateway:
   cors:
     customer-origin: ${CORS_CUSTOMER_ORIGIN:http://localhost:5173}
     admin-origin: ${CORS_ADMIN_ORIGIN:http://localhost:5174}
-    keycloak-origin: ${CORS_KEYCLOAK_ORIGIN:http://localhost:8180}
   # Rate limit configuration (AC3: configurable per endpoint)
   rate-limit:
     authenticated:

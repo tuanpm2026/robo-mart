@@ -2,6 +2,7 @@ package com.robomart.security.converter;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -34,6 +35,19 @@ class KeycloakRealmRoleConverterTest {
         assertThat(authorities)
                 .extracting(GrantedAuthority::getAuthority)
                 .containsExactly("ROLE_CUSTOMER");
+    }
+
+    @Test
+    void shouldNormalizeRolesIndependentlyOfDefaultLocale() {
+        Locale previous = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+            assertThat(converter.convert(buildJwt(Map.of("roles", List.of("admin", "inventory_service")))))
+                    .extracting(GrantedAuthority::getAuthority)
+                    .containsExactly("ROLE_ADMIN", "ROLE_INVENTORY_SERVICE");
+        } finally {
+            Locale.setDefault(previous);
+        }
     }
 
     @Test

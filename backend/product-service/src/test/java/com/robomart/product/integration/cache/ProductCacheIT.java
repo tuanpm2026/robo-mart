@@ -16,12 +16,12 @@ import com.robomart.events.product.ProductDeletedEvent;
 import com.robomart.events.product.ProductUpdatedEvent;
 import com.robomart.product.config.CacheConfig;
 import com.robomart.product.event.consumer.ProductCacheInvalidationConsumer;
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.ProductIntegrationTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
-@IntegrationTest
+@ProductIntegrationTest
 class ProductCacheIT {
 
     /**

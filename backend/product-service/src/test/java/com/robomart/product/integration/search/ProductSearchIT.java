@@ -28,7 +28,7 @@ import com.robomart.product.config.CacheConfig;
 import com.robomart.product.document.ProductDocument;
 import com.robomart.product.repository.ProductSearchRepository;
 import com.robomart.product.integration.ProductSearchTestSupport;
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.ProductIntegrationTest;
 
 /**
  * All test methods here are read-only searches over the same immutable 5-document dataset, so the index
@@ -44,7 +44,7 @@ import com.robomart.test.IntegrationTest;
  * deterministic, the index-writing consumer is paused for the lifetime of this class and resumed in
  * {@code @AfterAll}, so the only writer of the shared index here is this test's own seed.
  */
-@IntegrationTest
+@ProductIntegrationTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ProductSearchIT {
 

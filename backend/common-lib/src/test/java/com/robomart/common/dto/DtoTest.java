@@ -22,7 +22,7 @@ class DtoTest {
     void apiErrorResponse_canBeCreatedWithErrorDetail() {
         var detail = new ErrorDetail("NOT_FOUND", "Item missing", Map.of("id", "42"));
         var now = Instant.now();
-        var errorResponse = new ApiErrorResponse(detail, "trace-2", now);
+        var errorResponse = new ApiErrorResponse(detail, "trace-2", now, 400);
 
         assertThat(errorResponse.error()).isSameAs(detail);
         assertThat(errorResponse.error().code()).isEqualTo("NOT_FOUND");

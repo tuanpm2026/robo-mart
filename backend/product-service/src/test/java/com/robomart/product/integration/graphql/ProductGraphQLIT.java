@@ -27,7 +27,7 @@ import com.robomart.product.config.CacheConfig;
 import com.robomart.product.document.ProductDocument;
 import com.robomart.product.repository.ProductSearchRepository;
 import com.robomart.product.integration.ProductSearchTestSupport;
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.ProductIntegrationTest;
 
 /**
  * All test methods here read the same immutable 3-document dataset, so the index is reset and seeded
@@ -40,7 +40,7 @@ import com.robomart.test.IntegrationTest;
  * com.robomart.product.event.consumer.ProductIndexConsumer} for its lifetime so sibling classes' async
  * Kafka events cannot index foreign documents into the shared {@code products} index mid-test.
  */
-@IntegrationTest
+@ProductIntegrationTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ProductGraphQLIT {
 

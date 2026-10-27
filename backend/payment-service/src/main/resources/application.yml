@@ -1,8 +1,16 @@
 spring:
   application:
     name: payment-service
-  profiles:
-    active: dev
+  jpa:
+    open-in-view: false
+  datasource:
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:3000}
+  threads:
+    virtual:
+      enabled: true
   autoconfigure:
     # Wave 2 secures HTTP endpoints only. Adding spring-security to the classpath makes spring-grpc
     # auto-secure the gRPC server (every call → UNAUTHENTICATED). gRPC here is internal and protected

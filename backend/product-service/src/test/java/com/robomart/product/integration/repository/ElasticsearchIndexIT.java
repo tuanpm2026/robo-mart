@@ -12,9 +12,9 @@ import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import com.robomart.product.document.ProductDocument;
 import com.robomart.product.repository.ProductSearchRepository;
 import com.robomart.product.integration.ProductSearchTestSupport;
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.ProductIntegrationTest;
 
-@IntegrationTest
+@ProductIntegrationTest
 class ElasticsearchIndexIT {
 
     @Autowired

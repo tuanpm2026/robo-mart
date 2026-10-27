@@ -21,11 +21,11 @@ import org.springframework.web.client.RestClient;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.ProductIntegrationTest;
 import com.robomart.test.security.TestJwt;
 import com.robomart.test.security.TestJwtDecoderConfig;
 
-@IntegrationTest
+@ProductIntegrationTest
 @Import(TestJwtDecoderConfig.class)
 class ProductWriteConcurrencyIT {
     @LocalServerPort private int port;

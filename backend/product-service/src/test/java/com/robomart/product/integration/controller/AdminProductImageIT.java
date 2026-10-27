@@ -26,7 +26,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.ProductIntegrationTest;
 import com.robomart.test.security.TestJwt;
 import com.robomart.test.security.TestJwtDecoderConfig;
 
@@ -35,7 +35,7 @@ import org.springframework.web.client.ResourceAccessException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@IntegrationTest
+@ProductIntegrationTest
 @Import(TestJwtDecoderConfig.class)
 class AdminProductImageIT {
 

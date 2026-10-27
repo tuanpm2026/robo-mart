@@ -1,8 +1,16 @@
 spring:
   application:
     name: order-service
-  profiles:
-    active: dev
+  jpa:
+    open-in-view: false
+  datasource:
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:3000}
+  threads:
+    virtual:
+      enabled: true
   autoconfigure:
     # Secure HTTP only. order-service runs a gRPC server (OrderGrpcService); spring-grpc would
     # auto-secure it once spring-security is present (every call → UNAUTHENTICATED). gRPC is

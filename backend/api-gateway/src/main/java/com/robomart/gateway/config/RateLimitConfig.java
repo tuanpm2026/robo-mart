@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
 import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter;
-import org.springframework.cloud.gateway.support.ipresolver.XForwardedRemoteAddressResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -39,18 +38,17 @@ public class RateLimitConfig {
 
     /**
      * Key resolver — returns "user:{sub}" for authenticated (JWT) requests.
-     * Falls back to "ip:{clientIp}" for anonymous requests, using X-Forwarded-For
-     * with maxTrustedIndex(1) to extract the real client IP behind one trusted proxy.
+     * Anonymous requests use the socket peer; untrusted forwarding headers cannot mint buckets.
+     * Behind an ingress, anonymous traffic shares that peer's bucket.
      */
     @Bean
     public KeyResolver userKeyResolver() {
-        XForwardedRemoteAddressResolver ipResolver = XForwardedRemoteAddressResolver.maxTrustedIndex(1);
         return exchange -> exchange.getPrincipal()
                 .filter(JwtAuthenticationToken.class::isInstance)
                 .cast(JwtAuthenticationToken.class)
                 .map(token -> "user:" + token.getName())
                 .switchIfEmpty(Mono.fromCallable(() -> {
-                    InetSocketAddress addr = ipResolver.resolve(exchange);
+                    InetSocketAddress addr = exchange.getRequest().getRemoteAddress();
                     if (addr == null) {
                         log.warn("remoteAddress is null for path {} — assigning random key to avoid shared bucket",
                                 exchange.getRequest().getPath().value());

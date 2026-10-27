@@ -1,8 +1,9 @@
 spring:
   application:
     name: cart-service
-  profiles:
-    active: dev
+  threads:
+    virtual:
+      enabled: true
   data:
     redis:
       repositories:

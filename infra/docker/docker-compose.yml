@@ -587,7 +587,6 @@ services:
       GATEWAY_SERVICES_NOTIFICATION_SERVICE: http://notification-service:8087
       GATEWAY_CORS_CUSTOMER_ORIGIN: http://localhost:5173
       GATEWAY_CORS_ADMIN_ORIGIN: http://localhost:5174
-      GATEWAY_CORS_KEYCLOAK_ORIGIN: http://localhost:8180
     networks:
       - robomart-network
     deploy:

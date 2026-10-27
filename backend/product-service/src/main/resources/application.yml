@@ -1,8 +1,16 @@
 spring:
   application:
     name: product-service
-  profiles:
-    active: dev
+  jpa:
+    open-in-view: false
+  datasource:
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:3000}
+  threads:
+    virtual:
+      enabled: true
   security:
     oauth2:
       resourceserver:

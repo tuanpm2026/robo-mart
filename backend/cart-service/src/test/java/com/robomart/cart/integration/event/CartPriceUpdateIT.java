@@ -17,11 +17,11 @@ import org.springframework.web.client.RestClient;
 import com.robomart.cart.event.consumer.ProductEventConsumer;
 import com.robomart.cart.integration.support.ProductServiceStub;
 import com.robomart.events.product.ProductUpdatedEvent;
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.CartIntegrationTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@IntegrationTest
+@CartIntegrationTest
 class CartPriceUpdateIT {
 
     private static final ProductServiceStub PRODUCT_SERVICE = ProductServiceStub.start()

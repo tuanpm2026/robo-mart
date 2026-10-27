@@ -1,7 +1,7 @@
 package com.robomart.inventory.integration;
 
 import com.robomart.inventory.repository.InventoryItemRepository;
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.InventoryIntegrationTest;
 import com.robomart.test.security.TestJwt;
 import com.robomart.test.security.TestJwtDecoderConfig;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,11 +20,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Integration tests for {@link com.robomart.inventory.controller.InventoryAdminRestController}.
  *
- * <p>Uses real PostgreSQL and Redis via Testcontainers (from @IntegrationTest).
+ * <p>Uses real PostgreSQL and Redis via Testcontainers (from @InventoryIntegrationTest).
  * Seed data provides ~50 inventory items (product IDs 1-50).
  * JWT authorization is enforced by the service as well as the gateway.
  */
-@IntegrationTest
+@InventoryIntegrationTest
 @Import(TestJwtDecoderConfig.class)
 class InventoryAdminRestIT {
 

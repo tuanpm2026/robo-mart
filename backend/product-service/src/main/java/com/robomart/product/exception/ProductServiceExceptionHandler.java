@@ -68,6 +68,6 @@ public class ProductServiceExceptionHandler {
         var span = tracer.currentSpan();
         String traceId = span != null && span.context() != null ? span.context().traceId() : "no-trace";
         return ResponseEntity.status(status)
-                .body(new ApiErrorResponse(new ErrorDetail(code, message, null), traceId, Instant.now()));
+                .body(new ApiErrorResponse(new ErrorDetail(code, message, null), traceId, Instant.now(), status.value()));
     }
 }

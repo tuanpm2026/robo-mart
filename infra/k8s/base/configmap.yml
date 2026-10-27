@@ -51,4 +51,3 @@ data:
   # CORS allowed origins
   CORS_CUSTOMER_ORIGIN: "https://app.tuanpm.xyz"
   CORS_ADMIN_ORIGIN: "https://admin.tuanpm.xyz"
-  CORS_KEYCLOAK_ORIGIN: "https://auth.tuanpm.xyz"

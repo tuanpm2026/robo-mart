@@ -7,11 +7,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.web.client.RestClient;
 
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.ProductIntegrationTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@IntegrationTest
+@ProductIntegrationTest
 class ProductRestControllerIT {
 
     @LocalServerPort

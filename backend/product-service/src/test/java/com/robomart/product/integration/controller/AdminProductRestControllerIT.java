@@ -9,7 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.client.RestClient;
 
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.ProductIntegrationTest;
 import com.robomart.test.security.TestJwt;
 import com.robomart.test.security.TestJwtDecoderConfig;
 
@@ -17,7 +17,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@IntegrationTest
+@ProductIntegrationTest
 @Import(TestJwtDecoderConfig.class)
 class AdminProductRestControllerIT {
 
