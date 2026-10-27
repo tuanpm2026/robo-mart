@@ -11,6 +11,7 @@ resources:
   - services/api-gateway/hpa.yml
   - services/product-service/deployment.yml
   - services/product-service/service.yml
+  - services/product-service/images-pvc.yml
   - services/product-service/hpa.yml
   - services/cart-service/deployment.yml
   - services/cart-service/service.yml

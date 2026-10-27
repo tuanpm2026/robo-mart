@@ -1,0 +1,10 @@
+# This overlay targets the existing single-node cluster; its default local storage is RWO.
+# Do not use this patch for replicas scheduled on multiple nodes.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: product-images
+  namespace: robomart
+spec:
+  accessModes:
+    - ReadWriteOnce

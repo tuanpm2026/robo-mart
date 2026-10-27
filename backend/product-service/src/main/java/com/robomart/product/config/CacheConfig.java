@@ -48,6 +48,7 @@ public class CacheConfig implements CachingConfigurer {
                 .serializeValuesWith(jsonSerializer);
 
         return RedisCacheManager.builder(RedisCacheWriter.nonLockingRedisCacheWriter(connectionFactory, BatchStrategies.scan(1000)))
+                .transactionAware()
                 .withCacheConfiguration(CACHE_PRODUCT_DETAIL, productDetailConfig)
                 .withCacheConfiguration(CACHE_PRODUCT_SEARCH, productSearchConfig)
                 .build();

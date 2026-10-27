@@ -51,9 +51,16 @@ spec:
             name: robomart-config
         - secretRef:
             name: product-db-secret
+        env:
+        - name: ROBOMART_PRODUCT_IMAGE_BASE_URL
+          value: "https://api.tuanpm.xyz"
+        - name: ROBOMART_PRODUCT_IMAGE_STORAGE_PATH
+          value: /tmp/robomart-images
         volumeMounts:
         - name: tmp
           mountPath: /tmp
+        - name: product-images
+          mountPath: /tmp/robomart-images
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
@@ -73,3 +80,6 @@ spec:
       volumes:
       - name: tmp
         emptyDir: {}
+      - name: product-images
+        persistentVolumeClaim:
+          claimName: product-images

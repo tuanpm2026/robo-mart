@@ -162,6 +162,10 @@ services:
       <<: *app-env
       SPRING_PROFILES_ACTIVE: "dev,demo"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product_db
+      ROBOMART_PRODUCT_IMAGE_BASE_URL: http://localhost:18080
+      ROBOMART_PRODUCT_IMAGE_STORAGE_PATH: /tmp/robomart-images
+    volumes:
+      - product-images:/tmp/robomart-images
     healthcheck:
       test: [CMD-SHELL, "curl -fsS http://localhost:8081/actuator/health > /dev/null"]
       interval: 10s
@@ -315,6 +319,7 @@ services:
       start_period: 60s
 
 volumes:
+  product-images:
   postgres-data:
   elasticsearch-data:
   kafka-data:

@@ -34,6 +34,7 @@ class GatewayOperationsRoutingTest {
     private static final HttpServer NOTIFICATION = server("notification");
     @MockitoBean private ReactiveJwtDecoder decoder;
     @MockitoBean(name = "authenticatedRateLimiter") private RedisRateLimiter rateLimiter;
+    @MockitoBean(name = "anonymousRateLimiter") private RedisRateLimiter anonymousRateLimiter;
     @LocalServerPort private int port;
     private WebTestClient client;
 
@@ -61,6 +62,8 @@ class GatewayOperationsRoutingTest {
     void setup() {
         when(rateLimiter.isAllowed(anyString(), anyString())).thenReturn(
                 Mono.just(new RateLimiter.Response(true, Map.of("X-RateLimit-Remaining", "99"))));
+        when(anonymousRateLimiter.isAllowed(anyString(), anyString())).thenReturn(
+                Mono.just(new RateLimiter.Response(true, Map.of("X-RateLimit-Remaining", "99"))));
         when(decoder.decode("admin")).thenReturn(Mono.just(Jwt.withTokenValue("admin").header("alg", "none")
                 .subject("operations-admin").claim("realm_access", Map.of("roles", List.of("ADMIN"))).build()));
         client = WebTestClient.bindToServer().baseUrl("http://localhost:" + port).build();
@@ -76,6 +79,9 @@ class GatewayOperationsRoutingTest {
         expect("/api/v1/admin/products/audit-logs?size=100", "product:/api/v1/admin/audit-logs?size=100");
         expect("/api/v1/admin/audit-logs?size=20", "notification:/api/v1/admin/audit-logs?size=20");
         expect("/api/v1/admin/reconciliation/status", "notification:/api/v1/admin/reconciliation/status");
+        client.get().uri("/images/1/test.jpg").exchange().expectStatus().isOk()
+                .expectBody(String.class).isEqualTo("product:/images/1/test.jpg");
+        client.put().uri("/images/1/test.jpg").exchange().expectStatus().isUnauthorized();
         client.get().uri("/api/v1/admin/categories").exchange().expectStatus().isUnauthorized();
     }
 

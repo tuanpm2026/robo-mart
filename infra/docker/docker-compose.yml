@@ -349,6 +349,9 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
       ROBOMART_PRODUCT_IMAGE_BASE_URL: http://localhost:8080
+      ROBOMART_PRODUCT_IMAGE_STORAGE_PATH: /tmp/robomart-images
+    volumes:
+      - product-images:/tmp/robomart-images
     networks:
       - robomart-network
     deploy:
@@ -625,6 +628,7 @@ services:
           memory: 128M
 
 volumes:
+  product-images:
   postgres-data:
   elasticsearch-data:
   kafka-data:

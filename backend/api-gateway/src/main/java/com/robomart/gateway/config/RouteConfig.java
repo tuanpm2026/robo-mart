@@ -39,6 +39,9 @@ public class RouteConfig {
                 .route("product-graphql", r -> r
                         .path("/graphql")
                         .uri(productServiceUri))
+                .route("product-images", r -> r
+                        .path("/images/**").and().method("GET")
+                        .uri(productServiceUri))
                 .route("cart-service", r -> r
                         .path("/api/v1/cart/**")
                         .uri(cartServiceUri))

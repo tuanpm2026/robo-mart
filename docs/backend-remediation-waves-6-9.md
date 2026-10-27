@@ -70,7 +70,7 @@ Aborted worktrees were removed after preserving tracked diffs, untracked files a
 | Product 4 | Bounded paging and connectivity-only fallback | Implemented: 10,000-result window, network-cause-only fallback, mapping/auth failures propagate; real HTTP deep-page rejection and unit classification tests passed |
 | Product 5 | DLT and admin rebuild | Pending |
 | Product 6 | Outbox ordering, async send, unknown types and retention | Pending |
-| Product 7 | Image route/auth/storage, post-commit delete and cache eviction | Pending |
+| Product 7 | Image route/auth/storage, post-commit delete and cache eviction | Implemented: public GET through Gateway, persistent image volumes/PVC, commit-only deletion, rollback upload cleanup and transaction-aware cache invalidation; real filesystem/DB/HTTP and volume replacement tests passed |
 | Product 8 | Optional update version, conflict mapping and real trace ID | Implemented: optional version, response version after flush, 409 on stale/optimistic or duplicate SKU, real trace ID; real parallel HTTP edits/creates passed |
 | Product 9 | Redis SCAN clearing and synchronized cache loading | Implemented: SCAN batches of 1,000 and sync=true on detail/search cache loading; Redis integration and concurrent Spring cache-loader regression passed |
 | Product 10 | Missing admin category/audit routes | Implemented: category management to Product, explicit product audit alias, global audit/reconciliation to Notification; real Gateway forwarding and RBAC regression passed |
@@ -287,3 +287,24 @@ This subset has no Flyway, Avro or infrastructure changes. Product findings1/2/4
 Search rejects a result window above 10,000 before contacting either data source. PostgreSQL fallback now requires a recognized network connection/read/pool timeout, closed connection or unreachable host in the cause chain. Mapping, authorization, missing-index and other application/query failures propagate instead of becoming apparently successful degraded results. TLS/certificate failures are not reclassified as ordinary unavailability. Existing reduced PostgreSQL filter semantics are unchanged.
 
 ./mvnw clean verify -pl :product-service -Dit.test=ProductSearchIT -DskipE2ETests passed on JDK25: 93 unit + 12 selected integration tests, with the coverage gate enabled and passed. Tests cover nested connect/read-timeout failures, mapping/HTTP401 propagation without a PostgreSQL query, pre-query deep-window rejection, and HTTP400 through the real cached search endpoint.
+
+
+### Product image persistence and transaction boundaries
+
+GET /images/** is public at Product and Gateway, and Gateway forwards it to Product. Image writes remain on ADMIN endpoints; anonymous writes to the public asset path remain rejected. The normal Gateway rate limiter remains enabled. Product detail cache eviction now covers upload/delete/reorder, and the Redis cache manager is transaction-aware so rollback does not evict or publish uncommitted cache changes. File deletion runs only after the database commit. Newly uploaded files are removed after rollback, including a transaction failure after the service method returned; an unknown completion outcome retains the files.
+
+Compose app and E2E stacks mount a named product-images volume at the configured /tmp/robomart-images path. Although that mount path remains backward-compatible, the files now survive replacement of the app container. New upload URLs target the externally reachable Gateway (localhost:8080, isolated E2E localhost:18080, or api.tuanpm.xyz in K8s). The existing prebuilt image already creates this directory owned by UID1001. A real build and a temporary named-volume smoke test verified a UID1001 container can write and a replacement container can read the same marker; only the uniquely named smoke volume was removed afterward.
+
+Kubernetes adds a 2Gi product-images PVC. Base and ingress-tls require ReadWriteMany storage so replicas on different nodes see the same files; provision an RWX-capable storage class/PV before rollout. The existing production overlay explicitly targets a single-node cluster, so its patch uses ReadWriteOnce. Do not reuse that patch for replicas on different nodes. Manifests were rendered; no live PVC was provisioned or application deployed. Wave9 object storage will replace this transitional filesystem dependency.
+
+Before replacing existing Product containers/pods, stop image writers and preserve/copy every existing /tmp/robomart-images tree into the new volume, retaining ownership for UID/GID1001 and checking file counts/checksums. Mounting an empty volume would hide existing image files. Existing database image URLs are not automatically rewritten: reconcile any old localhost/service-only URL prefixes with the configured public Gateway base while retaining their /images/{productId}/{filename} suffixes. Keep the original files/database backup until existing image URLs are verified. No production data or volume was removed by this implementation.
+
+Executed on JDK25 with background Java compilation suspended/resumed:
+
+- ./mvnw clean verify -pl :product-service -DskipE2ETests — passed, 93 unit + 64 integration tests and coverage. New real HTTP/PostgreSQL/filesystem tests verify anonymous GET bytes, cache changes after upload/deletion, original files and rows surviving rollback, commit-only file deletion and cleanup of files uploaded inside a rolled-back outer transaction.
+- After adding reorder cache coverage, ./mvnw clean verify -pl :product-service -Dit.test=AdminProductImageIT -DskipE2ETests — passed, 93 unit + 8 selected integration tests and coverage.
+- ./mvnw clean verify -pl :api-gateway -DskipITs -DskipE2ETests — passed, 57 tests and coverage, including actual anonymous GET image forwarding and rejected anonymous image writes. The routing fixture mocks its Redis rate limiters; production is unchanged.
+- Checkstyle, both Compose config checks and Kustomize base/production/ingress-tls — passed.
+- docker build -f backend/Dockerfile.prebuilt --target product-service -t robo-w7-product-image-smoke backend — passed; the image/volume smoke does not start Spring or represent a full-stack application test.
+
+After adding the unit regression that a rejected database delete cannot remove the original file, ./mvnw clean test -pl :product-service passed 94 unit tests. Checkstyle passed again for Product/Gateway. Production code was unchanged after the successful full image verification and selected reorder integration verification.

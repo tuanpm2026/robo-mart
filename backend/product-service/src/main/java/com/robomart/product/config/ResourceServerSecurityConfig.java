@@ -42,6 +42,7 @@ public class ResourceServerSecurityConfig {
                 .requestMatchers("/actuator/**").permitAll()
                 // Public catalog + search + GraphQL (browsable without auth, as at the gateway).
                 .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/images/**").permitAll()
                 .requestMatchers("/graphql", "/graphiql/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/admin/audit-logs")
                     .hasAnyRole("ADMIN", "NOTIFICATION_SERVICE")
