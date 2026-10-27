@@ -90,7 +90,10 @@ Mỗi service sở hữu dữ liệu của mình. Không có transaction ACID ba
 ```text
 backend/
   pom.xml                 Maven reactor, version và quality gates
-  common-lib/             DTO, exception, audit, correlation/tracing
+  common-core/            DTO, exception và audit contract, không kéo JPA runtime
+  common-web-starter/     Auto-configuration cho servlet, Jackson, audit và observability
+  common-lib/             Facade tương thích cho selector CI cũ
+  outbox-lib/             Claim có fencing, gửi bất đồng bộ và retention dùng chung
   security-lib/           JWT roles và tiện ích auth
   proto/                  Hợp đồng gRPC, sinh protobuf/stubs
   events/                 Hợp đồng Avro và mã sự kiện được sinh
@@ -377,7 +380,7 @@ sequenceDiagram
 
 API ghi thành công không đảm bảo Elasticsearch và mọi giỏ hàng đã cập nhật ngay. Nếu catalog đúng nhưng search cũ, kiểm tra outbox và consumer trước khi kết luận DB bị mất dữ liệu.
 
-Ảnh sản phẩm có API upload/delete/reorder. Cấu hình mặc định lưu file ở `/tmp/robomart-images`; cần kiểm tra serving URL, gateway routing và storage volume khi triển khai nhiều replica hoặc restart container. Xem mục 14.
+Ảnh sản phẩm có API upload/delete/reorder, lưu object qua AWS SDK v2 và trả URL công khai của S3/CDN. Compose dùng MinIO ở cổng9002; E2E dùng19002. Volume/PVC cũ được giữ chỉ đọc tại `/migration/images`; URL `/images/**` cũ chuyển hướng sau bước copy/kiểm checksum tường minh. Production cần provision bucket và `product-s3-secret` trước rollout; xem [hướng dẫn migration](product-object-storage.md).
 
 Nguồn: [`product/service/`](../backend/product-service/src/main/java/com/robomart/product/service/), [`product/event/consumer/`](../backend/product-service/src/main/java/com/robomart/product/event/consumer/), [`Cart ProductEventConsumer`](../backend/cart-service/src/main/java/com/robomart/cart/event/consumer/ProductEventConsumer.java).
 
@@ -633,7 +636,7 @@ Các điểm sau phát hiện bằng đọc code/config, chưa là kết quả c
 | Docker healthcheck | Wave 8 đã thống nhất Dockerfile qua `backend/scripts/render-dockerfiles.py`, cài curl cho healthcheck và dùng chung target với E2E. Các bước kiểm chứng image/stack được ghi trong báo cáo Wave 8. |
 | Container downstream URLs | Notification defaults tới localhost cho các HTTP clients, Compose chưa override đầy đủ; gateway thiếu payment URI override; JWT JWK URL của một số service còn localhost. Trong container, localhost là chính container đó. |
 | Container OTLP | Compose full truyền `MANAGEMENT_OTLP_TRACING_ENDPOINT`; application config dùng `MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT`. Cần thống nhất property trước khi kỳ vọng trace tới Tempo. |
-| Ảnh sản phẩm | Storage mặc định `/tmp`, cần durable/shared storage nếu nhiều replica; route phục vụ ảnh qua gateway cần kiểm tra. |
+| Ảnh sản phẩm | Wave9 dùng S3-compatible storage, MinIO trong Compose và URL công khai. Volume/PVC cũ chỉ đọc để migration; production cần bucket/secret và xác minh copy trước rollout. |
 | CD revision | Checkout build và SHA dùng tạo overlay tag chưa được pin nhất quán; hai workflow cùng sửa overlay có thể conflict. |
 | Docs so với runtime | CI/CD/K8s guides cũ có phần migration/đường dẫn/luồng deploy khác hiện tại; ưu tiên workflows, Kustomize, `application.yml`, controller/service trong checkout. |
 

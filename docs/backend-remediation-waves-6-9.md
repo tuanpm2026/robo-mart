@@ -94,7 +94,9 @@ Earlier validation attempts failed on obsolete retry/cancellation expectations, 
 
 No new schema, REST response fields, proto/Avro contract or infrastructure changes are included in the current order-service subset. Checkout awaiting stock release returns HTTP 202 with its existing `INVENTORY_RELEASING` status; the storefront displays cancellation progress instead of confirmation or a delivery estimate. The deadline remains a per-attempt bound; a retried operation can take up to three deadlines plus the configured exponential backoff. Do not start Wave 8 or merge Wave 7 while the remaining correctness scope is incomplete.
 
-## Wave 8: in progress on `wave8/platform`
+## Wave 8: merged
+
+PR [#46](https://github.com/tuanpm2026/robo-mart/pull/46), squash commit `c6d72677b7e8cdc1c23e83942c97d1f2d2030e9f`. All15 CI checks passed on head a1c5e71291a04eb044f9e0cf05eb031c377a2e33; no open CodeQL alert on the PR merge ref, none dismissed. Final local gates:985 backend tests +3 real E2E/chaos +327 frontend tests, coverage/style/schema/configuration passed. No new Flyway migration; production audience provisioning and manual rollout remain operational prerequisites.
 
 | Finding | Status / dependency |
 | --- | --- |
@@ -109,14 +111,16 @@ No new schema, REST response fields, proto/Avro contract or infrastructure chang
 | 9. Service-specific integration-test infrastructure | Implemented and verified: resource-specific JVM-owned fixtures; no forced fork shutdown in final full reactor |
 | 10. Remove active dev profile, Locale.ROOT, security coverage exclusions, Keycloak CORS origin and proxy spoofing | Implemented; role/CORS/forwarded-header regressions and coverage including config passed |
 
-## Wave 9: pending
+## Wave 9: implementation verified on `wave9/data-infra`
+
+[PR #47](https://github.com/tuanpm2026/robo-mart/pull/47) is the authoritative CI and squash-merge record. All local gates are complete; auto-deploy is disabled.
 
 | Finding | Status / dependency |
 | --- | --- |
-| 1. Shared outbox library with ordering, claims, IDs, retention and metrics; document CDC | Pending; extract proven behavior from Wave 7 |
-| 2. Confluent 8/KRaft and compatible consumer protocol | Pending; verify broker/client/schema compatibility |
-| 3. S3-compatible image storage and MinIO/AWS SDK v2 | Pending; provide migration/rollout path for existing images |
-| 4. Split common-core/common-web-starter, scoped errors and remove cart DB exclusions | Pending; preserve service security and configuration boundaries |
+| 1. Shared outbox library with ordering, claims, IDs, retention and metrics; document CDC | Implemented shared outbox engine/JDBC claims/settings/retention/identity; focused and full reactor/library/service gates passed; all local image/E2E checks passed; CI/merge record: PR #47 |
+| 2. Confluent 8/KRaft and compatible consumer protocol | Implemented8.2.4 with Kafka client4.2.2; retained-data upgrade/IDs/offsets verified; Avro/group migration and Notification consumer-mode suites passed; real retained-data E2E passed; CI/merge record: PR #47 |
+| 3. S3-compatible image storage and MinIO/AWS SDK v2 | Implemented SDK2.57.4, patched source-built MinIO fixtures, public URLs, transaction-safe cleanup and explicit copy/checksum migration; full reactor/style gates passed; all local image/E2E checks passed; CI/merge record: PR #47 |
+| 4. Split common-core/common-web-starter, scoped errors and remove cart DB exclusions | Implemented conditional auto-configuration, domain-owned wire codes, optional persistence API and Cart exclusions removed; focused and full reactor/common tests/coverage passed; all local image/E2E checks passed; CI/merge record: PR #47 |
 
 ### Order recovery/outbox continuation
 
@@ -485,3 +489,33 @@ Read-only post-test SQL attributed only orders22–28 beyond the baseline21: all
 ### Wave 8 final post-fallback gate
 
 The final ./mvnw -B -ntp clean verify -DskipE2ETests passed all15 modules in6m35s after the E2E-discovered fallback fix:698 unit+287 IT=985, zero failures/errors/skips, all configured coverage gates passed. Product includes82 IT with the new real HTTP degraded-search regression. Explicit Checkstyle passed all15 modules; dependency installation then succeeded with tests intentionally skipped and the IDE compiler still suspended. No forced-fork-exit or Boot3 introspection warning remained. All3 isolated E2E/chaos tests had already passed on the same implementation, with verified refunds/stock cleanup. The final validation report consolidates evidence and limits. PR CI and squash merge remain.
+
+
+### Wave 9 shared outbox extraction
+
+outbox-lib now owns the unchanged PostgreSQL head-eligibility/SKIP LOCKED claim SQL, fencing, published-only10,000-row retention, duration validation and bounded asynchronous dispatcher. Product/Inventory/Order retain their schemas, event mapping and distributed scheduler locks. Persisted Product/Inventory UUIDs and Order's exact legacy UUID-name namespace/row derivation are preserved; no migration or event-ID rewrite is introduced. The library has no Kafka/web starter. CDC is documented as a future, separately designed handover; Kafka Connect is not added.
+
+Executed: ./mvnw -B -ntp clean verify -pl :outbox-lib -DskipE2ETests passed10 unit+6 PostgreSQL IT and coverage, including a deliberately held row lock, old-fence rejection and a10,001-row retention fixture. ./mvnw -B -ntp test -pl :product-service,:order-service,:inventory-service -DskipE2ETests passed358 unit tests. Selected outbox verification passed Product103unit+11IT and coverage; Order180unit+7selectedIT passed its assertions but correctly failed the76% partial-suite module coverage gate. No gate was weakened. Full ./mvnw -B -ntp clean verify -pl :order-service,:inventory-service -DskipE2ETests then passed Order180unit+57IT and Inventory75unit+49IT, both coverage gates, without forced fork exits. Shared dependencies were installed before module-only testing; the image renderer includes the new module.
+
+
+### Wave 9 Confluent8 and guarded consumer protocol
+
+Direct inspection of Boot4.1.2's BOM confirms kafka-clients4.2.2. Confluent8.2.4 matches Kafka4.2; serializer and all broker/registry fixtures are upgraded together. Both Compose sets pin their multi-platform image digests. Existing Compose already uses static-quorum KRaft, so no ZooKeeper migration or quorum rewrite is performed. K8s references externally managed Kafka; its default protocol remains classic until an operator verifies broker/feature readiness.
+
+A label-guarded retained E2E upgrade from7.9.10 to8.2.4 preserved cluster/node/directory identity, all17 topic IDs/partition counts,4 committed partition offsets and6 schema IDs/versions/content. Metadata stayed3.9-IV0 and kraft.version0. After a successful dry-run, group.version was enabled at1 on only the stopped-app isolated fixture; metadata did not advance, and the snapshot still matched. No volume was formatted/deleted. configure-kafka.py guards the exact project/service/image, named-volume ownership and fixed cluster identity; first enablement refuses running apps and repeat execution is idempotent. Python guard tests cover wrong ownership/image/volume/cluster, app draining, read-only/idempotent operation and unexpected metadata change. Production defaults remain classic; E2E and fresh disposable service fixtures opt into consumer.
+
+./mvnw -B -ntp clean verify -pl :events -DskipE2ETests passed2unit+5IT: all13 Avro schemas register/re-register/backward-check, and a classic group commits offset1 then migrates to GroupType.CONSUMER, receives offset1 next without replaying offset0, and commits2. An initial run exposed the old test's substring ID parser when Registry8 returned extra version/GUID/schema fields; it now uses a proper Jackson3 JSON parser, with legacy/extended response coverage. No schema compatibility assertion was removed. Full Notification verification on8.2.4/consumer mode passed116unit+22IT and coverage, including malformed bytes, archive failure/retry, replay and service reads; no forced fork exit remained. The operator runbook records feature, rollback and deployment boundaries. Final whole-wave reactor/E2E/CI remain after storage/common-module work.
+
+
+### Wave9 final reactor and storage/module validation
+
+The first full18-module verification passed748unit+298IT. The final repeated `./mvnw -B -ntp clean verify -DskipE2ETests` passed753unit+298IT=1,051 executions in7m34s after adding5 S3 configuration/CLI tests and preserving Unix backslashes as filenames rather than reinterpreting them as object path separators. Zero failures/errors/skips; all configured80% module coverage gates passed. The facade intentionally reruns36 starter tests for the existing CI selector, giving1,015 distinct tests. Explicit Checkstyle and dependency installation passed; no forced fork exit/class-data mismatch warning remained.
+
+Real MinIO tests passed upload/delete/transaction rollback/cache behavior, dry-run, conditional copy, checksum verification, idempotent repeat, conflict refusal without overwrite, source retention, symlink/invalid-key guards and302 legacy URL redirects with anonymous object reads. The first redirect test followed302 automatically and was corrected to assert the response and destination separately. Common modules passed conditional/no-scan/optional-security/domain-code tests; Cart's real integration context asserts no Hibernate/datasource/entity manager/Flyway and no exclusions. Product's repository-root CD/source image built, including NullAway and AOT; its packaged migration CLI ran network-disabled with the old, independently verified empty E2E volume mounted read-only.
+
+Both frontends passed327 tests/type-check/build/format; proto lint/breaking, five Kafka guard tests, Compose renders, all3 actual Kustomize renders and generated Dockerfile drift passed. All4 final real E2E/chaos tests and actual image/AOT checks passed; CI/merge record: [PR #47](https://github.com/tuanpm2026/robo-mart/pull/47). The [complete finding checklist](backend-remediation-final-status.md) distinguishes implemented findings from explicit future/operational boundaries; the [Wave9 validation report](../_bmad-output/test-artifacts/wave9-data-infra-validation-2026-10-27.md) records commands and per-module counts.
+
+
+### Wave9 isolated E2E completed
+
+All7 production image targets built and ran healthy as UID1001 with mapped AOT caches. Kafka feature/audience reconciliation repeated with0 updates; all8 application groups were confirmed Consumer/Stable. All4 real E2E/chaos tests passed (checkout/refund, S3 public upload/deletion and both chaos); the60second automatic recovery budget is unchanged. Orders29–35 were cancelled, fully refunded179.99 each and released; stock quantities returned exactly to the baseline, image rows returned to123, and prior orders/images remained intact. Teardown retained all volumes and left unrelated MySQL running. CI and squash-merge record: [PR #47](https://github.com/tuanpm2026/robo-mart/pull/47).

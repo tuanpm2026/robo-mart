@@ -16,6 +16,24 @@
 
     <dependencies>
         <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <exclusions>
+                <exclusion><groupId>software.amazon.awssdk</groupId><artifactId>apache-client</artifactId></exclusion>
+                <exclusion><groupId>software.amazon.awssdk</groupId><artifactId>netty-nio-client</artifactId></exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>url-connection-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.robomart</groupId>
+            <artifactId>outbox-lib</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>com.robomart</groupId>
             <artifactId>build-support</artifactId>
             <version>${project.version}</version>
@@ -35,7 +53,7 @@
         </dependency>
         <dependency>
             <groupId>com.robomart</groupId>
-            <artifactId>common-lib</artifactId>
+            <artifactId>common-web-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>com.robomart</groupId>

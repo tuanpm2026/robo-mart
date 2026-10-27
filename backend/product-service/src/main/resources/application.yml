@@ -60,6 +60,7 @@ spring:
         spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
         spring.deserializer.value.delegate.class: io.confluent.kafka.serializers.KafkaAvroDeserializer
         specific.avro.reader: true
+        group.protocol: ${KAFKA_GROUP_PROTOCOL:classic}
         max.poll.interval.ms: 600000
     admin:
       operation-timeout: 5s
@@ -118,7 +119,16 @@ management:
 robomart:
   product:
     image-storage-path: /tmp/robomart-images
-    image-base-url: http://localhost:8081
+    image-base-url: ${LEGACY_IMAGE_BASE_URL:http://localhost:8081}
+    # Legacy source path is read only by the explicit migration command; new writes use S3.
+    images:
+      endpoint: ${S3_ENDPOINT:}
+      region: ${S3_REGION:us-east-1}
+      bucket: ${S3_BUCKET:robomart-images}
+      public-base-url: ${S3_PUBLIC_BASE_URL:}
+      access-key: ${S3_ACCESS_KEY:}
+      secret-key: ${S3_SECRET_KEY:}
+      path-style: ${S3_PATH_STYLE:false}
 
 ---
 spring:
@@ -137,6 +147,15 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+robomart:
+  product:
+    images:
+      endpoint: ${S3_ENDPOINT:http://localhost:9002}
+      public-base-url: ${S3_PUBLIC_BASE_URL:http://localhost:9002/robomart-images}
+      access-key: ${S3_ACCESS_KEY:robomart-local}
+      secret-key: ${S3_SECRET_KEY:robomart-local-dev-only}
+      path-style: true
 
 management:
   endpoints:
@@ -182,3 +201,13 @@ spring:
 outbox:
   # Delivery integration tests invoke the real poller explicitly.
   initial-delay-ms: 3600000
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+robomart:
+  product:
+    images:
+      public-base-url: http://localhost:9002/robomart-test-images

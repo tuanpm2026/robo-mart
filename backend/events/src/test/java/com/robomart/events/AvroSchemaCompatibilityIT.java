@@ -2,6 +2,23 @@ package com.robomart.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.UUID;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.time.Duration;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.FeatureUpdate;
+import org.apache.kafka.clients.admin.UpdateFeaturesOptions;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.GroupType;
+import org.apache.kafka.common.TopicPartition;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -57,7 +74,7 @@ class AvroSchemaCompatibilityIT {
             KAFKA_NETWORK_ALIAS + ":" + KAFKA_NETWORK_PORT;
 
     private static final ConfluentKafkaContainer KAFKA =
-            new ConfluentKafkaContainer("confluentinc/cp-kafka:7.9.10")
+            new ConfluentKafkaContainer("confluentinc/cp-kafka:8.2.4")
                     .withNetwork(NETWORK)
                     .withListener(KAFKA_IN_NETWORK_LISTENER);
 
@@ -72,7 +89,7 @@ class AvroSchemaCompatibilityIT {
     static void startContainers() {
         KAFKA.start();
 
-        schemaRegistry = new GenericContainer<>("confluentinc/cp-schema-registry:7.9.10")
+        schemaRegistry = new GenericContainer<>("confluentinc/cp-schema-registry:8.2.4")
                 .withNetwork(NETWORK)
                 .withExposedPorts(8081)
                 .withEnv("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
@@ -98,6 +115,71 @@ class AvroSchemaCompatibilityIT {
             KAFKA.stop();
         }
         NETWORK.close();
+    }
+
+    @Test
+    void emptyClassicGroupMigratesToConsumerProtocolWithoutReplayingCommittedOffsets() throws Exception {
+        String topic = "protocol-migration-" + UUID.randomUUID();
+        String group = "protocol-group-" + UUID.randomUUID();
+        var partition = new TopicPartition(topic, 0);
+        try (var admin = Admin.create(Map.of("bootstrap.servers", KAFKA.getBootstrapServers()))) {
+            // This is a fresh disposable broker, not an upgrade of any developer/production data.
+            var feature = admin.describeFeatures().featureMetadata().get(10, TimeUnit.SECONDS)
+                    .finalizedFeatures().get("group.version");
+            if (feature == null || feature.maxVersionLevel() < 1) admin.updateFeatures(Map.of("group.version", new FeatureUpdate(
+                    (short) 1, FeatureUpdate.UpgradeType.UPGRADE)),
+                    new UpdateFeaturesOptions()).all().get(30, TimeUnit.SECONDS);
+            admin.createTopics(List.of(new NewTopic(topic, 1, (short) 1)))
+                    .all().get(10, TimeUnit.SECONDS);
+            try (var producer = new KafkaProducer<String, String>(Map.of(
+                    "bootstrap.servers", KAFKA.getBootstrapServers(), "acks", "all",
+                    "key.serializer", "org.apache.kafka.common.serialization.StringSerializer",
+                    "value.serializer", "org.apache.kafka.common.serialization.StringSerializer"))) {
+                producer.send(new ProducerRecord<>(topic, "first")).get(10, TimeUnit.SECONDS);
+                producer.send(new ProducerRecord<>(topic, "second")).get(10, TimeUnit.SECONDS);
+            }
+            try (var classic = protocolConsumer(group, "classic")) {
+                classic.subscribe(List.of(topic));
+                var record = nextRecord(classic);
+                assertThat(record.value()).isEqualTo("first");
+                classic.commitSync(Map.of(partition, new OffsetAndMetadata(record.offset() + 1)));
+            }
+            try (var modern = protocolConsumer(group, "consumer")) {
+                modern.subscribe(List.of(topic));
+                var record = nextRecord(modern);
+                assertThat(record.value()).isEqualTo("second");
+                assertThat(record.offset()).isEqualTo(1);
+                modern.commitSync(Map.of(partition, new OffsetAndMetadata(record.offset() + 1)));
+                assertThat(admin.describeConsumerGroups(List.of(group)).all()
+                        .get(10, TimeUnit.SECONDS).get(group).type())
+                        .isEqualTo(GroupType.CONSUMER);
+                assertThat(modern.committed(Set.of(partition)).get(partition).offset()).isEqualTo(2);
+            }
+        }
+    }
+
+    private static KafkaConsumer<String, String> protocolConsumer(String group, String protocol) {
+        return new KafkaConsumer<>(Map.of(
+                "bootstrap.servers", KAFKA.getBootstrapServers(), "group.id", group, "group.protocol", protocol,
+                "auto.offset.reset", "earliest", "enable.auto.commit", false, "max.poll.records", 1,
+                "key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer",
+                "value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer"));
+    }
+
+    private static ConsumerRecord<String, String> nextRecord(
+            KafkaConsumer<String, String> consumer) {
+        long until = System.nanoTime() + Duration.ofSeconds(30).toNanos();
+        while (System.nanoTime() < until) {
+            var records = consumer.poll(Duration.ofMillis(250));
+            if (!records.isEmpty()) return records.iterator().next();
+        }
+        throw new AssertionError("No record arrived within the bounded protocol-migration poll");
+    }
+
+    @Test
+    void parsesBothLegacyAndExtendedRegistrationResponses() {
+        assertThat(extractId("{\"id\":7}")).isEqualTo(7);
+        assertThat(extractId("{\"version\":2,\"id\":7,\"guid\":\"metadata\",\"schema\":\"{}\"}")).isEqualTo(7);
     }
 
     @Test
@@ -237,15 +319,11 @@ class AvroSchemaCompatibilityIT {
     }
 
     /**
-     * Extracts the integer "id" field from a Schema Registry response like {"id":1}.
+     * Reads the stable ID field while allowing additional Schema Registry response metadata.
      */
     private static int extractId(String responseBody) {
-        // Response is {"id":<number>}
-        int start = responseBody.indexOf("\"id\":") + 5;
-        int end = responseBody.indexOf("}", start);
-        if (end < 0) {
-            end = responseBody.length();
-        }
-        return Integer.parseInt(responseBody.substring(start, end).trim());
+        var id = tools.jackson.databind.json.JsonMapper.builder().build().readTree(responseBody).path("id");
+        assertThat(id.isIntegralNumber()).as("Registration response must contain an integral schema ID").isTrue();
+        return id.intValue();
     }
 }

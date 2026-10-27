@@ -8,6 +8,9 @@ COPY backend/.mvn .mvn
 COPY backend/pom.xml pom.xml
 COPY backend/config config
 COPY backend/build-support/pom.xml build-support/pom.xml
+COPY backend/outbox-lib/pom.xml outbox-lib/pom.xml
+COPY backend/common-core/pom.xml common-core/pom.xml
+COPY backend/common-web-starter/pom.xml common-web-starter/pom.xml
 COPY backend/common-lib/pom.xml common-lib/pom.xml
 COPY backend/security-lib/pom.xml security-lib/pom.xml
 COPY backend/proto/pom.xml proto/pom.xml
@@ -23,7 +26,9 @@ COPY backend/notification-service/pom.xml notification-service/pom.xml
 COPY backend/e2e-tests/pom.xml e2e-tests/pom.xml
 RUN chmod +x mvnw
 COPY backend/build-support/src build-support/src
-COPY backend/common-lib/src common-lib/src
+COPY backend/outbox-lib/src outbox-lib/src
+COPY backend/common-core/src common-core/src
+COPY backend/common-web-starter/src common-web-starter/src
 COPY backend/security-lib/src security-lib/src
 COPY backend/proto/src proto/src
 COPY backend/events/src events/src
@@ -36,7 +41,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd -r -g 1001 robomart && useradd -r -u 1001 -g robomart robomart \
-    && mkdir -p /tmp/robomart-images && chown robomart:robomart /app /tmp/robomart-images
+    && chown robomart:robomart /app
 USER robomart
 
 FROM runtime-base AS cart-service-extracted

@@ -3,6 +3,36 @@ networks:
     driver: bridge
 
 services:
+  minio:
+    image: robomart/minio:security-9e49d5e
+    build: {context: minio, dockerfile: Dockerfile}
+    profiles: ["core"]
+    mem_limit: 384m
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-robomart-local}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-robomart-local-dev-only}
+    ports: ["127.0.0.1:${MINIO_PORT:-9002}:9000"]
+    volumes: [minio-data:/data]
+    networks: [robomart-network]
+
+  minio-init:
+    image: amazon/aws-cli:latest@sha256:bdb0dd07c54dfc7fe6526387dcf23eaab269875a20d647ae4de8196ea04d6bd4
+    profiles: ["core"]
+    user: "1001:1001"
+    mem_limit: 128m
+    read_only: true
+    tmpfs: [/tmp]
+    entrypoint: [/bin/sh, /bootstrap/init-bucket.sh]
+    depends_on:
+      minio: {condition: service_healthy}
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-robomart-local}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-robomart-local-dev-only}
+      S3_BUCKET: ${S3_BUCKET:-robomart-images}
+      HOME: /tmp
+    volumes: [./minio/init-bucket.sh:/bootstrap/init-bucket.sh:ro]
+    networks: [robomart-network]
+
   postgres:
     image: postgres:17
     container_name: robomart-postgres
@@ -54,7 +84,7 @@ services:
       retries: 5
 
   kafka:
-    image: confluentinc/cp-kafka:7.9.10
+    image: confluentinc/cp-kafka:8.2.4@sha256:58e544adba6a825389ab56dad5f8a1c72d9bbcdcf077e275473f1aff22e2cd76
     container_name: robomart-kafka
     profiles: ["core"]
     environment:
@@ -88,7 +118,7 @@ services:
       retries: 5
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:7.9.10
+    image: confluentinc/cp-schema-registry:8.2.4@sha256:b5a110851999118dd2ebd154bba8406271606d6ebf958bc83c56dabcd68664c2
     container_name: robomart-schema-registry
     profiles: ["core"]
     depends_on:
@@ -330,6 +360,7 @@ services:
     container_name: robomart-product-service
     profiles: ["app"]
     depends_on:
+      minio-init: {condition: service_completed_successfully}
       postgres:
         condition: service_healthy
       elasticsearch:
@@ -350,13 +381,21 @@ services:
       SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
       SPRING_DATA_REDIS_HOST: redis
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_GROUP_PROTOCOL: ${KAFKA_GROUP_PROTOCOL:-classic}
       SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
       ROBOMART_PRODUCT_IMAGE_BASE_URL: http://localhost:8080
-      ROBOMART_PRODUCT_IMAGE_STORAGE_PATH: /tmp/robomart-images
+      ROBOMART_PRODUCT_IMAGE_STORAGE_PATH: /migration/images
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_BASE_URL: http://localhost:${MINIO_PORT:-9002}/${S3_BUCKET:-robomart-images}
+      S3_REGION: us-east-1
+      S3_BUCKET: ${S3_BUCKET:-robomart-images}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-robomart-local}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-robomart-local-dev-only}
+      S3_PATH_STYLE: "true"
       PRODUCT_SEARCH_INITIALIZE_INDEX: "true"
       PRODUCT_KAFKA_DLT_REPLICATION_FACTOR: "1"
     volumes:
-      - product-images:/tmp/robomart-images
+      - product-images:/migration/images:ro
     networks:
       - robomart-network
     deploy:
@@ -388,6 +427,7 @@ services:
     environment:
       SPRING_DATA_REDIS_HOST: redis
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_GROUP_PROTOCOL: ${KAFKA_GROUP_PROTOCOL:-classic}
       SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
       CHECKOUT_BASE_URL: http://localhost:5173/cart
       PRODUCT_SERVICE_URL: http://product-service:8081
@@ -428,6 +468,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-robomart}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-robomart}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_GROUP_PROTOCOL: ${KAFKA_GROUP_PROTOCOL:-classic}
       SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
       GRPC_CLIENT_INVENTORY_SERVICE_ADDRESS: static://inventory-service:9094
       GRPC_CLIENT_PAYMENT_SERVICE_ADDRESS: static://payment-service:9095
@@ -471,6 +512,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-robomart}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-robomart}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_GROUP_PROTOCOL: ${KAFKA_GROUP_PROTOCOL:-classic}
       SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
     networks:
       - robomart-network
@@ -543,6 +585,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ${NOTIFICATION_DB_USER:-postgres}
       SPRING_DATASOURCE_PASSWORD: ${NOTIFICATION_DB_PASSWORD:-postgres}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_GROUP_PROTOCOL: ${KAFKA_GROUP_PROTOCOL:-classic}
       SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
       KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
       API_GATEWAY_URL: http://api-gateway:8090
@@ -651,6 +694,7 @@ services:
           memory: 128M
 
 volumes:
+  minio-data:
   product-images:
   postgres-data:
   elasticsearch-data:

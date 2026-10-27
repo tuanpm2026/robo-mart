@@ -49,11 +49,13 @@ spec:
             name: robomart-config
         - secretRef:
             name: product-db-secret
+        - secretRef:
+            name: product-s3-secret
         env:
         - name: ROBOMART_PRODUCT_IMAGE_BASE_URL
           value: "https://api.tuanpm.xyz"
         - name: ROBOMART_PRODUCT_IMAGE_STORAGE_PATH
-          value: /tmp/robomart-images
+          value: /migration/images
         - name: PRODUCT_SEARCH_INITIALIZE_INDEX
           value: "true"
         - name: PRODUCT_KAFKA_DLT_REPLICATION_FACTOR
@@ -62,7 +64,8 @@ spec:
         - name: tmp
           mountPath: /tmp
         - name: product-images
-          mountPath: /tmp/robomart-images
+          mountPath: /migration/images
+          readOnly: true
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness

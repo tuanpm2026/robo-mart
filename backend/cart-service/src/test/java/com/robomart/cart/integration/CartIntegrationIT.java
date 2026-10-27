@@ -53,6 +53,21 @@ class CartIntegrationIT {
     @Autowired
     private StringRedisTemplate redis;
 
+    @Autowired
+    private org.springframework.context.ApplicationContext context;
+
+    @Test
+    void redisCartStartsWithoutDatabaseAutoConfigurationOrExclusions() {
+        assertThat(context.containsBean("dataSource")).isFalse();
+        assertThat(context.containsBean("entityManagerFactory")).isFalse();
+        assertThat(context.containsBean("flyway")).isFalse();
+        assertThat(org.springframework.util.ClassUtils.isPresent("org.hibernate.Session", getClass().getClassLoader())).isFalse();
+        var annotation = com.robomart.cart.CartServiceApplication.class
+                .getAnnotation(org.springframework.boot.autoconfigure.SpringBootApplication.class);
+        assertThat(annotation.exclude()).isEmpty();
+        assertThat(annotation.excludeName()).isEmpty();
+    }
+
     private RestClient restClient;
     private final JsonMapper jsonMapper = JsonMapper.builder().build();
 

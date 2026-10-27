@@ -9,14 +9,7 @@ import com.robomart.cart.config.CartProperties;
 
 @EnableScheduling
 @EnableConfigurationProperties(CartProperties.class)
-@SpringBootApplication(
-        scanBasePackages = "com.robomart",
-        excludeName = {
-                "org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration",
-                "org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration",
-                "org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration"
-        }
-)
+@SpringBootApplication(scanBasePackages = {"com.robomart.cart", "com.robomart.security"})
 public class CartServiceApplication {
 
     public static void main(String[] args) {

@@ -1,7 +1,6 @@
 package com.robomart.product.integration.controller;
 
 import java.nio.file.Path;
-import java.nio.file.Files;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -59,6 +58,7 @@ class AdminProductImageIT {
     private RestClient restClient;
     private Long productId;
     @Autowired private ProductImageService images;
+    @Autowired private com.robomart.product.service.ImageStorageService storage;
     @Autowired private PlatformTransactionManager transactions;
     @Autowired private JdbcTemplate jdbc;
 
@@ -71,12 +71,11 @@ class AdminProductImageIT {
         assertThat(JsonMapper.builder().build().readTree(detail()).path("data").path("images").size()).isZero();
         var uploaded = images.uploadImages(productId, List.of(new MockMultipartFile(
                 "file", "image.jpg", "image/jpeg", JPEG_MAGIC_BYTES))).getFirst();
-        String path = java.net.URI.create(uploaded.imageUrl()).getPath();
-        Path file = tempDir.resolve(path.substring("/images/".length()));
-        assertThat(Files.exists(file)).isTrue();
+        String key = storage.ownedKey(uploaded.imageUrl()).orElseThrow();
+        assertThat(storage.exists(key)).isTrue();
         var anonymous = RestClient.builder().baseUrl("http://localhost:" + port)
                 .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { }).build();
-        var response = anonymous.get().uri(path).retrieve().toEntity(byte[].class);
+        var response = anonymous.get().uri(uploaded.imageUrl()).retrieve().toEntity(byte[].class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).containsExactly(JPEG_MAGIC_BYTES);
         assertThat(detail()).contains(uploaded.imageUrl());
@@ -84,19 +83,19 @@ class AdminProductImageIT {
         var transaction = new TransactionTemplate(transactions);
         transaction.executeWithoutResult(status -> {
             images.deleteImage(productId, uploaded.id());
-            assertThat(Files.exists(file)).isTrue();
+            assertThat(storage.exists(key)).isTrue();
             status.setRollbackOnly();
         });
-        assertThat(Files.exists(file)).isTrue();
+        assertThat(storage.exists(key)).isTrue();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM product_images WHERE id=?", Integer.class, uploaded.id())).isEqualTo(1);
         assertThat(detail()).contains(uploaded.imageUrl());
 
         transaction.executeWithoutResult(status -> {
             images.deleteImage(productId, uploaded.id());
-            assertThat(Files.exists(file)).isTrue();
+            assertThat(storage.exists(key)).isTrue();
         });
-        assertThat(Files.exists(file)).isFalse();
-        assertThat(anonymous.get().uri(path).retrieve().toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(storage.exists(key)).isFalse();
+        assertThat(anonymous.get().uri(uploaded.imageUrl()).retrieve().toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(JsonMapper.builder().build().readTree(detail()).path("data").path("images").size()).isZero();
     }
 
@@ -119,17 +118,17 @@ class AdminProductImageIT {
     }
 
     @Test
-    void uploadRollbackRemovesNewFilesAndLeavesNoImageRow() {
-        var files = new java.util.ArrayList<Path>();
+    void uploadRollbackRemovesNewObjectsAndLeavesNoImageRow() {
+        var keys = new java.util.ArrayList<String>();
         new TransactionTemplate(transactions).executeWithoutResult(status -> {
             var uploaded = images.uploadImages(productId, List.of(new MockMultipartFile(
                     "file", "rollback.jpg", "image/jpeg", JPEG_MAGIC_BYTES))).getFirst();
-            Path file = tempDir.resolve(java.net.URI.create(uploaded.imageUrl()).getPath().substring("/images/".length()));
-            files.add(file);
-            assertThat(Files.exists(file)).isTrue();
+            String key = storage.ownedKey(uploaded.imageUrl()).orElseThrow();
+            keys.add(key);
+            assertThat(storage.exists(key)).isTrue();
             status.setRollbackOnly();
         });
-        assertThat(files).allSatisfy(file -> assertThat(Files.exists(file)).isFalse());
+        assertThat(keys).allSatisfy(key -> assertThat(storage.exists(key)).isFalse());
         assertThat(jdbc.queryForObject("SELECT count(*) FROM product_images WHERE product_id=?", Integer.class, productId)).isZero();
     }
 
