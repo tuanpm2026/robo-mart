@@ -46,9 +46,11 @@ import io.confluent.kafka.serializers.KafkaAvroSerializer;
 @Testcontainers
 class DlqRoutingIT {
     @Container private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine");
-    @Container private static final ConfluentKafkaContainer KAFKA = new ConfluentKafkaContainer("confluentinc/cp-kafka:7.9.10");
+    @Container private static final ConfluentKafkaContainer KAFKA = new ConfluentKafkaContainer("confluentinc/cp-kafka:8.2.4");
     @DynamicPropertySource
     static void kafka(DynamicPropertyRegistry registry) {
+        com.robomart.test.KafkaTestFeatures.enableConsumerProtocol(KAFKA.getBootstrapServers());
+        registry.add("spring.kafka.consumer.properties.group.protocol", () -> "consumer");
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);

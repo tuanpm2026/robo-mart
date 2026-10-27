@@ -9,16 +9,18 @@ import org.testcontainers.kafka.ConfluentKafkaContainer;
 public class KafkaContainerConfig {
 
     private static final ConfluentKafkaContainer KAFKA =
-            new ConfluentKafkaContainer("confluentinc/cp-kafka:7.9.10");
+            new ConfluentKafkaContainer("confluentinc/cp-kafka:8.2.4");
 
     static {
         KAFKA.start();
+        KafkaTestFeatures.enableConsumerProtocol(KAFKA.getBootstrapServers());
     }
 
     @Bean
     DynamicPropertyRegistrar kafkaProperties() {
         return registry -> {
             registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
+            registry.add("spring.kafka.consumer.properties.group.protocol", () -> "consumer");
             registry.add("spring.kafka.properties.schema.registry.url", () -> "mock://test-schema-registry");
         };
     }

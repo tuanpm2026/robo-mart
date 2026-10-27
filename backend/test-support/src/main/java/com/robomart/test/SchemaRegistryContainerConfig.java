@@ -19,7 +19,7 @@ public class SchemaRegistryContainerConfig {
     private static GenericContainer<?> schemaRegistry;
 
     public static void initWithKafka(String kafkaBootstrapServers) {
-        schemaRegistry = new GenericContainer<>("confluentinc/cp-schema-registry:7.9.10")
+        schemaRegistry = new GenericContainer<>("confluentinc/cp-schema-registry:8.2.4")
                 .withExposedPorts(SCHEMA_REGISTRY_PORT)
                 .withEnv("SCHEMA_REGISTRY_HOST_NAME", "schema-registry")
                 .withEnv("SCHEMA_REGISTRY_LISTENERS", "http://0.0.0.0:" + SCHEMA_REGISTRY_PORT)

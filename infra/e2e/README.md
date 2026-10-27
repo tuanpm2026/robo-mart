@@ -50,3 +50,6 @@ Wave 8 uses the public Keycloak issuer http://localhost:18180/realms/robomart an
 
 
 Wave 8's rebuilt production image targets passed all3 E2E/chaos tests on2026-10-27, including the unchanged60second recovery budget. All7 JVMs mapped their image AOT cache. The retained test realm required one-time provisioning of the missing Inventory fixture client before the audience-only reconciler could run; existing identities/secrets were preserved, and subsequent mapper reconciliation reported0 updates. Orders22–28 were all cancelled, fully refunded and released, with one RESERVE/COMMIT/RELEASE each. The stack was shut down with every volume retained. See [Wave8 validation](../../_bmad-output/test-artifacts/wave8-platform-validation-2026-10-27.md).
+
+
+Wave9 upgrades the retained Kafka/Schema Registry data to pinned Confluent8.2.4 images. Before apps start, configure-kafka.py verifies the fixed isolated labels/image/volume/cluster and enables only group.version1 after a dry-run; it never finalizes metadata or formats storage and first enablement requires stopped apps. E2E opts into KIP-848 consumer mode. Developer/production defaults remain classic until explicitly prepared. See [Kafka8 rollout](../../docs/kafka-8-upgrade.md) for the tested retained-data boundary and feature controls.
