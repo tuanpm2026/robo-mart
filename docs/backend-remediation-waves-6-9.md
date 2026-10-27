@@ -67,7 +67,7 @@ Aborted worktrees were removed after preserving tracked diffs, untracked files a
 | Product 1 | Versioned explicit index/mapping/alias, Vietnamese analyzer and scaled price | Pending |
 | Product 2 | External versions including durable deletion semantics | Pending |
 | Product 3 | Shared complete event payload including rating | Implemented: one snapshot mapper for live edits and demo indexing, preserving nullable rating; unit and real persisted-outbox regression passed |
-| Product 4 | Bounded paging and connectivity-only fallback | Pending |
+| Product 4 | Bounded paging and connectivity-only fallback | Implemented: 10,000-result window, network-cause-only fallback, mapping/auth failures propagate; real HTTP deep-page rejection and unit classification tests passed |
 | Product 5 | DLT and admin rebuild | Pending |
 | Product 6 | Outbox ordering, async send, unknown types and retention | Pending |
 | Product 7 | Image route/auth/storage, post-commit delete and cache eviction | Pending |
@@ -280,3 +280,10 @@ Executed on JDK25, with the background Java compiler suspended/resumed:
 - ./mvnw checkstyle:check -pl :product-service — passed, existing naming warnings remain.
 
 This subset has no Flyway, Avro or infrastructure changes. Product findings1/2/4/5/6/7, final Wave7 verification and Waves8–9 remain outstanding.
+
+
+### Product search bounds and failure classification
+
+Search rejects a result window above 10,000 before contacting either data source. PostgreSQL fallback now requires a recognized network connection/read/pool timeout, closed connection or unreachable host in the cause chain. Mapping, authorization, missing-index and other application/query failures propagate instead of becoming apparently successful degraded results. TLS/certificate failures are not reclassified as ordinary unavailability. Existing reduced PostgreSQL filter semantics are unchanged.
+
+./mvnw clean verify -pl :product-service -Dit.test=ProductSearchIT -DskipE2ETests passed on JDK25: 93 unit + 12 selected integration tests, with the coverage gate enabled and passed. Tests cover nested connect/read-timeout failures, mapping/HTTP401 propagation without a PostgreSQL query, pre-query deep-window rejection, and HTTP400 through the real cached search endpoint.

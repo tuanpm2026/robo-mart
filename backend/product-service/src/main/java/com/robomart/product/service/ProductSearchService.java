@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import com.robomart.common.dto.PagedResponse;
 import com.robomart.common.dto.PaginationMeta;
+import com.robomart.common.exception.ValidationException;
 import com.robomart.product.document.ProductDocument;
 import com.robomart.product.dto.ProductListResponse;
 import com.robomart.product.dto.ProductSearchRequest;
@@ -52,6 +53,9 @@ public class ProductSearchService {
                      "T(Math).min(#pageable.pageSize, 100) + ':' + #pageable.sort")
     public PagedResponse<ProductListResponse> search(ProductSearchRequest request, Pageable pageable) {
         Pageable clampedPageable = clampPageSize(pageable);
+        if (clampedPageable.getOffset() + clampedPageable.getPageSize() > 10000) {
+            throw new ValidationException("Search is limited to 10,000 results; narrow the filters for deeper results");
+        }
 
         // Build the query outside the try block so query-construction errors are not masked as ES failures
         NativeQuery query = buildSearchQuery(request, clampedPageable);
@@ -75,7 +79,8 @@ public class ProductSearchService {
             );
 
             return new PagedResponse<>(products, pagination, getTraceId());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            if (!isConnectionFailure(e)) throw e;
             log.warn("Elasticsearch unavailable, falling back to PostgreSQL LIKE search: {}", e.getMessage());
             try {
                 return searchWithPostgresFallback(request, clampedPageable);
@@ -84,6 +89,17 @@ public class ProductSearchService {
                 throw fallbackEx;
             }
         }
+    }
+
+    private boolean isConnectionFailure(Throwable failure) {
+        for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
+            if (cause instanceof java.net.SocketException || cause instanceof java.net.SocketTimeoutException
+                    || cause instanceof java.net.UnknownHostException || cause instanceof java.net.http.HttpTimeoutException
+                    || cause instanceof org.apache.hc.core5.http.ConnectionRequestTimeoutException
+                    || cause instanceof org.apache.hc.core5.http.NoHttpResponseException
+                    || cause instanceof org.apache.hc.core5.http.ConnectionClosedException) return true;
+        }
+        return false;
     }
 
     private PagedResponse<ProductListResponse> searchWithPostgresFallback(ProductSearchRequest request, Pageable pageable) {

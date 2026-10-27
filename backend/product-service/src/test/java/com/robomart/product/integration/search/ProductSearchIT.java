@@ -192,6 +192,13 @@ class ProductSearchIT {
     }
 
     @Test
+    void deepSearchPageReturnsValidationErrorInsteadOfFallingBack() {
+        var response = search("/api/v1/products/search?page=100&size=100");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody()).contains("VALIDATION_ERROR");
+    }
+
+    @Test
     void shouldReturnRelevantProductsWhenKeywordSearch() {
         awaitSearch("/api/v1/products/search?keyword=headphone", response -> {
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
