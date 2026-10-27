@@ -81,7 +81,7 @@ public class ProductImageService {
                 saved.add(productImageRepository.save(image));
             }
         } catch (Exception e) {
-            // Clean up any files already written to disk before the failure
+            // Clean up any objects already stored before the failure
             if (!synchronizedTransaction) storedUrls.forEach(imageStorageService::delete);
             throw e;
         }

@@ -1,132 +1,120 @@
 package com.robomart.product.unit.service;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
-import org.springframework.mock.web.MockMultipartFile;
-
-import com.robomart.common.exception.ValidationException;
-import com.robomart.product.service.ImageStorageService;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
+import java.io.IOException;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.mock.web.MockMultipartFile;
+import com.robomart.common.exception.ValidationException;
+import com.robomart.product.config.ImageStorageProperties;
+import com.robomart.product.service.ImageStorageService;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 class ImageStorageServiceTest {
-
-    // Valid JPEG magic bytes (FF D8 FF E0 ...) with minimal filler
-    private static final byte[] JPEG_HEADER = new byte[]{
-            (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0, 0, 0, 0, 0, 0, 0, 0
-    };
-
-    // Valid PNG magic bytes (89 50 4E 47 0D 0A 1A 0A) with minimal filler
-    private static final byte[] PNG_HEADER = new byte[]{
-            (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0
-    };
-
-    @TempDir
-    Path tempDir;
-
-    private ImageStorageService imageStorageService;
+    private static final byte[] JPEG = {(byte) 0xff, (byte) 0xd8, (byte) 0xff, 0, 1};
+    private S3Client s3;
+    private ImageStorageService images;
 
     @BeforeEach
     void setUp() {
-        imageStorageService = new ImageStorageService(tempDir.toString(), "http://localhost:8081");
+        s3 = mock(S3Client.class);
+        var properties = new ImageStorageProperties();
+        properties.setBucket("images");
+        properties.setPublicBaseUrl("https://media.example.test/images/");
+        images = new ImageStorageService(s3, properties, "https://api.example.test/");
     }
 
     @Test
-    void store_validJpegFile_savesFileAndReturnsUrl() throws IOException {
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "photo.jpg", "image/jpeg", JPEG_HEADER);
-
-        String url = imageStorageService.store(1L, file);
-
-        assertThat(url).startsWith("http://localhost:8081/images/1/");
-        assertThat(url).endsWith(".jpg");
-
-        // Verify file actually saved on disk
-        String filename = url.substring(url.lastIndexOf('/') + 1);
-        Path savedFile = tempDir.resolve("1").resolve(filename);
-        assertThat(savedFile).exists();
-        assertThat(Files.readAllBytes(savedFile)).isEqualTo(JPEG_HEADER);
+    void uploadsValidatedBytesWithOwnedRandomKeyMimeAndChecksum() throws IOException {
+        String url = images.store(1L, new MockMultipartFile("file", "untrusted.exe", "text/plain", JPEG));
+        var request = ArgumentCaptor.forClass(PutObjectRequest.class);
+        var body = ArgumentCaptor.forClass(RequestBody.class);
+        verify(s3).putObject(request.capture(), body.capture());
+        assertThat(url).startsWith("https://media.example.test/images/1/").endsWith(".jpg");
+        assertThat(request.getValue().bucket()).isEqualTo("images");
+        assertThat(request.getValue().key()).isEqualTo(url.substring("https://media.example.test/images/".length()));
+        assertThat(request.getValue().contentType()).isEqualTo("image/jpeg");
+        assertThat(request.getValue().metadata().get("sha256")).hasSize(64);
+        assertThat(request.getValue().ifNoneMatch()).isEqualTo("*");
+        try (var input = body.getValue().contentStreamProvider().newStream()) {
+            assertThat(input.readAllBytes()).containsExactly(JPEG);
+        }
     }
 
     @Test
-    void store_fileTooLarge_throwsValidationException() {
-        byte[] oversized = new byte[6 * 1024 * 1024]; // 6MB
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "big.jpg", "image/jpeg", oversized);
-
-        assertThatThrownBy(() -> imageStorageService.store(1L, file))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("5MB");
+    void rejectsEmptyOversizedAndUnsupportedContentBeforeAnyObjectWrite() {
+        for (byte[] bytes : new byte[][]{new byte[0], new byte[6 * 1024 * 1024], "not-an-image".getBytes()}) {
+            assertThatThrownBy(() -> images.store(1L, new MockMultipartFile("file", "fake.jpg", "image/jpeg", bytes)))
+                    .isInstanceOf(ValidationException.class);
+        }
+        assertThatThrownBy(() -> images.store(0L, new MockMultipartFile("file", JPEG)))
+                .isInstanceOf(ValidationException.class);
+        verify(s3, never()).putObject(any(PutObjectRequest.class), any(RequestBody.class));
     }
 
     @Test
-    void store_unsupportedType_throwsValidationException() {
-        // Random bytes — no magic pattern matches
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "doc.pdf", "application/pdf", "not-an-image".getBytes());
-
-        assertThatThrownBy(() -> imageStorageService.store(1L, file))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("Unsupported file type");
+    void supportsPngAndWebpSignaturesWithoutTrustingClientMime() {
+        byte[] png = {(byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a};
+        byte[] webp = {'R', 'I', 'F', 'F', 0, 0, 0, 0, 'W', 'E', 'B', 'P'};
+        assertThat(images.store(1L, new MockMultipartFile("file", png))).endsWith(".png");
+        assertThat(images.store(1L, new MockMultipartFile("file", webp))).endsWith(".webp");
     }
 
     @Test
-    void delete_existingFile_removesFromFilesystem() throws IOException {
-        // Store a valid JPEG first
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "to-delete.jpg", "image/jpeg", JPEG_HEADER);
-        String url = imageStorageService.store(1L, file);
-
-        // Verify it exists
-        String filename = url.substring(url.lastIndexOf('/') + 1);
-        Path savedFile = tempDir.resolve("1").resolve(filename);
-        assertThat(savedFile).exists();
-
-        // Delete it
-        imageStorageService.delete(url);
-
-        assertThat(savedFile).doesNotExist();
+    void missingObjectsReturnFalseButProviderErrorsRemainVisible() {
+        String key = "1/" + UUID.randomUUID() + ".jpg";
+        org.mockito.Mockito.when(s3.headObject(any(software.amazon.awssdk.services.s3.model.HeadObjectRequest.class)))
+                .thenThrow(software.amazon.awssdk.services.s3.model.S3Exception.builder().statusCode(404).build())
+                .thenThrow(software.amazon.awssdk.services.s3.model.S3Exception.builder().statusCode(403).build());
+        assertThat(images.exists(key)).isFalse();
+        assertThatThrownBy(() -> images.exists(key)).isInstanceOf(com.robomart.product.exception.ImageStorageException.class);
+        assertThat(images.exists("../unsafe")).isFalse();
+        assertThatThrownBy(() -> images.publicUrl("../unsafe")).isInstanceOf(ValidationException.class);
     }
 
     @Test
-    void delete_missingFile_doesNotThrow() {
-        String nonExistentUrl = "http://localhost:8081/images/1/nonexistent.jpg";
-        // Should not throw
-        imageStorageService.delete(nonExistentUrl);
+    void uploadFailureIsVisibleWhilePostCommitCleanupRemainsBestEffort() {
+        var failure = software.amazon.awssdk.core.exception.SdkClientException.create("storage unavailable");
+        org.mockito.Mockito.when(s3.putObject(any(PutObjectRequest.class), any(RequestBody.class))).thenThrow(failure);
+        assertThatThrownBy(() -> images.store(1L, new MockMultipartFile("file", JPEG)))
+                .isInstanceOf(com.robomart.product.exception.ImageStorageException.class).hasCause(failure);
+        org.mockito.Mockito.when(s3.deleteObject(any(DeleteObjectRequest.class))).thenThrow(failure);
+        org.assertj.core.api.Assertions.assertThatCode(() -> images.delete("https://media.example.test/images/1/"
+                + UUID.randomUUID() + ".jpg")).doesNotThrowAnyException();
     }
 
     @Test
-    void delete_withTrailingSlashInBaseUrl_stillDeletesCorrectly() throws IOException {
-        // Constructor strips trailing slash — URLs built with trailing-slash base should still work
-        ImageStorageService serviceWithSlash = new ImageStorageService(
-                tempDir.toString(), "http://localhost:8081/");
-
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "photo.jpg", "image/jpeg", JPEG_HEADER);
-        String url = serviceWithSlash.store(1L, file);
-
-        assertThat(url).startsWith("http://localhost:8081/images/1/");
-
-        String filename = url.substring(url.lastIndexOf('/') + 1);
-        Path savedFile = tempDir.resolve("1").resolve(filename);
-        assertThat(savedFile).exists();
-
-        serviceWithSlash.delete(url);
-        assertThat(savedFile).doesNotExist();
+    void deletesOnlyOwnedPublicOrLegacyKeysAndNormalizesTrailingSlashes() {
+        String key = "1/" + UUID.randomUUID() + ".png";
+        images.delete("https://media.example.test/images/" + key);
+        images.delete("https://api.example.test/images/" + key);
+        var request = ArgumentCaptor.forClass(DeleteObjectRequest.class);
+        org.mockito.Mockito.verify(s3, org.mockito.Mockito.times(2)).deleteObject(request.capture());
+        assertThat(request.getAllValues()).allSatisfy(value -> {
+            assertThat(value.bucket()).isEqualTo("images");
+            assertThat(value.key()).isEqualTo(key);
+        });
     }
 
     @Test
-    void delete_pathTraversalAttempt_doesNotDeleteOutsideRoot() throws IOException {
-        // Craft a URL that attempts path traversal
-        String maliciousUrl = "http://localhost:8081/images/../../../etc/passwd";
-        // Should log a warning and return without throwing or deleting anything
-        imageStorageService.delete(maliciousUrl);
-        // Just verifying no exception — the bounds check prevents actual traversal
+    void rejectsTraversalForeignUrlsQueryParametersAndUnownedObjectNames() {
+        for (String url : new String[]{null, "https://elsewhere.test/images/1/a.jpg",
+                "https://api.example.test/images/../../../etc/passwd",
+                "https://media.example.test/images/1/not-owned.jpg",
+                "https://media.example.test/images/1/" + UUID.randomUUID() + ".jpg?download=1"}) {
+            images.delete(url);
+        }
+        verify(s3, never()).deleteObject(any(DeleteObjectRequest.class));
     }
 }

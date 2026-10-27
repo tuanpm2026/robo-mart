@@ -11,6 +11,6 @@ import org.springframework.context.annotation.Import;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @IntegrationTest
-@Import({PostgresContainerConfig.class, KafkaContainerConfig.class, ElasticsearchContainerConfig.class, RedisContainerConfig.class})
+@Import({PostgresContainerConfig.class, KafkaContainerConfig.class, ElasticsearchContainerConfig.class, RedisContainerConfig.class, MinioContainerConfig.class})
 public @interface ProductIntegrationTest {
 }

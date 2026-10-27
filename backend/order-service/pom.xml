@@ -33,7 +33,7 @@
         <!-- Internal -->
         <dependency>
             <groupId>com.robomart</groupId>
-            <artifactId>common-lib</artifactId>
+            <artifactId>common-web-starter</artifactId>
         </dependency>
         <dependency>
             <groupId>com.robomart</groupId>

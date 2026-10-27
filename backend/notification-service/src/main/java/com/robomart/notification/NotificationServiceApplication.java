@@ -3,7 +3,7 @@ package com.robomart.notification;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplication(scanBasePackages = "com.robomart")
+@SpringBootApplication(scanBasePackages = {"com.robomart.notification", "com.robomart.security"})
 public class NotificationServiceApplication {
 
     public static void main(String[] args) {

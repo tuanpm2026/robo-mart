@@ -117,8 +117,8 @@ PR [#46](https://github.com/tuanpm2026/robo-mart/pull/46), squash commit `c6d726
 | --- | --- |
 | 1. Shared outbox library with ordering, claims, IDs, retention and metrics; document CDC | Implemented shared outbox engine/JDBC claims/settings/retention/identity; focused library and service checks passed; final wave gates remain |
 | 2. Confluent 8/KRaft and compatible consumer protocol | Implemented8.2.4 with Kafka client4.2.2; retained-data upgrade/IDs/offsets verified; Avro/group migration and Notification consumer-mode suites passed; final E2E remains |
-| 3. S3-compatible image storage and MinIO/AWS SDK v2 | Pending; provide migration/rollout path for existing images |
-| 4. Split common-core/common-web-starter, scoped errors and remove cart DB exclusions | Pending; preserve service security and configuration boundaries |
+| 3. S3-compatible image storage and MinIO/AWS SDK v2 | Implemented SDK2.57.4, patched source-built MinIO fixtures, public URLs, transaction-safe cleanup and explicit copy/checksum migration; final full gates remain |
+| 4. Split common-core/common-web-starter, scoped errors and remove cart DB exclusions | Implemented conditional auto-configuration, domain-owned wire codes, optional persistence API and Cart exclusions removed; focused common tests/coverage passed, final gates remain |
 
 ### Order recovery/outbox continuation
 

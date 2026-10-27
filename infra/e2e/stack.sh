@@ -20,13 +20,15 @@ case "${1:-}" in
       }
     done
     # Serial image builds avoid memory contention on Docker Desktop's 8 GiB VM.
-    for service in postgres keycloak "${SERVICES[@]}"; do
+    for service in minio postgres keycloak "${SERVICES[@]}"; do
       "${COMPOSE[@]}" build "$service"
     done
     ;;
   up)
     # Dependencies first, then Spring contexts one at a time.
-    "${COMPOSE[@]}" up -d --wait --wait-timeout 600 postgres redis elasticsearch kafka schema-registry keycloak
+    "${COMPOSE[@]}" up -d --wait --wait-timeout 600 postgres redis elasticsearch kafka schema-registry keycloak minio
+    "${COMPOSE[@]}" up -d minio-init
+    "${COMPOSE[@]}" wait minio-init
     python3 "$ROOT/infra/e2e/configure-kafka.py" --enable-consumer-protocol
     # Startup imports do not update an existing realm; preserve data and reconcile only test mappers.
     python3 "$ROOT/infra/e2e/configure-realm.py"

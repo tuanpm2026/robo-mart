@@ -32,6 +32,32 @@ x-app: &app
     keycloak: {condition: service_healthy}
 
 services:
+  minio:
+    image: robomart/minio:security-9e49d5e
+    build: {context: minio, dockerfile: Dockerfile}
+    mem_limit: 384m
+    environment:
+      MINIO_ROOT_USER: robomart-e2e
+      MINIO_ROOT_PASSWORD: robomart-e2e-fixture-only
+    ports: ["127.0.0.1:19002:9000"]
+    volumes: [minio-data:/data]
+
+  minio-init:
+    image: amazon/aws-cli:latest@sha256:bdb0dd07c54dfc7fe6526387dcf23eaab269875a20d647ae4de8196ea04d6bd4
+    user: "1001:1001"
+    mem_limit: 128m
+    read_only: true
+    tmpfs: [/tmp]
+    entrypoint: [/bin/sh, /bootstrap/init-bucket.sh]
+    depends_on:
+      minio: {condition: service_healthy}
+    environment:
+      AWS_ACCESS_KEY_ID: robomart-e2e
+      AWS_SECRET_ACCESS_KEY: robomart-e2e-fixture-only
+      S3_BUCKET: robomart-images
+      HOME: /tmp
+    volumes: [./minio/init-bucket.sh:/bootstrap/init-bucket.sh:ro]
+
   postgres:
     image: robomart-e2e/postgres:17
     build: {context: ../.., dockerfile: infra/e2e/Dockerfile.postgres}
@@ -156,6 +182,7 @@ services:
       dockerfile: Dockerfile.prebuilt
       target: product-service
     depends_on:
+      minio-init: {condition: service_completed_successfully}
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
       schema-registry: {condition: service_healthy}
@@ -166,12 +193,19 @@ services:
       SPRING_PROFILES_ACTIVE: "dev,demo"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product_db
       ROBOMART_PRODUCT_IMAGE_BASE_URL: http://localhost:18080
-      ROBOMART_PRODUCT_IMAGE_STORAGE_PATH: /tmp/robomart-images
+      ROBOMART_PRODUCT_IMAGE_STORAGE_PATH: /migration/images
+      S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_BASE_URL: http://localhost:19002/robomart-images
+      S3_REGION: us-east-1
+      S3_BUCKET: robomart-images
+      S3_ACCESS_KEY: robomart-e2e
+      S3_SECRET_KEY: robomart-e2e-fixture-only
+      S3_PATH_STYLE: "true"
       SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
       PRODUCT_SEARCH_INITIALIZE_INDEX: "true"
       PRODUCT_KAFKA_DLT_REPLICATION_FACTOR: "1"
     volumes:
-      - product-images:/tmp/robomart-images
+      - product-images:/migration/images:ro
     healthcheck:
       test: [CMD-SHELL, "curl -fsS http://localhost:8081/actuator/health > /dev/null"]
       interval: 10s
@@ -325,6 +359,7 @@ services:
       start_period: 60s
 
 volumes:
+  minio-data:
   product-images:
   postgres-data:
   elasticsearch-data:

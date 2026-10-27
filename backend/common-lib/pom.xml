@@ -1,101 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>com.robomart</groupId>
         <artifactId>robo-mart-parent</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
-
     <artifactId>common-lib</artifactId>
-    <name>Robo-Mart Common Library</name>
-    <description>Shared DTOs, exceptions, configuration, and utilities</description>
-
+    <name>Robo-Mart Common Compatibility Facade</name>
     <dependencies>
         <dependency>
-            <groupId>org.jspecify</groupId>
-            <artifactId>jspecify</artifactId>
+            <groupId>com.robomart</groupId>
+            <artifactId>common-web-starter</artifactId>
         </dependency>
-        <dependency>
-            <groupId>jakarta.validation</groupId>
-            <artifactId>jakarta.validation-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-opentelemetry</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
-        </dependency>
-
-        <!-- AspectJ weaver for @Auditable aspect (spring-aop is already in spring-context via spring-boot-starter-web) -->
-        <dependency>
-            <groupId>org.aspectj</groupId>
-            <artifactId>aspectjweaver</artifactId>
-        </dependency>
-
-        <!-- Spring Security core for SecurityContextHolder in AuditAspect (optional — consumers provide it) -->
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-core</artifactId>
-            <optional>true</optional>
+            <scope>test</scope>
         </dependency>
-
-        <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
-
+    <!-- Existing CI selects :common-lib. Run the owning starter's tests here too until that selector migrates. -->
     <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>default-compile</id>
-                        <configuration>
-                            <proc>full</proc>
-                            <annotationProcessorPaths>
-                                <path>
-                                    <groupId>com.google.errorprone</groupId>
-                                    <artifactId>error_prone_core</artifactId>
-                                    <version>${error-prone.version}</version>
-                                </path>
-                                <path>
-                                    <groupId>com.uber.nullaway</groupId>
-                                    <artifactId>nullaway</artifactId>
-                                    <version>${nullaway.version}</version>
-                                </path>
-                            </annotationProcessorPaths>
-                            <compilerArgs>
-                                <arg>-XDcompilePolicy=simple</arg>
-                                <arg>--should-stop=ifError=FLOW</arg>
-                                <arg>-Xplugin:ErrorProne -XepDisableAllChecks -Xep:NullAway:ERROR -XepOpt:NullAway:OnlyNullMarked=true -XepOpt:NullAway:JSpecifyMode=true</arg>
-                            </compilerArgs>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
+        <testSourceDirectory>${project.basedir}/../common-web-starter/src/test/java</testSourceDirectory>
     </build>
 </project>

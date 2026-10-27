@@ -1,0 +1,3 @@
+com.robomart.common.config.JacksonConfig
+com.robomart.common.audit.AuditAutoConfiguration
+com.robomart.common.config.CommonWebAutoConfiguration
