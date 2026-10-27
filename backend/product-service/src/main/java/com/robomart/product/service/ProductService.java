@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.robomart.common.audit.AuditAction;
@@ -30,6 +31,7 @@ import com.robomart.product.entity.Category;
 import com.robomart.product.entity.Product;
 import com.robomart.product.exception.ProductNotFoundException;
 import com.robomart.product.mapper.ProductMapper;
+import com.robomart.product.mapper.ProductEventPayloadMapper;
 import com.robomart.product.repository.CategoryRepository;
 import com.robomart.product.repository.ProductRepository;
 
@@ -87,7 +89,7 @@ public class ProductService {
         return new PagedResponse<>(products, pagination, getTraceId());
     }
 
-    @Cacheable(value = "productDetail", key = "#productId")
+    @Cacheable(value = "productDetail", key = "#productId", sync = true)
     public ProductDetailResponse getProductById(Long productId) {
         log.debug("Fetching product detail for id={}", productId);
 
@@ -138,10 +140,16 @@ public class ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Category not found: " + request.categoryId()));
 
+        if (request.version() != null && !request.version().equals(product.getVersion())) {
+            throw new ObjectOptimisticLockingFailureException(Product.class, productId);
+        }
+
         productMapper.updateEntityFromRequest(request, product);
         product.setCategory(category);
 
         Product saved = productRepository.save(product);
+        // Hibernate advances @Version on flush; expose the committed candidate in the response.
+        productRepository.flush();
 
         String payload = buildOutboxPayload(saved);
         outboxPublisher.saveEvent("PRODUCT", String.valueOf(saved.getId()), "PRODUCT_UPDATED", payload);
@@ -182,17 +190,7 @@ public class ProductService {
 
     private String buildOutboxPayload(Product product) {
         try {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("id", product.getId());
-            map.put("sku", product.getSku());
-            map.put("name", product.getName());
-            map.put("description", product.getDescription() != null ? product.getDescription() : "");
-            map.put("price", product.getPrice());
-            map.put("categoryId", product.getCategory().getId());
-            map.put("categoryName", product.getCategory().getName());
-            map.put("brand", product.getBrand() != null ? product.getBrand() : "");
-            map.put("stockQuantity", product.getStockQuantity());
-            return objectMapper.writeValueAsString(map);
+            return objectMapper.writeValueAsString(ProductEventPayloadMapper.snapshot(product));
         } catch (Exception e) {
             throw new IllegalStateException("Failed to serialize outbox payload for product id=" + product.getId(), e);
         }

@@ -173,6 +173,19 @@ class AdminProductServiceTest {
     // ─── updateProduct ───────────────────────────────────────────────────────
 
     @Test
+    void staleOptionalVersionCannotOverwriteProductOrWriteAnOutboxEvent() {
+        var request = new UpdateProductRequest("Stale edit", null, 1L, BigDecimal.TEN, null, 1);
+        org.springframework.test.util.ReflectionTestUtils.setField(testProduct, "version", 2);
+        when(productRepository.findByIdWithDetails(1L)).thenReturn(Optional.of(testProduct));
+        when(categoryRepository.findById(1L)).thenReturn(Optional.of(testCategory));
+
+        assertThatThrownBy(() -> productService.updateProduct(1L, request))
+                .isInstanceOf(org.springframework.orm.ObjectOptimisticLockingFailureException.class);
+        verify(productRepository, never()).save(any());
+        verify(outboxPublisher, never()).saveEvent(any(), any(), any(), any());
+    }
+
+    @Test
     void updateProduct_whenValidRequest_updatesProductAndEvictsCache() throws Exception {
         var request = new UpdateProductRequest("Updated Name", "Updated desc", 1L,
                 BigDecimal.valueOf(49.99), "NewBrand");

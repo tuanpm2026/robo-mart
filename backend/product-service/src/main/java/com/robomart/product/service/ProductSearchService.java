@@ -45,7 +45,7 @@ public class ProductSearchService {
         this.tracer = tracer;
     }
 
-    @Cacheable(value = "productSearch",
+    @Cacheable(value = "productSearch", sync = true,
                key = "#request.keyword() + ':' + #request.categoryId() + ':' + " +
                      "#request.brand() + ':' + #request.minPrice() + ':' + #request.maxPrice() + ':' + " +
                      "#request.minRating() + ':' + #pageable.pageNumber + ':' + " +

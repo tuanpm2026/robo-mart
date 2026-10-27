@@ -66,13 +66,13 @@ Aborted worktrees were removed after preserving tracked diffs, untracked files a
 | Notification 3 | Reconciliation lock, processed-event retention, HTTP timeouts and bounded name cache | Implemented: DB-time ShedLock, bounded retention preserving active failed identities, bounded HTTP/token requests and Caffeine cache; real DB/HTTP regressions passed |
 | Product 1 | Versioned explicit index/mapping/alias, Vietnamese analyzer and scaled price | Pending |
 | Product 2 | External versions including durable deletion semantics | Pending |
-| Product 3 | Shared complete event payload including rating | Pending |
+| Product 3 | Shared complete event payload including rating | Implemented: one snapshot mapper for live edits and demo indexing, preserving nullable rating; unit and real persisted-outbox regression passed |
 | Product 4 | Bounded paging and connectivity-only fallback | Pending |
 | Product 5 | DLT and admin rebuild | Pending |
 | Product 6 | Outbox ordering, async send, unknown types and retention | Pending |
 | Product 7 | Image route/auth/storage, post-commit delete and cache eviction | Pending |
-| Product 8 | Optional update version, conflict mapping and real trace ID | Pending |
-| Product 9 | Redis SCAN clearing and synchronized cache loading | Pending |
+| Product 8 | Optional update version, conflict mapping and real trace ID | Implemented: optional version, response version after flush, 409 on stale/optimistic or duplicate SKU, real trace ID; real parallel HTTP edits/creates passed |
+| Product 9 | Redis SCAN clearing and synchronized cache loading | Implemented: SCAN batches of 1,000 and sync=true on detail/search cache loading; Redis integration and concurrent Spring cache-loader regression passed |
 | Product 10 | Missing admin category/audit routes | Implemented: category management to Product, explicit product audit alias, global audit/reconciliation to Notification; real Gateway forwarding and RBAC regression passed |
 
 ### Wave 7 validation
@@ -265,3 +265,18 @@ Executed on JDK25 with background Java compilation suspended/resumed during serv
 - Admin type-check, 87 unit tests, build and changed-file Prettier checks — passed. Both Compose configurations and Kustomize base/production/ingress-tls — passed.
 
 Intermediate targeted verification first caught a test JWT bean collision, then the ignored generic HTTP-service customizer, nullable timestamp SQL failure and missing method-validation exception mapping. Those causes were corrected. A selected Order integration suite passed its assertions but covered 79% of the service; the full suite then exercised the required 80% gate without disabling it. The full Order recovery failure described above was isolated to shared fixture data and corrected with a private test database. CI on the prior head passed every check after retrying the buf installer job, which had failed on GitHub's unauthenticated download-API rate limit. CI for this new subset still needs to run after push. The final whole-reactor Wave 7 run, full-stack E2E and live realm provisioning have not been performed for this subset.
+
+
+### Product payloads, concurrent edits and cache clearing
+
+Product live writes and demo indexing now use one complete snapshot mapper, including nullable rating. Editing a product no longer emits a snapshot that wipes its search rating. UpdateProductRequest accepts an optional nonnegative version; existing clients may omit it. Product detail adds version without removing existing fields, and update flushes before creating its response so that the returned version can be used for the next edit. A stale supplied version rejects the write before mutation/outbox creation; Hibernate still detects concurrent writes that read the same version. Product-specific advice runs before the common generic handler, maps optimistic conflicts and PostgreSQL's products_sku_key/23505 race to HTTP409, leaves unrelated integrity failures as server errors, and uses the current trace instead of hard-coding no-trace. Database paths/SQL are not exposed in API messages.
+
+Redis clearing uses SCAN in batches of 1,000. Detail and search request synchronized loading through Spring's cache API. The concurrent loader regression uses the local Spring cache implementation; this does not claim distributed single-flight across replicas with the nonlocking Redis writer. Existing Redis cache/invalidation integration tests passed.
+
+Executed on JDK25, with the background Java compiler suspended/resumed:
+
+- ./mvnw clean verify -pl :product-service -DskipE2ETests — passed, 89 unit + 61 integration tests and coverage. Three new real HTTP/PostgreSQL tests verify usable response versions, stale-write rejection without a new outbox row, rating retention in the persisted update snapshot, two editors sharing one version, and two creations sharing one SKU. Exactly one concurrent create commits a product/event. Existing contract, search, cache, image and CRUD suites passed.
+- After adding the concurrent local cache-loader regression, ./mvnw clean test -pl :product-service — passed, 90 unit tests. No production code changed after the preceding full verification.
+- ./mvnw checkstyle:check -pl :product-service — passed, existing naming warnings remain.
+
+This subset has no Flyway, Avro or infrastructure changes. Product findings1/2/4/5/6/7, final Wave7 verification and Waves8–9 remain outstanding.
