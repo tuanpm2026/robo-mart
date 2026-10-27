@@ -42,6 +42,8 @@ public class ResourceServerSecurityConfig {
                 .requestMatchers("/actuator/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/admin/orders/{orderId:[0-9]+}")
                     .hasAnyRole("ADMIN", "NOTIFICATION_SERVICE")
+                .requestMatchers(HttpMethod.GET, "/api/v1/admin/orders/reconciliation-summary", "/api/v1/admin/orders/audit-logs")
+                    .hasAnyRole("ADMIN", "NOTIFICATION_SERVICE")
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/v1/internal/inventory/orders/{orderId:[0-9]+}/status")
                     .hasRole("INVENTORY_SERVICE")

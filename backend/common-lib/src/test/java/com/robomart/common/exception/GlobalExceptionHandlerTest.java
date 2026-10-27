@@ -21,6 +21,14 @@ import static org.mockito.Mockito.when;
 
 class GlobalExceptionHandlerTest {
 
+    @Test
+    void constrainedMethodParametersReturn400() {
+        var response = handler.handleConstraintViolation(
+                new jakarta.validation.ConstraintViolationException(java.util.Set.of()));
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().error().code()).isEqualTo("VALIDATION_ERROR");
+    }
+
     private Tracer tracer;
     private GlobalExceptionHandler handler;
 

@@ -99,7 +99,8 @@ public class HealthAggregatorService {
             ActuatorHealthResponse healthResp = client.get().uri("/actuator/health")
                     .retrieve()
                     .body(ActuatorHealthResponse.class);
-            String actuatorStatus = healthResp != null ? healthResp.status() : "DOWN";
+            if (healthResp == null || healthResp.status() == null) throw new IllegalStateException("Invalid actuator response");
+            String actuatorStatus = healthResp.status();
 
             // Step 2: p95 response time (value in seconds → ms)
             Double p95Seconds = fetchMetric(client, "http.server.requests", "quantile:0.95");
@@ -148,11 +149,11 @@ public class HealthAggregatorService {
                     Instant.now()
             );
         } catch (Exception e) {
-            log.warn("Health check failed for {}: {}", config.name(), e.getMessage());
+            log.error("Health check failed for {}", config.name(), e);
             return new ServiceHealthData(
                     config.name(),
                     config.displayName(),
-                    "DOWN",
+                    "ERROR",
                     null, null, null, null, null, null,
                     config.consumerGroup(),
                     Instant.now()
@@ -169,13 +170,14 @@ public class HealthAggregatorService {
             ActuatorMetricResponse resp = client.get().uri(uri)
                     .retrieve()
                     .body(ActuatorMetricResponse.class);
-            Double value = resp != null ? resp.firstValue() : null;
+            if (resp == null) throw new IllegalStateException("Invalid metric response");
+            Double value = resp.firstValue();
             if (value == null) {
                 log.debug("Metric {} not available (no data or tag not matched)", metricName);
             }
             return value;
-        } catch (Exception e) {
-            log.debug("Metric {} fetch failed: {}", metricName, e.getMessage());
+        } catch (org.springframework.web.client.HttpClientErrorException.NotFound unavailableMetric) {
+            // A metric without samples is optional; authentication, transport and server failures propagate.
             return null;
         }
     }

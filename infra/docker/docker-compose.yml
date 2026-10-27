@@ -168,6 +168,7 @@ services:
       - --import-realm
     environment:
       INVENTORY_SERVICE_CLIENT_SECRET: ${INVENTORY_SERVICE_CLIENT_SECRET:-}
+      NOTIFICATION_SERVICE_CLIENT_SECRET: ${NOTIFICATION_SERVICE_CLIENT_SECRET:-}
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:-admin}
       KC_HTTP_PORT: 8180
@@ -507,6 +508,8 @@ services:
     container_name: robomart-notification-service
     profiles: ["app"]
     depends_on:
+      keycloak:
+        condition: service_healthy
       postgres-notification:
         condition: service_healthy
       kafka:
@@ -514,6 +517,9 @@ services:
       schema-registry:
         condition: service_healthy
     environment:
+      NOTIFICATION_SERVICE_CLIENT_SECRET: ${NOTIFICATION_SERVICE_CLIENT_SECRET:-}
+      NOTIFICATION_SERVICE_TOKEN_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/token
+      NOTIFICATION_SERVICE_AUTH_ENABLED: "true"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-notification:5432/notification_db
       SPRING_DATASOURCE_USERNAME: ${NOTIFICATION_DB_USER:-postgres}
       SPRING_DATASOURCE_PASSWORD: ${NOTIFICATION_DB_PASSWORD:-postgres}

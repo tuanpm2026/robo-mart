@@ -3,7 +3,7 @@ import adminClient from './adminClient'
 export interface ServiceHealthData {
   service: string
   displayName: string
-  actuatorStatus: 'UP' | 'DOWN'
+  actuatorStatus: 'UP' | 'DOWN' | 'ERROR'
   p95ResponseTimeMs: number | null
   cpuPercent: number | null
   memoryPercent: number | null

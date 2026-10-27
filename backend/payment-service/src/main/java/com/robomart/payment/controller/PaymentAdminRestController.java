@@ -46,6 +46,7 @@ public class PaymentAdminRestController {
     }
 
     @GetMapping("/reconciliation-summary")
+    @PreAuthorize("hasAnyRole('ADMIN', 'NOTIFICATION_SERVICE')")
     public ResponseEntity<ApiResponse<ReconciliationSummaryResponse>> getReconciliationSummary(
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "100") @Min(1) @Max(100) int size) {
@@ -69,6 +70,7 @@ public class PaymentAdminRestController {
     }
 
     @GetMapping("/audit-logs")
+    @PreAuthorize("hasAnyRole('ADMIN', 'NOTIFICATION_SERVICE')")
     public ResponseEntity<PagedResponse<AuditLogDto>> searchAuditLogs(
             @RequestParam(required = false) String actor,
             @RequestParam(required = false) String action,

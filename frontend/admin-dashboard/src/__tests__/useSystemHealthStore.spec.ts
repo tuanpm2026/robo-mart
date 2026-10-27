@@ -74,6 +74,13 @@ describe('useSystemHealthStore', () => {
     expect(store.overallHealth).toBe('down')
   })
 
+  it('overallHealth returns down when a service cannot be checked', () => {
+    const store = useSystemHealthStore()
+    store.services = [makeService({ actuatorStatus: 'ERROR', p95ResponseTimeMs: null })]
+
+    expect(store.overallHealth).toBe('down')
+  })
+
   it('updateFromWebSocket updates services and lagHistory rolling buffer', () => {
     const store = useSystemHealthStore()
     const svc = makeService({ kafkaConsumerLag: 5 })

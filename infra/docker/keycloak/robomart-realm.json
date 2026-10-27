@@ -28,6 +28,10 @@
       {
         "name": "INVENTORY_SERVICE",
         "description": "Read minimal order status for reservation expiry only"
+      },
+      {
+        "name": "NOTIFICATION_SERVICE",
+        "description": "Read only order details, reconciliation and audit endpoints for notification operations"
       }
     ]
   },
@@ -124,6 +128,35 @@
           "config": {
             "claim.name": "realm_access.roles",
             "claim.value": "[\"INVENTORY_SERVICE\"]",
+            "jsonType.label": "JSON",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "notification-service",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${NOTIFICATION_SERVICE_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": false,
+      "defaultClientScopes": [],
+      "protocolMappers": [
+        {
+          "name": "notification-role",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "realm_access.roles",
+            "claim.value": "[\"NOTIFICATION_SERVICE\"]",
             "jsonType.label": "JSON",
             "access.token.claim": "true",
             "id.token.claim": "false",
@@ -2020,6 +2053,14 @@
       "serviceAccountClientId": "inventory-service",
       "realmRoles": [
         "INVENTORY_SERVICE"
+      ]
+    },
+    {
+      "username": "service-account-notification-service",
+      "enabled": true,
+      "serviceAccountClientId": "notification-service",
+      "realmRoles": [
+        "NOTIFICATION_SERVICE"
       ]
     }
   ]

@@ -1,178 +1,107 @@
 package com.robomart.notification.unit.service;
 
-import com.robomart.notification.service.AuditAggregatorService;
-import com.robomart.notification.service.AuditAggregatorService.AggregatedAuditResponse;
-import com.robomart.notification.service.AuditAggregatorService.AuditLogEntry;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.Mockito.*;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
-import tools.jackson.databind.json.JsonMapper;
+import com.robomart.common.dto.PagedResponse;
+import com.robomart.common.dto.PaginationMeta;
+import com.robomart.common.exception.ValidationException;
+import com.robomart.notification.client.AdminReadModels.AuditEntry;
+import com.robomart.notification.client.InventoryAdminReadClient;
+import com.robomart.notification.client.OrderAdminReadClient;
+import com.robomart.notification.client.PaymentAdminReadClient;
+import com.robomart.notification.client.ProductAdminReadClient;
+import com.robomart.notification.service.AuditAggregatorService;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Answers.RETURNS_DEEP_STUBS;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-@ExtendWith(MockitoExtension.class)
 class AuditAggregatorServiceTest {
-
-    private static final JsonMapper JSON = JsonMapper.builder().build();
-
-    private AuditAggregatorService service;
-    private RestClient orderClient;
-    private RestClient inventoryClient;
-    private RestClient paymentClient;
-    private RestClient productClient;
+    private final OrderAdminReadClient orders = mock(OrderAdminReadClient.class);
+    private final InventoryAdminReadClient inventory = mock(InventoryAdminReadClient.class);
+    private final PaymentAdminReadClient payments = mock(PaymentAdminReadClient.class);
+    private final ProductAdminReadClient products = mock(ProductAdminReadClient.class);
+    private final AuditAggregatorService service = new AuditAggregatorService(orders, inventory, payments, products);
 
     @BeforeEach
-    void setUp() {
-        service = new AuditAggregatorService();
-        ReflectionTestUtils.setField(service, "orderUrl", "http://localhost:8083");
-        ReflectionTestUtils.setField(service, "inventoryUrl", "http://localhost:8084");
-        ReflectionTestUtils.setField(service, "paymentUrl", "http://localhost:8086");
-        ReflectionTestUtils.setField(service, "productUrl", "http://localhost:8081");
-
-        orderClient = mock(RestClient.class, RETURNS_DEEP_STUBS);
-        inventoryClient = mock(RestClient.class, RETURNS_DEEP_STUBS);
-        paymentClient = mock(RestClient.class, RETURNS_DEEP_STUBS);
-        productClient = mock(RestClient.class, RETURNS_DEEP_STUBS);
-        ReflectionTestUtils.setField(service, "orderClient", orderClient);
-        ReflectionTestUtils.setField(service, "inventoryClient", inventoryClient);
-        ReflectionTestUtils.setField(service, "paymentClient", paymentClient);
-        ReflectionTestUtils.setField(service, "productClient", productClient);
+    void emptySources() {
+        doAnswer(i -> page(List.of(), i.getArgument(0))).when(orders).audits(anyMap());
+        doAnswer(i -> page(List.of(), i.getArgument(0))).when(inventory).audits(anyMap());
+        doAnswer(i -> page(List.of(), i.getArgument(0))).when(payments).audits(anyMap());
+        doAnswer(i -> page(List.of(), i.getArgument(0))).when(products).audits(anyMap());
     }
 
-    /** Stubs the deep RestClient chain to return an AuditPageResponse deserialised from {@code json}. */
-    @SuppressWarnings("unchecked")
-    private <T> void stubPage(RestClient client, String json) {
-        try {
-            Class<T> type = (Class<T>)
-                    Class.forName("com.robomart.notification.service.AuditAggregatorService$AuditPageResponse");
-            T body = JSON.readValue(json, type);
-            when(client.get().uri(anyString()).retrieve().body(type)).thenReturn(body);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    private AuditEntry entry(long id) {
+        return new AuditEntry(id, "actor", "CREATE", "Order", "order", "trace", "correlation",
+                Instant.parse("2026-01-01T00:00:00Z").plusSeconds(id));
     }
-
-    private void stubEmpty(RestClient client) {
-        stubPage(client, "{\"data\":[],\"pagination\":null,\"traceId\":\"x\"}");
-    }
-
-    private String entry(long id, String createdAt) {
-        return "{\"id\":" + id + ",\"actor\":\"admin\",\"action\":\"CREATE\",\"entityType\":\"Order\","
-                + "\"entityId\":\"" + id + "\",\"traceId\":\"t\",\"correlationId\":\"c\","
-                + "\"createdAt\":\"" + createdAt + "\"}";
+    private PagedResponse<AuditEntry> page(List<AuditEntry> all, Map<String, String> params) {
+        int page = Integer.parseInt(params.get("page"));
+        int size = Integer.parseInt(params.get("size"));
+        assertThat(size).isBetween(1, 100);
+        List<AuditEntry> sorted = all.stream().sorted(Comparator.comparing(AuditEntry::createdAt).reversed()).toList();
+        int from = Math.min(page * size, sorted.size());
+        int to = Math.min(from + size, sorted.size());
+        return new PagedResponse<>(sorted.subList(from, to),
+                new PaginationMeta(page, size, all.size(), (all.size() + size - 1) / size), null);
     }
 
     @Test
-    void shouldAggregateAndSortAcrossServicesNewestFirst() {
-        stubPage(orderClient, "{\"data\":[" + entry(1, "2026-01-01T10:00:00Z") + "],\"pagination\":null,\"traceId\":\"x\"}");
-        stubPage(inventoryClient, "{\"data\":[" + entry(2, "2026-01-03T10:00:00Z") + "],\"pagination\":null,\"traceId\":\"x\"}");
-        stubPage(paymentClient, "{\"data\":[" + entry(3, "2026-01-02T10:00:00Z") + "],\"pagination\":null,\"traceId\":\"x\"}");
-        stubEmpty(productClient);
-
-        AggregatedAuditResponse resp = service.getAuditLogs(
-                null, null, null, null, null, null, null, 0, 10);
-
-        assertThat(resp.totalElements()).isEqualTo(3);
-        assertThat(resp.totalPages()).isEqualTo(1);
-        assertThat(resp.data()).extracting(AuditLogEntry::id).containsExactly(2L, 3L, 1L);
+    void mergesSortedPrefixesIntoCorrectGlobalPageAndReportsAllSourceTotals() {
+        doAnswer(i -> page(List.of(entry(1), entry(4)), i.getArgument(0))).when(orders).audits(anyMap());
+        doAnswer(i -> page(List.of(entry(2), entry(3)), i.getArgument(0))).when(inventory).audits(anyMap());
+        var result = service.getAuditLogs(null, null, null, null, null, null, null, 1, 2);
+        assertThat(result.status()).isEqualTo("OK");
+        assertThat(result.data()).extracting(AuditEntry::id).containsExactly(2L, 1L);
+        assertThat(result.totalElements()).isEqualTo(4);
+        assertThat(result.totalPages()).isEqualTo(2);
     }
 
     @Test
-    void shouldPaginateAggregatedResults() {
-        stubPage(orderClient,
-                "{\"data\":[" + entry(1, "2026-01-01T10:00:00Z") + "," + entry(2, "2026-01-02T10:00:00Z")
-                        + "," + entry(3, "2026-01-03T10:00:00Z") + "],\"pagination\":null,\"traceId\":\"x\"}");
-        stubEmpty(inventoryClient);
-        stubEmpty(paymentClient);
-        stubEmpty(productClient);
-
-        AggregatedAuditResponse page0 = service.getAuditLogs(null, null, null, null, null, null, null, 0, 2);
-        assertThat(page0.totalElements()).isEqualTo(3);
-        assertThat(page0.totalPages()).isEqualTo(2);
-        assertThat(page0.data()).hasSize(2);
-
-        AggregatedAuditResponse page1 = service.getAuditLogs(null, null, null, null, null, null, null, 1, 2);
-        assertThat(page1.data()).hasSize(1);
-        assertThat(page1.page()).isEqualTo(1);
+    void fetchesMultiplePagesWithoutAnyDownstreamRequestAbove100() {
+        List<AuditEntry> all = new ArrayList<>();
+        for (int i = 1; i <= 180; i++) all.add(entry(i));
+        doAnswer(i -> page(all, i.getArgument(0))).when(orders).audits(anyMap());
+        var result = service.getAuditLogs(null, null, null, null, null, null, null, 2, 50);
+        assertThat(result.data()).hasSize(50);
+        assertThat(result.data().getFirst().id()).isEqualTo(80);
+        assertThat(result.data().getLast().id()).isEqualTo(31);
+        verify(orders, times(2)).audits(anyMap());
     }
 
     @Test
-    void shouldReturnEmptyPageWhenPageBeyondRange() {
-        stubPage(orderClient, "{\"data\":[" + entry(1, "2026-01-01T10:00:00Z") + "],\"pagination\":null,\"traceId\":\"x\"}");
-        stubEmpty(inventoryClient);
-        stubEmpty(paymentClient);
-        stubEmpty(productClient);
-
-        AggregatedAuditResponse resp = service.getAuditLogs(null, null, null, null, null, null, null, 5, 10);
-
-        assertThat(resp.totalElements()).isEqualTo(1);
-        assertThat(resp.data()).isEmpty();
+    void missingDownstreamReturnsExplicitErrorWithAvailableData() {
+        doThrow(new RestClientException("401")).when(orders).audits(anyMap());
+        doAnswer(i -> page(List.of(entry(1)), i.getArgument(0))).when(inventory).audits(anyMap());
+        var result = service.getAuditLogs(null, null, null, null, null, null, null, 0, 25);
+        assertThat(result.status()).isEqualTo("ERROR");
+        assertThat(result.errors()).hasSize(1);
+        assertThat(result.data()).hasSize(1);
     }
 
     @Test
-    void shouldBuildQueryStringWithAllFilters() {
-        // All filter params non-null exercises every URLEncoder append branch in fetchAuditLogs.
-        stubPage(orderClient, "{\"data\":[" + entry(7, "2026-01-01T10:00:00Z") + "],\"pagination\":null,\"traceId\":\"x\"}");
-        stubEmpty(inventoryClient);
-        stubEmpty(paymentClient);
-        stubEmpty(productClient);
-
-        AggregatedAuditResponse resp = service.getAuditLogs(
-                "admin user", "CREATE", "Order", "7", "trace 1",
-                "2026-01-01T00:00:00Z", "2026-01-31T00:00:00Z", 0, 10);
-
-        assertThat(resp.totalElements()).isEqualTo(1);
-        assertThat(resp.data().getFirst().id()).isEqualTo(7L);
+    void forwardsFiltersWithoutManualUrlConcatenationAndFreezesTheReadCutoff() {
+        service.getAuditLogs("Nguyễn A & B", "UPDATE", "Product", "42", "trace", "2026-01-01T00:00:00Z", null, 0, 25);
+        verify(orders).audits(argThat(params -> "Nguyễn A & B".equals(params.get("actor"))
+                && "25".equals(params.get("size")) && params.containsKey("to")));
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    void shouldTolerateRestClientExceptionFromOneService() {
-        stubPage(orderClient, "{\"data\":[" + entry(1, "2026-01-01T10:00:00Z") + "],\"pagination\":null,\"traceId\":\"x\"}");
-        when(inventoryClient.get().uri(anyString()).retrieve().body(any(Class.class)))
-                .thenThrow(new RestClientException("inventory down"));
-        stubEmpty(paymentClient);
-        stubEmpty(productClient);
-
-        AggregatedAuditResponse resp = service.getAuditLogs(null, null, null, null, null, null, null, 0, 10);
-
-        // The failing service is skipped; the rest still aggregate.
-        assertThat(resp.totalElements()).isEqualTo(1);
-        assertThat(resp.data().getFirst().id()).isEqualTo(1L);
-    }
-
-    @Test
-    void shouldReturnEmptyWhenAllServicesReturnNothing() {
-        stubEmpty(orderClient);
-        stubEmpty(inventoryClient);
-        stubEmpty(paymentClient);
-        stubEmpty(productClient);
-
-        AggregatedAuditResponse resp = service.getAuditLogs(null, null, null, null, null, null, null, 0, 10);
-
-        assertThat(resp.totalElements()).isZero();
-        assertThat(resp.totalPages()).isZero();
-        assertThat(resp.data()).isEmpty();
-    }
-
-    @Test
-    void initShouldBuildClientsWithoutError() {
-        AuditAggregatorService fresh = new AuditAggregatorService();
-        ReflectionTestUtils.setField(fresh, "orderUrl", "http://localhost:8083");
-        ReflectionTestUtils.setField(fresh, "inventoryUrl", "http://localhost:8084");
-        ReflectionTestUtils.setField(fresh, "paymentUrl", "http://localhost:8086");
-        ReflectionTestUtils.setField(fresh, "productUrl", "http://localhost:8081");
-        fresh.init();
-        assertThat(ReflectionTestUtils.getField(fresh, "orderClient")).isNotNull();
+    void malformedPaginationIsErrorAndInvalidDeepPageIsRejectedBeforeHttp() {
+        doReturn(new PagedResponse<>(List.of(entry(1)), null, null)).when(orders).audits(anyMap());
+        assertThat(service.getAuditLogs(null, null, null, null, null, null, null, 0, 25).status()).isEqualTo("ERROR");
+        clearInvocations(orders, inventory, payments, products);
+        assertThatThrownBy(() -> service.getAuditLogs(null, null, null, null, null, null, null, 1000, 100))
+                .isInstanceOf(ValidationException.class);
+        verifyNoInteractions(orders, inventory, payments, products);
     }
 }

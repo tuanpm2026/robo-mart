@@ -31,6 +31,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Answers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -47,7 +50,6 @@ import com.robomart.order.repository.OrderRepository;
 import com.robomart.order.repository.OutboxEventRepository;
 import com.robomart.order.repository.SagaAuditLogRepository;
 import com.robomart.order.saga.OrderSagaOrchestrator;
-import com.robomart.order.saga.RecoveryPhase;
 import com.robomart.order.saga.SagaRecoveryPolicy;
 import com.robomart.order.service.OrderService;
 import com.robomart.order.service.PendingPaymentRecoveryService;
@@ -59,7 +61,7 @@ import com.robomart.proto.inventory.ReserveInventoryResponse;
 import com.robomart.proto.payment.PaymentServiceGrpc;
 import com.robomart.proto.payment.ProcessPaymentRequest;
 import com.robomart.proto.payment.ProcessPaymentResponse;
-import com.robomart.test.PostgresContainerConfig;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.grpc.Status;
@@ -68,8 +70,17 @@ import io.grpc.Status;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = "saga.payment-recovery.enabled=false")
 @ActiveProfiles("test")
-@Import(PostgresContainerConfig.class)
+@Import(PendingPaymentRecoveryIT.Database.class)
 class PendingPaymentRecoveryIT {
+
+    @TestConfiguration(proxyBeanMethods = false)
+    static class Database {
+        @Bean
+        @ServiceConnection
+        PostgreSQLContainer<?> recoveryPostgres() {
+            return new PostgreSQLContainer<>("postgres:17-alpine").withDatabaseName("payment_recovery_test");
+        }
+    }
 
     @MockitoBean(answers = Answers.RETURNS_SELF)
     private InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub;

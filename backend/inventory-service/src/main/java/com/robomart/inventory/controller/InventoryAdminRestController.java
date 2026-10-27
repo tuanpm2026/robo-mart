@@ -62,6 +62,7 @@ public class InventoryAdminRestController {
     }
 
     @GetMapping("/reconciliation-summary")
+    @PreAuthorize("hasAnyRole('ADMIN', 'NOTIFICATION_SERVICE')")
     public ResponseEntity<ApiResponse<ReconciliationSummaryResponse>> getReconciliationSummary() {
         return ResponseEntity.ok(new ApiResponse<>(inventoryService.getReconciliationSummary(), getTraceId()));
     }
@@ -96,6 +97,7 @@ public class InventoryAdminRestController {
     }
 
     @GetMapping("/audit-logs")
+    @PreAuthorize("hasAnyRole('ADMIN', 'NOTIFICATION_SERVICE')")
     public ResponseEntity<PagedResponse<AuditLogDto>> searchAuditLogs(
             @RequestParam(required = false) String actor,
             @RequestParam(required = false) String action,

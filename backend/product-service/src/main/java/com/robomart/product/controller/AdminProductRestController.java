@@ -118,6 +118,7 @@ public class AdminProductRestController {
     }
 
     @GetMapping("/audit-logs")
+    @PreAuthorize("hasAnyRole('ADMIN', 'NOTIFICATION_SERVICE')")
     public ResponseEntity<PagedResponse<AuditLogDto>> searchAuditLogs(
             @RequestParam(required = false) String actor,
             @RequestParam(required = false) String action,

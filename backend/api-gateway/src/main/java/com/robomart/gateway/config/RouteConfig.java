@@ -45,6 +45,13 @@ public class RouteConfig {
                 .route("order-service", r -> r
                         .path("/api/v1/orders/**")
                         .uri(orderServiceUri))
+                .route("admin-product-audit", r -> r
+                        .path("/api/v1/admin/products/audit-logs")
+                        .filters(f -> f.setPath("/api/v1/admin/audit-logs"))
+                        .uri(productServiceUri))
+                .route("admin-categories", r -> r
+                        .path("/api/v1/admin/categories", "/api/v1/admin/categories/**")
+                        .uri(productServiceUri))
                 .route("admin-products", r -> r
                         .path("/api/v1/admin/products/**")
                         .uri(productServiceUri))
@@ -65,6 +72,12 @@ public class RouteConfig {
                         .uri(paymentServiceUri))
                 .route("admin-system-health", r -> r
                         .path("/api/v1/admin/system/health")
+                        .uri(notificationServiceUri))
+                .route("admin-audit", r -> r
+                        .path("/api/v1/admin/audit-logs")
+                        .uri(notificationServiceUri))
+                .route("admin-reconciliation", r -> r
+                        .path("/api/v1/admin/reconciliation", "/api/v1/admin/reconciliation/**")
                         .uri(notificationServiceUri))
                 .build();
     }

@@ -290,4 +290,26 @@ class OrderAdminRestIT {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).contains("INVALID_TRANSITION");
     }
+    @Test
+    void notificationIdentityCanReadOnlyRequiredOperationsEndpoints() {
+        RestClient operations = RestClient.builder().baseUrl("http://localhost:" + port)
+                .defaultHeader("Authorization", "Bearer " + TestJwt.NOTIFICATION_TOKEN)
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { }).build();
+        assertThat(operations.get().uri("/api/v1/admin/orders/reconciliation-summary").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(operations.get().uri("/api/v1/admin/orders/audit-logs?size=100").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(operations.get().uri("/api/v1/admin/orders/audit-logs?size=101").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(operations.get().uri("/api/v1/admin/orders/metrics").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(operations.put().uri("/api/v1/admin/orders/1/status").contentType(MediaType.APPLICATION_JSON).body("{}")
+                .retrieve().toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        RestClient customer = RestClient.builder().baseUrl("http://localhost:" + port)
+                .defaultHeader("Authorization", TestJwt.customerBearer())
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { }).build();
+        assertThat(customer.get().uri("/api/v1/admin/orders/audit-logs").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
 }

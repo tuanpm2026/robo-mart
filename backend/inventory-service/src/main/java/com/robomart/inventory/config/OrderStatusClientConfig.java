@@ -19,7 +19,7 @@ import org.springframework.security.oauth2.client.registration.InMemoryClientReg
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.http.converter.OAuth2AccessTokenResponseHttpMessageConverter;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.service.registry.HttpServiceGroupConfigurer;
+import org.springframework.web.client.support.RestClientHttpServiceGroupConfigurer;
 import org.springframework.web.service.registry.ImportHttpServices;
 
 import com.robomart.inventory.client.OrderStatusClient;
@@ -29,7 +29,7 @@ import com.robomart.inventory.client.OrderStatusClient;
 @ImportHttpServices(group = "inventory-order-status", types = OrderStatusClient.class)
 public class OrderStatusClientConfig {
     @Bean
-    HttpServiceGroupConfigurer<RestClient.Builder> orderStatusAuthentication(
+    RestClientHttpServiceGroupConfigurer orderStatusAuthentication(
             @Value("${INVENTORY_SERVICE_CLIENT_SECRET:unconfigured}") String secret,
             @Value("${INVENTORY_SERVICE_TOKEN_URI:http://localhost:8180/realms/robomart/protocol/openid-connect/token}")
                     String tokenUri) {

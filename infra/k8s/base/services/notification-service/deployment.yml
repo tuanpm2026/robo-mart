@@ -49,6 +49,16 @@ spec:
             name: robomart-config
         - secretRef:
             name: notification-db-secret
+        env:
+        - name: NOTIFICATION_SERVICE_AUTH_ENABLED
+          value: "true"
+        - name: NOTIFICATION_SERVICE_TOKEN_URI
+          value: "https://auth.tuanpm.xyz/realms/robomart/protocol/openid-connect/token"
+        - name: NOTIFICATION_SERVICE_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: notification-service-auth
+              key: client-secret
         volumeMounts:
         - name: tmp
           mountPath: /tmp
