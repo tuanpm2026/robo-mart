@@ -1,4 +1,7 @@
 spring:
+  autoconfigure:
+    # Cloud 5.0.3's unused blocking adapter references Boot 3 metrics annotation types.
+    exclude: org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JAutoConfiguration
   application:
     name: api-gateway
 

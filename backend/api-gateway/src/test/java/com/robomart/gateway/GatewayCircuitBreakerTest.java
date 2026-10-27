@@ -20,6 +20,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
+import org.springframework.cloud.client.circuitbreaker.ReactiveCircuitBreakerFactory;
+import org.springframework.context.ApplicationContext;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.cloud.gateway.filter.ratelimit.RateLimiter;
 import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -52,8 +56,21 @@ class GatewayCircuitBreakerTest {
     @MockitoBean(name = "authenticatedRateLimiter") private RedisRateLimiter authenticated;
     @MockitoBean(name = "anonymousRateLimiter") private RedisRateLimiter anonymous;
     @Autowired private CircuitBreakerRegistry breakers;
+    @Autowired private ApplicationContext context;
+    @Autowired private MeterRegistry meters;
     @LocalServerPort private int port;
     private WebTestClient http;
+
+    @Test
+    void usesOnlyReactiveFactoryAndKeepsBoot4CircuitMetrics() {
+        assertThat(context.getBeansOfType(CircuitBreakerFactory.class)).isEmpty();
+        assertThat(context.getBeansOfType(ReactiveCircuitBreakerFactory.class)).hasSize(1);
+        breakers.circuitBreaker("platform-metrics-probe").executeSupplier(() -> "ok");
+        var successfulCalls = meters.find("resilience4j.circuitbreaker.calls")
+                .tags("name", "platform-metrics-probe", "kind", "successful").timer();
+        assertThat(successfulCalls).isNotNull();
+        assertThat(successfulCalls.count()).isEqualTo(1);
+    }
 
     private static HttpServer upstream() {
         try {

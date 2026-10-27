@@ -67,3 +67,10 @@ After the Pact correction, ./mvnw -B -ntp clean verify -DskipE2ETests passed all
 | Notification | 116 | 22 |
 
 ./mvnw -B -ntp checkstyle:check then passed all15 modules. Existing advisory warnings remain at their existing severity; no checker/coverage gate was disabled. Proto buf lint and wire-breaking comparison against main passed. Events' real Kafka/Schema Registry Avro compatibility suite passed3 tests in the final reactor.
+
+
+## Application image startup follow-up
+
+The full source reactor image (backend/Dockerfile target api-gateway), Product/Gateway per-service CD paths, and all7 prebuilt isolated application images built successfully. Source builds include actual Linux proto/gRPC generation and active NullAway; they intentionally skip tests because the host reactor already runs them.
+
+The first actual Gateway main smoke loaded AOT-linked classes and reached liveness UP, but logged a Boot3 class reference in the unused Cloud5.0.3 blocking adapter's annotation metadata. Gateway now excludes only that blocking auto-configuration. Reactive-only factory selection and working Micrometer circuit metrics are covered by a new test; ./mvnw -B -ntp clean verify -pl :api-gateway -DskipITs -DskipE2ETests passed63 tests and coverage. Rebuilt CD/prebuilt Gateway images again loaded AOT-linked classes and reached liveness UP with no Boot3 introspection warning. The final reactor is repeated after this correction.
