@@ -159,6 +159,7 @@ class ServiceKillChaosIT {
     }
 
     private void assertRecoveredExactlyOnce(long id) {
+        assertCommittedStock(id);
         assertThat(E2eSupport.query("postgres", "payment_db",
                 "SELECT count(*) || '|' || count(*) FILTER (WHERE status='COMPLETED')"
                         + " FROM payments WHERE order_id='" + id + "'"))
@@ -238,8 +239,14 @@ class ServiceKillChaosIT {
         assertThat(data.path("status").asString()).isEqualTo("CONFIRMED");
         assertThat(E2eSupport.query("postgres", "order_db", "SELECT status FROM orders WHERE id=" + id))
                 .isEqualTo("CONFIRMED");
+        await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> assertCommittedStock(id));
+    }
+
+    private void assertCommittedStock(long id) {
         assertThat(E2eSupport.query("postgres", "inventory_db",
-                "SELECT status FROM reservations WHERE order_id='" + id + "'")).isEqualTo("RESERVED");
+                "SELECT r.status || '|' || (SELECT count(*) FROM stock_movements m WHERE m.order_id=r.order_id "
+                        + "AND m.type='COMMIT' AND m.quantity=1) FROM reservations r WHERE r.order_id='" + id + "'"))
+                .as("Confirmed order %s commits its original reservation once", id).isEqualTo("COMMITTED|1");
     }
 
     private static Duration recoveryBudget(long restartStarted) {

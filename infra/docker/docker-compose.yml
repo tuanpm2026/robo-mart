@@ -532,6 +532,12 @@ services:
       SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
       KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
       API_GATEWAY_URL: http://api-gateway:8090
+      ORDER_SERVICE_URL: http://order-service:8083
+      PRODUCT_SERVICE_URL: http://product-service:8081
+      CART_SERVICE_URL: http://cart-service:8082
+      INVENTORY_SERVICE_URL: http://inventory-service:8084
+      PAYMENT_SERVICE_URL: http://payment-service:8086
+      NOTIFICATION_SERVICE_URL: http://notification-service:8087
     networks:
       - robomart-network
     deploy:

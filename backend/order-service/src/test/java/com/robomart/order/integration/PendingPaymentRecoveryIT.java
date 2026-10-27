@@ -193,6 +193,34 @@ class PendingPaymentRecoveryIT {
     }
 
     @Test
+    void openBreakerRechecksPromptlyWithoutSendingAnotherCharge() {
+        when(paymentStub.processPayment(any(ProcessPaymentRequest.class)))
+                .thenThrow(Status.UNAVAILABLE.asRuntimeException());
+        Order pending = createPendingOrder();
+        circuitBreakerRegistry.circuitBreaker("payment-service").transitionToOpenState();
+        org.mockito.Mockito.clearInvocations(paymentStub);
+
+        assertThat(recoveryService.resumeNextPayment()).isTrue();
+
+        assertThat(orderRepository.findById(pending.getId()).orElseThrow().getStatus())
+                .isEqualTo(OrderStatus.PAYMENT_PENDING);
+        assertThat(jdbc.queryForObject("SELECT next_payment_retry_at <= CURRENT_TIMESTAMP + INTERVAL '5 seconds' "
+                + "AND next_payment_retry_at > CURRENT_TIMESTAMP FROM orders WHERE id=?",
+                Boolean.class, pending.getId())).isTrue();
+        verify(paymentStub, never()).processPayment(any(ProcessPaymentRequest.class));
+        verify(inventoryStub, never()).releaseInventory(any(ReleaseInventoryRequest.class));
+
+        resetBreakers();
+        makeDue(pending.getId());
+        doReturn(success("payment-after-breaker")).when(paymentStub).processPayment(any(ProcessPaymentRequest.class));
+        assertThat(recoveryService.resumeNextPayment()).isTrue();
+        verify(paymentStub).processPayment(org.mockito.ArgumentMatchers.argThat(request ->
+                request.getIdempotencyKey().equals(pending.getId().toString())));
+        assertThat(orderRepository.findById(pending.getId()).orElseThrow().getStatus())
+                .isEqualTo(OrderStatus.CONFIRMED);
+    }
+
+    @Test
     void definitiveDeclineCancelsOnlyAfterInventoryIsReleased() {
         when(paymentStub.processPayment(any(ProcessPaymentRequest.class)))
                 .thenThrow(Status.UNAVAILABLE.asRuntimeException());

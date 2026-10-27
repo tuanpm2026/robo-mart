@@ -1,5 +1,6 @@
 package com.robomart.order.service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 
@@ -25,6 +26,8 @@ import com.robomart.order.saga.SagaRecoveryPolicy;
 import com.robomart.order.saga.steps.ReleaseInventoryStep;
 import com.robomart.proto.common.Money;
 import com.robomart.proto.payment.ProcessPaymentRequest;
+
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 
 import tools.jackson.databind.ObjectMapper;
 
@@ -107,6 +110,13 @@ public class PendingPaymentRecoveryService {
             recordAttempt(order, "FAILED", "Payment declined");
             return true;
         } catch (RuntimeException uncertain) {
+            // A denied breaker probe sent no RPC. Recheck promptly instead of adding the full
+            // provider backoff after the breaker itself has already waited 30 seconds.
+            if (uncertain.getCause() instanceof CallNotPermittedException) {
+                order.setNextPaymentRetryAt(Instant.now().plus(
+                        properties.getPaymentRecovery().getRetryDelay().compareTo(Duration.ofSeconds(5)) < 0
+                                ? properties.getPaymentRecovery().getRetryDelay() : Duration.ofSeconds(5)));
+            }
             // A timeout can hide a completed charge. Never release stock or generate a new key.
             recoveryPolicy.failed(order.getId(), RecoveryPhase.PAYMENT, "Payment unavailable or result uncertain");
             recordAttempt(order, "FAILED", "Payment unavailable or result uncertain");

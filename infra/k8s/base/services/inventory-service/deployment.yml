@@ -8,10 +8,8 @@ metadata:
 spec:
   replicas: 2
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0  # Zero-downtime: never kill a pod before new one is ready
+    # Old reservation writers/publishers cannot safely share the lifecycle and delivery-claim schema.
+    type: Recreate
   selector:
     matchLabels:
       app: inventory-service
