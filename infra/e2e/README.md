@@ -43,4 +43,4 @@ Email delivery uses `MockEmailService` in the dev profile. An `ORDER_CONFIRMED` 
 
 The updated full-flow test and both chaos tests passed on 2026-10-24 (3 tests, zero failures/errors/skips), including automatic resumption of the same five pending orders. See [the recovery validation report](../../_bmad-output/test-artifacts/payment-pending-resume-validation-2026-10-24.md) for exact results, preserved data and limits.
 
-Wave 7 verification is in progress; the 2026-10-24 result above is historical evidence for the earlier implementation, not a claim that the revised stack has already passed.
+The rebuilt Wave 7 stack passed all three tests on 2026-10-27 after correcting the extra provider backoff for breaker-denied calls. The 60-second recovery assertion is unchanged. Read-only probes verified all seven new orders cancelled, fully refunded and released, with one RESERVE/COMMIT/RELEASE movement each. Teardown preserved volumes and unrelated containers. See [Wave 7 validation](../../_bmad-output/test-artifacts/wave7-correctness-validation-2026-10-27.md) for final commands, results and limits.
