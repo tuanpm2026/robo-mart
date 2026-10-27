@@ -162,6 +162,12 @@ services:
       <<: *app-env
       SPRING_PROFILES_ACTIVE: "dev,demo"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product_db
+      ROBOMART_PRODUCT_IMAGE_BASE_URL: http://localhost:18080
+      ROBOMART_PRODUCT_IMAGE_STORAGE_PATH: /tmp/robomart-images
+      PRODUCT_SEARCH_INITIALIZE_INDEX: "true"
+      PRODUCT_KAFKA_DLT_REPLICATION_FACTOR: "1"
+    volumes:
+      - product-images:/tmp/robomart-images
     healthcheck:
       test: [CMD-SHELL, "curl -fsS http://localhost:8081/actuator/health > /dev/null"]
       interval: 10s
@@ -187,6 +193,11 @@ services:
 
   inventory-service:
     <<: *app
+    depends_on:
+      postgres: {condition: service_healthy}
+      kafka: {condition: service_healthy}
+      schema-registry: {condition: service_healthy}
+      keycloak: {condition: service_healthy}
     image: robomart-e2e/inventory-service:java25
     build:
       context: ../..
@@ -194,6 +205,9 @@ services:
       args: {SERVICE: inventory-service}
     ports: ["127.0.0.1:18084:8084"]
     environment:
+      ORDER_SERVICE_URL: http://order-service:8083
+      INVENTORY_SERVICE_CLIENT_SECRET: e2e-inventory-secret
+      INVENTORY_SERVICE_TOKEN_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/token
       <<: *app-env
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/inventory_db
       SPRING_PROFILES_ACTIVE: "dev,demo,chaos-monkey"
@@ -211,6 +225,9 @@ services:
 
   payment-service:
     <<: *app
+    depends_on:
+      postgres: {condition: service_healthy}
+      keycloak: {condition: service_healthy}
     image: robomart-e2e/payment-service:java25
     build:
       context: ../..
@@ -304,6 +321,7 @@ services:
       start_period: 60s
 
 volumes:
+  product-images:
   postgres-data:
   elasticsearch-data:
   kafka-data:

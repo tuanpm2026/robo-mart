@@ -10,6 +10,7 @@ import com.robomart.order.grpc.PaymentGrpcClient;
 import com.robomart.order.grpc.PaymentServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
 import com.robomart.order.saga.SagaStep;
+import com.robomart.order.saga.SagaStepResult;
 import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.proto.common.Money;
 import com.robomart.proto.payment.ProcessPaymentRequest;
@@ -32,7 +33,7 @@ public class ProcessPaymentStep implements SagaStep {
     }
 
     @Override
-    public void execute(SagaContext context) {
+    public SagaStepResult execute(SagaContext context) {
         Order order = context.getOrder();
         log.info("Processing payment for orderId={}", order.getId());
 
@@ -54,13 +55,13 @@ public class ProcessPaymentStep implements SagaStep {
             if (response.getPaymentId().isBlank()) {
                 throw new PaymentServiceUnavailableException("Payment result is incomplete", null);
             }
-            order.setPaymentId(response.getPaymentId());
             log.info("Payment processed for orderId={}, paymentId={}", order.getId(), response.getPaymentId());
+            return new SagaStepResult(null, response.getPaymentId());
         } catch (PaymentBusinessException e) {
             // Deterministic business rejection (e.g. payment declined) — cancel and compensate
             // the already-reserved inventory.
-            order.setCancellationReason("Payment declined");
-            throw new SagaStepException("Payment declined for orderId=" + order.getId(), e, true);
+            throw new SagaStepException("Payment declined for orderId=" + order.getId(),
+                    e, true, false, "Payment declined");
         } catch (PaymentServiceUnavailableException e) {
             // Circuit open — do NOT cancel, do NOT compensate inventory
             // Hold order as PAYMENT_PENDING to allow retry when circuit closes

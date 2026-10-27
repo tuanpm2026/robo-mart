@@ -26,7 +26,7 @@ import org.springframework.web.client.RestClient;
 import com.robomart.product.config.CacheConfig;
 import com.robomart.product.document.ProductDocument;
 import com.robomart.product.repository.ProductSearchRepository;
-import com.robomart.test.ElasticsearchTestSupport;
+import com.robomart.product.integration.ProductSearchTestSupport;
 import com.robomart.test.IntegrationTest;
 
 /**
@@ -74,7 +74,7 @@ class ProductGraphQLIT {
 
         // Reset the shared ES index with the correct mapping before seeding, so this class does not
         // depend on (or leave behind) a dynamically-mapped index when sharing the reused container.
-        ElasticsearchTestSupport.resetIndex(elasticsearchOperations, ProductDocument.class);
+        ProductSearchTestSupport.resetIndex(elasticsearchOperations, ProductDocument.class);
 
         // RefreshPolicy.IMMEDIATE forces the bulk index to refresh, so the docs are queryable the instant
         // save() returns — removing the write-side near-real-time gap.

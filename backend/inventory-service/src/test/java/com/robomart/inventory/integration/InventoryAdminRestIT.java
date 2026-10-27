@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Uses real PostgreSQL and Redis via Testcontainers (from @IntegrationTest).
  * Seed data provides ~50 inventory items (product IDs 1-50).
- * No JWT required — gateway enforces auth in production; tests call service directly.
+ * JWT authorization is enforced by the service as well as the gateway.
  */
 @IntegrationTest
 @Import(TestJwtDecoderConfig.class)
@@ -184,4 +184,26 @@ class InventoryAdminRestIT {
         assertThat(new20).isEqualTo(original20 + 30);
         assertThat(new21).isEqualTo(original21 + 30);
     }
+    @Test
+    void notificationIdentityCanReadOnlyRequiredOperationsEndpoints() {
+        RestClient operations = RestClient.builder().baseUrl("http://localhost:" + port)
+                .defaultHeader("Authorization", "Bearer " + TestJwt.NOTIFICATION_TOKEN)
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { }).build();
+        assertThat(operations.get().uri("/api/v1/admin/inventory/reconciliation-summary").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(operations.get().uri("/api/v1/admin/inventory/audit-logs?size=100").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(operations.get().uri("/api/v1/admin/inventory/audit-logs?size=101").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(operations.get().uri("/api/v1/admin/inventory/metrics").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(operations.put().uri("/api/v1/admin/inventory/1/restock").contentType(MediaType.APPLICATION_JSON).body("{}")
+                .retrieve().toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        RestClient customer = RestClient.builder().baseUrl("http://localhost:" + port)
+                .defaultHeader("Authorization", TestJwt.customerBearer())
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { }).build();
+        assertThat(customer.get().uri("/api/v1/admin/inventory/audit-logs").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
 }

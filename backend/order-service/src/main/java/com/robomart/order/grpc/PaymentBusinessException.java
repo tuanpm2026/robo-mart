@@ -1,10 +1,11 @@
 package com.robomart.order.grpc;
 
+import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 
 /**
- * Wraps a deterministic business rejection from the Payment service (gRPC
- * {@code FAILED_PRECONDITION}, e.g. payment declined).
+ * Wraps a deterministic application rejection from the Payment service.
+ * The original gRPC status is retained for refund idempotency and recovery decisions.
  *
  * <p>This is a distinct type from {@link StatusRuntimeException} on purpose: business rejections
  * must NOT be retried and must NOT trip the circuit breaker (retrying a deterministic decline
@@ -14,6 +15,11 @@ import io.grpc.StatusRuntimeException;
  * client wrapper to the saga step for correct handling.
  */
 public class PaymentBusinessException extends RuntimeException {
+
+    public Status.Code getStatusCode() {
+        return getCause() instanceof StatusRuntimeException grpc
+                ? grpc.getStatus().getCode() : Status.Code.FAILED_PRECONDITION;
+    }
 
     public PaymentBusinessException(String message, StatusRuntimeException cause) {
         super(message, cause);

@@ -141,3 +141,27 @@ management:
       # readiness group; skip group-membership validation so the context starts (matches
       # the shared @IntegrationTest meta-annotation used by other services).
       validate-group-membership: false
+
+---
+spring:
+  http:
+    serviceclient:
+      notification-order:
+        base-url: ${notification.order-service.url}
+        connect-timeout: 1s
+        read-timeout: 2s
+      notification-inventory:
+        base-url: ${notification.inventory-service.url}
+        connect-timeout: 1s
+        read-timeout: 2s
+      notification-payment:
+        base-url: ${notification.payment-service.url}
+        connect-timeout: 1s
+        read-timeout: 2s
+      notification-product:
+        base-url: ${notification.product-service.url}
+        connect-timeout: 1s
+        read-timeout: 2s
+notification:
+  service-auth:
+    enabled: ${NOTIFICATION_SERVICE_AUTH_ENABLED:true}

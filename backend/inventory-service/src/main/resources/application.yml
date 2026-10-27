@@ -15,13 +15,15 @@ spring:
       resourceserver:
         jwt:
           jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/robomart/protocol/openid-connect/certs}
+  http:
+    serviceclient:
+      inventory-order-status:
+        base-url: ${ORDER_SERVICE_URL:http://localhost:8083}
+        connect-timeout: 1s
+        read-timeout: 2s
   flyway:
     enabled: true
     locations: classpath:db/migration
-  data:
-    redis:
-      host: localhost
-      port: 6379
   kafka:
     bootstrap-servers: localhost:29092
     properties:
@@ -69,7 +71,7 @@ management:
         liveness:
           include: livenessState
         readiness:
-          include: readinessState,db,redis,kafka
+          include: readinessState,db,kafka
   metrics:
     distribution:
       percentiles-histogram:
@@ -123,3 +125,31 @@ spring:
       ddl-auto: validate
   flyway:
     locations: classpath:db/migration,classpath:db/seed
+
+robomart:
+  inventory:
+    consumer-enabled: false
+    expiry-enabled: false
+
+management:
+  endpoint:
+    health:
+      # This profile intentionally disables Kafka listeners in PostgreSQL-only tests.
+      validate-group-membership: false
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+server:
+  shutdown: immediate
+management:
+  otlp:
+    metrics:
+      export:
+        enabled: false
+
+outbox:
+  # Persistence tests invoke the real poller explicitly; unrelated contexts must not publish in the background.
+  initial-delay-ms: 3600000

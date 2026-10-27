@@ -1,11 +1,20 @@
 package com.robomart.product.integration.controller;
 
 import java.nio.file.Path;
+import java.nio.file.Files;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.mock.web.MockMultipartFile;
+import tools.jackson.databind.json.JsonMapper;
+import com.robomart.product.service.ProductImageService;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -49,6 +58,80 @@ class AdminProductImageIT {
 
     private RestClient restClient;
     private Long productId;
+    @Autowired private ProductImageService images;
+    @Autowired private PlatformTransactionManager transactions;
+    @Autowired private JdbcTemplate jdbc;
+
+    private String detail() {
+        return restClient.get().uri("/api/v1/products/" + productId).retrieve().body(String.class);
+    }
+
+    @Test
+    void publicImageReadsAndCacheReflectUploadAndCommittedDeletionButPreserveRollback() {
+        assertThat(JsonMapper.builder().build().readTree(detail()).path("data").path("images").size()).isZero();
+        var uploaded = images.uploadImages(productId, List.of(new MockMultipartFile(
+                "file", "image.jpg", "image/jpeg", JPEG_MAGIC_BYTES))).getFirst();
+        String path = java.net.URI.create(uploaded.imageUrl()).getPath();
+        Path file = tempDir.resolve(path.substring("/images/".length()));
+        assertThat(Files.exists(file)).isTrue();
+        var anonymous = RestClient.builder().baseUrl("http://localhost:" + port)
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { }).build();
+        var response = anonymous.get().uri(path).retrieve().toEntity(byte[].class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).containsExactly(JPEG_MAGIC_BYTES);
+        assertThat(detail()).contains(uploaded.imageUrl());
+
+        var transaction = new TransactionTemplate(transactions);
+        transaction.executeWithoutResult(status -> {
+            images.deleteImage(productId, uploaded.id());
+            assertThat(Files.exists(file)).isTrue();
+            status.setRollbackOnly();
+        });
+        assertThat(Files.exists(file)).isTrue();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM product_images WHERE id=?", Integer.class, uploaded.id())).isEqualTo(1);
+        assertThat(detail()).contains(uploaded.imageUrl());
+
+        transaction.executeWithoutResult(status -> {
+            images.deleteImage(productId, uploaded.id());
+            assertThat(Files.exists(file)).isTrue();
+        });
+        assertThat(Files.exists(file)).isFalse();
+        assertThat(anonymous.get().uri(path).retrieve().toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(JsonMapper.builder().build().readTree(detail()).path("data").path("images").size()).isZero();
+    }
+
+    @Test
+    void reorderingImagesEvictsTheCachedDetailAfterCommit() {
+        var uploaded = images.uploadImages(productId, List.of(
+                new MockMultipartFile("file", "first.jpg", "image/jpeg", JPEG_MAGIC_BYTES),
+                new MockMultipartFile("file", "second.jpg", "image/jpeg", JPEG_MAGIC_BYTES)));
+        var mapper = JsonMapper.builder().build();
+        assertThat(mapper.readTree(detail()).path("data").path("images").get(0).path("id").asLong())
+                .isEqualTo(uploaded.get(0).id());
+        var response = restClient.put().uri("/api/v1/admin/products/" + productId + "/images/order")
+                .contentType(MediaType.APPLICATION_JSON).body(java.util.Map.of("items", List.of(
+                        java.util.Map.of("imageId", uploaded.get(1).id(), "displayOrder", 0),
+                        java.util.Map.of("imageId", uploaded.get(0).id(), "displayOrder", 1))))
+                .retrieve().toBodilessEntity();
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(mapper.readTree(detail()).path("data").path("images").get(0).path("id").asLong())
+                .isEqualTo(uploaded.get(1).id());
+    }
+
+    @Test
+    void uploadRollbackRemovesNewFilesAndLeavesNoImageRow() {
+        var files = new java.util.ArrayList<Path>();
+        new TransactionTemplate(transactions).executeWithoutResult(status -> {
+            var uploaded = images.uploadImages(productId, List.of(new MockMultipartFile(
+                    "file", "rollback.jpg", "image/jpeg", JPEG_MAGIC_BYTES))).getFirst();
+            Path file = tempDir.resolve(java.net.URI.create(uploaded.imageUrl()).getPath().substring("/images/".length()));
+            files.add(file);
+            assertThat(Files.exists(file)).isTrue();
+            status.setRollbackOnly();
+        });
+        assertThat(files).allSatisfy(file -> assertThat(Files.exists(file)).isFalse());
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM product_images WHERE product_id=?", Integer.class, productId)).isZero();
+    }
 
     @BeforeEach
     void setUp() {

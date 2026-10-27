@@ -9,6 +9,7 @@ resources:
 #   kustomize edit set image ghcr.io/tuanpm2026/robomart/<service>:<tag>
 patches:
 - path: patches/single-node-replicas.yaml
+- path: patches/product-image-storage.yaml
 
 images:
 - name: ghcr.io/robomart/admin-dashboard

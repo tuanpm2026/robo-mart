@@ -1,6 +1,7 @@
 package com.robomart.product.entity;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -33,6 +34,9 @@ public class OutboxEvent {
     @Column(nullable = false, columnDefinition = "jsonb")
     private String payload;
 
+    @Column(name = "event_id", nullable = false, updatable = false)
+    private UUID eventId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -51,7 +55,12 @@ public class OutboxEvent {
         this.eventType = eventType;
         this.payload = payload;
         this.createdAt = Instant.now();
+        this.eventId = UUID.randomUUID();
         this.published = false;
+    }
+
+    public UUID getEventId() {
+        return eventId;
     }
 
     public Long getId() {

@@ -51,6 +51,7 @@ public class GatewaySecurityConfig {
                             // validated by notification-service, so the HTTP handshake must pass.
                             .pathMatchers("/ws/**").permitAll()
                             .pathMatchers("/api/v1/products/**").permitAll()
+                            .pathMatchers(HttpMethod.GET, "/images/**").permitAll()
                             .pathMatchers("/graphql").permitAll()
                             .pathMatchers(HttpMethod.POST, "/api/v1/cart/merge").authenticated()
                             .pathMatchers("/api/v1/cart/**").permitAll()

@@ -8,6 +8,7 @@ import java.time.Instant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -40,10 +41,10 @@ import com.robomart.test.security.TestJwtDecoderConfig;
 @DisplayName("OrderAdminRestController Integration Tests")
 class OrderAdminRestIT {
 
-    @MockitoBean
+    @MockitoBean(answers = Answers.RETURNS_SELF)
     private InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub;
 
-    @MockitoBean
+    @MockitoBean(answers = Answers.RETURNS_SELF)
     private PaymentServiceGrpc.PaymentServiceBlockingStub paymentStub;
 
     @MockitoBean
@@ -94,6 +95,29 @@ class OrderAdminRestIT {
                 .toBodilessEntity();
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
+    void inventoryIdentityCanOnlyReadMinimalInternalStatus() {
+        Order order = persistOrderInState(OrderStatus.PAYMENT_PENDING, "expiry-customer");
+        RestClient inventory = RestClient.builder().baseUrl("http://localhost:" + port)
+                .defaultHeader("Authorization", "Bearer " + TestJwt.INVENTORY_TOKEN)
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { }).build();
+        String path = "/api/v1/internal/inventory/orders/" + order.getId() + "/status";
+        var status = inventory.get().uri(path).retrieve().toEntity(String.class);
+        assertThat(status.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(status.getBody()).contains("PAYMENT_PENDING").doesNotContain("expiry-customer");
+        assertThat(inventory.get().uri("/api/v1/admin/orders/" + order.getId()).retrieve()
+                .toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(inventory.post().uri("/api/v1/orders").contentType(MediaType.APPLICATION_JSON).body("{}")
+                .retrieve().toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(restClient.get().uri(path).retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+        RestClient customer = RestClient.builder().baseUrl("http://localhost:" + port)
+                .defaultHeader("Authorization", TestJwt.customerBearer())
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { }).build();
+        assertThat(customer.get().uri(path).retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
     }
 
     private Order persistOrderInState(OrderStatus status, String userId) {
@@ -266,4 +290,26 @@ class OrderAdminRestIT {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).contains("INVALID_TRANSITION");
     }
+    @Test
+    void notificationIdentityCanReadOnlyRequiredOperationsEndpoints() {
+        RestClient operations = RestClient.builder().baseUrl("http://localhost:" + port)
+                .defaultHeader("Authorization", "Bearer " + TestJwt.NOTIFICATION_TOKEN)
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { }).build();
+        assertThat(operations.get().uri("/api/v1/admin/orders/reconciliation-summary").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(operations.get().uri("/api/v1/admin/orders/audit-logs?size=100").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(operations.get().uri("/api/v1/admin/orders/audit-logs?size=101").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(operations.get().uri("/api/v1/admin/orders/metrics").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(operations.put().uri("/api/v1/admin/orders/1/status").contentType(MediaType.APPLICATION_JSON).body("{}")
+                .retrieve().toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        RestClient customer = RestClient.builder().baseUrl("http://localhost:" + port)
+                .defaultHeader("Authorization", TestJwt.customerBearer())
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { }).build();
+        assertThat(customer.get().uri("/api/v1/admin/orders/audit-logs").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
 }

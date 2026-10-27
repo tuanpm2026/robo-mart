@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.robomart.common.exception.ResourceNotFoundException;
@@ -43,6 +46,7 @@ public class ProductImageService {
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
+    @CacheEvict(value = "productDetail", key = "#productId")
     public List<ProductImageResponse> uploadImages(Long productId, List<MultipartFile> files) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(productId));
@@ -56,6 +60,15 @@ public class ProductImageService {
 
         int nextOrder = (int) currentCount;
         List<String> storedUrls = new ArrayList<>();
+        boolean synchronizedTransaction = TransactionSynchronizationManager.isSynchronizationActive();
+        if (synchronizedTransaction) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCompletion(int status) {
+                    if (status == STATUS_ROLLED_BACK) storedUrls.forEach(imageStorageService::delete);
+                }
+            });
+        }
         List<ProductImage> saved = new ArrayList<>();
         try {
             for (MultipartFile file : files) {
@@ -69,21 +82,32 @@ public class ProductImageService {
             }
         } catch (Exception e) {
             // Clean up any files already written to disk before the failure
-            storedUrls.forEach(imageStorageService::delete);
+            if (!synchronizedTransaction) storedUrls.forEach(imageStorageService::delete);
             throw e;
         }
         return productMapper.toImageResponseList(saved);
     }
 
+    @CacheEvict(value = "productDetail", key = "#productId")
     public void deleteImage(Long productId, Long imageId) {
         // Single fetch — eliminates existsByIdAndProductId + findById double round-trip
         ProductImage image = productImageRepository.findByIdAndProductId(imageId, productId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Image " + imageId + " not found for product " + productId));
-        imageStorageService.delete(image.getImageUrl());
         productImageRepository.deleteById(imageId);
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    imageStorageService.delete(image.getImageUrl());
+                }
+            });
+        } else {
+            imageStorageService.delete(image.getImageUrl());
+        }
     }
 
+    @CacheEvict(value = "productDetail", key = "#productId")
     public List<ProductImageResponse> reorderImages(Long productId, ReorderImagesRequest request) {
         // Require all images to be included — partial reorder causes duplicate displayOrder values
         long totalImages = productImageRepository.countByProductId(productId);

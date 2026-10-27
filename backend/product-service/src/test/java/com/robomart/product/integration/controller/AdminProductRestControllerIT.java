@@ -231,4 +231,24 @@ class AdminProductRestControllerIT {
         assertThat(response.getBody()).startsWith("[");
         assertThat(response.getBody()).contains("\"name\"");
     }
+    @Test
+    void notificationIdentityCanReadOnlyRequiredOperationsEndpoints() {
+        RestClient operations = RestClient.builder().baseUrl("http://localhost:" + port)
+                .defaultHeader("Authorization", "Bearer " + TestJwt.NOTIFICATION_TOKEN)
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { }).build();
+        assertThat(operations.get().uri("/api/v1/admin/audit-logs?size=100").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.OK);
+        assertThat(operations.get().uri("/api/v1/admin/audit-logs?size=101").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(operations.get().uri("/api/v1/admin/products").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(operations.put().uri("/api/v1/admin/products/1").contentType(MediaType.APPLICATION_JSON).body("{}")
+                .retrieve().toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+        RestClient customer = RestClient.builder().baseUrl("http://localhost:" + port)
+                .defaultHeader("Authorization", TestJwt.customerBearer())
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { }).build();
+        assertThat(customer.get().uri("/api/v1/admin/audit-logs").retrieve().toBodilessEntity().getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
 }

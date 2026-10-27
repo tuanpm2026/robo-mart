@@ -120,6 +120,33 @@ class ProductServiceCacheTest {
     }
 
     @Test
+    void concurrentColdReadsShareOneCacheLoader() throws Exception {
+        var product = createProduct();
+        var response = new ProductDetailResponse(1L, "TEST-001", "Product", null, BigDecimal.TEN,
+                null, null, 10, null, List.of(), null, null);
+        when(productRepository.findByIdWithDetails(1L)).thenAnswer(call -> {
+            Thread.sleep(100);
+            return Optional.of(product);
+        });
+        when(productMapper.toDetailResponse(product)).thenReturn(response);
+        var ready = new java.util.concurrent.CountDownLatch(8);
+        var start = new java.util.concurrent.CountDownLatch(1);
+        try (var executor = java.util.concurrent.Executors.newFixedThreadPool(8)) {
+            var requests = java.util.stream.IntStream.range(0, 8).mapToObj(index -> executor.submit(() -> {
+                ready.countDown();
+                start.await();
+                return productService.getProductById(1L);
+            })).toList();
+            assertThat(ready.await(5, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+            start.countDown();
+            for (var request : requests) {
+                assertThat(request.get(5, java.util.concurrent.TimeUnit.SECONDS)).isEqualTo(response);
+            }
+        }
+        verify(productRepository, times(1)).findByIdWithDetails(1L);
+    }
+
+    @Test
     void shouldNotCacheExceptions() {
         when(productRepository.findByIdWithDetails(999L)).thenReturn(Optional.empty());
 

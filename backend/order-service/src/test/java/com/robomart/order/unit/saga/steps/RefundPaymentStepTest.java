@@ -23,7 +23,9 @@ import com.robomart.order.enums.OrderStatus;
 import com.robomart.order.grpc.PaymentBusinessException;
 import com.robomart.order.grpc.PaymentGrpcClient;
 import com.robomart.order.grpc.PaymentServiceUnavailableException;
+import com.robomart.order.saga.RecoveryPhase;
 import com.robomart.order.saga.SagaContext;
+import com.robomart.order.saga.SagaRecoveryPolicy;
 import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.order.saga.steps.RefundPaymentStep;
 import com.robomart.proto.payment.RefundPaymentRequest;
@@ -39,11 +41,15 @@ class RefundPaymentStepTest {
     @Mock
     private PaymentGrpcClient paymentClient;
 
+    @Mock
+    private SagaRecoveryPolicy recoveryPolicy;
+
     private RefundPaymentStep step;
 
     @BeforeEach
     void setUp() {
-        step = new RefundPaymentStep(paymentClient);
+        step = new RefundPaymentStep(paymentClient, recoveryPolicy);
+        org.mockito.Mockito.lenient().when(recoveryPolicy.tryBegin(any(), any())).thenReturn(true);
     }
 
     private Order buildOrder() {
@@ -93,15 +99,15 @@ class RefundPaymentStepTest {
     }
 
     @Test
-    @DisplayName("shouldSkipGracefullyWhenPaymentNotFound")
-    void shouldSkipGracefullyWhenPaymentNotFound() {
+    @DisplayName("shouldKeepKnownPaymentRecoverableWhenNotFound")
+    void shouldKeepKnownPaymentRecoverableWhenNotFound() {
         Order order = buildOrder();
         SagaContext context = new SagaContext(order);
 
         when(paymentClient.refundPayment(any(RefundPaymentRequest.class)))
-                .thenThrow(new StatusRuntimeException(Status.NOT_FOUND.withDescription("Payment not found")));
+                .thenThrow(new PaymentBusinessException("Payment not found", Status.NOT_FOUND.asRuntimeException()));
 
-        assertThatNoException().isThrownBy(() -> step.execute(context));
+        assertThatThrownBy(() -> step.execute(context)).isInstanceOf(SagaStepException.class);
     }
 
     @Test
@@ -129,7 +135,7 @@ class RefundPaymentStepTest {
                         new StatusRuntimeException(Status.FAILED_PRECONDITION.withDescription("not refundable"))));
 
         // Must surface as a SagaStepException (caught by orchestrator) with shouldCompensate=false,
-        // so cancellation/recovery continues to inventory release + finalizeCancellation.
+        // so the orchestrator holds the order for refund recovery.
         assertThatThrownBy(() -> step.execute(context))
                 .isInstanceOf(SagaStepException.class)
                 .satisfies(e -> assertThat(((SagaStepException) e).isShouldCompensate()).isFalse());
@@ -157,5 +163,39 @@ class RefundPaymentStepTest {
 
         assertThatThrownBy(() -> step.compensate(context))
                 .isInstanceOf(UnsupportedOperationException.class);
+    }    @Test
+    void mappedAlreadyRefundedIsIdempotentSuccess() {
+        when(paymentClient.refundPayment(any())).thenThrow(new PaymentBusinessException(
+                "Already refunded", Status.ALREADY_EXISTS.asRuntimeException()));
+        assertThatNoException().isThrownBy(() -> step.execute(new SagaContext(buildOrder())));
     }
+
+    @Test
+    void unacknowledgedRefundRemainsRecoverable() {
+        when(paymentClient.refundPayment(any())).thenReturn(RefundPaymentResponse.getDefaultInstance());
+        assertThatThrownBy(() -> step.execute(new SagaContext(buildOrder()))).isInstanceOf(SagaStepException.class);
+    }
+    @Test
+    void exhaustedBudgetNeverInvokesRefundRpc() {
+        when(recoveryPolicy.tryBegin(any(), any())).thenReturn(false);
+        assertThatThrownBy(() -> step.execute(new SagaContext(buildOrder())))
+                .isInstanceOf(SagaStepException.class);
+        verify(paymentClient, never()).refundPayment(any());
+    }
+
+    @Test
+    void failedRefundRecordsDurableAttemptOutcome() {
+        when(paymentClient.refundPayment(any())).thenThrow(new PaymentServiceUnavailableException("uncertain", null));
+        assertThatThrownBy(() -> step.execute(new SagaContext(buildOrder())))
+                .isInstanceOf(SagaStepException.class);
+        verify(recoveryPolicy).failed(42L, RecoveryPhase.REFUND, "Refund failed or result uncertain");
+    }
+    @Test
+    void acknowledgedRefundBeforeCrashContinuesWithoutAnotherRpc() {
+        when(recoveryPolicy.isCompleted(42L, RecoveryPhase.REFUND)).thenReturn(true);
+        assertThatNoException().isThrownBy(() -> step.execute(new SagaContext(buildOrder())));
+        verify(paymentClient, never()).refundPayment(any());
+        verify(recoveryPolicy, never()).tryBegin(any(), any());
+    }
+
 }

@@ -24,13 +24,15 @@ export const useDlqStore = defineStore('dlq', () => {
   }
 
   async function retryEvent(id: number) {
-    await retryDlqEvent(id)
+    const result = await retryDlqEvent(id)
     await loadEvents()
+    return result
   }
 
   async function retryAll() {
-    await retryAllDlqEvents()
+    const result = await retryAllDlqEvents()
     await loadEvents()
+    return result
   }
 
   return {

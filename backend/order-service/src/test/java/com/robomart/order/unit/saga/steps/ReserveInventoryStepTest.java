@@ -80,9 +80,10 @@ class ReserveInventoryStepTest {
                         .setReservationId("res-123")
                         .build());
 
-        step.execute(context);
+        var result = step.execute(context);
 
-        assertThat(order.getReservationId()).isEqualTo("res-123");
+        assertThat(result.reservationId()).isEqualTo("res-123");
+        assertThat(order.getReservationId()).isNull();
     }
 
     @Test
@@ -101,7 +102,7 @@ class ReserveInventoryStepTest {
                 .isInstanceOf(SagaStepException.class)
                 .satisfies(e -> assertThat(((SagaStepException) e).isShouldCompensate()).isFalse());
 
-        assertThat(order.getCancellationReason()).isEqualTo("Insufficient stock");
+        assertThat(order.getCancellationReason()).isNull();
     }
 
     @Test

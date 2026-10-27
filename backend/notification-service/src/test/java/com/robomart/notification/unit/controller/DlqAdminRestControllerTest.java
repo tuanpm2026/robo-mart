@@ -21,7 +21,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import com.robomart.notification.controller.DlqAdminRestController;
-import com.robomart.notification.entity.FailedEvent;
+import com.robomart.notification.dto.FailedEventSummary;
+import static org.mockito.Mockito.mock;
 import com.robomart.notification.service.FailedEventService;
 
 import io.micrometer.tracing.Tracer;
@@ -46,8 +47,8 @@ class DlqAdminRestControllerTest {
 
     @Test
     void shouldReturnPagedEventsOnListEvents() {
-        FailedEvent event = buildFailedEvent(1L);
-        Page<FailedEvent> page = new PageImpl<>(List.of(event), PageRequest.of(0, 25), 1);
+        FailedEventSummary event = buildFailedEvent(1L);
+        Page<FailedEventSummary> page = new PageImpl<>(List.of(event), PageRequest.of(0, 25), 1);
         when(failedEventService.listEvents(0, 25)).thenReturn(page);
 
         ResponseEntity<?> response = controller.listEvents(0, 25);
@@ -72,7 +73,7 @@ class DlqAdminRestControllerTest {
 
     @Test
     void shouldCapSizeAt200() {
-        Page<FailedEvent> page = new PageImpl<>(List.of(), PageRequest.of(0, 200), 0);
+        Page<FailedEventSummary> page = new PageImpl<>(List.of(), PageRequest.of(0, 200), 0);
         when(failedEventService.listEvents(0, 200)).thenReturn(page);
 
         ResponseEntity<?> response = controller.listEvents(0, 999);
@@ -118,13 +119,18 @@ class DlqAdminRestControllerTest {
         verify(failedEventService).retryAll();
     }
 
-    private FailedEvent buildFailedEvent(Long id) {
-        FailedEvent event = new FailedEvent();
-        event.setEventType("order.order.status-changed");
-        event.setAggregateId("order-1");
-        event.setOriginalTopic("order.order.status-changed");
-        event.setRetryCount(0);
-        event.setStatus("PENDING");
+    @Test
+    void shouldReturnAcceptedForUncertainAcknowledgementAndUnavailableOnTransportFailure() {
+        when(failedEventService.retryEvent(1L)).thenReturn(false);
+        assertThat(controller.retrySingle(1L).getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+        when(failedEventService.retryEvent(2L)).thenThrow(new FailedEventService.ReplayUnavailableException("unavailable", null));
+        assertThat(controller.retrySingle(2L).getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    private FailedEventSummary buildFailedEvent(Long id) {
+        FailedEventSummary event = mock(FailedEventSummary.class);
+        when(event.getId()).thenReturn(id);
+        when(event.getStatus()).thenReturn("PENDING");
         return event;
     }
 }

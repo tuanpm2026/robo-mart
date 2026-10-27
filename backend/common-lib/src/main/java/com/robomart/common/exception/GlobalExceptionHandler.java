@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
+import jakarta.validation.ConstraintViolationException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -79,6 +81,13 @@ public class GlobalExceptionHandler {
         var error = new ErrorDetail("VALIDATION_ERROR", "Request validation failed", fieldErrors);
         var response = new ApiErrorResponse(error, getTraceId(), Instant.now());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
+        log.warn("Method parameter validation failed: {}", ex.getMessage());
+        var error = new ErrorDetail("VALIDATION_ERROR", "Request validation failed", null);
+        return ResponseEntity.badRequest().body(new ApiErrorResponse(error, getTraceId(), Instant.now()));
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)

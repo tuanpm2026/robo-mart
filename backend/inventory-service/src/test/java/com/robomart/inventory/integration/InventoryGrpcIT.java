@@ -1,8 +1,11 @@
 package com.robomart.inventory.integration;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -13,11 +16,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.grpc.server.lifecycle.GrpcServerLifecycle;
 import org.springframework.test.context.TestPropertySource;
 
-import com.robomart.inventory.config.RedisLockConfig;
 import com.robomart.inventory.entity.InventoryItem;
 import com.robomart.inventory.entity.Reservation;
 import com.robomart.inventory.entity.ReservationLine;
@@ -40,10 +41,6 @@ import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.tuple;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 /**
  * Integration tests for the Inventory gRPC endpoints with real PostgreSQL, Redis, and gRPC server
  * via Testcontainers.
@@ -60,9 +57,6 @@ class InventoryGrpcIT {
 
     @Autowired
     private GrpcServerLifecycle grpcServerLifecycle;
-
-    @Autowired
-    private StringRedisTemplate stringRedisTemplate;
 
     @Autowired
     private InventoryItemRepository inventoryItemRepository;
@@ -85,11 +79,7 @@ class InventoryGrpcIT {
                 .build();
         stub = InventoryServiceGrpc.newBlockingStub(channel);
 
-        // Clean up any leftover Redis lock keys
-        Set<String> lockKeys = stringRedisTemplate.keys(RedisLockConfig.LOCK_KEY_PREFIX + "*");
-        if (lockKeys != null && !lockKeys.isEmpty()) {
-            stringRedisTemplate.delete(lockKeys);
-        }
+
     }
 
     @AfterEach

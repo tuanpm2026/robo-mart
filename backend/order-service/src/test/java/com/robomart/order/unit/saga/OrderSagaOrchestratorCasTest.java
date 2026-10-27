@@ -40,6 +40,7 @@ import com.robomart.order.repository.OutboxEventRepository;
 import com.robomart.order.repository.SagaAuditLogRepository;
 import com.robomart.order.saga.OrderSagaOrchestrator;
 import com.robomart.order.saga.SagaContext;
+import com.robomart.order.saga.SagaStepResult;
 import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.order.saga.steps.ProcessPaymentStep;
 import com.robomart.order.saga.steps.RefundPaymentStep;
@@ -69,6 +70,8 @@ class OrderSagaOrchestratorCasTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(reserveInventoryStep.execute(any())).thenReturn(SagaStepResult.NONE);
+        lenient().when(processPaymentStep.execute(any())).thenReturn(SagaStepResult.NONE);
         orchestrator = new OrderSagaOrchestrator(
                 orderRepository, orderStatusHistoryRepository, outboxEventRepository,
                 sagaAuditLogRepository, transactionTemplate, new ObjectMapper(),
@@ -258,7 +261,7 @@ class OrderSagaOrchestratorCasTest {
     void cancelPendingLosesToSaga() {
         Order order = buildOrder(OrderStatus.PENDING);
         order.setReservationId("res-1");
-        loseTransition(OrderStatus.PENDING, OrderStatus.CANCELLED, OrderStatus.INVENTORY_RESERVING);
+        loseTransition(OrderStatus.PENDING, OrderStatus.INVENTORY_RELEASING, OrderStatus.INVENTORY_RESERVING);
 
         assertThatThrownBy(() -> orchestrator.cancelPendingSaga(order, "changed mind", "user-1"))
                 .isInstanceOf(OrderNotCancellableException.class);
@@ -295,5 +298,63 @@ class OrderSagaOrchestratorCasTest {
 
         verify(releaseInventoryStep, never()).compensate(any());
         verify(outboxEventRepository, never()).save(any());
+    }    @Test
+    void confirmedCancellationDoesNotFinalizeAfterFailedRelease() {
+        Order order = buildOrder(OrderStatus.CONFIRMED);
+        order.setPaymentId("pay-1");
+        doThrow(new IllegalStateException("stock still reserved"))
+                .when(releaseInventoryStep).compensate(any());
+
+        orchestrator.cancelConfirmedSaga(order, "changed mind", "user-1");
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.INVENTORY_RELEASING);
+        verify(orderRepository, never()).transitionStatus(any(), any(), eq(OrderStatus.CANCELLED));
     }
+
+    @Test
+    void pendingCancellationDoesNotFinalizeAfterFailedRelease() {
+        Order order = buildOrder(OrderStatus.PENDING);
+        order.setReservationId("res-1");
+        doThrow(new IllegalStateException("stock still reserved"))
+                .when(releaseInventoryStep).compensate(any());
+
+        orchestrator.cancelPendingSaga(order, "changed mind", "user-1");
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.INVENTORY_RELEASING);
+        verify(orderRepository, never()).transitionStatus(any(), any(), eq(OrderStatus.CANCELLED));
+    }
+
+    @Test
+    void recoveryDoesNotFinalizeAfterFailedRelease() {
+        Order order = buildOrder(OrderStatus.INVENTORY_RELEASING);
+        doThrow(new IllegalStateException("stock still reserved"))
+                .when(releaseInventoryStep).compensate(any());
+
+        orchestrator.handleDeadSaga(order);
+
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.INVENTORY_RELEASING);
+        verify(orderRepository, never()).transitionStatus(any(), any(), eq(OrderStatus.CANCELLED));
+    }
+    @Test
+    void rpcResultsAreAppliedOnTheCallingThread() {
+        Order order = buildOrder(OrderStatus.PENDING);
+        Thread caller = Thread.currentThread();
+        when(reserveInventoryStep.execute(any())).thenAnswer(invocation -> {
+            assertThat(Thread.currentThread()).isSameAs(caller);
+            assertThat(order.getReservationId()).isNull();
+            return new SagaStepResult("reservation-result", null);
+        });
+        when(processPaymentStep.execute(any())).thenAnswer(invocation -> {
+            assertThat(Thread.currentThread()).isSameAs(caller);
+            assertThat(order.getReservationId()).isEqualTo("reservation-result");
+            assertThat(order.getPaymentId()).isNull();
+            return new SagaStepResult(null, "payment-result");
+        });
+
+        orchestrator.executeSaga(order);
+
+        assertThat(order.getPaymentId()).isEqualTo("payment-result");
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+    }
+
 }

@@ -1,6 +1,7 @@
 package com.robomart.notification.entity;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,13 +19,13 @@ public class FailedEvent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "event_type", nullable = false, length = 200)
+    @Column(name = "event_type", nullable = false, length = 249)
     private String eventType;
 
     @Column(name = "aggregate_id", length = 200)
     private String aggregateId;
 
-    @Column(name = "original_topic", nullable = false, length = 200)
+    @Column(name = "original_topic", nullable = false, length = 249)
     private String originalTopic;
 
     @Column(name = "error_class", length = 500)
@@ -47,6 +48,62 @@ public class FailedEvent {
 
     @Column(name = "last_attempted_at", nullable = false)
     private Instant lastAttemptedAt;
+
+    @Column(name = "original_partition")
+    private Integer originalPartition;
+
+    @Column(name = "original_offset")
+    private Long originalOffset;
+
+    @Column(name = "original_timestamp")
+    private Long originalTimestamp;
+
+    @Column(name = "record_key", columnDefinition = "bytea")
+    private byte[] recordKey;
+
+    @Column(name = "record_value", columnDefinition = "bytea")
+    private byte[] recordValue;
+
+    @Column(name = "original_headers", columnDefinition = "TEXT")
+    private String originalHeaders;
+
+    @Column(name = "raw_record_available")
+    private boolean rawRecordAvailable;
+
+    @Column(name = "source_event_id", length = 100)
+    private String sourceEventId;
+
+    @Column(name = "source_consumer_group", length = 150)
+    private String sourceConsumerGroup;
+
+    @Column(name = "replay_token")
+    private UUID replayToken;
+
+    @Column(name = "replay_claim_until")
+    private Instant replayClaimUntil;
+
+    public Integer getOriginalPartition() { return originalPartition; }
+    public void setOriginalPartition(Integer value) { originalPartition = value; }
+    public Long getOriginalOffset() { return originalOffset; }
+    public void setOriginalOffset(Long value) { originalOffset = value; }
+    public Long getOriginalTimestamp() { return originalTimestamp; }
+    public void setOriginalTimestamp(Long value) { originalTimestamp = value; }
+    public byte[] getRecordKey() { return recordKey; }
+    public void setRecordKey(byte[] value) { recordKey = value; }
+    public byte[] getRecordValue() { return recordValue; }
+    public void setRecordValue(byte[] value) { recordValue = value; }
+    public String getOriginalHeaders() { return originalHeaders; }
+    public void setOriginalHeaders(String value) { originalHeaders = value; }
+    public boolean isRawRecordAvailable() { return rawRecordAvailable; }
+    public void setRawRecordAvailable(boolean value) { rawRecordAvailable = value; }
+    public String getSourceEventId() { return sourceEventId; }
+    public void setSourceEventId(String value) { sourceEventId = value; }
+    public String getSourceConsumerGroup() { return sourceConsumerGroup; }
+    public void setSourceConsumerGroup(String value) { sourceConsumerGroup = value; }
+    public UUID getReplayToken() { return replayToken; }
+    public void setReplayToken(UUID value) { replayToken = value; }
+    public Instant getReplayClaimUntil() { return replayClaimUntil; }
+    public void setReplayClaimUntil(Instant value) { replayClaimUntil = value; }
 
     @PrePersist
     protected void onCreate() {

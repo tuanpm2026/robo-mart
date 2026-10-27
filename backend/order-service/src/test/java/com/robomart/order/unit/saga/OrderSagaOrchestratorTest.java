@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
@@ -45,6 +46,7 @@ import com.robomart.order.repository.SagaAuditLogRepository;
 import com.robomart.order.saga.OrderSagaOrchestrator;
 import com.robomart.order.saga.SagaContext;
 import com.robomart.order.saga.SagaStep;
+import com.robomart.order.saga.SagaStepResult;
 import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.order.saga.steps.ProcessPaymentStep;
 import com.robomart.order.saga.steps.RefundPaymentStep;
@@ -92,6 +94,8 @@ class OrderSagaOrchestratorTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(reserveInventoryStep.execute(any())).thenReturn(SagaStepResult.NONE);
+        lenient().when(processPaymentStep.execute(any())).thenReturn(SagaStepResult.NONE);
         objectMapper = new ObjectMapper();
 
         SagaProperties sagaProperties = new SagaProperties();
@@ -165,7 +169,12 @@ class OrderSagaOrchestratorTest {
         AtomicReference<Throwable> failure = new AtomicReference<>();
         doAnswer(invocation -> {
             paymentEntered.countDown();
-            releasePayment.await(10, TimeUnit.SECONDS);
+            try {
+                releasePayment.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                throw new SagaStepException("Payment interrupted", interrupted, false, true);
+            }
             return null;
         }).when(processPaymentStep).execute(any(SagaContext.class));
         Thread caller = Thread.ofPlatform().start(() -> {
@@ -188,7 +197,6 @@ class OrderSagaOrchestratorTest {
         } finally {
             releasePayment.countDown();
             caller.join(5000);
-            orchestrator.shutdownStepExecutor();
         }
     }
 
@@ -200,8 +208,8 @@ class OrderSagaOrchestratorTest {
         @DisplayName("shouldConfirmOrderWhenAllStepsSucceed")
         void shouldConfirmOrderWhenAllStepsSucceed() {
             Order order = buildOrder();
-            doNothing().when(reserveInventoryStep).execute(any(SagaContext.class));
-            doNothing().when(processPaymentStep).execute(any(SagaContext.class));
+            doReturn(SagaStepResult.NONE).when(reserveInventoryStep).execute(any(SagaContext.class));
+            doReturn(SagaStepResult.NONE).when(processPaymentStep).execute(any(SagaContext.class));
 
             orchestrator.executeSaga(order);
 
@@ -216,8 +224,8 @@ class OrderSagaOrchestratorTest {
         @DisplayName("shouldTransitionThroughAllStatesOnSuccess")
         void shouldTransitionThroughAllStatesOnSuccess() {
             Order order = buildOrder();
-            doNothing().when(reserveInventoryStep).execute(any(SagaContext.class));
-            doNothing().when(processPaymentStep).execute(any(SagaContext.class));
+            doReturn(SagaStepResult.NONE).when(reserveInventoryStep).execute(any(SagaContext.class));
+            doReturn(SagaStepResult.NONE).when(processPaymentStep).execute(any(SagaContext.class));
 
             orchestrator.executeSaga(order);
 
@@ -235,8 +243,8 @@ class OrderSagaOrchestratorTest {
         @DisplayName("shouldWriteSagaAuditLogEntriesOnSuccess")
         void shouldWriteSagaAuditLogEntriesOnSuccess() {
             Order order = buildOrder();
-            doNothing().when(reserveInventoryStep).execute(any(SagaContext.class));
-            doNothing().when(processPaymentStep).execute(any(SagaContext.class));
+            doReturn(SagaStepResult.NONE).when(reserveInventoryStep).execute(any(SagaContext.class));
+            doReturn(SagaStepResult.NONE).when(processPaymentStep).execute(any(SagaContext.class));
 
             orchestrator.executeSaga(order);
 
@@ -284,7 +292,7 @@ class OrderSagaOrchestratorTest {
         @DisplayName("shouldCompensateAndCancelOrderWhenPaymentFails")
         void shouldCompensateAndCancelOrderWhenPaymentFails() {
             Order order = buildOrder();
-            doNothing().when(reserveInventoryStep).execute(any(SagaContext.class));
+            doReturn(SagaStepResult.NONE).when(reserveInventoryStep).execute(any(SagaContext.class));
             doThrow(new SagaStepException("Payment declined", true))
                     .when(processPaymentStep).execute(any(SagaContext.class));
             doNothing().when(releaseInventoryStep).compensate(any(SagaContext.class));
@@ -298,10 +306,10 @@ class OrderSagaOrchestratorTest {
         }
 
         @Test
-        @DisplayName("shouldContinueCancellingEvenIfCompensationFails")
-        void shouldContinueCancellingEvenIfCompensationFails() {
+        @DisplayName("shouldRemainRecoverableWhenCompensationFails")
+        void shouldRemainRecoverableWhenCompensationFails() {
             Order order = buildOrder();
-            doNothing().when(reserveInventoryStep).execute(any(SagaContext.class));
+            doReturn(SagaStepResult.NONE).when(reserveInventoryStep).execute(any(SagaContext.class));
             doThrow(new SagaStepException("Payment declined", true))
                     .when(processPaymentStep).execute(any(SagaContext.class));
             doThrow(new RuntimeException("Release inventory failed"))
@@ -309,8 +317,8 @@ class OrderSagaOrchestratorTest {
 
             orchestrator.executeSaga(order);
 
-            // Even if compensation fails, order should still be CANCELLED
-            assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
+            // Recovery must release stock before finalizing cancellation.
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.INVENTORY_RELEASING);
         }
     }
 
@@ -322,7 +330,7 @@ class OrderSagaOrchestratorTest {
         @DisplayName("shouldHoldOrderAsPaymentPendingWhenCircuitOpen")
         void shouldHoldOrderAsPaymentPendingWhenCircuitOpen() {
             Order order = buildOrder();
-            doNothing().when(reserveInventoryStep).execute(any(SagaContext.class));
+            doReturn(SagaStepResult.NONE).when(reserveInventoryStep).execute(any(SagaContext.class));
             doThrow(new SagaStepException("Payment service circuit open", null, false, true))
                     .when(processPaymentStep).execute(any(SagaContext.class));
 
@@ -337,7 +345,7 @@ class OrderSagaOrchestratorTest {
         @DisplayName("shouldNotCompensateInventoryWhenPaymentCircuitOpen")
         void shouldNotCompensateInventoryWhenPaymentCircuitOpen() {
             Order order = buildOrder();
-            doNothing().when(reserveInventoryStep).execute(any(SagaContext.class));
+            doReturn(SagaStepResult.NONE).when(reserveInventoryStep).execute(any(SagaContext.class));
             doThrow(new SagaStepException("Payment service circuit open", null, false, true))
                     .when(processPaymentStep).execute(any(SagaContext.class));
 
@@ -351,7 +359,7 @@ class OrderSagaOrchestratorTest {
         @DisplayName("shouldPublishStatusChangedEventWithPaymentPendingStatus")
         void shouldPublishStatusChangedEventWithPaymentPendingStatus() {
             Order order = buildOrder();
-            doNothing().when(reserveInventoryStep).execute(any(SagaContext.class));
+            doReturn(SagaStepResult.NONE).when(reserveInventoryStep).execute(any(SagaContext.class));
             doThrow(new SagaStepException("Payment service circuit open", null, false, true))
                     .when(processPaymentStep).execute(any(SagaContext.class));
 

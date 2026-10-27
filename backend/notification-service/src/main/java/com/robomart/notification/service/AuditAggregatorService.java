@@ -1,124 +1,107 @@
 package com.robomart.notification.service;
 
-import jakarta.annotation.PostConstruct;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
-
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import com.robomart.common.dto.PagedResponse;
+import com.robomart.common.exception.ValidationException;
+import com.robomart.notification.client.AdminReadModels.AuditEntry;
+import com.robomart.notification.client.InventoryAdminReadClient;
+import com.robomart.notification.client.OrderAdminReadClient;
+import com.robomart.notification.client.PaymentAdminReadClient;
+import com.robomart.notification.client.ProductAdminReadClient;
+
+/** Fetch only the sorted prefixes needed for a global page; failures stay explicit. */
 @Service
 public class AuditAggregatorService {
+    private static final Logger LOG = LoggerFactory.getLogger(AuditAggregatorService.class);
+    private static final int MAX_WINDOW = 10000;
+    private final List<Source> sources;
 
-    private static final Logger log = LoggerFactory.getLogger(AuditAggregatorService.class);
-
-    @Value("${notification.order-service.url:http://localhost:8083}")
-    private String orderUrl;
-
-    @Value("${notification.inventory-service.url:http://localhost:8084}")
-    private String inventoryUrl;
-
-    @Value("${notification.payment-service.url:http://localhost:8086}")
-    private String paymentUrl;
-
-    @Value("${notification.product-service.url:http://localhost:8081}")
-    private String productUrl;
-
-    private RestClient orderClient;
-    private RestClient inventoryClient;
-    private RestClient paymentClient;
-    private RestClient productClient;
-
-    @PostConstruct
-    public void init() {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofSeconds(3));
-        factory.setReadTimeout(Duration.ofSeconds(10));
-
-        orderClient = RestClient.builder().baseUrl(orderUrl).requestFactory(factory).build();
-        inventoryClient = RestClient.builder().baseUrl(inventoryUrl).requestFactory(factory).build();
-        paymentClient = RestClient.builder().baseUrl(paymentUrl).requestFactory(factory).build();
-        productClient = RestClient.builder().baseUrl(productUrl).requestFactory(factory).build();
+    public AuditAggregatorService(OrderAdminReadClient orders, InventoryAdminReadClient inventory,
+            PaymentAdminReadClient payments, ProductAdminReadClient products) {
+        sources = List.of(new Source("order", orders::audits), new Source("inventory", inventory::audits),
+                new Source("payment", payments::audits), new Source("product", products::audits));
     }
 
     public AggregatedAuditResponse getAuditLogs(String actor, String action, String entityType,
-                                                  String entityId, String traceId, String from, String to,
-                                                  int page, int size) {
-        List<AuditLogEntry> all = new ArrayList<>();
-
-        all.addAll(fetchAuditLogs(orderClient, "/api/v1/admin/orders/audit-logs",
-                actor, action, entityType, entityId, traceId, from, to));
-        all.addAll(fetchAuditLogs(inventoryClient, "/api/v1/admin/inventory/audit-logs",
-                actor, action, entityType, entityId, traceId, from, to));
-        all.addAll(fetchAuditLogs(paymentClient, "/api/v1/admin/payments/audit-logs",
-                actor, action, entityType, entityId, traceId, from, to));
-        all.addAll(fetchAuditLogs(productClient, "/api/v1/admin/audit-logs",
-                actor, action, entityType, entityId, traceId, from, to));
-
-        all.sort(Comparator.comparing(AuditLogEntry::createdAt, Comparator.nullsLast(Comparator.reverseOrder())));
-
-        int total = all.size();
-        int fromIdx = page * size;
-        int toIdx = Math.min(fromIdx + size, total);
-        List<AuditLogEntry> pageContent = fromIdx < total ? all.subList(fromIdx, toIdx) : List.of();
-        int totalPages = total == 0 ? 0 : (int) Math.ceil((double) total / size);
-
-        return new AggregatedAuditResponse(pageContent, page, size, total, totalPages);
-    }
-
-    private List<AuditLogEntry> fetchAuditLogs(RestClient client, String path,
-                                                String actor, String action, String entityType,
-                                                String entityId, String traceId, String from, String to) {
-        try {
-            StringBuilder uri = new StringBuilder(path).append("?size=1000");
-            if (actor != null) uri.append("&actor=").append(URLEncoder.encode(actor, StandardCharsets.UTF_8));
-            if (action != null) uri.append("&action=").append(URLEncoder.encode(action, StandardCharsets.UTF_8));
-            if (entityType != null) uri.append("&entityType=").append(URLEncoder.encode(entityType, StandardCharsets.UTF_8));
-            if (entityId != null) uri.append("&entityId=").append(URLEncoder.encode(entityId, StandardCharsets.UTF_8));
-            if (traceId != null) uri.append("&traceId=").append(URLEncoder.encode(traceId, StandardCharsets.UTF_8));
-            if (from != null) uri.append("&from=").append(URLEncoder.encode(from, StandardCharsets.UTF_8));
-            if (to != null) uri.append("&to=").append(URLEncoder.encode(to, StandardCharsets.UTF_8));
-
-            AuditPageResponse resp = client.get()
-                    .uri(uri.toString())
-                    .retrieve()
-                    .body(AuditPageResponse.class);
-
-            if (resp != null && resp.data() != null) {
-                return resp.data();
-            }
-        } catch (RestClientException e) {
-            log.warn("Failed to fetch audit logs from {}: {}", path, e.getMessage());
+            String entityId, String traceId, String from, String to, int page, int size) {
+        long wanted = ((long) page + 1) * size;
+        if (page < 0 || size < 1 || size > 100 || wanted > MAX_WINDOW) {
+            throw new ValidationException("Audit page must be within 10,000 results; narrow the filters for deeper history");
         }
-        return List.of();
+        Map<String, String> filters = new HashMap<>();
+        put(filters, "actor", actor); put(filters, "action", action); put(filters, "entityType", entityType);
+        put(filters, "entityId", entityId); put(filters, "traceId", traceId); put(filters, "from", from);
+        filters.put("to", to == null ? Instant.now().toString() : to);
+        List<AuditEntry> entries = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        long total = 0;
+        long until = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+        for (Source source : sources) {
+            try {
+                SourcePage result = fetch(source, filters, (int) wanted, until);
+                entries.addAll(result.entries());
+                total = Math.addExact(total, result.total());
+            } catch (RuntimeException failed) {
+                LOG.error("Audit read failed: service={}", source.name(), failed);
+                errors.add(source.name() + ": " + failed.getClass().getSimpleName());
+            }
+        }
+        entries.sort(Comparator.comparing(AuditEntry::createdAt, Comparator.reverseOrder())
+                .thenComparing(AuditEntry::id, Comparator.nullsLast(Comparator.reverseOrder())));
+        int start = Math.min(page * size, entries.size());
+        int end = Math.min(start + size, entries.size());
+        int pages = (int) Math.min(Integer.MAX_VALUE, Math.ceil((double) total / size));
+        return new AggregatedAuditResponse(List.copyOf(entries.subList(start, end)), page, size, total, pages,
+                errors.isEmpty() ? "OK" : "ERROR", List.copyOf(errors));
     }
 
-    public record AuditLogEntry(
-            Long id,
-            String actor,
-            String action,
-            String entityType,
-            String entityId,
-            String traceId,
-            String correlationId,
-            Instant createdAt) {}
+    private SourcePage fetch(Source source, Map<String, String> filters, int wanted, long until) {
+        int size = Math.min(100, wanted);
+        List<AuditEntry> entries = new ArrayList<>();
+        long total = 0;
+        for (int page = 0; entries.size() < wanted; page++) {
+            if (System.nanoTime() >= until) throw new IllegalStateException("Audit request budget exceeded");
+            Map<String, String> params = new HashMap<>(filters);
+            params.put("page", String.valueOf(page));
+            params.put("size", String.valueOf(size));
+            PagedResponse<AuditEntry> response = source.read().apply(params);
+            if (response == null || response.data() == null || response.pagination() == null
+                    || response.pagination().page() != page || response.pagination().size() != size
+                    || response.data().size() > size || response.pagination().totalElements() < 0) throw new IllegalStateException("Invalid audit page");
+            if (response.data().stream().anyMatch(entry -> entry == null || entry.createdAt() == null)) {
+                throw new IllegalStateException("Invalid audit entry");
+            }
+            if (page == 0) total = response.pagination().totalElements();
+            entries.addAll(response.data());
+            if (page + 1 >= response.pagination().totalPages()) break;
+            if (response.data().isEmpty()) throw new IllegalStateException("Audit page did not advance");
+        }
+        return new SourcePage(entries, total);
+    }
 
-    record AuditPageResponse(List<AuditLogEntry> data, Object pagination, String traceId) {}
+    private void put(Map<String, String> values, String name, String value) {
+        if (value != null) values.put(name, value);
+    }
 
-    public record AggregatedAuditResponse(
-            List<AuditLogEntry> data,
-            int page,
-            int size,
-            long totalElements,
-            int totalPages) {}
+    private record Source(String name, Function<Map<String, String>, PagedResponse<AuditEntry>> read) { }
+    private record SourcePage(List<AuditEntry> entries, long total) { }
+
+    public record AggregatedAuditResponse(List<AuditEntry> data, int page, int size, long totalElements,
+            int totalPages, String status, List<String> errors) {
+        public AggregatedAuditResponse(List<AuditEntry> data, int page, int size, long totalElements, int totalPages) {
+            this(data, page, size, totalElements, totalPages, "OK", List.of());
+        }
+    }
 }

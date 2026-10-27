@@ -1,258 +1,156 @@
 package com.robomart.notification.service;
 
-import com.robomart.notification.web.ReconciliationDiscrepancy;
-import com.robomart.notification.web.ReconciliationResult;
-import jakarta.annotation.PostConstruct;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
-
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import com.robomart.common.dto.ApiResponse;
+import com.robomart.notification.client.AdminReadModels.InventorySummary;
+import com.robomart.notification.client.AdminReadModels.OrderPayment;
+import com.robomart.notification.client.AdminReadModels.OrderSummary;
+import com.robomart.notification.client.InventoryAdminReadClient;
+import com.robomart.notification.client.OrderAdminReadClient;
+import com.robomart.notification.client.PaymentAdminReadClient;
+import com.robomart.notification.web.ReconciliationDiscrepancy;
+import com.robomart.notification.web.ReconciliationResult;
+
+/** An unavailable/malformed downstream response is an ERROR, never evidence of a clean ledger. */
 @Service
 public class ReconciliationService {
+    private static final Logger LOG = LoggerFactory.getLogger(ReconciliationService.class);
+    private final InventoryAdminReadClient inventory;
+    private final PaymentAdminReadClient payments;
+    private final OrderAdminReadClient orders;
+    private final AdminPushService push;
+    @Value("${notification.reconciliation.inventory-threshold-absolute:5}") private int absoluteThreshold = 5;
+    @Value("${notification.reconciliation.inventory-threshold-percent:1.0}") private double percentThreshold = 1;
+    private volatile ReconciliationResult lastInventory = notRun("INVENTORY");
+    private volatile ReconciliationResult lastPayment = notRun("PAYMENT");
 
-    private static final Logger log = LoggerFactory.getLogger(ReconciliationService.class);
-
-    @Value("${notification.inventory-service.url:http://localhost:8084}")
-    private String inventoryUrl;
-
-    @Value("${notification.payment-service.url:http://localhost:8086}")
-    private String paymentUrl;
-
-    @Value("${notification.order-service.url:http://localhost:8083}")
-    private String orderUrl;
-
-    @Value("${notification.reconciliation.inventory-threshold-absolute:5}")
-    private int inventoryThresholdAbsolute;
-
-    @Value("${notification.reconciliation.inventory-threshold-percent:1.0}")
-    private double inventoryThresholdPercent;
-
-    @Value("${notification.reconciliation.payment-threshold-percent:1.0}")
-    private double paymentThresholdPercent;
-
-    private RestClient inventoryClient;
-    private RestClient paymentClient;
-    private RestClient orderClient;
-
-    private final AdminPushService adminPushService;
-
-    private volatile ReconciliationResult lastInventoryResult =
-            new ReconciliationResult("INVENTORY", List.of(), false, Instant.now());
-    private volatile ReconciliationResult lastPaymentResult =
-            new ReconciliationResult("PAYMENT", List.of(), false, Instant.now());
-
-    public ReconciliationService(AdminPushService adminPushService) {
-        this.adminPushService = adminPushService;
-    }
-
-    @PostConstruct
-    public void init() {
-        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofSeconds(3));
-        factory.setReadTimeout(Duration.ofSeconds(10));
-
-        inventoryClient = RestClient.builder().baseUrl(inventoryUrl).requestFactory(factory).build();
-        paymentClient = RestClient.builder().baseUrl(paymentUrl).requestFactory(factory).build();
-        orderClient = RestClient.builder().baseUrl(orderUrl).requestFactory(factory).build();
+    public ReconciliationService(InventoryAdminReadClient inventory, PaymentAdminReadClient payments,
+            OrderAdminReadClient orders, AdminPushService push) {
+        this.inventory = inventory;
+        this.payments = payments;
+        this.orders = orders;
+        this.push = push;
     }
 
     public ReconciliationResult runInventoryReconciliation() {
         try {
-            InventoryReconciliationResponse inventoryResp = inventoryClient.get()
-                    .uri("/api/v1/admin/inventory/reconciliation-summary")
-                    .retrieve()
-                    .body(InventoryReconciliationResponse.class);
-
-            OrderReconciliationListResponse orderResp = orderClient.get()
-                    .uri("/api/v1/admin/orders/reconciliation-summary")
-                    .retrieve()
-                    .body(OrderReconciliationListResponse.class);
-
-            List<ReconciliationDiscrepancy> discrepancies = compareInventory(inventoryResp, orderResp);
-            ReconciliationResult result = new ReconciliationResult(
-                    "INVENTORY",
-                    discrepancies,
-                    !discrepancies.isEmpty(),
-                    Instant.now());
-
-            lastInventoryResult = result;
-
-            if (!discrepancies.isEmpty()) {
-                log.warn("Inventory reconciliation found {} discrepancies", discrepancies.size());
-                adminPushService.pushReconciliationAlert(result);
+            InventorySummary stock = data(inventory.reconciliation());
+            List<OrderSummary> orderRows = data(orders.reconciliation());
+            if (stock.items() == null) throw new IllegalStateException("Inventory items are missing");
+            Map<Long, Integer> expected = new HashMap<>();
+            for (OrderSummary order : orderRows) {
+                if (order.status() == null || order.items() == null) throw new IllegalStateException("Invalid order summary");
+                if (isReserving(order.status())) {
+                    for (var item : order.items()) {
+                        if (item.productId() == null || item.quantity() <= 0) throw new IllegalStateException("Invalid order line");
+                        expected.merge(item.productId(), item.quantity(), Math::addExact);
+                    }
+                }
             }
-
-            return result;
-        } catch (RestClientException e) {
-            log.warn("Inventory reconciliation failed: {}", e.getMessage());
-            ReconciliationResult empty = new ReconciliationResult("INVENTORY", List.of(), false, Instant.now());
-            lastInventoryResult = empty;
-            return empty;
+            List<ReconciliationDiscrepancy> differences = new ArrayList<>();
+            Set<Long> present = new HashSet<>();
+            for (var item : stock.items()) {
+                if (item.productId() == null || item.reservedQuantity() < 0 || !present.add(item.productId())) {
+                    throw new IllegalStateException("Invalid inventory summary");
+                }
+                int wanted = expected.getOrDefault(item.productId(), 0);
+                long difference = Math.abs((long) item.reservedQuantity() - wanted);
+                if (difference > absoluteThreshold || (double) difference / Math.max(wanted, 1) > percentThreshold / 100) {
+                    differences.add(new ReconciliationDiscrepancy("InventoryItem", item.productId().toString(),
+                            String.valueOf(wanted), String.valueOf(item.reservedQuantity()), "Review reservation lifecycle"));
+                }
+            }
+            expected.forEach((product, quantity) -> {
+                if (!present.contains(product)) differences.add(new ReconciliationDiscrepancy("InventoryItem",
+                        product.toString(), quantity.toString(), "MISSING", "Review missing inventory record"));
+            });
+            lastInventory = completed("INVENTORY", differences);
+        } catch (RuntimeException failed) {
+            lastInventory = failed("INVENTORY", failed);
         }
+        return lastInventory;
     }
 
     public ReconciliationResult runPaymentReconciliation() {
         try {
-            PaymentReconciliationResponse paymentResp = paymentClient.get()
-                    .uri("/api/v1/admin/payments/reconciliation-summary")
-                    .retrieve()
-                    .body(PaymentReconciliationResponse.class);
-
-            OrderReconciliationListResponse orderResp = orderClient.get()
-                    .uri("/api/v1/admin/orders/reconciliation-summary")
-                    .retrieve()
-                    .body(OrderReconciliationListResponse.class);
-
-            List<ReconciliationDiscrepancy> discrepancies = comparePayments(paymentResp, orderResp);
-            ReconciliationResult result = new ReconciliationResult(
-                    "PAYMENT",
-                    discrepancies,
-                    !discrepancies.isEmpty(),
-                    Instant.now());
-
-            lastPaymentResult = result;
-
-            if (!discrepancies.isEmpty()) {
-                log.warn("Payment reconciliation found {} discrepancies", discrepancies.size());
-                adminPushService.pushReconciliationAlert(result);
-            }
-
-            return result;
-        } catch (RestClientException e) {
-            log.warn("Payment reconciliation failed: {}", e.getMessage());
-            ReconciliationResult empty = new ReconciliationResult("PAYMENT", List.of(), false, Instant.now());
-            lastPaymentResult = empty;
-            return empty;
-        }
-    }
-
-    public ReconciliationResult getLastInventoryResult() {
-        return lastInventoryResult;
-    }
-
-    public ReconciliationResult getLastPaymentResult() {
-        return lastPaymentResult;
-    }
-
-    private List<ReconciliationDiscrepancy> compareInventory(
-            InventoryReconciliationResponse inventoryResp,
-            OrderReconciliationListResponse orderResp) {
-
-        List<ReconciliationDiscrepancy> discrepancies = new ArrayList<>();
-
-        if (inventoryResp == null || inventoryResp.data() == null) {
-            return discrepancies;
-        }
-
-        // Compute expected reserved quantity from orders in active saga states
-        Map<Long, Integer> expectedReserved = new HashMap<>();
-        if (orderResp != null && orderResp.data() != null) {
-            for (OrderReconciliationSummaryDto order : orderResp.data()) {
-                if (isInventoryReservingStatus(order.status()) && order.items() != null) {
-                    for (OrderItemSummaryDto item : order.items()) {
-                        expectedReserved.merge(item.productId(), item.quantity(), Integer::sum);
+            Map<String, String> byOrder = new HashMap<>();
+            long until = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(30);
+            for (int page = 0; ; page++) {
+                if (page == 1000 || System.nanoTime() >= until) throw new IllegalStateException("Payment reconciliation page budget exceeded");
+                var response = data(payments.reconciliation(page, 100));
+                if (response.payments() == null || response.hasNext() && response.payments().isEmpty()
+                        || response.size() > 0 && (response.page() != page || response.size() != 100)) {
+                    throw new IllegalStateException("Invalid payment page");
+                }
+                for (OrderPayment payment : response.payments()) {
+                    if (payment.orderId() == null || payment.status() == null
+                            || byOrder.putIfAbsent(payment.orderId(), payment.status()) != null) {
+                        throw new IllegalStateException("Invalid or duplicate payment summary");
                     }
                 }
+                if (!response.hasNext()) break;
             }
-        }
-
-        for (ProductInventorySummaryDto inv : inventoryResp.data().items()) {
-            int actual = inv.reservedQuantity();
-            int expected = expectedReserved.getOrDefault(inv.productId(), 0);
-            int diff = Math.abs(actual - expected);
-            int maxVal = Math.max(expected, 1);
-            boolean absoluteExceeded = diff > inventoryThresholdAbsolute;
-            boolean percentExceeded = (double) diff / maxVal > inventoryThresholdPercent / 100.0;
-            if (absoluteExceeded || percentExceeded) {
-                discrepancies.add(new ReconciliationDiscrepancy(
-                        "InventoryItem",
-                        String.valueOf(inv.productId()),
-                        String.valueOf(expected),
-                        String.valueOf(actual),
-                        "Check order saga state for productId=" + inv.productId()));
+            List<ReconciliationDiscrepancy> differences = new ArrayList<>();
+            for (OrderSummary order : data(orders.reconciliation())) {
+                if (order.status() == null || order.orderId() == null) throw new IllegalStateException("Invalid order summary");
+                String actual = byOrder.get(order.orderId());
+                boolean settledOrder = Set.of("CONFIRMED", "SHIPPED", "DELIVERED").contains(order.status());
+                if (settledOrder && !"COMPLETED".equals(actual)) {
+                    differences.add(new ReconciliationDiscrepancy("Payment", order.orderId(), "COMPLETED",
+                            actual == null ? "MISSING" : actual, "Review payment settlement"));
+                } else if ("CANCELLED".equals(order.status()) && "COMPLETED".equals(actual)) {
+                    differences.add(new ReconciliationDiscrepancy("Payment", order.orderId(), "REFUNDED",
+                            actual, "Review cancellation refund"));
+                }
             }
+            lastPayment = completed("PAYMENT", differences);
+        } catch (RuntimeException failed) {
+            lastPayment = failed("PAYMENT", failed);
         }
-
-        return discrepancies;
+        return lastPayment;
     }
 
-    private boolean isInventoryReservingStatus(String status) {
-        return "INVENTORY_RESERVING".equals(status)
-                || "PAYMENT_PROCESSING".equals(status)
-                || "CONFIRMED".equals(status)
-                || "PAYMENT_PENDING".equals(status);
+    private boolean isReserving(String status) {
+        // CONFIRMED and later states consume committed stock; they no longer reserve units.
+        return Set.of("INVENTORY_RESERVING", "PAYMENT_PROCESSING", "PAYMENT_PENDING", "INVENTORY_RELEASING").contains(status);
     }
 
-    private List<ReconciliationDiscrepancy> comparePayments(
-            PaymentReconciliationResponse paymentResp,
-            OrderReconciliationListResponse orderResp) {
-
-        List<ReconciliationDiscrepancy> discrepancies = new ArrayList<>();
-
-        if (orderResp == null || orderResp.data() == null) {
-            return discrepancies;
-        }
-
-        Map<String, String> paymentsByOrderId = new HashMap<>();
-        if (paymentResp != null && paymentResp.data() != null) {
-            for (OrderPaymentSummaryDto p : paymentResp.data().payments()) {
-                paymentsByOrderId.put(p.orderId(), p.status());
-            }
-        }
-
-        for (OrderReconciliationSummaryDto order : orderResp.data()) {
-            if ("CANCELLED".equals(order.status())) {
-                continue;
-            }
-            String paymentStatus = paymentsByOrderId.get(order.orderId());
-            if (paymentStatus == null) {
-                discrepancies.add(new ReconciliationDiscrepancy(
-                        "Payment",
-                        order.orderId(),
-                        "EXISTS",
-                        "MISSING",
-                        "Verify payment processing for orderId=" + order.orderId()));
-            } else if ("CONFIRMED".equals(order.status()) && !"COMPLETED".equals(paymentStatus)) {
-                discrepancies.add(new ReconciliationDiscrepancy(
-                        "Payment",
-                        order.orderId(),
-                        "COMPLETED",
-                        paymentStatus,
-                        "Verify payment processing for orderId=" + order.orderId()));
-            }
-        }
-
-        return discrepancies;
+    private <T> T data(ApiResponse<T> response) {
+        if (response == null || response.data() == null) throw new IllegalStateException("Downstream response data missing");
+        return response.data();
     }
 
-    // --- Internal DTOs for deserializing responses from other services ---
+    private ReconciliationResult completed(String type, List<ReconciliationDiscrepancy> differences) {
+        var result = new ReconciliationResult(type, differences, !differences.isEmpty(), Instant.now());
+        if (!differences.isEmpty()) push.pushReconciliationAlert(result);
+        return result;
+    }
 
-    record InventoryReconciliationResponse(ProductInventorySummaryListDto data, String traceId) {}
+    private ReconciliationResult failed(String type, RuntimeException failure) {
+        LOG.error("{} reconciliation failed", type, failure);
+        var result = new ReconciliationResult(type, List.of(), false, Instant.now(), "ERROR",
+                "Downstream reconciliation failed: " + failure.getClass().getSimpleName());
+        try { push.pushReconciliationAlert(result); }
+        catch (RuntimeException alertFailure) { LOG.error("Reconciliation error alert failed", alertFailure); }
+        return result;
+    }
 
-    record ProductInventorySummaryListDto(List<ProductInventorySummaryDto> items, String generatedAt) {}
+    private static ReconciliationResult notRun(String type) {
+        return new ReconciliationResult(type, List.of(), false, Instant.now(), "NOT_RUN", null);
+    }
 
-    record ProductInventorySummaryDto(Long productId, int availableQuantity, int reservedQuantity, int totalQuantity) {}
-
-    record OrderReconciliationListResponse(List<OrderReconciliationSummaryDto> data, String traceId) {}
-
-    record OrderReconciliationSummaryDto(String orderId, String status, List<OrderItemSummaryDto> items) {}
-
-    record OrderItemSummaryDto(Long productId, int quantity) {}
-
-    record PaymentReconciliationResponse(PaymentSummaryListDto data, String traceId) {}
-
-    record PaymentSummaryListDto(List<OrderPaymentSummaryDto> payments, String generatedAt) {}
-
-    record OrderPaymentSummaryDto(String orderId, String status, String amount) {}
+    public ReconciliationResult getLastInventoryResult() { return lastInventory; }
+    public ReconciliationResult getLastPaymentResult() { return lastPayment; }
 }

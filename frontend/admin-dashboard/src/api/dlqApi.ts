@@ -12,6 +12,8 @@ export interface DlqEvent {
   status: string
   firstFailedAt: string
   lastAttemptedAt: string
+  replayable: boolean
+  replayClaimUntil: string | null
 }
 
 interface PagedResponse<T> {
@@ -27,11 +29,13 @@ export async function fetchDlqEvents(page: number, size: number): Promise<PagedR
   return data
 }
 
-export async function retryDlqEvent(id: number): Promise<string> {
-  const { data } = await adminClient.post<{ data: string; traceId: string }>(
+export async function retryDlqEvent(
+  id: number,
+): Promise<{ message: string; acknowledged: boolean }> {
+  const { data, status } = await adminClient.post<{ data: string; traceId: string }>(
     `/api/v1/admin/dlq/${id}/retry`,
   )
-  return data.data
+  return { message: data.data, acknowledged: status === 200 }
 }
 
 export async function retryAllDlqEvents(): Promise<string> {
@@ -39,4 +43,14 @@ export async function retryAllDlqEvents(): Promise<string> {
     '/api/v1/admin/dlq/retry-all',
   )
   return data.data
+}
+
+export function canReplayDlqEvent(event: DlqEvent, now = Date.now()): boolean {
+  return (
+    event.replayable &&
+    (event.status === 'PENDING' ||
+      (event.status === 'REPLAYING' &&
+        event.replayClaimUntil !== null &&
+        Date.parse(event.replayClaimUntil) <= now))
+  )
 }

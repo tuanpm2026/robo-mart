@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.cache.RedisCacheWriter;
+import org.springframework.data.redis.cache.BatchStrategies;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
@@ -45,7 +47,8 @@ public class CacheConfig implements CachingConfigurer {
                 .entryTtl(Duration.ofMinutes(1))
                 .serializeValuesWith(jsonSerializer);
 
-        return RedisCacheManager.builder(connectionFactory)
+        return RedisCacheManager.builder(RedisCacheWriter.nonLockingRedisCacheWriter(connectionFactory, BatchStrategies.scan(1000)))
+                .transactionAware()
                 .withCacheConfiguration(CACHE_PRODUCT_DETAIL, productDetailConfig)
                 .withCacheConfiguration(CACHE_PRODUCT_SEARCH, productSearchConfig)
                 .build();

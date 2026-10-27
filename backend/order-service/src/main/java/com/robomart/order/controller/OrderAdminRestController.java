@@ -66,6 +66,7 @@ public class OrderAdminRestController {
     }
 
     @GetMapping("/reconciliation-summary")
+    @PreAuthorize("hasAnyRole('ADMIN', 'NOTIFICATION_SERVICE')")
     public ResponseEntity<ApiResponse<List<OrderReconciliationSummary>>> getReconciliationSummary() {
         return ResponseEntity.ok(new ApiResponse<>(orderService.getOrderReconciliationSummary(), getTraceId()));
     }
@@ -124,6 +125,7 @@ public class OrderAdminRestController {
     }
 
     @GetMapping("/audit-logs")
+    @PreAuthorize("hasAnyRole('ADMIN', 'NOTIFICATION_SERVICE')")
     public ResponseEntity<PagedResponse<AuditLogDto>> searchAuditLogs(
             @RequestParam(required = false) String actor,
             @RequestParam(required = false) String action,

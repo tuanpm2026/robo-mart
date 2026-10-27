@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.robomart.product.entity.Product;
+import com.robomart.product.mapper.ProductEventPayloadMapper;
 import com.robomart.product.repository.ProductRepository;
 
 import tools.jackson.databind.ObjectMapper;
@@ -54,18 +55,7 @@ public class SeedDataIndexer {
 
     private String buildPayload(Product product) {
         try {
-            var payload = new java.util.LinkedHashMap<String, Object>();
-            payload.put("id", product.getId());
-            payload.put("sku", product.getSku());
-            payload.put("name", product.getName());
-            payload.put("description", product.getDescription());
-            payload.put("price", product.getPrice());
-            payload.put("categoryId", product.getCategory().getId());
-            payload.put("categoryName", product.getCategory().getName());
-            payload.put("brand", product.getBrand());
-            payload.put("rating", product.getRating());
-            payload.put("stockQuantity", product.getStockQuantity());
-            return objectMapper.writeValueAsString(payload);
+            return objectMapper.writeValueAsString(ProductEventPayloadMapper.snapshot(product));
         } catch (Exception e) {
             throw new RuntimeException("Failed to serialize product payload for id=" + product.getId(), e);
         }

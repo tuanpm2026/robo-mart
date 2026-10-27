@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.robomart.order.config.SagaProperties;
 import com.robomart.order.grpc.InventoryGrpcClient;
 import com.robomart.proto.inventory.InventoryServiceGrpc;
 import com.robomart.proto.inventory.ReserveInventoryRequest;
@@ -24,14 +25,14 @@ import io.grpc.StatusRuntimeException;
 @DisplayName("InventoryGrpcClient")
 class InventoryGrpcClientTest {
 
-    @Mock
+    @Mock(answer = org.mockito.Answers.RETURNS_SELF)
     private InventoryServiceGrpc.InventoryServiceBlockingStub stub;
 
     private InventoryGrpcClient client;
 
     @BeforeEach
     void setUp() {
-        client = new InventoryGrpcClient(stub);
+        client = new InventoryGrpcClient(stub, new SagaProperties());
     }
 
     @Test

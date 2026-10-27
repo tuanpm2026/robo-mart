@@ -11,6 +11,7 @@ import com.robomart.order.grpc.InventoryGrpcClient;
 import com.robomart.order.grpc.InventoryServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
 import com.robomart.order.saga.SagaStep;
+import com.robomart.order.saga.SagaStepResult;
 import com.robomart.order.saga.exception.SagaStepException;
 import com.robomart.proto.inventory.ReservationItem;
 import com.robomart.proto.inventory.ReserveInventoryRequest;
@@ -36,7 +37,7 @@ public class ReserveInventoryStep implements SagaStep {
     }
 
     @Override
-    public void execute(SagaContext context) {
+    public SagaStepResult execute(SagaContext context) {
         Order order = context.getOrder();
         log.info("Reserving inventory for orderId={}", order.getId());
 
@@ -52,18 +53,22 @@ public class ReserveInventoryStep implements SagaStep {
 
         try {
             ReserveInventoryResponse response = inventoryClient.reserveInventory(requestBuilder.build());
-            order.setReservationId(response.getReservationId());
+            if (!response.getSuccess() || response.getReservationId().isBlank()) {
+                throw new InventoryServiceUnavailableException("Inventory result is incomplete", null);
+            }
             log.info("Inventory reserved for orderId={}, reservationId={}", order.getId(), response.getReservationId());
+            return new SagaStepResult(response.getReservationId(), null);
         } catch (InventoryBusinessException e) {
             // Deterministic business rejection (e.g. insufficient stock) — cancel, do not compensate.
-            order.setCancellationReason("Insufficient stock");
-            throw new SagaStepException("Insufficient stock for orderId=" + order.getId(), e, false);
+            throw new SagaStepException("Insufficient stock for orderId=" + order.getId(),
+                    e, false, false, "Insufficient stock");
         } catch (InventoryServiceUnavailableException e) {
-            order.setCancellationReason(CIRCUIT_OPEN_CANCELLATION_REASON);
-            throw new SagaStepException("Inventory service circuit open for orderId=" + order.getId(), e, true);
+            throw new SagaStepException("Inventory service circuit open for orderId=" + order.getId(),
+                    e, true, false, CIRCUIT_OPEN_CANCELLATION_REASON);
         } catch (RuntimeException e) {
             // Transient/unexpected gRPC failure that survived retries but did not open the circuit.
-            throw new SagaStepException("Inventory reservation failed for orderId=" + order.getId(), e, true);
+            throw new SagaStepException("Inventory reservation failed for orderId=" + order.getId(),
+                    e, true, false, CIRCUIT_OPEN_CANCELLATION_REASON);
         }
     }
 

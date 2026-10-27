@@ -57,8 +57,9 @@ public class OrderRestController {
         // A replayed Idempotency-Key returns the original order; the response mirrors its current state.
         Order order = orderService.createOrder(userId, items, request.shippingAddress(), idempotencyKey);
 
-        if (order.getStatus() == OrderStatus.PAYMENT_PENDING) {
-            // AC1: Payment circuit open — return 202 Accepted, customer informed to wait
+        if (order.getStatus() == OrderStatus.PAYMENT_PENDING
+                || order.getStatus() == OrderStatus.INVENTORY_RELEASING) {
+            // Checkout or compensation is still in progress; expose the current state.
             OrderSummaryResponse summary = new OrderSummaryResponse(
                     order.getId(), order.getCreatedAt(), order.getTotalAmount(),
                     order.getStatus(), order.getItems().size(), order.getCancellationReason());

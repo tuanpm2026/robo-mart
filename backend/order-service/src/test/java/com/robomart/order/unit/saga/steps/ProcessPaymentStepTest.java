@@ -72,9 +72,10 @@ class ProcessPaymentStepTest {
                         .setTransactionId("txn-abc")
                         .build());
 
-        step.execute(context);
+        var result = step.execute(context);
 
-        assertThat(order.getPaymentId()).isEqualTo("pay-999");
+        assertThat(result.paymentId()).isEqualTo("pay-999");
+        assertThat(order.getPaymentId()).isNull();
     }
 
     @Test
@@ -93,7 +94,7 @@ class ProcessPaymentStepTest {
                 .isInstanceOf(SagaStepException.class)
                 .satisfies(e -> assertThat(((SagaStepException) e).isShouldCompensate()).isTrue());
 
-        assertThat(order.getCancellationReason()).isEqualTo("Payment declined");
+        assertThat(order.getCancellationReason()).isNull();
     }
 
     @Test

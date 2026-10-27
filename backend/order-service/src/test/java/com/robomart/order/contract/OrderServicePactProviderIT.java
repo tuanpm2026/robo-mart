@@ -1,8 +1,10 @@
 package com.robomart.order.contract;
 
+import org.apache.hc.core5.http.HttpRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -11,20 +13,18 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import com.robomart.proto.inventory.InventoryServiceGrpc;
+import com.robomart.proto.payment.PaymentServiceGrpc;
+import com.robomart.test.PostgresContainerConfig;
+import com.robomart.test.security.TestJwt;
+import com.robomart.test.security.TestJwtDecoderConfig;
+
 import au.com.dius.pact.provider.junit5.HttpTestTarget;
 import au.com.dius.pact.provider.junit5.PactVerificationContext;
 import au.com.dius.pact.provider.junit5.PactVerificationInvocationContextProvider;
 import au.com.dius.pact.provider.junitsupport.Provider;
 import au.com.dius.pact.provider.junitsupport.State;
 import au.com.dius.pact.provider.junitsupport.loader.PactFolder;
-
-import org.apache.hc.core5.http.HttpRequest;
-
-import com.robomart.proto.inventory.InventoryServiceGrpc;
-import com.robomart.proto.payment.PaymentServiceGrpc;
-import com.robomart.test.PostgresContainerConfig;
-import com.robomart.test.security.TestJwt;
-import com.robomart.test.security.TestJwtDecoderConfig;
 
 /**
  * Pact provider test: verifies that Order Service satisfies the contract defined by
@@ -53,10 +53,10 @@ class OrderServicePactProviderIT {
     @LocalServerPort
     private int port;
 
-    @MockitoBean
+    @MockitoBean(answers = Answers.RETURNS_SELF)
     private InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub;
 
-    @MockitoBean
+    @MockitoBean(answers = Answers.RETURNS_SELF)
     private PaymentServiceGrpc.PaymentServiceBlockingStub paymentStub;
 
     @MockitoBean

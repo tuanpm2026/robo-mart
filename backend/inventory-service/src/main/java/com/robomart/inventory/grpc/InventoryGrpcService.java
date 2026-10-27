@@ -14,7 +14,6 @@ import com.robomart.inventory.entity.InventoryItem;
 import com.robomart.inventory.entity.Reservation;
 import com.robomart.inventory.enums.ReservationStatus;
 import com.robomart.inventory.exception.InsufficientStockException;
-import com.robomart.inventory.exception.LockAcquisitionException;
 import com.robomart.inventory.exception.ReservationReleasedException;
 import com.robomart.inventory.service.InventoryService;
 import com.robomart.proto.inventory.GetInventoryRequest;
@@ -120,13 +119,6 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
         } catch (InsufficientStockException e) {
             log.warn("Insufficient stock in reserveInventory: orderId={}, productId={}", orderId, e.getProductId(), e);
             responseObserver.onError(Status.FAILED_PRECONDITION
-                    .withDescription(e.getMessage())
-                    .withCause(e)
-                    .asRuntimeException());
-
-        } catch (LockAcquisitionException e) {
-            log.warn("Lock acquisition failed in reserveInventory: orderId={}, productId={}", orderId, e.getProductId(), e);
-            responseObserver.onError(Status.UNAVAILABLE
                     .withDescription(e.getMessage())
                     .withCause(e)
                     .asRuntimeException());

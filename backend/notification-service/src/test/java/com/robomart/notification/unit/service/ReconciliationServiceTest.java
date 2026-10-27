@@ -1,216 +1,143 @@
 package com.robomart.notification.unit.service;
 
-import com.robomart.notification.service.AdminPushService;
-import com.robomart.notification.service.ReconciliationService;
-import com.robomart.notification.web.ReconciliationResult;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
-
-import tools.jackson.databind.json.JsonMapper;
-
-import java.lang.reflect.Method;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Answers.RETURNS_DEEP_STUBS;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+import java.time.Instant;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.web.client.RestClientException;
+
+import com.robomart.common.dto.ApiResponse;
+import com.robomart.notification.client.AdminReadModels.InventoryItem;
+import com.robomart.notification.client.AdminReadModels.InventorySummary;
+import com.robomart.notification.client.AdminReadModels.OrderItem;
+import com.robomart.notification.client.AdminReadModels.OrderPayment;
+import com.robomart.notification.client.AdminReadModels.OrderSummary;
+import com.robomart.notification.client.AdminReadModels.PaymentSummary;
+import com.robomart.notification.client.InventoryAdminReadClient;
+import com.robomart.notification.client.OrderAdminReadClient;
+import com.robomart.notification.client.PaymentAdminReadClient;
+import com.robomart.notification.service.AdminPushService;
+import com.robomart.notification.service.ReconciliationService;
+
 class ReconciliationServiceTest {
+    private final InventoryAdminReadClient inventory = mock(InventoryAdminReadClient.class);
+    private final PaymentAdminReadClient payments = mock(PaymentAdminReadClient.class);
+    private final OrderAdminReadClient orders = mock(OrderAdminReadClient.class);
+    private final AdminPushService push = mock(AdminPushService.class);
+    private final ReconciliationService service = new ReconciliationService(inventory, payments, orders, push);
 
-    private static final JsonMapper JSON = JsonMapper.builder().build();
-
-    private static final String INVENTORY_URI = "/api/v1/admin/inventory/reconciliation-summary";
-    private static final String PAYMENT_URI = "/api/v1/admin/payments/reconciliation-summary";
-    private static final String ORDER_URI = "/api/v1/admin/orders/reconciliation-summary";
-
-    @Mock
-    private AdminPushService adminPushService;
-
-    private ReconciliationService reconciliationService;
-
-    // Deep-stubbed RestClients injected directly so we bypass real HTTP and drive comparison logic.
-    private RestClient inventoryClient;
-    private RestClient paymentClient;
-    private RestClient orderClient;
-
-    @BeforeEach
-    void setUp() {
-        reconciliationService = new ReconciliationService(adminPushService);
-        ReflectionTestUtils.setField(reconciliationService, "inventoryUrl", "http://localhost:8084");
-        ReflectionTestUtils.setField(reconciliationService, "paymentUrl", "http://localhost:8086");
-        ReflectionTestUtils.setField(reconciliationService, "orderUrl", "http://localhost:8083");
-        ReflectionTestUtils.setField(reconciliationService, "inventoryThresholdAbsolute", 5);
-        ReflectionTestUtils.setField(reconciliationService, "inventoryThresholdPercent", 1.0);
-        ReflectionTestUtils.setField(reconciliationService, "paymentThresholdPercent", 1.0);
-
-        inventoryClient = mock(RestClient.class, RETURNS_DEEP_STUBS);
-        paymentClient = mock(RestClient.class, RETURNS_DEEP_STUBS);
-        orderClient = mock(RestClient.class, RETURNS_DEEP_STUBS);
-        ReflectionTestUtils.setField(reconciliationService, "inventoryClient", inventoryClient);
-        ReflectionTestUtils.setField(reconciliationService, "paymentClient", paymentClient);
-        ReflectionTestUtils.setField(reconciliationService, "orderClient", orderClient);
+    private void stock(int reserved) {
+        when(inventory.reconciliation()).thenReturn(new ApiResponse<>(new InventorySummary(
+                List.of(new InventoryItem(1L, 2000 - reserved, reserved, 2000)), Instant.now()), null));
     }
-
-    /**
-     * Deserialises {@code json} into the package-private response record {@code className} (a nested
-     * type of {@link ReconciliationService}) and stubs the deep RestClient chain
-     * {@code client.get().uri(uri).retrieve().body(type)} to return it.
-     */
-    @SuppressWarnings("unchecked")
-    private <T> void stubBody(RestClient client, String uri, String className, String json) {
-        try {
-            Class<T> type =
-                    (Class<T>) Class.forName("com.robomart.notification.service.ReconciliationService$" + className);
-            T body = JSON.readValue(json, type);
-            when(client.get().uri(uri).retrieve().body(type)).thenReturn(body);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    private OrderSummary order(String id, String status, int quantity) {
+        return new OrderSummary(id, status, List.of(new OrderItem(1L, quantity)));
+    }
+    private void paymentPage(int page, boolean next, OrderPayment... values) {
+        when(payments.reconciliation(page, 100)).thenReturn(new ApiResponse<>(
+                new PaymentSummary(List.of(values), Instant.now(), page, 100, next), null));
     }
 
     @Test
-    void shouldDetectInventoryDiscrepancyAboveAbsoluteThreshold() {
-        // Inventory reports reservedQuantity=20 for product 1; orders expect 10 reserved.
-        // |20-10| = 10 > absolute threshold 5  => discrepancy.
-        stubBody(inventoryClient, INVENTORY_URI, "InventoryReconciliationResponse",
-                "{\"data\":{\"items\":[{\"productId\":1,\"availableQuantity\":80,"
-                        + "\"reservedQuantity\":20,\"totalQuantity\":100}],\"generatedAt\":\"t\"},\"traceId\":\"x\"}");
-        stubBody(orderClient, ORDER_URI, "OrderReconciliationListResponse",
-                "{\"data\":[{\"orderId\":\"100\",\"status\":\"CONFIRMED\","
-                        + "\"items\":[{\"productId\":1,\"quantity\":10}]}],\"traceId\":\"x\"}");
+    void initialStatusDoesNotClaimReconciliationAlreadyRan() {
+        assertThat(service.getLastInventoryResult().status()).isEqualTo("NOT_RUN");
+        assertThat(service.getLastPaymentResult().status()).isEqualTo("NOT_RUN");
+    }
 
-        ReconciliationResult result = reconciliationService.runInventoryReconciliation();
+    @Test
+    void confirmedStockIsCommittedWhilePendingAndReleasingStockRemainsReserved() {
+        stock(10);
+        when(orders.reconciliation()).thenReturn(new ApiResponse<>(List.of(order("1", "CONFIRMED", 20),
+                order("2", "PAYMENT_PENDING", 6), order("3", "INVENTORY_RELEASING", 4)), null));
+        var result = service.runInventoryReconciliation();
+        assertThat(result.status()).isEqualTo("OK");
+        assertThat(result.hasDiscrepancies()).isFalse();
+        verifyNoInteractions(push);
+    }
 
-        assertThat(result.type()).isEqualTo("INVENTORY");
+    @Test
+    void mismatchedReservedUnitsGenerateAnAlert() {
+        stock(15);
+        when(orders.reconciliation()).thenReturn(new ApiResponse<>(List.of(order("1", "PAYMENT_PENDING", 10)), null));
+        var result = service.runInventoryReconciliation();
         assertThat(result.hasDiscrepancies()).isTrue();
         assertThat(result.discrepancies()).hasSize(1);
-        assertThat(result.discrepancies().getFirst().entityId()).isEqualTo("1");
-        verify(adminPushService).pushReconciliationAlert(result);
+        verify(push).pushReconciliationAlert(result);
     }
 
     @Test
-    void shouldNotAlertWhenInventoryWithinThresholds() {
-        // reserved=11 vs expected=10 => diff=1, below absolute(5) and percent(1%*max=0.1 -> 1/10=10%>1%?)
-        // Use expected=1000 so percent diff is tiny: |1001-1000|=1, 1/1000=0.1% < 1% and 1 < 5.
-        stubBody(inventoryClient, INVENTORY_URI, "InventoryReconciliationResponse",
-                "{\"data\":{\"items\":[{\"productId\":1,\"availableQuantity\":0,"
-                        + "\"reservedQuantity\":1001,\"totalQuantity\":1001}],\"generatedAt\":\"t\"},\"traceId\":\"x\"}");
-        stubBody(orderClient, ORDER_URI, "OrderReconciliationListResponse",
-                "{\"data\":[{\"orderId\":\"100\",\"status\":\"PAYMENT_PROCESSING\","
-                        + "\"items\":[{\"productId\":1,\"quantity\":1000}]}],\"traceId\":\"x\"}");
-
-        ReconciliationResult result = reconciliationService.runInventoryReconciliation();
-
-        assertThat(result.hasDiscrepancies()).isFalse();
-        assertThat(result.discrepancies()).isEmpty();
-        verify(adminPushService, never()).pushReconciliationAlert(any());
+    void smallDifferenceBelowBothConfiguredThresholdsIsClean() {
+        stock(1002);
+        when(orders.reconciliation()).thenReturn(new ApiResponse<>(List.of(order("1", "PAYMENT_PENDING", 1000)), null));
+        assertThat(service.runInventoryReconciliation().hasDiscrepancies()).isFalse();
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    void shouldReturnEmptyInventoryResultOnRestClientException() {
-        when(inventoryClient.get().uri(eq(INVENTORY_URI)).retrieve().body(any(Class.class)))
-                .thenThrow(new RestClientException("connection refused"));
-
-        ReconciliationResult result = reconciliationService.runInventoryReconciliation();
-
-        assertThat(result.type()).isEqualTo("INVENTORY");
-        assertThat(result.discrepancies()).isEmpty();
-        assertThat(reconciliationService.getLastInventoryResult()).isEqualTo(result);
-        verify(adminPushService, never()).pushReconciliationAlert(any());
-    }
-
-    @Test
-    void shouldDetectMissingPaymentForNonCancelledOrder() {
-        // Order 200 CONFIRMED but no payment record => "MISSING" discrepancy.
-        // Order 201 CANCELLED => skipped.
-        stubBody(paymentClient, PAYMENT_URI, "PaymentReconciliationResponse",
-                "{\"data\":{\"payments\":[],\"generatedAt\":\"t\"},\"traceId\":\"x\"}");
-        stubBody(orderClient, ORDER_URI, "OrderReconciliationListResponse",
-                "{\"data\":[{\"orderId\":\"200\",\"status\":\"CONFIRMED\",\"items\":[]},"
-                        + "{\"orderId\":\"201\",\"status\":\"CANCELLED\",\"items\":[]}],\"traceId\":\"x\"}");
-
-        ReconciliationResult result = reconciliationService.runPaymentReconciliation();
-
-        assertThat(result.type()).isEqualTo("PAYMENT");
-        assertThat(result.discrepancies()).hasSize(1);
-        assertThat(result.discrepancies().getFirst().entityId()).isEqualTo("200");
+    void expectedProductMissingFromInventoryIsNotSilentlyIgnored() {
+        when(inventory.reconciliation()).thenReturn(new ApiResponse<>(new InventorySummary(List.of(), Instant.now()), null));
+        when(orders.reconciliation()).thenReturn(new ApiResponse<>(List.of(order("1", "PAYMENT_PENDING", 2)), null));
+        var result = service.runInventoryReconciliation();
+        assertThat(result.hasDiscrepancies()).isTrue();
         assertThat(result.discrepancies().getFirst().actual()).isEqualTo("MISSING");
-        verify(adminPushService).pushReconciliationAlert(result);
     }
 
     @Test
-    void shouldDetectPaymentStatusMismatchForConfirmedOrder() {
-        // Order CONFIRMED but payment status PENDING (not COMPLETED) => discrepancy.
-        stubBody(paymentClient, PAYMENT_URI, "PaymentReconciliationResponse",
-                "{\"data\":{\"payments\":[{\"orderId\":\"300\",\"status\":\"PENDING\",\"amount\":\"10\"}],"
-                        + "\"generatedAt\":\"t\"},\"traceId\":\"x\"}");
-        stubBody(orderClient, ORDER_URI, "OrderReconciliationListResponse",
-                "{\"data\":[{\"orderId\":\"300\",\"status\":\"CONFIRMED\",\"items\":[]}],\"traceId\":\"x\"}");
-
-        ReconciliationResult result = reconciliationService.runPaymentReconciliation();
-
-        assertThat(result.discrepancies()).hasSize(1);
-        assertThat(result.discrepancies().getFirst().expected()).isEqualTo("COMPLETED");
-        assertThat(result.discrepancies().getFirst().actual()).isEqualTo("PENDING");
-        verify(adminPushService).pushReconciliationAlert(result);
+    void authenticationTransportAndMalformedResponseBecomeErrorInsteadOfClean() {
+        when(inventory.reconciliation()).thenThrow(new RestClientException("401 Unauthorized"));
+        assertThat(service.runInventoryReconciliation().status()).isEqualTo("ERROR");
+        doReturn(new ApiResponse<>(null, null)).when(inventory).reconciliation();
+        assertThat(service.runInventoryReconciliation().status()).isEqualTo("ERROR");
+        assertThat(service.getLastInventoryResult().error()).isNotBlank();
     }
 
     @Test
-    void shouldNotFlagWhenPaymentCompletedForConfirmedOrder() {
-        stubBody(paymentClient, PAYMENT_URI, "PaymentReconciliationResponse",
-                "{\"data\":{\"payments\":[{\"orderId\":\"400\",\"status\":\"COMPLETED\",\"amount\":\"10\"}],"
-                        + "\"generatedAt\":\"t\"},\"traceId\":\"x\"}");
-        stubBody(orderClient, ORDER_URI, "OrderReconciliationListResponse",
-                "{\"data\":[{\"orderId\":\"400\",\"status\":\"CONFIRMED\",\"items\":[]}],\"traceId\":\"x\"}");
-
-        ReconciliationResult result = reconciliationService.runPaymentReconciliation();
-
+    void paymentReconciliationReadsEveryBoundedPage() {
+        paymentPage(0, true, new OrderPayment("1", "COMPLETED", "10"));
+        paymentPage(1, false, new OrderPayment("2", "COMPLETED", "20"));
+        when(orders.reconciliation()).thenReturn(new ApiResponse<>(List.of(order("1", "CONFIRMED", 1),
+                order("2", "SHIPPED", 1)), null));
+        var result = service.runPaymentReconciliation();
+        assertThat(result.status()).isEqualTo("OK");
         assertThat(result.hasDiscrepancies()).isFalse();
-        verify(adminPushService, never()).pushReconciliationAlert(any());
+        verify(payments).reconciliation(0, 100);
+        verify(payments).reconciliation(1, 100);
     }
 
     @Test
-    @SuppressWarnings("unchecked")
-    void shouldReturnEmptyPaymentResultOnRestClientException() {
-        when(paymentClient.get().uri(eq(PAYMENT_URI)).retrieve().body(any(Class.class)))
-                .thenThrow(new RestClientException("connection refused"));
-
-        ReconciliationResult result = reconciliationService.runPaymentReconciliation();
-
-        assertThat(result.discrepancies()).isEmpty();
-        assertThat(reconciliationService.getLastPaymentResult()).isEqualTo(result);
-        verify(adminPushService, never()).pushReconciliationAlert(any());
+    void aLaterPaymentPageFailureInvalidatesTheWholeResult() {
+        paymentPage(0, true, new OrderPayment("1", "COMPLETED", "10"));
+        when(payments.reconciliation(1, 100)).thenThrow(new RestClientException("timeout"));
+        assertThat(service.runPaymentReconciliation().status()).isEqualTo("ERROR");
+        verifyNoInteractions(orders);
     }
 
     @Test
-    void initShouldBuildClientsWithoutError() {
-        // Exercises the @PostConstruct client construction path.
-        ReconciliationService fresh = new ReconciliationService(adminPushService);
-        ReflectionTestUtils.setField(fresh, "inventoryUrl", "http://localhost:8084");
-        ReflectionTestUtils.setField(fresh, "paymentUrl", "http://localhost:8086");
-        ReflectionTestUtils.setField(fresh, "orderUrl", "http://localhost:8083");
-        fresh.init();
-        assertThat(ReflectionTestUtils.getField(fresh, "inventoryClient")).isNotNull();
+    void missingSettledPaymentAndUnrefundedCancellationAreDiscrepancies() {
+        paymentPage(0, false, new OrderPayment("cancelled", "COMPLETED", "10"));
+        when(orders.reconciliation()).thenReturn(new ApiResponse<>(List.of(order("missing", "DELIVERED", 1),
+                order("cancelled", "CANCELLED", 1), order("pending", "PAYMENT_PENDING", 1)), null));
+        var result = service.runPaymentReconciliation();
+        assertThat(result.discrepancies()).hasSize(2);
+        assertThat(result.hasDiscrepancies()).isTrue();
     }
 
     @Test
-    void allComparisonMethodsArePrivate() throws Exception {
-        for (Method m : ReconciliationService.class.getDeclaredMethods()) {
-            if (m.getName().startsWith("compare") || m.getName().equals("isInventoryReservingStatus")) {
-                assertThat(java.lang.reflect.Modifier.isPrivate(m.getModifiers())).isTrue();
-            }
-        }
+    void nonAdvancingOrDuplicatePaymentPagesCannotProduceCleanResult() {
+        paymentPage(0, true);
+        assertThat(service.runPaymentReconciliation().status()).isEqualTo("ERROR");
+        paymentPage(0, true, new OrderPayment("1", "COMPLETED", "10"));
+        paymentPage(1, false, new OrderPayment("1", "COMPLETED", "10"));
+        assertThat(service.runPaymentReconciliation().status()).isEqualTo("ERROR");
+    }
+
+    @Test
+    void failedErrorAlertDoesNotHideErrorStatus() {
+        when(inventory.reconciliation()).thenThrow(new RestClientException("unavailable"));
+        doThrow(new IllegalStateException("push unavailable")).when(push).pushReconciliationAlert(any());
+        assertThat(service.runInventoryReconciliation().status()).isEqualTo("ERROR");
     }
 }

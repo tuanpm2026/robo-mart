@@ -1,7 +1,5 @@
 package com.robomart.product.event.consumer;
 
-import java.math.BigDecimal;
-import java.time.Instant;
 
 import org.apache.avro.specific.SpecificRecord;
 import org.slf4j.Logger;
@@ -12,8 +10,8 @@ import org.springframework.stereotype.Component;
 import com.robomart.events.product.ProductCreatedEvent;
 import com.robomart.events.product.ProductDeletedEvent;
 import com.robomart.events.product.ProductUpdatedEvent;
-import com.robomart.product.document.ProductDocument;
-import com.robomart.product.repository.ProductSearchRepository;
+import com.robomart.product.service.ProductProjectionStore;
+import com.robomart.product.service.ProductIndexWriter;
 import com.robomart.product.service.ProcessedEventService;
 
 @Component
@@ -23,12 +21,14 @@ public class ProductIndexConsumer {
 
     private static final String CONSUMER_GROUP = "product-service-product-index-group";
 
-    private final ProductSearchRepository productSearchRepository;
+    private final ProductProjectionStore source;
+    private final ProductIndexWriter writer;
     private final ProcessedEventService processedEventService;
 
-    public ProductIndexConsumer(ProductSearchRepository productSearchRepository,
+    public ProductIndexConsumer(ProductProjectionStore source, ProductIndexWriter writer,
                                 ProcessedEventService processedEventService) {
-        this.productSearchRepository = productSearchRepository;
+        this.source = source;
+        this.writer = writer;
         this.processedEventService = processedEventService;
     }
 
@@ -76,45 +76,16 @@ public class ProductIndexConsumer {
             log.debug("Skipping duplicate PRODUCT_DELETED event: eventId={}", eventId);
             return;
         }
-        productSearchRepository.deleteById(event.getProductId());
-        log.info("Deleted product from Elasticsearch index: id={}", event.getProductId());
+        writer.write(source.load(event.getProductId()));
+        log.info("Reconciled product projection after deletion event: id={}", event.getProductId());
         processedEventService.markProcessed(CONSUMER_GROUP, eventId);
     }
 
     private void indexProduct(SpecificRecord record) {
-        ProductDocument doc = new ProductDocument();
-        Instant now = Instant.now();
-
-        if (record instanceof ProductCreatedEvent event) {
-            doc.setId(event.getProductId());
-            doc.setSku(event.getSku());
-            doc.setName(event.getName());
-            doc.setDescription(event.getDescription());
-            doc.setPrice(new BigDecimal(event.getPrice()));
-            doc.setCategoryId(event.getCategoryId());
-            doc.setCategoryName(event.getCategoryName());
-            doc.setBrand(event.getBrand());
-            doc.setRating(event.getRating() != null ? new BigDecimal(event.getRating()) : null);
-            doc.setStockQuantity(event.getStockQuantity());
-            doc.setCreatedAt(now);
-            doc.setUpdatedAt(now);
-        } else if (record instanceof ProductUpdatedEvent event) {
-            doc.setId(event.getProductId());
-            doc.setSku(event.getSku());
-            doc.setName(event.getName());
-            doc.setDescription(event.getDescription());
-            doc.setPrice(new BigDecimal(event.getPrice()));
-            doc.setCategoryId(event.getCategoryId());
-            doc.setCategoryName(event.getCategoryName());
-            doc.setBrand(event.getBrand());
-            doc.setRating(event.getRating() != null ? new BigDecimal(event.getRating()) : null);
-            doc.setStockQuantity(event.getStockQuantity());
-            var existing = productSearchRepository.findById(event.getProductId());
-            doc.setCreatedAt(existing.map(ProductDocument::getCreatedAt).orElse(now));
-            doc.setUpdatedAt(now);
-        }
-
-        productSearchRepository.save(doc);
-        log.info("Indexed product in Elasticsearch: id={}, name={}", doc.getId(), doc.getName());
+        long id;
+        if (record instanceof ProductCreatedEvent event) id = event.getProductId();
+        else if (record instanceof ProductUpdatedEvent event) id = event.getProductId();
+        else throw new IllegalArgumentException("Unsupported product projection event");
+        writer.write(source.load(id));
     }
 }

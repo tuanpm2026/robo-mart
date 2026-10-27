@@ -10,7 +10,6 @@ import com.robomart.notification.service.HealthAggregatorService;
 import com.robomart.notification.web.ServiceHealthData;
 import com.robomart.notification.web.SystemHealthResponse;
 
-import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,11 +31,22 @@ class HealthAggregatorServiceTest {
         ReflectionTestUtils.setField(service, "notifUrl", "http://localhost:8087");
         ReflectionTestUtils.setField(service, "gatewayUrl", "http://localhost:8080");
         service.init();
+        java.util.Map<String, org.springframework.web.client.RestClient> clients = new java.util.HashMap<>();
+        for (String name : List.of("product-service", "cart-service", "order-service", "inventory-service",
+                "payment-service", "notification-service", "api-gateway")) {
+            var client = org.mockito.Mockito.mock(org.springframework.web.client.RestClient.class,
+                    org.mockito.Mockito.RETURNS_DEEP_STUBS);
+            org.mockito.Mockito.when(client.get().uri("/actuator/health").retrieve()
+                    .body(com.robomart.notification.web.ActuatorHealthResponse.class))
+                    .thenThrow(new org.springframework.web.client.ResourceAccessException("unreachable"));
+            clients.put(name, client);
+        }
+        ReflectionTestUtils.setField(service, "clients", clients);
     }
 
     @Test
     void aggregateHealth_returns7ServiceEntries() {
-        // All services will be DOWN (no actual HTTP servers running) but the list should have 7 entries
+        // Stubbed transport failures still produce all seven service entries.
         SystemHealthResponse response = service.aggregateHealth();
 
         assertThat(response).isNotNull();
@@ -48,8 +58,8 @@ class HealthAggregatorServiceTest {
     void aggregateHealth_marksServicesDownWhenUnreachable() {
         SystemHealthResponse response = service.aggregateHealth();
 
-        // All localhost services are unreachable in unit test context — should all be DOWN
-        assertThat(response.services()).allMatch(s -> "DOWN".equals(s.actuatorStatus()));
+        // Transport failures are ERROR, not an observed healthy/clean result.
+        assertThat(response.services()).allMatch(s -> "ERROR".equals(s.actuatorStatus()));
     }
 
     @Test
@@ -102,7 +112,7 @@ class HealthAggregatorServiceTest {
             assertThat(data.service()).isNotBlank();
             assertThat(data.displayName()).isNotBlank();
             assertThat(data.checkedAt()).isNotNull();
-            assertThat(data.actuatorStatus()).isEqualTo("DOWN");
+            assertThat(data.actuatorStatus()).isEqualTo("ERROR");
         }
     }
 }

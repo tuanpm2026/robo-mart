@@ -17,6 +17,8 @@ spring:
     enabled: true
     locations: classpath:db/migration
   elasticsearch:
+    connection-timeout: 1s
+    socket-timeout: 2s
     uris: http://localhost:9200
   data:
     redis:
@@ -63,7 +65,7 @@ management:
         liveness:
           include: livenessState
         readiness:
-          include: readinessState,db,redis,elasticsearch,kafka
+          include: readinessState,db,redis,elasticsearch,kafka,productSearch
   metrics:
     distribution:
       percentiles-histogram:
@@ -125,3 +127,16 @@ spring:
       ddl-auto: validate
   flyway:
     locations: classpath:db/migration,classpath:db/seed
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  kafka:
+    listener:
+      # Kafka delivery suites explicitly start/stop their listeners; persistence/HTTP suites do not.
+      auto-startup: false
+outbox:
+  # Delivery integration tests invoke the real poller explicitly.
+  initial-delay-ms: 3600000

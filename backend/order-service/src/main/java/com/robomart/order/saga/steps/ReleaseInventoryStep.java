@@ -6,15 +6,12 @@ import org.springframework.stereotype.Component;
 
 import com.robomart.order.entity.Order;
 import com.robomart.order.entity.OrderItem;
-import com.robomart.order.grpc.InventoryBusinessException;
 import com.robomart.order.grpc.InventoryGrpcClient;
-import com.robomart.order.grpc.InventoryServiceUnavailableException;
 import com.robomart.order.saga.SagaContext;
 import com.robomart.order.saga.SagaStep;
+import com.robomart.order.saga.SagaStepResult;
 import com.robomart.proto.inventory.ReleaseInventoryRequest;
 import com.robomart.proto.inventory.ReservationItem;
-
-import io.grpc.StatusRuntimeException;
 
 @Component
 public class ReleaseInventoryStep implements SagaStep {
@@ -49,7 +46,7 @@ public class ReleaseInventoryStep implements SagaStep {
     }
 
     @Override
-    public void execute(SagaContext context) {
+    public SagaStepResult execute(SagaContext context) {
         throw new UnsupportedOperationException("ReleaseInventoryStep is a compensation-only step");
     }
 
@@ -79,14 +76,10 @@ public class ReleaseInventoryStep implements SagaStep {
                     .build());
         }
 
-        try {
-            inventoryClient.releaseInventory(requestBuilder.build());
-            log.info("Inventory released for orderId={}", order.getId());
-        } catch (StatusRuntimeException | InventoryServiceUnavailableException | InventoryBusinessException e) {
-            // Best-effort / idempotent — release failures (transient, circuit-open, or a business
-            // rejection such as FAILED_PRECONDITION when the reservation was already released) are
-            // logged but never re-thrown, so the saga can continue cancelling.
-            log.error("Failed to release inventory for orderId={}: {}", order.getId(), e.getMessage(), e);
+        var response = inventoryClient.releaseInventory(requestBuilder.build());
+        if (!response.getSuccess()) {
+            throw new IllegalStateException("Inventory release was not acknowledged for order " + order.getId());
         }
+        log.info("Inventory released for orderId={}", order.getId());
     }
 }

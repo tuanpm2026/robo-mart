@@ -32,6 +32,9 @@ message RefundPaymentRequest {
   string order_id = 2;
   com.robomart.proto.common.Money amount = 3;
   string reason = 4;
+  // Optional for old clients: absent means the original single full-refund identity.
+  // Distinct partial refunds must supply distinct keys; retries must reuse a key.
+  string idempotency_key = 5;
 }
 
 message RefundPaymentResponse {

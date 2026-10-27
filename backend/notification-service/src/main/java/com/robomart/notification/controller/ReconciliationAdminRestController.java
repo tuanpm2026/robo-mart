@@ -30,7 +30,9 @@ public class ReconciliationAdminRestController {
     public ResponseEntity<ApiResponse<List<ReconciliationResult>>> runReconciliation() {
         ReconciliationResult inventoryResult = reconciliationService.runInventoryReconciliation();
         ReconciliationResult paymentResult = reconciliationService.runPaymentReconciliation();
-        return ResponseEntity.ok(new ApiResponse<>(List.of(inventoryResult, paymentResult), getTraceId()));
+        boolean failed = "ERROR".equals(inventoryResult.status()) || "ERROR".equals(paymentResult.status());
+        return ResponseEntity.status(failed ? 502 : 200)
+                .body(new ApiResponse<>(List.of(inventoryResult, paymentResult), getTraceId()));
     }
 
     @GetMapping("/status")

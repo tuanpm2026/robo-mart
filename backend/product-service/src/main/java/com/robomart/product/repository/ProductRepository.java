@@ -1,6 +1,7 @@
 package com.robomart.product.repository;
 
 import java.util.Optional;
+import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @EntityGraph(attributePaths = {"category", "images"})
     @Query("SELECT p FROM Product p WHERE p.id = :id")
     Optional<Product> findByIdWithDetailsIncludeInactive(@Param("id") Long id);
+
+    @EntityGraph(attributePaths = {"category"})
+    @Query("SELECT p FROM Product p WHERE p.id = :id")
+    Optional<Product> findProjectionById(@Param("id") Long id);
+
+    @EntityGraph(attributePaths = {"category"})
+    @Query("SELECT p FROM Product p WHERE p.id > :after ORDER BY p.id")
+    List<Product> findProjectionPage(@Param("after") Long after, Pageable pageable);
 
     boolean existsBySku(String sku);
 

@@ -9,6 +9,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.mockito.Answers;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
@@ -18,6 +21,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 
+import com.robomart.order.config.SagaProperties;
 import com.robomart.order.grpc.InventoryBusinessException;
 import com.robomart.order.grpc.InventoryGrpcClient;
 import com.robomart.order.grpc.InventoryServiceUnavailableException;
@@ -44,10 +48,14 @@ class GrpcClientResilienceTest {
             .withInitializer(new ConfigDataApplicationContextInitializer())
             .withConfiguration(AutoConfigurations.of(
                     CircuitBreakerAutoConfiguration.class, RetryAutoConfiguration.class))
-            .withUserConfiguration(ClientConfiguration.class);
+            .withUserConfiguration(ClientConfiguration.class)
+            .withPropertyValues("resilience4j.retry.instances.inventory-service.wait-duration=1ms",
+                    "resilience4j.retry.instances.payment-service.wait-duration=1ms");
 
-    @Test
-    void businessRejectionsBypassRetriesAndCircuitBreakerFailureCounting() {
+    @ParameterizedTest
+    @EnumSource(value = Status.Code.class, names = {"INVALID_ARGUMENT", "NOT_FOUND", "ALREADY_EXISTS",
+            "FAILED_PRECONDITION", "PERMISSION_DENIED"})
+    void businessRejectionsBypassRetriesAndCircuitBreakerFailureCounting(Status.Code code) {
         contextRunner.run(context -> {
             assertThat(context).hasNotFailed();
             InventoryGrpcClient inventoryClient = context.getBean(InventoryGrpcClient.class);
@@ -58,9 +66,9 @@ class GrpcClientResilienceTest {
             var inventoryStub = context.getBean(InventoryServiceGrpc.InventoryServiceBlockingStub.class);
             var paymentStub = context.getBean(PaymentServiceGrpc.PaymentServiceBlockingStub.class);
             when(inventoryStub.reserveInventory(any())).thenThrow(
-                    Status.FAILED_PRECONDITION.withDescription("Insufficient stock").asRuntimeException());
+                    Status.fromCode(code).withDescription("Insufficient stock").asRuntimeException());
             when(paymentStub.processPayment(any())).thenThrow(
-                    Status.FAILED_PRECONDITION.withDescription("Payment declined").asRuntimeException());
+                    Status.fromCode(code).withDescription("Payment declined").asRuntimeException());
 
             assertThatThrownBy(() -> inventoryClient.reserveInventory(ReserveInventoryRequest.getDefaultInstance()))
                     .isInstanceOf(InventoryBusinessException.class).hasMessage("Insufficient stock");
@@ -93,7 +101,7 @@ class GrpcClientResilienceTest {
             assertOutageOpensBreaker(
                     () -> client.reserveInventory(ReserveInventoryRequest.getDefaultInstance()),
                     InventoryServiceUnavailableException.class, breaker);
-            verify(stub, times(5)).reserveInventory(any());
+            verify(stub, times(15)).reserveInventory(any());
         });
     }
 
@@ -114,11 +122,27 @@ class GrpcClientResilienceTest {
         });
     }
 
+    @ParameterizedTest
+    @EnumSource(value = Status.Code.class, names = {"UNAVAILABLE", "RESOURCE_EXHAUSTED", "ABORTED"})
+    void releaseRetriesTransientFailuresBeforeFallback(Status.Code code) {
+        contextRunner.run(context -> {
+            var stub = context.getBean(InventoryServiceGrpc.InventoryServiceBlockingStub.class);
+            when(stub.releaseInventory(any()))
+                    .thenThrow(Status.fromCode(code).asRuntimeException())
+                    .thenThrow(Status.fromCode(code).asRuntimeException())
+                    .thenReturn(com.robomart.proto.inventory.ReleaseInventoryResponse.newBuilder()
+                            .setSuccess(true).build());
+            var result = context.getBean(InventoryGrpcClient.class).releaseInventory(
+                    com.robomart.proto.inventory.ReleaseInventoryRequest.getDefaultInstance());
+            assertThat(result.getSuccess()).isTrue();
+            verify(stub, times(3)).releaseInventory(any());
+            assertThat(context.getBean(CircuitBreakerRegistry.class).circuitBreaker("inventory-service")
+                    .getMetrics().getNumberOfFailedCalls()).isZero();
+        });
+    }
+
     private static void assertOutageOpensBreaker(Runnable call,
             Class<? extends RuntimeException> fallbackException, CircuitBreaker breaker) {
-        // Preserve the documented RETRY-NOOP behavior during the dependency upgrade:
-        // the inner circuit-breaker fallback translates the first transient gRPC failure,
-        // so the outer Retry does not see a configured retryable exception.
         for (int attempt = 0; attempt < 5; attempt++) {
             assertThatThrownBy(call::run).isInstanceOf(fallbackException);
         }
@@ -130,17 +154,17 @@ class GrpcClientResilienceTest {
 
     @Configuration(proxyBeanMethods = false)
     @EnableAspectJAutoProxy
-    @Import({InventoryGrpcClient.class, PaymentGrpcClient.class})
+    @Import({InventoryGrpcClient.class, PaymentGrpcClient.class, SagaProperties.class})
     static class ClientConfiguration {
 
         @Bean
         InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub() {
-            return mock(InventoryServiceGrpc.InventoryServiceBlockingStub.class);
+            return mock(InventoryServiceGrpc.InventoryServiceBlockingStub.class, Answers.RETURNS_SELF);
         }
 
         @Bean
         PaymentServiceGrpc.PaymentServiceBlockingStub paymentStub() {
-            return mock(PaymentServiceGrpc.PaymentServiceBlockingStub.class);
+            return mock(PaymentServiceGrpc.PaymentServiceBlockingStub.class, Answers.RETURNS_SELF);
         }
     }
 }

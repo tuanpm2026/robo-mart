@@ -8,10 +8,8 @@ metadata:
 spec:
   replicas: 2
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0  # Zero-downtime: never kill a pod before new one is ready
+    # Pre-V8 outbox publishers ignore delivery leases; stop them before migrating.
+    type: Recreate
   selector:
     matchLabels:
       app: product-service
@@ -51,9 +49,20 @@ spec:
             name: robomart-config
         - secretRef:
             name: product-db-secret
+        env:
+        - name: ROBOMART_PRODUCT_IMAGE_BASE_URL
+          value: "https://api.tuanpm.xyz"
+        - name: ROBOMART_PRODUCT_IMAGE_STORAGE_PATH
+          value: /tmp/robomart-images
+        - name: PRODUCT_SEARCH_INITIALIZE_INDEX
+          value: "true"
+        - name: PRODUCT_KAFKA_DLT_REPLICATION_FACTOR
+          value: "1"
         volumeMounts:
         - name: tmp
           mountPath: /tmp
+        - name: product-images
+          mountPath: /tmp/robomart-images
         livenessProbe:
           httpGet:
             path: /actuator/health/liveness
@@ -73,3 +82,6 @@ spec:
       volumes:
       - name: tmp
         emptyDir: {}
+      - name: product-images
+        persistentVolumeClaim:
+          claimName: product-images

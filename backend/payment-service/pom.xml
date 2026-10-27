@@ -33,10 +33,6 @@
             <groupId>com.robomart</groupId>
             <artifactId>proto</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.robomart</groupId>
-            <artifactId>events</artifactId>
-        </dependency>
 
         <!-- Spring Boot -->
         <dependency>
@@ -77,16 +73,6 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
-        </dependency>
-
-        <!-- Kafka -->
-        <dependency>
-            <groupId>org.springframework.kafka</groupId>
-            <artifactId>spring-kafka</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.confluent</groupId>
-            <artifactId>kafka-avro-serializer</artifactId>
         </dependency>
 
         <!-- gRPC -->

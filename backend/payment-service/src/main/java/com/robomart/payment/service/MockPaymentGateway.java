@@ -2,6 +2,11 @@ package com.robomart.payment.service;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import java.util.concurrent.Semaphore;
+import java.util.function.Supplier;
+
+import org.springframework.transaction.TransactionException;
+import org.springframework.dao.TransientDataAccessException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +25,7 @@ public class MockPaymentGateway {
     private volatile long simulatedDelayMs = 0;
 
     private final MockGatewayLedger ledger;
+    private final Semaphore providerSlots = new Semaphore(2);
 
     public MockPaymentGateway(MockGatewayLedger ledger) {
         this.ledger = ledger;
@@ -29,8 +35,8 @@ public class MockPaymentGateway {
     public GatewayResult processPayment(BigDecimal amount, String currency, String idempotencyKey,
             String orderId, String userId) {
         String identity = orderId.length() + ":" + orderId + userId.length() + ":" + userId;
-        return ledger.settle("charge:" + idempotencyKey, amount, currency, identity, orderId,
-                () -> charge(amount, currency));
+        return withProviderSlot(() -> ledger.settle("charge:" + idempotencyKey, amount, currency, identity, orderId,
+                () -> charge(amount, currency)));
     }
 
     public GatewayResult processPayment(BigDecimal amount, String currency, String idempotencyKey) {
@@ -64,8 +70,25 @@ public class MockPaymentGateway {
     }
 
     public GatewayResult refundPayment(String transactionId, BigDecimal amount) {
-        return ledger.settle("refund:" + transactionId, amount, "", transactionId,
-                () -> refund(transactionId, amount));
+        return withProviderSlot(() -> ledger.settle("refund:" + transactionId, amount, "", transactionId,
+                () -> refund(transactionId, amount)));
+    }
+
+    public GatewayResult refundPayment(String transactionId, BigDecimal amount, String requestKey) {
+        if ("legacy".equals(requestKey)) return refundPayment(transactionId, amount);
+        return withProviderSlot(() -> ledger.settle("refund:" + transactionId + ":" + requestKey, amount, "", transactionId,
+                () -> refund(transactionId, amount)));
+    }
+
+    private GatewayResult withProviderSlot(Supplier<GatewayResult> request) {
+        if (!providerSlots.tryAcquire()) throw new PaymentTransientException("Payment provider is busy");
+        try {
+            return request.get();
+        } catch (TransactionException | TransientDataAccessException unavailable) {
+            throw new PaymentTransientException("Payment provider temporarily unavailable");
+        } finally {
+            providerSlots.release();
+        }
     }
 
     private GatewayResult refund(String transactionId, BigDecimal amount) {

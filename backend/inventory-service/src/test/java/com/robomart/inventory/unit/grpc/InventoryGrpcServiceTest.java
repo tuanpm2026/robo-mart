@@ -1,8 +1,6 @@
 package com.robomart.inventory.unit.grpc;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -29,7 +27,6 @@ import com.robomart.inventory.entity.InventoryItem;
 import com.robomart.inventory.entity.Reservation;
 import com.robomart.inventory.enums.ReservationStatus;
 import com.robomart.inventory.exception.InsufficientStockException;
-import com.robomart.inventory.exception.LockAcquisitionException;
 import com.robomart.inventory.exception.ReservationReleasedException;
 import com.robomart.inventory.grpc.InventoryGrpcService;
 import com.robomart.inventory.service.InventoryService;
@@ -165,16 +162,7 @@ class InventoryGrpcServiceTest {
             assertThat(reserveErrorCode()).isEqualTo(Status.Code.FAILED_PRECONDITION);
         }
 
-        @Test
-        @DisplayName("should return UNAVAILABLE when lock acquisition fails")
-        void shouldReturnUnavailableWhenLockFails() {
-            when(inventoryService.reserveOrder(eq("order-123"), anyMap()))
-                    .thenThrow(new LockAcquisitionException(1L, "inventory:lock:product:1"));
 
-            inventoryGrpcService.reserveInventory(reserveRequest("1", 5), reserveResponseObserver);
-
-            assertThat(reserveErrorCode()).isEqualTo(Status.Code.UNAVAILABLE);
-        }
 
         @Test
         @DisplayName("should return NOT_FOUND when product does not exist")
@@ -272,7 +260,6 @@ class InventoryGrpcServiceTest {
             ReleaseInventoryResponse response = releaseResponseCaptor.getValue();
             assertThat(response.getSuccess()).isTrue();
             assertThat(response.getMessage()).isEqualTo("Inventory released successfully");
-            verify(inventoryService, never()).releaseStock(anyLong(), anyInt(), anyString());
         }
 
         @Test
@@ -300,7 +287,6 @@ class InventoryGrpcServiceTest {
             verify(releaseResponseObserver).onNext(releaseResponseCaptor.capture());
             assertThat(releaseResponseCaptor.getValue().getSuccess()).isTrue();
             assertThat(releaseResponseCaptor.getValue().getMessage()).contains("No reservation found");
-            verify(inventoryService, never()).releaseStock(anyLong(), anyInt(), anyString());
         }
 
         @Test

@@ -1,8 +1,12 @@
 package com.robomart.product.config;
 
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authorization.AuthenticatedAuthorizationManager;
+import org.springframework.security.authorization.AuthorityAuthorizationManager;
+import org.springframework.security.authorization.AuthorizationManagers;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -38,9 +42,14 @@ public class ResourceServerSecurityConfig {
                 .requestMatchers("/actuator/**").permitAll()
                 // Public catalog + search + GraphQL (browsable without auth, as at the gateway).
                 .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/images/**").permitAll()
                 .requestMatchers("/graphql", "/graphiql/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/admin/audit-logs")
+                    .hasAnyRole("ADMIN", "NOTIFICATION_SERVICE")
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated())
+                .anyRequest().access(AuthorizationManagers.allOf(
+                        AuthenticatedAuthorizationManager.authenticated(),
+                        AuthorizationManagers.not(AuthorityAuthorizationManager.hasRole("NOTIFICATION_SERVICE")))))
             .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
                 jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
         return http.build();

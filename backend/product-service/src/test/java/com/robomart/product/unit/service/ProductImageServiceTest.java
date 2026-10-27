@@ -123,6 +123,19 @@ class ProductImageServiceTest {
     // ─── deleteImage ───────────────────────────────────────────────────────────
 
     @Test
+    void databaseDeleteFailureCannotRemoveTheOriginalFile() {
+        ProductImage image = new ProductImage();
+        image.setImageUrl("http://localhost:8081/images/1/original.jpg");
+        when(productImageRepository.findByIdAndProductId(10L, 1L)).thenReturn(Optional.of(image));
+        org.mockito.Mockito.doThrow(new org.springframework.dao.DataIntegrityViolationException("delete rejected"))
+                .when(productImageRepository).deleteById(10L);
+
+        assertThatThrownBy(() -> productImageService.deleteImage(1L, 10L))
+                .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+        verify(imageStorageService, never()).delete(any());
+    }
+
+    @Test
     void deleteImage_validOwnership_deletesAndRemovesFile() {
         ProductImage image = new ProductImage();
         image.setImageUrl("http://localhost:8081/images/1/abc.jpg");

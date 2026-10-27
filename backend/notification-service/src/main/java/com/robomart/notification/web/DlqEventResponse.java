@@ -13,5 +13,7 @@ public record DlqEventResponse(
         int retryCount,
         String status,
         Instant firstFailedAt,
-        Instant lastAttemptedAt
+        Instant lastAttemptedAt,
+        boolean replayable,
+        Instant replayClaimUntil
 ) {}

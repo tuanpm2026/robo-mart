@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import com.robomart.product.document.ProductDocument;
 import com.robomart.product.repository.ProductSearchRepository;
-import com.robomart.test.ElasticsearchTestSupport;
+import com.robomart.product.integration.ProductSearchTestSupport;
 import com.robomart.test.IntegrationTest;
 
 @IntegrationTest
@@ -27,7 +27,7 @@ class ElasticsearchIndexIT {
     void resetIndex() {
         // Own the shared index lifecycle deterministically: recreate with the explicit mapping so a
         // dynamically-mapped index left by another class does not break this one (and vice versa).
-        ElasticsearchTestSupport.resetIndex(elasticsearchOperations, ProductDocument.class);
+        ProductSearchTestSupport.resetIndex(elasticsearchOperations, ProductDocument.class);
     }
 
     @Test

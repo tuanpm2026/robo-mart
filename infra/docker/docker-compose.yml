@@ -167,6 +167,8 @@ services:
       - start-dev
       - --import-realm
     environment:
+      INVENTORY_SERVICE_CLIENT_SECRET: ${INVENTORY_SERVICE_CLIENT_SECRET:-}
+      NOTIFICATION_SERVICE_CLIENT_SECRET: ${NOTIFICATION_SERVICE_CLIENT_SECRET:-}
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME:-admin}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:-admin}
       KC_HTTP_PORT: 8180
@@ -347,6 +349,11 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
       ROBOMART_PRODUCT_IMAGE_BASE_URL: http://localhost:8080
+      ROBOMART_PRODUCT_IMAGE_STORAGE_PATH: /tmp/robomart-images
+      PRODUCT_SEARCH_INITIALIZE_INDEX: "true"
+      PRODUCT_KAFKA_DLT_REPLICATION_FACTOR: "1"
+    volumes:
+      - product-images:/tmp/robomart-images
     networks:
       - robomart-network
     deploy:
@@ -447,13 +454,13 @@ services:
         condition: service_healthy
       schema-registry:
         condition: service_healthy
-      redis:
-        condition: service_healthy
     environment:
+      ORDER_SERVICE_URL: http://order-service:8083
+      INVENTORY_SERVICE_CLIENT_SECRET: ${INVENTORY_SERVICE_CLIENT_SECRET:-}
+      INVENTORY_SERVICE_TOKEN_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/token
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-inventory:5432/inventory_db
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-robomart}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-robomart}
-      SPRING_DATA_REDIS_HOST: redis
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
     networks:
@@ -480,16 +487,10 @@ services:
     depends_on:
       postgres-payment:
         condition: service_healthy
-      kafka:
-        condition: service_healthy
-      schema-registry:
-        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payment:5432/payment_db
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-robomart}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-robomart}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
     networks:
       - robomart-network
     deploy:
@@ -512,6 +513,8 @@ services:
     container_name: robomart-notification-service
     profiles: ["app"]
     depends_on:
+      keycloak:
+        condition: service_healthy
       postgres-notification:
         condition: service_healthy
       kafka:
@@ -519,6 +522,9 @@ services:
       schema-registry:
         condition: service_healthy
     environment:
+      NOTIFICATION_SERVICE_CLIENT_SECRET: ${NOTIFICATION_SERVICE_CLIENT_SECRET:-}
+      NOTIFICATION_SERVICE_TOKEN_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/token
+      NOTIFICATION_SERVICE_AUTH_ENABLED: "true"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-notification:5432/notification_db
       SPRING_DATASOURCE_USERNAME: ${NOTIFICATION_DB_USER:-postgres}
       SPRING_DATASOURCE_PASSWORD: ${NOTIFICATION_DB_PASSWORD:-postgres}
@@ -526,6 +532,12 @@ services:
       SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
       KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
       API_GATEWAY_URL: http://api-gateway:8090
+      ORDER_SERVICE_URL: http://order-service:8083
+      PRODUCT_SERVICE_URL: http://product-service:8081
+      CART_SERVICE_URL: http://cart-service:8082
+      INVENTORY_SERVICE_URL: http://inventory-service:8084
+      PAYMENT_SERVICE_URL: http://payment-service:8086
+      NOTIFICATION_SERVICE_URL: http://notification-service:8087
     networks:
       - robomart-network
     deploy:
@@ -624,6 +636,7 @@ services:
           memory: 128M
 
 volumes:
+  product-images:
   postgres-data:
   elasticsearch-data:
   kafka-data:

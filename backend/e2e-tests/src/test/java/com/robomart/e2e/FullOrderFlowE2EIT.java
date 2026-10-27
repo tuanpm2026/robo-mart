@@ -18,7 +18,7 @@ class FullOrderFlowE2EIT {
         var api = E2eSupport.api();
         var product = E2eSupport.availableProduct();
         String stockBefore = E2eSupport.query("postgres", "inventory_db",
-                "SELECT available_quantity || '|' || reserved_quantity FROM inventory_items WHERE product_id=" + product.id());
+                "SELECT available_quantity || '|' || reserved_quantity || '|' || total_quantity FROM inventory_items WHERE product_id=" + product.id());
 
         await().atMost(45, TimeUnit.SECONDS).untilAsserted(() -> {
             var search = api.get().uri(builder -> builder.path("/api/v1/products/search")
@@ -75,12 +75,20 @@ class FullOrderFlowE2EIT {
                 "SELECT count(*) FROM stock_movements WHERE order_id='" + orderId + "' AND type='RESERVE' AND quantity=1"))
                 .isEqualTo("1");
 
-        String[] stockQuantities = stockBefore.split("\\|");
-        String reservedStock = (Integer.parseInt(stockQuantities[0]) - 1) + "|"
-                + (Integer.parseInt(stockQuantities[1]) + 1);
-        assertThat(E2eSupport.query("postgres", "inventory_db",
-                "SELECT available_quantity || '|' || reserved_quantity FROM inventory_items WHERE product_id=" + product.id()))
-                .as("Confirmed checkout reserves exactly one unit").isEqualTo(reservedStock);
+        String[] stockQuantities = stockBefore.split("[|]");
+        String committedStock = (Integer.parseInt(stockQuantities[0]) - 1) + "|" + stockQuantities[1]
+                + "|" + (Integer.parseInt(stockQuantities[2]) - 1);
+        await().atMost(60, TimeUnit.SECONDS).untilAsserted(() -> {
+            assertThat(E2eSupport.query("postgres", "inventory_db",
+                    "SELECT status FROM reservations WHERE order_id='" + orderId + "'")).isEqualTo("COMMITTED");
+            assertThat(E2eSupport.query("postgres", "inventory_db",
+                    "SELECT count(*) FROM stock_movements WHERE order_id='" + orderId + "' AND type='COMMIT' AND quantity=1"))
+                    .isEqualTo("1");
+            assertThat(E2eSupport.query("postgres", "inventory_db",
+                    "SELECT available_quantity || '|' || reserved_quantity || '|' || total_quantity FROM inventory_items WHERE product_id=" + product.id()))
+                    .as("Confirmed checkout commits exactly one unit").isEqualTo(committedStock);
+        });
+
 
         await().atMost(60, TimeUnit.SECONDS).pollInterval(2, TimeUnit.SECONDS).untilAsserted(() ->
                 assertThat(E2eSupport.query("postgres", "notification_db",
@@ -102,7 +110,22 @@ class FullOrderFlowE2EIT {
                 "SELECT count(*) FROM stock_movements WHERE order_id='" + orderId + "' AND type='RELEASE' AND quantity=1"))
                 .isEqualTo("1");
         assertThat(E2eSupport.query("postgres", "inventory_db",
-                "SELECT available_quantity || '|' || reserved_quantity FROM inventory_items WHERE product_id=" + product.id()))
-                .as("Cancellation restores original available/reserved stock").isEqualTo(stockBefore);
+                "SELECT available_quantity || '|' || reserved_quantity || '|' || total_quantity FROM inventory_items WHERE product_id=" + product.id()))
+                .as("Refunded cancellation restores original available/reserved/total stock").isEqualTo(stockBefore);
+
+        String admin = E2eSupport.adminToken();
+        var reconciliation = api.post().uri("/api/v1/admin/reconciliation/run")
+                .headers(headers -> headers.setBearerAuth(admin)).retrieve().toEntity(String.class);
+        assertThat(reconciliation.getStatusCode()).as("Real service-credential reconciliation").isEqualTo(HttpStatus.OK);
+        var results = E2eSupport.json(reconciliation.getBody()).path("data");
+        assertThat(results.size()).isEqualTo(2);
+        for (var result : results) {
+            assertThat(result.path("status").asString()).as("Reconciliation %s", result.path("type").asString())
+                    .isEqualTo("OK");
+        }
+        var audits = api.get().uri("/api/v1/admin/audit-logs?page=0&size=10")
+                .headers(headers -> headers.setBearerAuth(admin)).retrieve().toEntity(String.class);
+        assertThat(audits.getStatusCode()).as("Real service-credential audit aggregation").isEqualTo(HttpStatus.OK);
+        assertThat(E2eSupport.json(audits.getBody()).path("data").path("status").asString()).isEqualTo("OK");
     }
 }

@@ -1,0 +1,8 @@
+{
+  "number_of_shards": 1,
+  "number_of_replicas": 0,
+  "analysis": {
+    "char_filter": {"vietnamese_d": {"type": "mapping", "mappings": ["đ=>d", "Đ=>D"]}},
+    "analyzer": {"vi_fold": {"type": "custom", "char_filter": ["vietnamese_d"], "tokenizer": "standard", "filter": ["lowercase", "asciifolding"]}}
+  }
+}

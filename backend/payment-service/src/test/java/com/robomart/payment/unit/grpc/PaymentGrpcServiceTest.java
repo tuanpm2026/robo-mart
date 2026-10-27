@@ -210,7 +210,7 @@ class PaymentGrpcServiceTest {
         @DisplayName("should return success response when refund succeeds")
         void shouldReturnSuccessWhenRefundSucceeds() {
             // given
-            when(paymentService.refundPayment(eq(1L), eq("order-1"), any(BigDecimal.class), eq("Customer request")))
+            when(paymentService.refundPayment(eq(1L), eq("order-1"), any(BigDecimal.class), eq("USD"), eq("Customer request"), eq("")))
                     .thenReturn(new PaymentResult(true, "Payment refunded successfully", "1", "refund-xyz"));
 
             // when
@@ -230,7 +230,7 @@ class PaymentGrpcServiceTest {
         @DisplayName("should return NOT_FOUND when payment not found")
         void shouldReturnNotFoundWhenPaymentNotExists() {
             // given
-            when(paymentService.refundPayment(eq(999L), anyString(), any(), anyString()))
+            when(paymentService.refundPayment(eq(999L), anyString(), any(), anyString(), anyString(), anyString()))
                     .thenThrow(new ResourceNotFoundException("Payment", 999L));
 
             // when
@@ -247,7 +247,7 @@ class PaymentGrpcServiceTest {
         @DisplayName("should return FAILED_PRECONDITION when payment state invalid")
         void shouldReturnFailedPreconditionWhenStateInvalid() {
             // given
-            when(paymentService.refundPayment(eq(1L), anyString(), any(), anyString()))
+            when(paymentService.refundPayment(eq(1L), anyString(), any(), anyString(), anyString(), anyString()))
                     .thenThrow(new IllegalStateException("Cannot refund"));
 
             // when
@@ -285,5 +285,15 @@ class PaymentGrpcServiceTest {
             StatusRuntimeException ex = (StatusRuntimeException) throwableCaptor.getValue();
             assertThat(ex.getStatus().getCode()).isEqualTo(Status.Code.INVALID_ARGUMENT);
         }
+        @Test
+        void shouldMapRefundValidationFailureToInvalidArgument() {
+            when(paymentService.refundPayment(eq(1L), anyString(), any(), anyString(), anyString(), anyString()))
+                    .thenThrow(new IllegalArgumentException("Refund currency must match"));
+            grpcService.refundPayment(createRefundRequest("1", "order-1", "99.99", "test"), refundResponseObserver);
+            verify(refundResponseObserver).onError(throwableCaptor.capture());
+            assertThat(((StatusRuntimeException) throwableCaptor.getValue()).getStatus().getCode())
+                    .isEqualTo(Status.Code.INVALID_ARGUMENT);
+        }
+
     }
 }

@@ -20,20 +20,6 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
-  kafka:
-    bootstrap-servers: localhost:29092
-    properties:
-      schema.registry.url: http://localhost:8085
-    producer:
-      properties:
-        interceptor.classes: com.robomart.common.kafka.CorrelationIdKafkaProducerInterceptor
-    consumer:
-      properties:
-        interceptor.classes: com.robomart.common.kafka.CorrelationIdKafkaConsumerInterceptor
-    template:
-      observation-enabled: true
-    listener:
-      observation-enabled: true
   grpc:
     server:
       port: 9095
@@ -67,7 +53,7 @@ management:
         liveness:
           include: livenessState
         readiness:
-          include: readinessState,db,kafka
+          include: readinessState,db
   metrics:
     distribution:
       percentiles-histogram:

@@ -39,7 +39,8 @@ public class AuditAdminRestController {
             @RequestParam(defaultValue = "20") @Max(100) int size) {
         AuditAggregatorService.AggregatedAuditResponse result =
                 auditAggregatorService.getAuditLogs(actor, action, entityType, entityId, traceId, from, to, page, size);
-        return ResponseEntity.ok(new ApiResponse<>(result, getTraceId()));
+        return ResponseEntity.status("ERROR".equals(result.status()) ? 502 : 200)
+                .body(new ApiResponse<>(result, getTraceId()));
     }
 
     private String getTraceId() {

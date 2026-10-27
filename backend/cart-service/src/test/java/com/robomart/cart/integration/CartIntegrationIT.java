@@ -1,6 +1,10 @@
 package com.robomart.cart.integration;
 
 import java.util.UUID;
+import java.time.Duration;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,6 +49,9 @@ class CartIntegrationIT {
 
     @LocalServerPort
     private int port;
+
+    @Autowired
+    private StringRedisTemplate redis;
 
     private RestClient restClient;
     private final JsonMapper jsonMapper = JsonMapper.builder().build();
@@ -389,11 +396,10 @@ class CartIntegrationIT {
     }
 
     // === Story 2.2: TTL Expiry ===
-    // NOTE: getCart() saves the cart to reset TTL. Use Thread.sleep() instead of
-    // Awaitility polling (which would keep resetting TTL via GET requests).
+    // Poll Redis existence directly: HTTP GET intentionally refreshes TTL.
 
     @Test
-    void shouldExpireCartAfterTtl() throws InterruptedException {
+    void shouldExpireCartAfterTtl() {
         // TTL is set to 1 minute via @TestPropertySource
         // Do NOT call GET after creation — it would reset TTL
         var createResponse = restClient.post()
@@ -408,8 +414,11 @@ class CartIntegrationIT {
         String cartId = createResponse.getHeaders().getFirst("X-Cart-Id");
         assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
-        // Wait for TTL expiry (60s + 10s buffer)
-        Thread.sleep(70_000);
+        String key = "cart:g:" + cartId;
+        assertThat(redis.getExpire(key)).isBetween(50L, 60L);
+        redis.expire(key, Duration.ofMillis(100));
+        org.awaitility.Awaitility.await().atMost(Duration.ofSeconds(5))
+                .untilAsserted(() -> assertThat(redis.hasKey(key)).isFalse());
 
         // Single check — cart should be expired
         var expiredResponse = restClient.get()
@@ -601,8 +610,8 @@ class CartIntegrationIT {
     }
 
     @Test
-    void shouldResetTtlOnCartAccess() throws InterruptedException {
-        // TTL is 1 minute. Access at 40s resets TTL. Cart should survive past 80s total.
+    void shouldResetTtlOnCartAccess() {
+        // Shorten the real Redis TTL, then verify HTTP access restores the configured minute.
         var createResponse = restClient.post()
                 .uri("/api/v1/cart/items")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -614,8 +623,8 @@ class CartIntegrationIT {
 
         String cartId = createResponse.getHeaders().getFirst("X-Cart-Id");
 
-        // Wait 40 seconds, then access cart to reset TTL
-        Thread.sleep(40_000);
+        String key = "cart:g:" + cartId;
+        redis.expire(key, Duration.ofSeconds(2));
 
         var refreshResponse = restClient.get()
                 .uri("/api/v1/cart")
@@ -624,9 +633,7 @@ class CartIntegrationIT {
                 .toEntity(String.class);
         assertThat(refreshResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-        // Wait another 40 seconds (total 80s from creation, 40s from last access)
-        // Cart should still exist because TTL was reset at ~40s mark
-        Thread.sleep(40_000);
+        assertThat(redis.getExpire(key)).isBetween(50L, 60L);
 
         var stillAliveResponse = restClient.get()
                 .uri("/api/v1/cart")

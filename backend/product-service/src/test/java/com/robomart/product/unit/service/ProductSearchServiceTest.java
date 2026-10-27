@@ -233,9 +233,34 @@ class ProductSearchServiceTest {
     }
 
     @Test
+    void rejectsDeepPagingBeforeEitherDataSourceIsCalled() {
+        var request = new ProductSearchRequest(null, null, null, null, null, null);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> productSearchService.search(request, PageRequest.of(100, 100)))
+                .isInstanceOf(com.robomart.common.exception.ValidationException.class);
+        org.mockito.Mockito.verifyNoInteractions(elasticsearchOperations, productRepository);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.MethodSource("nonConnectionFailures")
+    void mappingAndAuthorizationErrorsCannotTurnIntoApparentlySuccessfulPostgresResults(RuntimeException failure) {
+        when(elasticsearchOperations.search(any(NativeQuery.class), eq(ProductDocument.class))).thenThrow(failure);
+        var request = new ProductSearchRequest("mapping", null, null, null, null, null);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> productSearchService.search(request, PageRequest.of(0, 20)))
+                .isSameAs(failure);
+        org.mockito.Mockito.verifyNoInteractions(productRepository);
+    }
+
+    static java.util.stream.Stream<RuntimeException> nonConnectionFailures() {
+        return java.util.stream.Stream.of(
+                new org.springframework.dao.DataIntegrityViolationException("invalid mapping/query"),
+                new org.springframework.data.elasticsearch.UncategorizedElasticsearchException(
+                        "unauthorized", 401, "{}", new IllegalStateException("credentials")));
+    }
+
+    @Test
     void shouldFallBackToPostgresWhenElasticsearchThrows() {
         when(elasticsearchOperations.search(any(NativeQuery.class), eq(ProductDocument.class)))
-                .thenThrow(new RuntimeException("Elasticsearch unavailable"));
+                .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("Elasticsearch unavailable", new java.net.ConnectException("refused")));
 
         Product product = createProduct(10L, "SKU-010", "Fallback Product", BigDecimal.valueOf(19.99), "FallbackBrand");
         Page<Product> page = new PageImpl<>(List.of(product));
@@ -257,7 +282,7 @@ class ProductSearchServiceTest {
     @Test
     void shouldReturnPagedResponseFromPostgresFallback() {
         when(elasticsearchOperations.search(any(NativeQuery.class), eq(ProductDocument.class)))
-                .thenThrow(new RuntimeException("ES down"));
+                .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("ES down", new java.net.SocketTimeoutException("read timeout")));
 
         Product p1 = createProduct(1L, "SKU-001", "Product A", BigDecimal.valueOf(10.00), "Brand1");
         Product p2 = createProduct(2L, "SKU-002", "Product B", BigDecimal.valueOf(20.00), "Brand2");

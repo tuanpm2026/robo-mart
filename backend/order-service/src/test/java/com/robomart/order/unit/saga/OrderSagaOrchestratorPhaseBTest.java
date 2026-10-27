@@ -6,8 +6,8 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -38,6 +38,7 @@ import com.robomart.order.repository.OutboxEventRepository;
 import com.robomart.order.repository.SagaAuditLogRepository;
 import com.robomart.order.saga.OrderSagaOrchestrator;
 import com.robomart.order.saga.SagaContext;
+import com.robomart.order.saga.SagaStepResult;
 import com.robomart.order.saga.steps.ProcessPaymentStep;
 import com.robomart.order.saga.steps.RefundPaymentStep;
 import com.robomart.order.saga.steps.ReleaseInventoryStep;
@@ -64,6 +65,8 @@ class OrderSagaOrchestratorPhaseBTest {
 
     @BeforeEach
     void setUp() {
+        lenient().when(reserveInventoryStep.execute(any())).thenReturn(SagaStepResult.NONE);
+        lenient().when(processPaymentStep.execute(any())).thenReturn(SagaStepResult.NONE);
         sagaProperties = new SagaProperties();
 
         orchestrator = new OrderSagaOrchestrator(
@@ -133,8 +136,8 @@ class OrderSagaOrchestratorPhaseBTest {
     @DisplayName("idempotencyKeyWrittenToAuditLog")
     void idempotencyKeyWrittenToAuditLog() {
         Order order = buildOrder();
-        doNothing().when(reserveInventoryStep).execute(any(SagaContext.class));
-        doNothing().when(processPaymentStep).execute(any(SagaContext.class));
+        doReturn(SagaStepResult.NONE).when(reserveInventoryStep).execute(any(SagaContext.class));
+        doReturn(SagaStepResult.NONE).when(processPaymentStep).execute(any(SagaContext.class));
 
         orchestrator.executeSaga(order);
 
@@ -148,10 +151,8 @@ class OrderSagaOrchestratorPhaseBTest {
     @DisplayName("timeoutOnReserveInventoryTriggersCompensationAndCancel")
     void timeoutOnReserveInventoryTriggersCompensationAndCancel() throws Exception {
         Order order = buildOrder();
-        doAnswer(inv -> {
-            Thread.sleep(5_000);
-            return null;
-        }).when(reserveInventoryStep).execute(any(SagaContext.class));
+        org.mockito.Mockito.doThrow(io.grpc.Status.DEADLINE_EXCEEDED.asRuntimeException())
+                .when(reserveInventoryStep).execute(any(SagaContext.class));
         sagaProperties.getSteps().getTimeouts().put("ReserveInventory", Duration.ofMillis(100));
         doNothing().when(releaseInventoryStep).compensate(any(SagaContext.class));
 
@@ -171,36 +172,22 @@ class OrderSagaOrchestratorPhaseBTest {
     void paymentTimeoutHoldsReservationForSafeReplay() throws Exception {
         Order order = buildOrder();
         order.setReservationId("reserved-before-payment");
-        var release = new java.util.concurrent.CountDownLatch(1);
-        doAnswer(inv -> {
-            release.await(2, java.util.concurrent.TimeUnit.SECONDS);
-            return null;
-        }).when(processPaymentStep).execute(any(SagaContext.class));
-        sagaProperties.getSteps().getTimeouts().put("ProcessPayment", Duration.ofMillis(100));
-        try {
-            orchestrator.executeSaga(order);
-            assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
-            assertThat(order.getReservationId()).isEqualTo("reserved-before-payment");
-            assertThat(order.getNextPaymentRetryAt()).isNotNull();
-            verify(releaseInventoryStep, never()).compensate(any());
-        } finally {
-            release.countDown();
-            orchestrator.shutdownStepExecutor();
-        }
+        org.mockito.Mockito.doThrow(io.grpc.Status.DEADLINE_EXCEEDED.asRuntimeException())
+                .when(processPaymentStep).execute(any(SagaContext.class));
+        orchestrator.executeSaga(order);
+        assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
+        assertThat(order.getReservationId()).isEqualTo("reserved-before-payment");
+        assertThat(order.getNextPaymentRetryAt()).isNotNull();
+        verify(releaseInventoryStep, never()).compensate(any());
     }
 
     @Test
     @DisplayName("reservationIdPersistedInStepSuccessTransaction")
     void reservationIdPersistedInStepSuccessTransaction() {
         Order order = buildOrder();
-        // Reserve step sets the reservationId on the context's order (as the real step does after
-        // the gRPC call returns).
-        doAnswer(inv -> {
-            SagaContext ctx = inv.getArgument(0);
-            ctx.getOrder().setReservationId("res-persisted-1");
-            return null;
-        }).when(reserveInventoryStep).execute(any(SagaContext.class));
-        doNothing().when(processPaymentStep).execute(any(SagaContext.class));
+        doReturn(new SagaStepResult("res-persisted-1", null))
+                .when(reserveInventoryStep).execute(any(SagaContext.class));
+        doReturn(SagaStepResult.NONE).when(processPaymentStep).execute(any(SagaContext.class));
 
         orchestrator.executeSaga(order);
 
@@ -215,8 +202,8 @@ class OrderSagaOrchestratorPhaseBTest {
     @DisplayName("retryCountWrittenToAuditLog")
     void retryCountWrittenToAuditLog() {
         Order order = buildOrder();
-        doNothing().when(reserveInventoryStep).execute(any(SagaContext.class));
-        doNothing().when(processPaymentStep).execute(any(SagaContext.class));
+        doReturn(SagaStepResult.NONE).when(reserveInventoryStep).execute(any(SagaContext.class));
+        doReturn(SagaStepResult.NONE).when(processPaymentStep).execute(any(SagaContext.class));
 
         orchestrator.executeSaga(order);
 

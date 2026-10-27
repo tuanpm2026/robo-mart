@@ -1,5 +1,18 @@
 package com.robomart.order.integration;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,8 +28,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -26,12 +43,14 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import com.robomart.common.dto.ApiResponse;
 import com.robomart.order.client.ProductCatalogClient;
 import com.robomart.order.client.ProductSnapshot;
+import com.robomart.order.config.SagaProperties;
 import com.robomart.order.entity.Order;
 import com.robomart.order.enums.OrderStatus;
 import com.robomart.order.repository.OrderRepository;
 import com.robomart.order.repository.OutboxEventRepository;
 import com.robomart.order.repository.SagaAuditLogRepository;
 import com.robomart.order.saga.OrderSagaOrchestrator;
+import com.robomart.order.saga.SagaRecoveryPolicy;
 import com.robomart.order.service.OrderService;
 import com.robomart.order.service.PendingPaymentRecoveryService;
 import com.robomart.proto.inventory.InventoryServiceGrpc;
@@ -42,35 +61,31 @@ import com.robomart.proto.inventory.ReserveInventoryResponse;
 import com.robomart.proto.payment.PaymentServiceGrpc;
 import com.robomart.proto.payment.ProcessPaymentRequest;
 import com.robomart.proto.payment.ProcessPaymentResponse;
-import com.robomart.test.PostgresContainerConfig;
+import org.testcontainers.containers.PostgreSQLContainer;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import io.grpc.Status;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /** Exercises the recovery worker's real transactions, row claims, state transitions and outbox. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = "saga.payment-recovery.enabled=false")
 @ActiveProfiles("test")
-@Import(PostgresContainerConfig.class)
+@Import(PendingPaymentRecoveryIT.Database.class)
 class PendingPaymentRecoveryIT {
 
-    @MockitoBean
+    @TestConfiguration(proxyBeanMethods = false)
+    static class Database {
+        @Bean
+        @ServiceConnection
+        PostgreSQLContainer<?> recoveryPostgres() {
+            return new PostgreSQLContainer<>("postgres:17-alpine").withDatabaseName("payment_recovery_test");
+        }
+    }
+
+    @MockitoBean(answers = Answers.RETURNS_SELF)
     private InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub;
 
-    @MockitoBean
+    @MockitoBean(answers = Answers.RETURNS_SELF)
     private PaymentServiceGrpc.PaymentServiceBlockingStub paymentStub;
 
     @MockitoBean
@@ -88,6 +103,8 @@ class PendingPaymentRecoveryIT {
     @Autowired private SagaAuditLogRepository sagaAuditLogRepository;
     @Autowired private CircuitBreakerRegistry circuitBreakerRegistry;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private SagaProperties sagaProperties;
+    @Autowired private SagaRecoveryPolicy recoveryPolicy;
 
     private final List<Long> createdIds = new ArrayList<>();
 
@@ -173,6 +190,34 @@ class PendingPaymentRecoveryIT {
             assertThat(request.getAmount().getAmount()).isEqualTo("25.00");
         });
         verify(inventoryStub, times(1)).reserveInventory(any(ReserveInventoryRequest.class));
+    }
+
+    @Test
+    void openBreakerRechecksPromptlyWithoutSendingAnotherCharge() {
+        when(paymentStub.processPayment(any(ProcessPaymentRequest.class)))
+                .thenThrow(Status.UNAVAILABLE.asRuntimeException());
+        Order pending = createPendingOrder();
+        circuitBreakerRegistry.circuitBreaker("payment-service").transitionToOpenState();
+        org.mockito.Mockito.clearInvocations(paymentStub);
+
+        assertThat(recoveryService.resumeNextPayment()).isTrue();
+
+        assertThat(orderRepository.findById(pending.getId()).orElseThrow().getStatus())
+                .isEqualTo(OrderStatus.PAYMENT_PENDING);
+        assertThat(jdbc.queryForObject("SELECT next_payment_retry_at <= CURRENT_TIMESTAMP + INTERVAL '5 seconds' "
+                + "AND next_payment_retry_at > CURRENT_TIMESTAMP FROM orders WHERE id=?",
+                Boolean.class, pending.getId())).isTrue();
+        verify(paymentStub, never()).processPayment(any(ProcessPaymentRequest.class));
+        verify(inventoryStub, never()).releaseInventory(any(ReleaseInventoryRequest.class));
+
+        resetBreakers();
+        makeDue(pending.getId());
+        doReturn(success("payment-after-breaker")).when(paymentStub).processPayment(any(ProcessPaymentRequest.class));
+        assertThat(recoveryService.resumeNextPayment()).isTrue();
+        verify(paymentStub).processPayment(org.mockito.ArgumentMatchers.argThat(request ->
+                request.getIdempotencyKey().equals(pending.getId().toString())));
+        assertThat(orderRepository.findById(pending.getId()).orElseThrow().getStatus())
+                .isEqualTo(OrderStatus.CONFIRMED);
     }
 
     @Test
@@ -363,7 +408,7 @@ class PendingPaymentRecoveryIT {
         orchestrator.handleDeadSaga(orderRepository.findById(pending.getId()).orElseThrow());
 
         assertThat(orderRepository.findById(pending.getId()).orElseThrow().getStatus()).isEqualTo(OrderStatus.PAYMENT_PROCESSING);
-        verify(paymentStub, times(1)).processPayment(any(ProcessPaymentRequest.class));
+        verify(paymentStub, times(3)).processPayment(any(ProcessPaymentRequest.class));
         verify(inventoryStub, never()).releaseInventory(any(ReleaseInventoryRequest.class));
     }
 
@@ -380,7 +425,7 @@ class PendingPaymentRecoveryIT {
         orchestrator.handleDeadSaga(staleSnapshot);
 
         assertThat(orderRepository.findById(pending.getId()).orElseThrow().getStatus()).isEqualTo(OrderStatus.CONFIRMED);
-        verify(paymentStub, times(1)).processPayment(any(ProcessPaymentRequest.class));
+        verify(paymentStub, times(3)).processPayment(any(ProcessPaymentRequest.class));
         verify(inventoryStub, never()).releaseInventory(any(ReleaseInventoryRequest.class));
     }
 
@@ -407,5 +452,42 @@ class PendingPaymentRecoveryIT {
     private static ProcessPaymentResponse success(String id) {
         return ProcessPaymentResponse.newBuilder().setSuccess(true).setPaymentId(id)
                 .setTransactionId("transaction-" + id).build();
+    }    @Test
+    void exhaustedPaymentBudgetStopsAutomaticCallsWithoutReleasingStock() {
+        when(paymentStub.processPayment(any())).thenThrow(Status.UNAVAILABLE.asRuntimeException());
+        Order pending = createPendingOrder();
+        reset(paymentStub);
+        when(paymentStub.processPayment(any())).thenThrow(Status.UNAVAILABLE.asRuntimeException());
+        int previous = sagaProperties.getPaymentRecovery().getMaxAttempts();
+        try {
+            sagaProperties.getPaymentRecovery().setMaxAttempts(1);
+            assertThat(recoveryService.resumeNextPayment()).isTrue();
+            assertThat(recoveryPolicy.isManualReview(pending.getId())).isTrue();
+            assertThat(recoveryService.resumeNextPayment()).isFalse();
+            assertThat(orderRepository.findById(pending.getId()).orElseThrow().getStatus())
+                    .isEqualTo(OrderStatus.PAYMENT_PENDING);
+            verify(paymentStub, times(3)).processPayment(org.mockito.ArgumentMatchers.argThat(request ->
+                    request.getIdempotencyKey().equals(pending.getId().toString())));
+            verify(inventoryStub, never()).releaseInventory(any());
+        } finally {
+            sagaProperties.getPaymentRecovery().setMaxAttempts(previous);
+        }
     }
+
+    @Test
+    void agedUncertainPaymentEscalatesBeforeAnotherRpc() {
+        when(paymentStub.processPayment(any())).thenThrow(Status.UNAVAILABLE.asRuntimeException());
+        Order pending = createPendingOrder();
+        reset(paymentStub);
+        jdbc.update("UPDATE orders SET created_at=now() - interval '2 hours' WHERE id=?", pending.getId());
+
+        assertThat(recoveryService.resumeNextPayment()).isTrue();
+        assertThat(recoveryPolicy.isManualReview(pending.getId())).isTrue();
+        assertThat(recoveryService.resumeNextPayment()).isFalse();
+        verify(paymentStub, never()).processPayment(any());
+        verify(inventoryStub, never()).releaseInventory(any());
+        assertThat(orderRepository.findById(pending.getId()).orElseThrow().getReservationId())
+                .isEqualTo("recovery-reservation");
+    }
+
 }

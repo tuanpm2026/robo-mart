@@ -7,5 +7,6 @@ package com.robomart.inventory.enums;
  */
 public enum ReservationStatus {
     RESERVED,
+    COMMITTED,
     RELEASED
 }
