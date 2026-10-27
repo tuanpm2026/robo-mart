@@ -11,9 +11,13 @@ import org.springframework.data.elasticsearch.annotations.FieldType;
 import org.springframework.data.elasticsearch.annotations.InnerField;
 import org.springframework.data.elasticsearch.annotations.MultiField;
 import org.springframework.data.elasticsearch.annotations.Setting;
+import org.springframework.data.elasticsearch.annotations.Mapping;
+import org.springframework.data.elasticsearch.annotations.WriteTypeHint;
 
-@Document(indexName = "products", createIndex = false)
-@Setting(shards = 1, replicas = 0)
+@Document(indexName = "products-search", createIndex = false, versionType = Document.VersionType.EXTERNAL,
+        writeTypeHint = WriteTypeHint.FALSE)
+@Setting(settingPath = "elasticsearch/products-settings.json")
+@Mapping(mappingPath = "elasticsearch/products-mapping.json")
 public class ProductDocument {
 
     @Id
@@ -23,12 +27,12 @@ public class ProductDocument {
     private String sku;
 
     @MultiField(
-            mainField = @Field(type = FieldType.Text, analyzer = "standard"),
+            mainField = @Field(type = FieldType.Text, analyzer = "vi_fold"),
             otherFields = @InnerField(suffix = "keyword", type = FieldType.Keyword)
     )
     private String name;
 
-    @Field(type = FieldType.Text, analyzer = "standard")
+    @Field(type = FieldType.Text, analyzer = "vi_fold")
     private String description;
 
     @Field(type = FieldType.Long)
@@ -40,7 +44,7 @@ public class ProductDocument {
     @Field(type = FieldType.Keyword)
     private String brand;
 
-    @Field(type = FieldType.Double)
+    @Field(type = FieldType.Scaled_Float, scalingFactor = 100)
     private BigDecimal price;
 
     @Field(type = FieldType.Double)
@@ -54,6 +58,25 @@ public class ProductDocument {
 
     @Field(type = FieldType.Date, format = DateFormat.epoch_millis)
     private Instant updatedAt;
+
+    @Field(type = FieldType.Boolean)
+    private boolean deleted;
+
+    @Field(type = FieldType.Long)
+    private Long sourceVersion;
+
+    public boolean isDeleted() {
+        return deleted;
+    }
+    public void setDeleted(boolean value) {
+        deleted = value;
+    }
+    public Long getSourceVersion() {
+        return sourceVersion;
+    }
+    public void setSourceVersion(Long value) {
+        sourceVersion = value;
+    }
 
     public ProductDocument() {
     }

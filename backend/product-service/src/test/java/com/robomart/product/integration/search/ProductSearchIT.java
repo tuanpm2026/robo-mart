@@ -27,7 +27,7 @@ import org.springframework.web.client.RestClient;
 import com.robomart.product.config.CacheConfig;
 import com.robomart.product.document.ProductDocument;
 import com.robomart.product.repository.ProductSearchRepository;
-import com.robomart.test.ElasticsearchTestSupport;
+import com.robomart.product.integration.ProductSearchTestSupport;
 import com.robomart.test.IntegrationTest;
 
 /**
@@ -82,7 +82,7 @@ class ProductSearchIT {
         // creates 'brand' as text, breaking term queries). The reset is race-tolerant: it waits for the
         // delete to propagate and tolerates a concurrent recreate, so it is safe regardless of which test
         // class ran before against the shared ES container.
-        ElasticsearchTestSupport.resetIndex(elasticsearchOperations, ProductDocument.class);
+        ProductSearchTestSupport.resetIndex(elasticsearchOperations, ProductDocument.class);
 
         // Save with RefreshPolicy.IMMEDIATE so the bulk index forces a refresh: the documents are
         // guaranteed queryable the instant save() returns, removing the near-real-time write-side gap

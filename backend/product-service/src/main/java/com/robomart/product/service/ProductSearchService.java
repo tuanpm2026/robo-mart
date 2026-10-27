@@ -91,7 +91,7 @@ public class ProductSearchService {
         }
     }
 
-    private boolean isConnectionFailure(Throwable failure) {
+    static boolean isConnectionFailure(Throwable failure) {
         for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
             if (cause instanceof java.net.SocketException || cause instanceof java.net.SocketTimeoutException
                     || cause instanceof java.net.UnknownHostException || cause instanceof java.net.http.HttpTimeoutException
@@ -120,6 +120,7 @@ public class ProductSearchService {
     private NativeQuery buildSearchQuery(ProductSearchRequest request, Pageable pageable) {
         return NativeQuery.builder()
                 .withQuery(q -> q.bool(b -> {
+                    b.filter(f -> f.term(t -> t.field("deleted").value(false)));
                     if (request.keyword() != null && !request.keyword().isBlank()) {
                         b.must(m -> m.multiMatch(mm -> mm
                                 .query(request.keyword())

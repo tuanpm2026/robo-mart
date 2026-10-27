@@ -350,6 +350,8 @@ services:
       SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
       ROBOMART_PRODUCT_IMAGE_BASE_URL: http://localhost:8080
       ROBOMART_PRODUCT_IMAGE_STORAGE_PATH: /tmp/robomart-images
+      PRODUCT_SEARCH_INITIALIZE_INDEX: "true"
+      PRODUCT_KAFKA_DLT_REPLICATION_FACTOR: "1"
     volumes:
       - product-images:/tmp/robomart-images
     networks:

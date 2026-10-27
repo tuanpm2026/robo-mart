@@ -54,6 +54,10 @@ spec:
           value: "https://api.tuanpm.xyz"
         - name: ROBOMART_PRODUCT_IMAGE_STORAGE_PATH
           value: /tmp/robomart-images
+        - name: PRODUCT_SEARCH_INITIALIZE_INDEX
+          value: "true"
+        - name: PRODUCT_KAFKA_DLT_REPLICATION_FACTOR
+          value: "1"
         volumeMounts:
         - name: tmp
           mountPath: /tmp

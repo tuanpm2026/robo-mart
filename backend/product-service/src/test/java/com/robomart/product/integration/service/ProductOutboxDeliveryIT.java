@@ -40,7 +40,7 @@ import com.robomart.product.service.OutboxPollingService;
 import io.micrometer.core.instrument.MeterRegistry;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
-        "spring.kafka.listener.auto-startup=false", "management.endpoint.health.validate-group-membership=false",
+        "spring.kafka.listener.auto-startup=false", "product.search.initialize-index=false", "management.endpoint.health.validate-group-membership=false",
         "outbox.initial-delay-ms=3600000", "outbox.publish-timeout=2s"})
 @ActiveProfiles("test")
 @Import(ProductOutboxDeliveryIT.Database.class)
