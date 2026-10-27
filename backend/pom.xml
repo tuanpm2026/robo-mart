@@ -21,6 +21,7 @@
     <properties>
         <java.version>25</java.version>
         <checkstyle.version>12.3.1</checkstyle.version>
+        <nullaway.version>0.13.8</nullaway.version>
         <spring-cloud.version>2025.1.4</spring-cloud.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <avro.version>1.12.2</avro.version>

@@ -165,4 +165,20 @@ class GlobalExceptionHandlerTest {
         assertThat(response.getBody()).isNotNull();
         assertThat(response.getBody().traceId()).isEqualTo("no-trace");
     }
+    @Test
+    void missingDomainMessageUsesTheHttpReasonInsteadOfNull() {
+        var response = handler.handleValidation(new ValidationException(null));
+        assertThat(response.getBody().error().message()).isEqualTo("Bad Request");
+    }
+
+    @Test
+    void missingValidationMessageHasANonNullFieldDetail() throws Exception {
+        var result = new BeanPropertyBindingResult(new Object(), "request");
+        result.addError(new FieldError("request", "name", null));
+        var parameter = new MethodParameter(
+                getClass().getDeclaredMethod("missingValidationMessageHasANonNullFieldDetail"), -1);
+        var response = handler.handleMethodArgumentNotValid(new MethodArgumentNotValidException(parameter, result));
+        assertThat(response.getBody().error().details()).containsEntry("name", "Invalid value");
+    }
+
 }

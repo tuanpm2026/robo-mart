@@ -52,4 +52,11 @@ class DtoTest {
         assertThat(paged.pagination().totalElements()).isEqualTo(55L);
         assertThat(paged.pagination().totalPages()).isEqualTo(6);
     }
+    @Test
+    void voidApiResponseRetainsItsNullableDataContract() {
+        var response = new ApiResponse<Void>(null, "trace-delete");
+        assertThat(response.data()).isNull();
+        assertThat(response.traceId()).isEqualTo("trace-delete");
+    }
+
 }

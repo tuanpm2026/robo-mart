@@ -2,6 +2,8 @@ package com.robomart.common.exception;
 
 import com.robomart.common.logging.ErrorCode;
 
+import org.jspecify.annotations.Nullable;
+
 public abstract class RoboMartException extends RuntimeException {
 
     private final ErrorCode errorCode;
@@ -11,7 +13,7 @@ public abstract class RoboMartException extends RuntimeException {
         this.errorCode = errorCode;
     }
 
-    protected RoboMartException(ErrorCode errorCode, String message, Throwable cause) {
+    protected RoboMartException(ErrorCode errorCode, String message, @Nullable Throwable cause) {
         super(message, cause);
         this.errorCode = errorCode;
     }

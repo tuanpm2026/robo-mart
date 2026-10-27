@@ -104,7 +104,7 @@ No new schema, REST response fields, proto/Avro contract or infrastructure chang
 | 4. Boot-managed Kafka factories, observations and DLT | Implemented; Product DLT/baggage and full Notification replay/archive tests passed; final reactor remains |
 | 5. Structured logging, baggage, remove duplicate tracing, OTLP setting, tracing test alignment | Implemented: Boot ECS, OTel in tests, scoped HTTP/Kafka baggage; actual propagation regression passed |
 | 6. Dockerfile alignment/layers/AOT/JVM flags/image digests | Pending; side-effect-free training profile required |
-| 7. Spring resilience primitives, gateway breaker, JSpecify/NullAway | Resilience implemented and verified; JSpecify/NullAway in progress |
+| 7. Spring resilience primitives, gateway breaker, JSpecify/NullAway | Implemented: Framework retries/concurrency, Gateway transport breaker, JSpecify contracts and compile-time NullAway errors |
 | 8. JWT issuer/audience and realm mapper alignment | Implemented issuer/audience/JWK configuration and realm mappers; real signed-token Gateway tests passed; E2E realm reconciliation still needs execution |
 | 9. Service-specific integration-test infrastructure | Implemented resource-specific fixtures; Order/Inventory/Notification runs no longer show forced fork shutdown |
 | 10. Remove active dev profile, Locale.ROOT, security coverage exclusions, Keycloak CORS origin and proxy spoofing | Implemented; role/CORS/forwarded-header regressions and coverage including config passed |
@@ -428,3 +428,12 @@ Gateway adds one circuit per backend across its HTTP routes. Transport failures/
 The Cloud 5.0.3 starter transitively includes resilience4j-spring-boot3, whose compatibility verifier correctly rejected Boot 4. That dependency is excluded and replaced with the existing managed resilience4j-spring-boot4 adapter; the verifier is not disabled. ./mvnw clean verify -pl :api-gateway -DskipITs -DskipE2ETests passed 62 tests and coverage, including real transport failure/open/half-open routing, preserved 502 body and the slow checkout bound. The first incompatible-adapter run is a failed intermediate run. Gateway tests also use Boot's tracing test module to avoid external reporting by default.
 
 The full Order recovery suite and final reactor/E2E remain required after the remaining platform work. No Wave 8 PR/merge has occurred.
+
+
+### Wave 8 null-safety compiler gate
+
+Common and Security production packages are explicitly JSpecify NullMarked. Nullable contracts describe real absence in DTO payloads, audit metadata, pre-persist entity fields, authentication and exception causes. Framework exception overrides match Spring's nullable body/return contracts; missing exception/validation messages receive stable safe defaults. Complex GrantedAuthority values without a string role are ignored, with a regression test.
+
+Both modules run NullAway 0.13.8 through Error Prone 2.51.0 during production compilation, at ERROR severity, with JSpecify mode. No blanket NullAway suppressions were introduced. Test compilation remains separate so intentional invalid-input tests exercise runtime behavior. Maven JVM exports in backend/.mvn/jvm.config support the javac plugin on JDK25. References: https://github.com/uber/NullAway/wiki/JSpecify-Support and https://github.com/uber/NullAway/releases/tag/v0.13.8.
+
+Executed ./mvnw -B -ntp clean verify -pl :common-lib,:security-lib -DskipITs -DskipE2ETests: Common44 + Security17 tests and coverage passed. A temporary production source in a marked package deliberately returned null: compilation failed with the expected NullAway error. The probe was removed and the clean positive verification repeated successfully. This demonstrates that the compiler gate is active, beyond merely declaring annotations.

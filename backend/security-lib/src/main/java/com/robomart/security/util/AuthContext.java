@@ -3,8 +3,10 @@ package com.robomart.security.util;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -28,7 +30,7 @@ public final class AuthContext {
      * @param authentication the current authentication, may be null
      * @return the user ID, or null if not a JWT authentication or the JWT lacks a 'sub' claim
      */
-    public static String getUserId(Authentication authentication) {
+    public static @Nullable String getUserId(@Nullable Authentication authentication) {
         if (authentication instanceof JwtAuthenticationToken jwtAuth) {
             Jwt jwt = jwtAuth.getToken();
             return jwt.getSubject();
@@ -42,7 +44,7 @@ public final class AuthContext {
      * @param authentication the current authentication, may be null
      * @return the email or null if not available
      */
-    public static String getEmail(Authentication authentication) {
+    public static @Nullable String getEmail(@Nullable Authentication authentication) {
         if (authentication instanceof JwtAuthenticationToken jwtAuth) {
             return jwtAuth.getToken().getClaimAsString("email");
         }
@@ -55,7 +57,7 @@ public final class AuthContext {
      * @param authentication the current authentication, may be null
      * @return set of authority strings (e.g., "ROLE_CUSTOMER"), empty if null
      */
-    public static Set<String> getRoles(Authentication authentication) {
+    public static Set<String> getRoles(@Nullable Authentication authentication) {
         if (authentication == null) {
             return Collections.emptySet();
         }
@@ -65,6 +67,7 @@ public final class AuthContext {
         }
         return authorities.stream()
                 .map(GrantedAuthority::getAuthority)
+                .filter(Objects::nonNull)
                 .collect(Collectors.toUnmodifiableSet());
     }
 
@@ -75,7 +78,7 @@ public final class AuthContext {
      * @param role           the role to check (e.g., "ROLE_CUSTOMER")
      * @return true if the role is present
      */
-    public static boolean hasRole(Authentication authentication, String role) {
+    public static boolean hasRole(@Nullable Authentication authentication, String role) {
         return getRoles(authentication).contains(role);
     }
 }

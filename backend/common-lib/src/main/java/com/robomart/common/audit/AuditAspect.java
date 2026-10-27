@@ -1,5 +1,6 @@
 package com.robomart.common.audit;
 
+import org.jspecify.annotations.Nullable;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -31,7 +32,7 @@ public class AuditAspect {
     }
 
     @Around("@annotation(auditable)")
-    public Object audit(ProceedingJoinPoint pjp, Auditable auditable) throws Throwable {
+    public @Nullable Object audit(ProceedingJoinPoint pjp, Auditable auditable) throws Throwable {
         Object result = pjp.proceed();
         try {
             String actor = extractActor();
@@ -59,7 +60,7 @@ public class AuditAspect {
         return "SYSTEM";
     }
 
-    private String extractEntityId(Auditable auditable, Object result, ProceedingJoinPoint pjp) {
+    private String extractEntityId(Auditable auditable, @Nullable Object result, ProceedingJoinPoint pjp) {
         if (result instanceof EntityIdProvider provider) {
             return provider.getEntityId();
         }

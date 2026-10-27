@@ -3,9 +3,11 @@ package com.robomart.common.exception;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import jakarta.validation.ConstraintViolationException;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -68,7 +70,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         log.warn("Validation error: {}", ex.getMessage());
         Map<String, String> fieldErrors = new HashMap<>();
         ex.getBindingResult().getFieldErrors()
-                .forEach(e -> fieldErrors.put(e.getField(), e.getDefaultMessage()));
+                .forEach(e -> fieldErrors.put(e.getField(), Objects.requireNonNullElse(e.getDefaultMessage(), "Invalid value")));
         var error = new ErrorDetail("VALIDATION_ERROR", "Request validation failed", fieldErrors);
         var response = new ApiErrorResponse(error, getTraceId(), Instant.now(), HttpStatus.BAD_REQUEST.value());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
@@ -79,8 +81,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         Map<String, String> fieldErrors = new HashMap<>();
         ex.getParameterValidationResults().forEach(result ->
                 result.getResolvableErrors().forEach(error ->
-                        fieldErrors.put(result.getMethodParameter().getParameterName(),
-                                error.getDefaultMessage())));
+                        fieldErrors.put(Objects.requireNonNullElse(result.getMethodParameter().getParameterName(),
+                                        "arg" + result.getMethodParameter().getParameterIndex()),
+                                Objects.requireNonNullElse(error.getDefaultMessage(), "Invalid value"))));
         var error = new ErrorDetail("VALIDATION_ERROR", "Request validation failed", fieldErrors);
         var response = new ApiErrorResponse(error, getTraceId(), Instant.now(), HttpStatus.BAD_REQUEST.value());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
@@ -95,13 +98,14 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     public ResponseEntity<ApiErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
         log.warn("Method not supported: {}", ex.getMessage());
-        var error = new ErrorDetail("METHOD_NOT_ALLOWED", ex.getMessage(), null);
+        var error = new ErrorDetail("METHOD_NOT_ALLOWED",
+                Objects.requireNonNullElse(ex.getMessage(), "Method not allowed"), null);
         var response = new ApiErrorResponse(error, getTraceId(), Instant.now(), HttpStatus.METHOD_NOT_ALLOWED.value());
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(response);
     }
 
     public ResponseEntity<ApiErrorResponse> handleNoResourceFound(NoResourceFoundException ex) {
-        var error = new ErrorDetail("NOT_FOUND", ex.getMessage(), null);
+        var error = new ErrorDetail("NOT_FOUND", Objects.requireNonNullElse(ex.getMessage(), "Not found"), null);
         var response = new ApiErrorResponse(error, getTraceId(), Instant.now(), HttpStatus.NOT_FOUND.value());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
@@ -124,7 +128,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @Override
-    protected ResponseEntity<Object> handleExceptionInternal(Exception ex, Object body, HttpHeaders headers,
+    protected @Nullable ResponseEntity<Object> handleExceptionInternal(Exception ex, @Nullable Object body, HttpHeaders headers,
             HttpStatusCode status, WebRequest request) {
         ApiErrorResponse problem;
         if (status.is5xxServerError()) {
@@ -152,7 +156,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     private ResponseEntity<ApiErrorResponse> buildResponse(HttpStatus status, RoboMartException ex) {
-        var error = new ErrorDetail(ex.getErrorCode().name(), ex.getMessage(), null);
+        var error = new ErrorDetail(ex.getErrorCode().name(),
+                Objects.requireNonNullElse(ex.getMessage(), status.getReasonPhrase()), null);
         var response = new ApiErrorResponse(error, getTraceId(), Instant.now(), status.value());
         return ResponseEntity.status(status).body(response);
     }

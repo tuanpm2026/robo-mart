@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 
+import org.jspecify.annotations.Nullable;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -16,29 +17,29 @@ public abstract class BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private @Nullable Long id;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt;
+    private @Nullable Instant createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
-    private Instant updatedAt;
+    private @Nullable Instant updatedAt;
 
-    public Long getId() {
+    public @Nullable Long getId() {
         return id;
     }
 
-    protected void setId(Long id) {
+    protected void setId(@Nullable Long id) {
         this.id = id;
     }
 
-    public Instant getCreatedAt() {
+    public @Nullable Instant getCreatedAt() {
         return createdAt;
     }
 
-    public Instant getUpdatedAt() {
+    public @Nullable Instant getUpdatedAt() {
         return updatedAt;
     }
 }
