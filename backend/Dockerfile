@@ -7,6 +7,7 @@ COPY .mvn .mvn
 COPY pom.xml pom.xml
 COPY config config
 COPY build-support/pom.xml build-support/pom.xml
+COPY outbox-lib/pom.xml outbox-lib/pom.xml
 COPY common-lib/pom.xml common-lib/pom.xml
 COPY security-lib/pom.xml security-lib/pom.xml
 COPY proto/pom.xml proto/pom.xml
@@ -22,6 +23,7 @@ COPY notification-service/pom.xml notification-service/pom.xml
 COPY e2e-tests/pom.xml e2e-tests/pom.xml
 RUN chmod +x mvnw
 COPY build-support/src build-support/src
+COPY outbox-lib/src outbox-lib/src
 COPY common-lib/src common-lib/src
 COPY security-lib/src security-lib/src
 COPY proto/src proto/src

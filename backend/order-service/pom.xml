@@ -17,6 +17,11 @@
     <dependencies>
         <dependency>
             <groupId>com.robomart</groupId>
+            <artifactId>outbox-lib</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.robomart</groupId>
             <artifactId>build-support</artifactId>
             <version>${project.version}</version>
         </dependency>

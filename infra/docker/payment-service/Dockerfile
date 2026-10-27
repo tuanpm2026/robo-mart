@@ -8,6 +8,7 @@ COPY backend/.mvn .mvn
 COPY backend/pom.xml pom.xml
 COPY backend/config config
 COPY backend/build-support/pom.xml build-support/pom.xml
+COPY backend/outbox-lib/pom.xml outbox-lib/pom.xml
 COPY backend/common-lib/pom.xml common-lib/pom.xml
 COPY backend/security-lib/pom.xml security-lib/pom.xml
 COPY backend/proto/pom.xml proto/pom.xml
@@ -23,6 +24,7 @@ COPY backend/notification-service/pom.xml notification-service/pom.xml
 COPY backend/e2e-tests/pom.xml e2e-tests/pom.xml
 RUN chmod +x mvnw
 COPY backend/build-support/src build-support/src
+COPY backend/outbox-lib/src outbox-lib/src
 COPY backend/common-lib/src common-lib/src
 COPY backend/security-lib/src security-lib/src
 COPY backend/proto/src proto/src

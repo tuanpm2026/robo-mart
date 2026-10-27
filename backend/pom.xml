@@ -54,6 +54,7 @@
 
     <modules>
         <module>build-support</module>
+        <module>outbox-lib</module>
         <module>common-lib</module>
         <module>security-lib</module>
         <module>proto</module>

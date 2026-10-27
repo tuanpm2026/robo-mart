@@ -1,6 +1,5 @@
 package com.robomart.product.service;
 
-import java.time.Instant;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
@@ -25,7 +24,6 @@ public class OutboxCleanupService {
     @Scheduled(cron = "${outbox.retention-cron:0 0 2 * * *}")
     @SchedulerLock(name = "ProductOutboxRetention", lockAtLeastFor = "PT1M", lockAtMostFor = "PT5M")
     public void cleanupOldEvents() {
-        int deleted = store.deletePublishedBefore(Instant.now().minus(properties.getRetention()));
-        meters.counter("robomart.outbox.retention.deleted").increment(deleted);
+        com.robomart.outbox.OutboxRetention.cleanup(store, properties, meters);
     }
 }

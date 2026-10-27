@@ -115,7 +115,7 @@ PR [#46](https://github.com/tuanpm2026/robo-mart/pull/46), squash commit `c6d726
 
 | Finding | Status / dependency |
 | --- | --- |
-| 1. Shared outbox library with ordering, claims, IDs, retention and metrics; document CDC | Pending; extract proven behavior from Wave 7 |
+| 1. Shared outbox library with ordering, claims, IDs, retention and metrics; document CDC | Implemented shared outbox engine/JDBC claims/settings/retention/identity; focused library and service checks passed; final wave gates remain |
 | 2. Confluent 8/KRaft and compatible consumer protocol | Pending; verify broker/client/schema compatibility |
 | 3. S3-compatible image storage and MinIO/AWS SDK v2 | Pending; provide migration/rollout path for existing images |
 | 4. Split common-core/common-web-starter, scoped errors and remove cart DB exclusions | Pending; preserve service security and configuration boundaries |
@@ -487,3 +487,10 @@ Read-only post-test SQL attributed only orders22–28 beyond the baseline21: all
 ### Wave 8 final post-fallback gate
 
 The final ./mvnw -B -ntp clean verify -DskipE2ETests passed all15 modules in6m35s after the E2E-discovered fallback fix:698 unit+287 IT=985, zero failures/errors/skips, all configured coverage gates passed. Product includes82 IT with the new real HTTP degraded-search regression. Explicit Checkstyle passed all15 modules; dependency installation then succeeded with tests intentionally skipped and the IDE compiler still suspended. No forced-fork-exit or Boot3 introspection warning remained. All3 isolated E2E/chaos tests had already passed on the same implementation, with verified refunds/stock cleanup. The final validation report consolidates evidence and limits. PR CI and squash merge remain.
+
+
+### Wave 9 shared outbox extraction
+
+outbox-lib now owns the unchanged PostgreSQL head-eligibility/SKIP LOCKED claim SQL, fencing, published-only10,000-row retention, duration validation and bounded asynchronous dispatcher. Product/Inventory/Order retain their schemas, event mapping and distributed scheduler locks. Persisted Product/Inventory UUIDs and Order's exact legacy UUID-name namespace/row derivation are preserved; no migration or event-ID rewrite is introduced. The library has no Kafka/web starter. CDC is documented as a future, separately designed handover; Kafka Connect is not added.
+
+Executed: ./mvnw -B -ntp clean verify -pl :outbox-lib -DskipE2ETests passed10 unit+6 PostgreSQL IT and coverage, including a deliberately held row lock, old-fence rejection and a10,001-row retention fixture. ./mvnw -B -ntp test -pl :product-service,:order-service,:inventory-service -DskipE2ETests passed358 unit tests. Selected outbox verification passed Product103unit+11IT and coverage; Order180unit+7selectedIT passed its assertions but correctly failed the76% partial-suite module coverage gate. No gate was weakened. Full ./mvnw -B -ntp clean verify -pl :order-service,:inventory-service -DskipE2ETests then passed Order180unit+57IT and Inventory75unit+49IT, both coverage gates, without forced fork exits. Shared dependencies were installed before module-only testing; the image renderer includes the new module.
