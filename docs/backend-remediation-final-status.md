@@ -64,6 +64,8 @@ The original continuation plan is preserved in [the wave roadmap](backend-remedi
 
 ## Wave9 data infrastructure
 
+CI/merge record: [PR #47](https://github.com/tuanpm2026/robo-mart/pull/47). All local18-module reactor, style, image, schema, frontend and4 isolated E2E gates passed; see the linked validation report for counts.
+
 | Finding | Status | Evidence |
 | --- | --- | --- |
 | Shared outbox library: ordering, locks/fences, IDs, retention, metrics, CDC option | Done | outbox-lib; direct PostgreSQL tests and all3 owning service suites; legacy IDs/schema unchanged |

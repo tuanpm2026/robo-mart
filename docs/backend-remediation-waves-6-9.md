@@ -113,12 +113,14 @@ PR [#46](https://github.com/tuanpm2026/robo-mart/pull/46), squash commit `c6d726
 
 ## Wave 9: implementation verified on `wave9/data-infra`
 
+[PR #47](https://github.com/tuanpm2026/robo-mart/pull/47) is the authoritative CI and squash-merge record. All local gates are complete; auto-deploy is disabled.
+
 | Finding | Status / dependency |
 | --- | --- |
-| 1. Shared outbox library with ordering, claims, IDs, retention and metrics; document CDC | Implemented shared outbox engine/JDBC claims/settings/retention/identity; focused and full reactor/library/service gates passed; all local image/E2E checks passed; PR CI remains |
-| 2. Confluent 8/KRaft and compatible consumer protocol | Implemented8.2.4 with Kafka client4.2.2; retained-data upgrade/IDs/offsets verified; Avro/group migration and Notification consumer-mode suites passed; real retained-data E2E passed; PR CI remains |
-| 3. S3-compatible image storage and MinIO/AWS SDK v2 | Implemented SDK2.57.4, patched source-built MinIO fixtures, public URLs, transaction-safe cleanup and explicit copy/checksum migration; full reactor/style gates passed; all local image/E2E checks passed; PR CI remains |
-| 4. Split common-core/common-web-starter, scoped errors and remove cart DB exclusions | Implemented conditional auto-configuration, domain-owned wire codes, optional persistence API and Cart exclusions removed; focused and full reactor/common tests/coverage passed; all local image/E2E checks passed; PR CI remains |
+| 1. Shared outbox library with ordering, claims, IDs, retention and metrics; document CDC | Implemented shared outbox engine/JDBC claims/settings/retention/identity; focused and full reactor/library/service gates passed; all local image/E2E checks passed; CI/merge record: PR #47 |
+| 2. Confluent 8/KRaft and compatible consumer protocol | Implemented8.2.4 with Kafka client4.2.2; retained-data upgrade/IDs/offsets verified; Avro/group migration and Notification consumer-mode suites passed; real retained-data E2E passed; CI/merge record: PR #47 |
+| 3. S3-compatible image storage and MinIO/AWS SDK v2 | Implemented SDK2.57.4, patched source-built MinIO fixtures, public URLs, transaction-safe cleanup and explicit copy/checksum migration; full reactor/style gates passed; all local image/E2E checks passed; CI/merge record: PR #47 |
+| 4. Split common-core/common-web-starter, scoped errors and remove cart DB exclusions | Implemented conditional auto-configuration, domain-owned wire codes, optional persistence API and Cart exclusions removed; focused and full reactor/common tests/coverage passed; all local image/E2E checks passed; CI/merge record: PR #47 |
 
 ### Order recovery/outbox continuation
 
@@ -511,9 +513,9 @@ The first full18-module verification passed748unit+298IT. The final repeated `./
 
 Real MinIO tests passed upload/delete/transaction rollback/cache behavior, dry-run, conditional copy, checksum verification, idempotent repeat, conflict refusal without overwrite, source retention, symlink/invalid-key guards and302 legacy URL redirects with anonymous object reads. The first redirect test followed302 automatically and was corrected to assert the response and destination separately. Common modules passed conditional/no-scan/optional-security/domain-code tests; Cart's real integration context asserts no Hibernate/datasource/entity manager/Flyway and no exclusions. Product's repository-root CD/source image built, including NullAway and AOT; its packaged migration CLI ran network-disabled with the old, independently verified empty E2E volume mounted read-only.
 
-Both frontends passed327 tests/type-check/build/format; proto lint/breaking, five Kafka guard tests, Compose renders, all3 actual Kustomize renders and generated Dockerfile drift passed. All4 final real E2E/chaos tests and actual image/AOT checks passed; PR CI/merge remain. The [complete finding checklist](backend-remediation-final-status.md) distinguishes implemented findings from explicit future/operational boundaries; the [Wave9 validation report](../_bmad-output/test-artifacts/wave9-data-infra-validation-2026-10-27.md) records commands and per-module counts.
+Both frontends passed327 tests/type-check/build/format; proto lint/breaking, five Kafka guard tests, Compose renders, all3 actual Kustomize renders and generated Dockerfile drift passed. All4 final real E2E/chaos tests and actual image/AOT checks passed; CI/merge record: [PR #47](https://github.com/tuanpm2026/robo-mart/pull/47). The [complete finding checklist](backend-remediation-final-status.md) distinguishes implemented findings from explicit future/operational boundaries; the [Wave9 validation report](../_bmad-output/test-artifacts/wave9-data-infra-validation-2026-10-27.md) records commands and per-module counts.
 
 
 ### Wave9 isolated E2E completed
 
-All7 production image targets built and ran healthy as UID1001 with mapped AOT caches. Kafka feature/audience reconciliation repeated with0 updates; all8 application groups were confirmed Consumer/Stable. All4 real E2E/chaos tests passed (checkout/refund, S3 public upload/deletion and both chaos); the60second automatic recovery budget is unchanged. Orders29–35 were cancelled, fully refunded179.99 each and released; stock quantities returned exactly to the baseline, image rows returned to123, and prior orders/images remained intact. Teardown retained all volumes and left unrelated MySQL running. Final PR CI and squash merge remain.
+All7 production image targets built and ran healthy as UID1001 with mapped AOT caches. Kafka feature/audience reconciliation repeated with0 updates; all8 application groups were confirmed Consumer/Stable. All4 real E2E/chaos tests passed (checkout/refund, S3 public upload/deletion and both chaos); the60second automatic recovery budget is unchanged. Orders29–35 were cancelled, fully refunded179.99 each and released; stock quantities returned exactly to the baseline, image rows returned to123, and prior orders/images remained intact. Teardown retained all volumes and left unrelated MySQL running. CI and squash-merge record: [PR #47](https://github.com/tuanpm2026/robo-mart/pull/47).

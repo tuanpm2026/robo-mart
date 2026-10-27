@@ -1,6 +1,6 @@
 # Wave 9 data infrastructure validation — 2026-10-27
 
-Status: implementation and all local reactor/style/image/E2E verification complete. PR CI and merge are tracked in the associated Wave9 pull request. Branch `wave9/data-infra`.
+Status: implementation and all local reactor/style/image/E2E verification complete. PR CI and merge are tracked in [PR #47](https://github.com/tuanpm2026/robo-mart/pull/47). Branch `wave9/data-infra`.
 
 ## Changes and operational boundaries
 
@@ -52,7 +52,7 @@ The actual repository-root CD/source Product image built successfully, including
 | proto | 8 | 0 | n/a |
 | security-lib | 17 | 0 | 85.3% |
 
-Final isolated image/E2E evidence follows below; PR CI/merge remain the final repository gate. Operator rollout prerequisites remain in `docs/kafka-8-upgrade.md` and `docs/product-object-storage.md`; deployment is not automated in the user's current environment.
+Final isolated image/E2E evidence follows below; CI/merge evidence is the linked PR record. Operator rollout prerequisites remain in `docs/kafka-8-upgrade.md` and `docs/product-object-storage.md`; deployment is not automated in the user's current environment.
 
 
 ## Final retained-data E2E
