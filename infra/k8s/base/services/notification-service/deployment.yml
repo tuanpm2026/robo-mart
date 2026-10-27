@@ -8,10 +8,8 @@ metadata:
 spec:
   replicas: 2
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0  # Zero-downtime: never kill a pod before new one is ready
+    # Raw DLQ records and V6 replay states require stopping old notification consumers first.
+    type: Recreate
   selector:
     matchLabels:
       app: notification-service

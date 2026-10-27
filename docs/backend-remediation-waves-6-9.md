@@ -62,7 +62,7 @@ Aborted worktrees were removed after preserving tracked diffs, untracked files a
 | Payment 3 | Partial-refund accounting, currency and INVALID_ARGUMENT | Implemented: cumulative refunded_amount, per-request refund receipts/keys, currency validation and correct gRPC mapping |
 | Payment 4 | Page unbounded query | Implemented: reconciliation page/size <=100 with hasNext; existing payment-list payload fields retained |
 | Notification 1 | Authenticated admin clients, least-privilege GET roles, bounded pages, error results | Pending |
-| Notification 2 | Full DLQ record storage, byte replay, source-offset dedup and exponential backoff | Pending |
+| Notification 2 | Full DLQ record storage, byte replay, source-offset dedup and exponential backoff | Implemented: exact key/value/header capture, source-position dedup, durable replay claims, Kafka ACK before REPLAYED, exponential retry; preview-only history requires manual review |
 | Notification 3 | Reconciliation lock, processed-event retention, HTTP timeouts and bounded name cache | Pending |
 | Product 1 | Versioned explicit index/mapping/alias, Vietnamese analyzer and scaled price | Pending |
 | Product 2 | External versions including durable deletion semantics | Pending |
@@ -215,3 +215,22 @@ The payment integration fixtures now start PostgreSQL only because this service 
 
 
 Inventory publisher follow-up: `./mvnw clean verify -pl :inventory-service -DskipE2ETests` passed with 75 unit + 48 integration tests and coverage. A real Kafka stock-reserved round trip now verifies the persisted outbox UUID and payload. Test-only background polling starts after an hour; delivery tests explicitly invoke the real poller, keeping unrelated persistence contexts isolated. Cached-context JVM teardown still exceeds Surefire's grace period; test success does not imply that warning is resolved.
+
+
+### Notification DLQ capture and actual replay
+
+Notification V6 preserves complete Kafka key/value bytes, headers (including duplicate names/null values), source topic/partition/offset/timestamp, source event identity and consumer group. Source-position uniqueness replaces aggregate-key deduplication: separate failures for the same aggregate are not discarded. Raw deserializers capture bytes before decoding, including Kafka's ByteBuffer key path. DLT recovery forwards those bytes without Avro reserialization, so corrupt envelopes and binary/null keys or values remain recoverable. Main retries use exponential backoff; the terminal DLQ monitor retries persistence indefinitely with a bounded backoff and never swallows database failures.
+
+Individual and batch retry share one path: commit a two-minute UUID claim, publish the exact original record/partition/timestamp and business headers without a database transaction, then conditionally mark REPLAYED only after Kafka acknowledgement. Unknown acknowledgement retains the lease; known broker failure releases it for retry. A stale owner cannot acknowledge a newer claim. Concurrency is bounded to ten deliveries, batch selection to 25 IDs and acknowledgement waits to ten seconds by default. Late completion uses an executor with Micrometer context plus the captured caller trace/MDC; database work never blocks Kafka's I/O callback thread. REPLAYED means broker acknowledgement, not proof of downstream business processing.
+
+Legacy rows only contain previews and cannot be reconstructed safely. V6 preserves them and changes their old PENDING/RESOLVED/FAILED_RETRY labels to LEGACY_REVIEW, including records that the old fake retry marked resolved without publishing. They remain visible, and automatic replay is rejected. Admin lists use a closed projection so paged reads do not load raw message bodies. Binary key display uses Base64; the original BYTEA stays unchanged. The admin UI distinguishes pending acknowledgement, broker replay and legacy review, disables unavailable/busy replay, polls active replay claims and displays the actual acknowledged batch count.
+
+Rollout: stop old notification consumers/writers before V6 and the raw DLT format. The notification K8s Deployment uses Recreate. Existing legacy DLT records are archived for manual review rather than being guessed/reencoded. No historical failed record is deleted by this migration. Monitor pending/legacy records after rollout; do not mistake broker replay for successful notification delivery.
+
+Executed on JDK25 with background Java compilation suspended/resumed during Maven:
+
+- `./mvnw clean verify -pl :notification-service -DskipE2ETests` — success, 113 unit + 14 integration tests, coverage passed. Real isolated Kafka/Postgres tests verify exact Avro and malformed-byte capture, original-consumer replay, acknowledgement state, binary keys, source dedup, concurrent claims, lease fencing, null payloads, propagated DB failure/recovery and legacy migration. Existing notification delivery and alert suites also pass.
+- `./mvnw checkstyle:check -pl :notification-service` — success, existing warnings remain.
+- Admin: `npm run type-check --workspace=admin-dashboard`; `npm run test:unit --workspace=admin-dashboard -- --run` (86 passed); `npm run build --workspace=admin-dashboard` — passed. The changed UI/API/store/test files were formatted with the lockfile's Prettier.
+
+Failed intermediate checks caught repository-package projection coupling, Kafka's ByteBuffer key overload, PostgreSQL NUL text handling and Spring repository translation of domain replay-state exceptions. These were corrected; no architecture, test or coverage gate was disabled. Scheduling/listener switches now allow persistence-only integration tests without background HTTP/Kafka activity. Notification authentication/reconciliation/retention work is still pending before Wave 7 can merge.

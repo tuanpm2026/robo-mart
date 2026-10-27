@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { canReplayDlqEvent } from '@/api/dlqApi'
 import { useToast } from 'primevue/usetoast'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -15,9 +16,9 @@ const retryProgress = ref(0)
 const isRetryingAll = ref(false)
 
 function statusSeverity(status: string): 'warn' | 'success' | 'danger' | undefined {
-  if (status === 'PENDING') return 'warn'
-  if (status === 'RESOLVED') return 'success'
-  if (status === 'FAILED_RETRY') return 'danger'
+  if (status === 'PENDING' || status === 'REPLAYING') return 'warn'
+  if (status === 'REPLAYED') return 'success'
+  if (status === 'LEGACY_REVIEW') return 'danger'
   return undefined
 }
 
@@ -27,8 +28,13 @@ function formatDate(iso: string): string {
 
 async function retry(id: number) {
   try {
-    await store.retryEvent(id)
-    toast.add({ severity: 'success', summary: 'Event processed', life: 3000 })
+    const result = await store.retryEvent(id)
+    toast.add({
+      severity: result.acknowledged ? 'success' : 'info',
+      summary: result.acknowledged ? 'Replay acknowledged' : 'Replay acknowledgement pending',
+      detail: result.message,
+      life: 4000,
+    })
   } catch {
     toast.add({ severity: 'error', summary: 'Still failing — investigate', life: 3000 })
   }
@@ -38,14 +44,13 @@ async function retryAll() {
   isRetryingAll.value = true
   retryProgress.value = 0
   try {
-    const total = store.events.filter((e) => e.status === 'PENDING').length
     retryProgress.value = 50
-    await store.retryAll()
+    const message = await store.retryAll()
     retryProgress.value = 100
     toast.add({
       severity: 'success',
-      summary: 'Retry All Complete',
-      detail: `${total} events processed`,
+      summary: 'Replay batch finished',
+      detail: message,
       life: 3000,
     })
   } catch {
@@ -55,6 +60,15 @@ async function retryAll() {
     retryProgress.value = 0
   }
 }
+let refreshTimer: ReturnType<typeof setInterval> | undefined
+onMounted(() => {
+  refreshTimer = setInterval(() => {
+    if (store.events.some((event) => event.status === 'REPLAYING')) void store.loadEvents()
+  }, 5000)
+})
+onUnmounted(() => {
+  if (refreshTimer) clearInterval(refreshTimer)
+})
 </script>
 
 <template>
@@ -65,7 +79,7 @@ async function retryAll() {
         label="Retry All"
         icon="pi pi-refresh"
         :loading="isRetryingAll"
-        :disabled="store.events.filter((e) => e.status === 'PENDING').length === 0"
+        :disabled="!store.events.some((event) => canReplayDlqEvent(event))"
         @click="retryAll"
       />
     </div>
@@ -99,7 +113,7 @@ async function retryAll() {
           <Button
             label="Retry"
             size="small"
-            :disabled="data.status !== 'PENDING'"
+            :disabled="!canReplayDlqEvent(data)"
             @click="retry(data.id)"
           />
         </template>
@@ -108,13 +122,14 @@ async function retryAll() {
         <div class="dlq-detail">
           <p><strong>Error Class:</strong> {{ data.errorClass }}</p>
           <p><strong>Original Topic:</strong> {{ data.originalTopic }}</p>
+          <p v-if="!data.replayable">Original bytes unavailable. Review this record manually.</p>
           <pre>{{ data.payloadPreview }}</pre>
         </div>
       </template>
     </DataTable>
 
     <div v-else-if="!store.isLoading" class="dlq-manager__empty">
-      No unprocessed events — all events processed successfully
+      No events awaiting review or replay
     </div>
   </div>
 </template>

@@ -31,7 +31,9 @@ public class TestKafkaProducerConfig {
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
         props.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
-        return new DefaultKafkaProducerFactory<>(props);
+        var factory = new DefaultKafkaProducerFactory<String, Object>(props);
+        factory.setPhysicalCloseTimeout(2);
+        return factory;
     }
 
     @Bean

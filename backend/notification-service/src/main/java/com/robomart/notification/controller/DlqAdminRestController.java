@@ -16,7 +16,7 @@ import io.micrometer.tracing.Tracer;
 import com.robomart.common.dto.ApiResponse;
 import com.robomart.common.dto.PagedResponse;
 import com.robomart.common.dto.PaginationMeta;
-import com.robomart.notification.entity.FailedEvent;
+import com.robomart.notification.dto.FailedEventSummary;
 import com.robomart.notification.service.FailedEventService;
 import com.robomart.notification.web.DlqEventResponse;
 
@@ -44,7 +44,7 @@ public class DlqAdminRestController {
             return ResponseEntity.badRequest().build();
         }
         int cappedSize = Math.min(size, MAX_PAGE_SIZE);
-        Page<FailedEvent> events = failedEventService.listEvents(page, cappedSize);
+        Page<FailedEventSummary> events = failedEventService.listEvents(page, cappedSize);
         Page<DlqEventResponse> mapped = events.map(this::toResponse);
         PagedResponse<DlqEventResponse> response = new PagedResponse<>(
                 mapped.getContent(),
@@ -57,11 +57,14 @@ public class DlqAdminRestController {
     @PostMapping("/{id}/retry")
     public ResponseEntity<ApiResponse<String>> retrySingle(@PathVariable Long id) {
         try {
-            failedEventService.retryEvent(id);
-            return ResponseEntity.ok(new ApiResponse<>("Event processed", getTraceId()));
+            boolean acknowledged = failedEventService.retryEvent(id);
+            return ResponseEntity.status(acknowledged ? 200 : 202).body(new ApiResponse<>(
+                    acknowledged ? "Original record replayed to Kafka" : "Replay acknowledgement pending", getTraceId()));
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(404)
                     .body(new ApiResponse<>("Event not found: " + id, getTraceId()));
+        } catch (FailedEventService.ReplayUnavailableException e) {
+            return ResponseEntity.status(503).body(new ApiResponse<>(e.getMessage(), getTraceId()));
         } catch (IllegalStateException e) {
             return ResponseEntity.status(400)
                     .body(new ApiResponse<>(e.getMessage(), getTraceId()));
@@ -71,10 +74,10 @@ public class DlqAdminRestController {
     @PostMapping("/retry-all")
     public ResponseEntity<ApiResponse<String>> retryAll() {
         int count = failedEventService.retryAll();
-        return ResponseEntity.ok(new ApiResponse<>(count + " events processed", getTraceId()));
+        return ResponseEntity.ok(new ApiResponse<>(count + " original records replayed to Kafka", getTraceId()));
     }
 
-    private DlqEventResponse toResponse(FailedEvent event) {
+    private DlqEventResponse toResponse(FailedEventSummary event) {
         return new DlqEventResponse(
                 event.getId(),
                 event.getEventType(),
@@ -86,7 +89,8 @@ public class DlqAdminRestController {
                 event.getRetryCount(),
                 event.getStatus(),
                 event.getFirstFailedAt(),
-                event.getLastAttemptedAt());
+                event.getLastAttemptedAt(),
+                event.isRawRecordAvailable(), event.getReplayClaimUntil());
     }
 
     private String getTraceId() {
