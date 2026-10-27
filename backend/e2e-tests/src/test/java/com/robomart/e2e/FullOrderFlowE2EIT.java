@@ -20,7 +20,7 @@ class FullOrderFlowE2EIT {
         String stockBefore = E2eSupport.query("postgres", "inventory_db",
                 "SELECT available_quantity || '|' || reserved_quantity || '|' || total_quantity FROM inventory_items WHERE product_id=" + product.id());
 
-        await().atMost(45, TimeUnit.SECONDS).untilAsserted(() -> {
+        await().pollInterval(3, TimeUnit.SECONDS).atMost(45, TimeUnit.SECONDS).untilAsserted(() -> {
             var search = api.get().uri(builder -> builder.path("/api/v1/products/search")
                             .queryParam("keyword", product.name()).queryParam("size", 100).build())
                     .retrieve().toEntity(String.class);

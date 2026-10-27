@@ -49,7 +49,7 @@ The initial whole-reactor run failed only the Order404 Pact media-type expectati
 
 ## Final reactor and style gates
 
-After the Pact correction, ./mvnw -B -ntp clean verify -DskipE2ETests passed all15 modules in6m20s. Maven execution summaries and individual XML testcase elements agree: **697 unit +286 integration tests =983**, zero failures/errors/skips. Three JUnit nested-class XML suite headers undercount their testcase elements, so counts use actual testcase elements and Maven execution summaries rather than summing only root attributes. Every configured coverage gate passed, including security/configuration classes. There was no forced-fork-exit warning.
+After the Pact and reactive-adapter corrections, ./mvnw -B -ntp clean verify -DskipE2ETests passed all15 modules in6m29s. Maven execution summaries and individual XML testcase elements agree: **698 unit +286 integration tests =984**, zero failures/errors/skips. Three JUnit nested-class XML suite headers undercount their testcase elements, so counts use actual testcase elements and Maven execution summaries rather than summing only root attributes. Every configured coverage gate passed, including security/configuration classes. There was no forced-fork-exit warning.
 
 | Module | Unit | Integration |
 | --- | ---: | ---: |
@@ -60,7 +60,7 @@ After the Pact correction, ./mvnw -B -ntp clean verify -DskipE2ETests passed all
 | Events | 2 | 3 |
 | Product | 103 | 81 |
 | Cart | 45 | 40 |
-| Gateway | 62 | 0 |
+| Gateway | 63 | 0 |
 | Order | 180 | 57 |
 | Inventory | 75 | 49 |
 | Payment | 44 | 34 |
@@ -73,4 +73,15 @@ After the Pact correction, ./mvnw -B -ntp clean verify -DskipE2ETests passed all
 
 The full source reactor image (backend/Dockerfile target api-gateway), Product/Gateway per-service CD paths, and all7 prebuilt isolated application images built successfully. Source builds include actual Linux proto/gRPC generation and active NullAway; they intentionally skip tests because the host reactor already runs them.
 
-The first actual Gateway main smoke loaded AOT-linked classes and reached liveness UP, but logged a Boot3 class reference in the unused Cloud5.0.3 blocking adapter's annotation metadata. Gateway now excludes only that blocking auto-configuration. Reactive-only factory selection and working Micrometer circuit metrics are covered by a new test; ./mvnw -B -ntp clean verify -pl :api-gateway -DskipITs -DskipE2ETests passed63 tests and coverage. Rebuilt CD/prebuilt Gateway images again loaded AOT-linked classes and reached liveness UP with no Boot3 introspection warning. The final reactor is repeated after this correction.
+The first actual Gateway main smoke loaded AOT-linked classes and reached liveness UP, but logged a Boot3 class reference in the unused Cloud5.0.3 blocking adapter's annotation metadata. Gateway now excludes only that blocking auto-configuration. Reactive-only factory selection and working Micrometer circuit metrics are covered by a new test; ./mvnw -B -ntp clean verify -pl :api-gateway -DskipITs -DskipE2ETests passed63 tests and coverage. Rebuilt CD/prebuilt Gateway images again loaded AOT-linked classes and reached liveness UP with no Boot3 introspection warning. The final repeated reactor passed698 unit+286 IT, all coverage gates and Checkstyle; no Boot3 introspection or forced-fork-exit warnings remained.
+
+
+## Retained-data E2E findings
+
+The first guarded stack start stopped before applications because the retained isolated realm lacked Inventory's Wave7 service client. A one-time guarded fixture provisioner verified the exact Compose labels/loopback Keycloak, created only the missing Inventory client from the committed fixture and its intended service-account grant, and preserved existing identities/secrets/data. The normal audience-only reconciler then completed. Both service identities received canonical-issuer/robomart-api tokens with exactly their intended role; Inventory could read the minimal internal order-status endpoint (200) and could not list admin orders (403). No production realm/cluster was changed. The reconciler remains audience-only and refuses missing clients.
+
+All13 containers became healthy. Read-only probes verified UID1001 and an actually memory-mapped nonempty AOT cache in every application JVM (under Compose's init process). The first E2E run nevertheless failed all3 tests before creating an order: the stack lacked SPRING_ELASTICSEARCH_URIS, and PostgreSQL degraded search mapped lazy images after its repository transaction closed under OSIV=false. Aggressive100ms search polling exhausted anonymous rate-limit tokens and obscured the initial500 with429. No test-created order existed beyond the baseline21.
+
+Product's fallback now opens a read-only TransactionTemplate only around the PostgreSQL query and DTO mapping; Elasticsearch I/O stays outside it. Existing degraded-mode filter semantics and connection-only fallback classification are unchanged. A new real HTTP ProductSearchFallbackIT forces an Elasticsearch connection failure, asserts no database transaction during that I/O, and verifies category/image DTO fields from PostgreSQL with OSIV disabled. Unit cache fixtures now supply the newly explicit transaction-manager dependency. ./mvnw -B -ntp clean verify -pl :product-service -Dit.test=ProductSearchFallbackIT -DskipE2ETests passed103 unit+1 targeted IT and coverage. The initial attempt found the missing transaction-manager mock in the cache-only unit context; it was corrected before the successful run.
+
+E2E explicitly addresses Elasticsearch through container DNS. Its45second search budget is unchanged, with3second polling that respects the actual anonymous token rate. New Product source/prebuilt images and the retained-data E2E stack are being verified before the final post-fix reactor/CI gate.

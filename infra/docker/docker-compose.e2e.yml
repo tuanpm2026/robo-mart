@@ -166,6 +166,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product_db
       ROBOMART_PRODUCT_IMAGE_BASE_URL: http://localhost:18080
       ROBOMART_PRODUCT_IMAGE_STORAGE_PATH: /tmp/robomart-images
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
       PRODUCT_SEARCH_INITIALIZE_INDEX: "true"
       PRODUCT_KAFKA_DLT_REPLICATION_FACTOR: "1"
     volumes:
