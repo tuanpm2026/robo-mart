@@ -16,7 +16,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.internals.RecordHeaders;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
@@ -26,6 +25,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.ConfluentKafkaContainer;
@@ -42,7 +42,6 @@ import io.confluent.kafka.serializers.KafkaAvroSerializer;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = "notification.scheduling.enabled=false")
 @ActiveProfiles("test")
-@Import(TestKafkaProducerConfig.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Testcontainers
 class DlqRoutingIT {
@@ -58,11 +57,12 @@ class DlqRoutingIT {
     }
 
     @Autowired private KafkaTemplate<String, Object> kafka;
-    @Autowired @Qualifier("rawRecordKafkaTemplate") private KafkaTemplate<byte[], byte[]> rawKafka;
+    @Autowired private KafkaTemplate<byte[], byte[]> rawKafka;
     @Autowired private FailedEventRepository events;
     @Autowired private FailedEventService replay;
     @Value("${spring.kafka.properties.schema.registry.url}") private String registry;
     @MockitoBean private NotificationService notifications;
+    @MockitoSpyBean private com.robomart.notification.service.DlqRecordStore archive;
 
     private FailedEvent awaitEvent(String eventId) {
         await().atMost(40, TimeUnit.SECONDS).untilAsserted(() -> assertThat(events.findAll().stream()
@@ -100,6 +100,30 @@ class DlqRoutingIT {
                 .sendOrderConfirmedNotifications(order));
         assertThat(events.findById(saved.getId()).orElseThrow().getStatus()).isEqualTo("REPLAYED");
         assertThatThrownBy(() -> replay.retryEvent(saved.getId())).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void terminalArchiveRetriesUnavailablePersistenceWithoutLosingTheRecord() throws Exception {
+        String order = UUID.randomUUID().toString();
+        String eventId = UUID.randomUUID().toString();
+        doThrow(new IllegalStateException("business failure awaiting archive"))
+                .when(notifications).sendOrderConfirmedNotifications(order);
+        var attempts = new java.util.concurrent.atomic.AtomicInteger();
+        org.mockito.Mockito.doAnswer(call -> {
+            if (attempts.incrementAndGet() <= 2) {
+                throw new org.springframework.dao.DataAccessResourceFailureException("archive unavailable");
+            }
+            return call.callRealMethod();
+        }).when(archive).capture(org.mockito.ArgumentMatchers.any());
+        var event = OrderStatusChangedEvent.newBuilder().setEventId(eventId).setEventType("ORDER_STATUS_CHANGED")
+                .setAggregateId(order).setAggregateType("Order").setTimestamp(Instant.now()).setVersion(1)
+                .setOrderId(order).setPreviousStatus("PAYMENT_PROCESSING").setNewStatus("CONFIRMED").build();
+        kafka.send("order.order.status-changed", order, event).get(10, TimeUnit.SECONDS);
+
+        FailedEvent saved = awaitEvent(eventId);
+        assertThat(saved.isRawRecordAvailable()).isTrue();
+        assertThat(attempts.get()).isEqualTo(3);
+        assertThat(events.findAll().stream().filter(e -> eventId.equals(e.getSourceEventId()))).hasSize(1);
     }
 
     @Test

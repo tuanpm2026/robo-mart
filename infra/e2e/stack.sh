@@ -26,6 +26,8 @@ case "${1:-}" in
   up)
     # Dependencies first, then Spring contexts one at a time.
     "${COMPOSE[@]}" up -d --wait --wait-timeout 600 postgres redis elasticsearch kafka schema-registry keycloak
+    # Startup imports do not update an existing realm; preserve data and reconcile only test mappers.
+    python3 "$ROOT/infra/e2e/configure-realm.py"
     for service in "${SERVICES[@]}"; do
       "${COMPOSE[@]}" up -d --no-deps --wait --wait-timeout 480 "$service"
     done

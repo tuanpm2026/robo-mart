@@ -11,23 +11,19 @@ public class KeycloakContainerConfig {
 
     private static final KeycloakContainer KEYCLOAK =
             new KeycloakContainer("quay.io/keycloak/keycloak:26.1.4")
-                    .withRealmImportFile("test-realm.json")
-                    .withReuse(true);
+                    .withRealmImportFile("test-realm.json");
 
     static {
         KEYCLOAK.start();
     }
 
     @Bean
-    public KeycloakContainer keycloakContainer() {
-        return KEYCLOAK;
-    }
-
-    @Bean
-    DynamicPropertyRegistrar keycloakProperties(KeycloakContainer keycloak) {
+    DynamicPropertyRegistrar keycloakProperties() {
         return registry -> {
             registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri",
-                () -> keycloak.getAuthServerUrl() + "/realms/robomart");
+                () -> KEYCLOAK.getAuthServerUrl() + "/realms/robomart");
+            registry.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri",
+                () -> KEYCLOAK.getAuthServerUrl() + "/realms/robomart/protocol/openid-connect/certs");
         };
     }
 }

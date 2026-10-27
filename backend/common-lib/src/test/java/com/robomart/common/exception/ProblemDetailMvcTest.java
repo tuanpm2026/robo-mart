@@ -35,8 +35,9 @@ class ProblemDetailMvcTest {
 
     @BeforeEach
     void setUp() {
+        Tracer tracer = mock(Tracer.class);
         mvc = MockMvcBuilders.standaloneSetup(new Requests())
-                .setControllerAdvice(new GlobalExceptionHandler(mock(Tracer.class))).build();
+                .setControllerAdvice(new GlobalExceptionHandler(tracer), new SecurityExceptionHandler(tracer)).build();
     }
 
     static Stream<Arguments> invalidRequests() {

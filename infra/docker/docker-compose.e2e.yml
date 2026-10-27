@@ -10,6 +10,8 @@ x-app-env: &app-env
   SPRING_DATA_REDIS_HOST: redis
   SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
   SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
+  KEYCLOAK_ISSUER_URI: http://localhost:18180/realms/robomart
+  KEYCLOAK_AUDIENCE: robomart-api
   KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
   # Order and cart price items server-side from product-service.
   PRODUCT_SERVICE_URL: http://product-service:8081

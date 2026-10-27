@@ -18,9 +18,32 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
     properties:
       schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8085}
-    consumer:
+      http.connect.timeout.ms: 1000
+      http.read.timeout.ms: 5000
+      max.retries: 0
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
       properties:
-        interceptor.classes: com.robomart.common.kafka.CorrelationIdKafkaConsumerInterceptor
+        auto.register.schemas: true
+        max.block.ms: 1000
+        request.timeout.ms: 10000
+        delivery.timeout.ms: 30000
+    consumer:
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      max-poll-records: 10
+      key-deserializer: com.robomart.notification.kafka.RawKeyDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: com.robomart.notification.kafka.RawAvroDeserializer
+        specific.avro.reader: true
+        max.poll.interval.ms: 600000
+    admin:
+      operation-timeout: 5s
+      auto-create: ${spring.kafka.listener.auto-startup:true}
     template:
       observation-enabled: true
     listener:
@@ -29,9 +52,16 @@ spring:
     oauth2:
       resourceserver:
         jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/robomart}
+          audiences: ${KEYCLOAK_AUDIENCE:robomart-api}
           jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/robomart/protocol/openid-connect/certs}
   lifecycle:
     timeout-per-shutdown-phase: 25s
+
+logging:
+  structured:
+    format:
+      console: ${LOGGING_STRUCTURED_FORMAT_CONSOLE:ecs}
 
 server:
   port: 8087
@@ -39,6 +69,10 @@ server:
 
 management:
   tracing:
+    baggage:
+      remote-fields: correlationId,X-Correlation-Id
+      correlation:
+        fields: correlationId,X-Correlation-Id
     sampling:
       probability: ${TRACING_SAMPLE_RATE:1.0}
   opentelemetry:

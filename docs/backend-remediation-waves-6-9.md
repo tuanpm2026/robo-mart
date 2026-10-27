@@ -98,16 +98,16 @@ No new schema, REST response fields, proto/Avro contract or infrastructure chang
 
 | Finding | Status / dependency |
 | --- | --- |
-| 1. Modern Checkstyle engine bound to validate | Pending; fix actual violations before enabling the gate |
-| 2. OSIV off, virtual threads, explicit pools and gRPC executor | Pending; verify detached access and executor behavior |
-| 3. ProblemDetail and Spring 4xx handling | Pending; inspect frontend field usage before changing errors |
-| 4. Boot-managed Kafka factories, observations and DLT | Pending |
-| 5. Structured logging, baggage, remove duplicate tracing, OTLP setting, tracing test alignment | Pending |
+| 1. Modern Checkstyle engine bound to validate | Implemented: Checkstyle 12.3.1 runs at validate; existing advisory severity retained |
+| 2. OSIV off, virtual threads, explicit pools and gRPC executor | Implemented configuration; Order/Inventory and real HTTP/gRPC virtual-thread checks passed; final full-service validation remains |
+| 3. ProblemDetail and Spring 4xx handling | Implemented RFC 9457 with legacy error envelope; real MVC 400/403/405/415 tests passed |
+| 4. Boot-managed Kafka factories, observations and DLT | Implemented; Product DLT/baggage and full Notification replay/archive tests passed; final reactor remains |
+| 5. Structured logging, baggage, remove duplicate tracing, OTLP setting, tracing test alignment | Implemented: Boot ECS, OTel in tests, scoped HTTP/Kafka baggage; actual propagation regression passed |
 | 6. Dockerfile alignment/layers/AOT/JVM flags/image digests | Pending; side-effect-free training profile required |
 | 7. Spring resilience primitives, gateway breaker, JSpecify/NullAway | Pending |
-| 8. JWT issuer/audience and realm mapper alignment | Pending; explicitly handle internal/external issuer hostnames |
-| 9. Service-specific integration-test infrastructure | Pending |
-| 10. Remove active dev profile, Locale.ROOT, security coverage exclusions, Keycloak CORS origin and proxy spoofing | Pending |
+| 8. JWT issuer/audience and realm mapper alignment | Implemented issuer/audience/JWK configuration and realm mappers; real signed-token Gateway tests passed; E2E realm reconciliation still needs execution |
+| 9. Service-specific integration-test infrastructure | Implemented resource-specific fixtures; Order/Inventory/Notification runs no longer show forced fork shutdown |
+| 10. Remove active dev profile, Locale.ROOT, security coverage exclusions, Keycloak CORS origin and proxy spoofing | Implemented; role/CORS/forwarded-header regressions and coverage including config passed |
 
 ## Wave 9: pending
 
@@ -391,3 +391,27 @@ Executed JDK25 validation for this foundation (not the complete Wave 8 gate):
 ./mvnw clean verify -pl :common-lib -DskipITs -DskipE2ETests passed 54 tests and coverage after the ProblemDetail change, including six real MVC status/content-type/envelope/header cases.
 
 Kafka/observability, remaining runtime validation, image/JVM/AOT work, resilience, null-safety and JWT hardening continue before a Wave 8 PR. No Wave 8 merge or completed-wave claim is made by these focused results.
+
+
+### Wave 8 Boot-managed Kafka, tracing and JWT boundaries
+
+Kafka services now explicitly depend on spring-boot-starter-kafka (the previous direct spring-kafka dependency did not provide Boot 4's Kafka auto-configuration). No application constructs a producer or consumer factory. Spring Kafka properties retain acknowledgement, poll and Schema Registry bounds; Boot owns factories, templates, admin clients and observation settings. Small producer customizers install Avro/raw-byte dispatch serializers without discarding configured interceptors/security/connection properties. Framework-supported listener customization retains retry/DLT behavior. Notification's terminal listener overrides its deserializers at the KafkaListener declaration; container-default properties alone were overwritten during listener creation and the initial routing test caught that error. Its terminal error handler treats every archive failure as retryable, with indefinite exponential backoff capped at 30 seconds, so conversion defects cannot acknowledge an unarchived record either.
+
+Boot's ECS structured console logging replaces the custom logback/logstash configuration in every application, including Gateway. Micrometer remote baggage fields correlationId and X-Correlation-Id propagate through HTTP/Kafka and correlate into their corresponding MDC fields. The legacy HTTP filter and batch consumer/producer interceptors are removed; absent correlation baggage is not fabricated, while normal trace IDs remain available. Incoming legacy X-Correlation-Id remains a baggage field; a generated legacy response header is no longer part of this instrumentation. Frontend does not read that header. Outbox context snapshots continue to propagate scopes. Native Boot gRPC observation remains authoritative.
+
+Test-support uses the production OTel bridge rather than Brave. OTel's Kotlin exporter and Testcontainers' duct-tape requested incompatible legacy JetBrains annotation versions; dependency management aligns them to 17.0.0 without relaxing convergence. AutoConfigureTracing(export=false) also disables propagation in Boot 4's test context. The real propagation test therefore enables tracing and disables only the OTLP exporter (management.tracing.export.otlp.enabled=false), avoiding external reporting while preserving the actual propagators. A Kafka poll processes queued records with distinct and then absent baggage; assertions verify per-record baggage/MDC, real trace scopes, no leaked caller MDC and a configured producer interceptor invoked three times. HTTP asserts baggage/MDC and a real trace ID on a virtual thread. Version references: https://docs.spring.io/spring-boot/reference/actuator/tracing.html and https://docs.spring.io/spring-boot/api/java/org/springframework/boot/micrometer/tracing/test/autoconfigure/AutoConfigureTracing.html.
+
+All JWT resource servers now validate the canonical issuer and robomart-api audience while fetching JWKs through an independent explicit URI. Compose uses the public localhost:8180 issuer and Docker-internal keycloak:8180 key endpoint; E2E uses public localhost:18180 with the same private key endpoint; K8s retains auth.tuanpm.xyz as its canonical issuer. No token issuer is rewritten to an internal hostname. Cart still delegates identity to the validated Gateway and retains anonymous guest carts; this change does not introduce a new Cart JWT resource server. Notification no longer creates a JWK-only decoder: Boot's validating decoder is shared by HTTP and STOMP. The main and test realms attach an access-token-only audience mapper; ID-token audience semantics and least-privilege roles are unchanged. Existing live realms must receive the mapper before enabling audience enforcement; no live realm was changed.
+
+E2E now has a guarded audience-only reconciliation script after Keycloak readiness and before app startup. It verifies the exact isolated project/service labels and loopback port, updates only the five known fixture clients' audience mapper, keeps credentials/tokens in memory, and preserves existing realm/order/image data. This avoids deleting persistent test volumes just because startup import does not update a realm. Python compilation, shell syntax, Compose core/app and E2E configuration, and all 3 Kustomize renders passed; the updated reconciliation script still awaits execution in the final E2E stack.
+
+Executed JDK25 checks for this continuation:
+
+- Dependency installation for common/security/proto/events/test-support passed after convergence alignment; tests skipped for this installation only.
+- ./mvnw clean test -pl :product-service,:cart-service,:inventory-service,:order-service,:notification-service -DskipE2ETests — 519 unit tests passed before later JWT/test additions.
+- ./mvnw clean verify -pl :product-service -Dit.test=ProductDltIT,PlatformBaggageIT -DskipE2ETests — the Product DLT cases passed, but early baggage fixture runs failed (stale auto-configuration metadata, a self-referencing test listener topic, then disabled test propagation). Those causes were corrected; none is counted as passing full verification.
+- ./mvnw clean verify -pl :product-service -Dit.test=PlatformBaggageIT -DskipE2ETests — 103 unit + 2 real HTTP/Kafka IT passed, including coverage.
+- ./mvnw clean verify -pl :common-lib,:security-lib,:api-gateway -DskipITs -DskipE2ETests — 41 Common + 16 Security + 59 Gateway tests and all expanded coverage gates passed. Gateway uses a local JWK server and real signed tokens to reject wrong/missing issuer, wrong/missing audience, expired tokens and invalid signatures, while accepting the valid token. Zero JWK requests occurred at startup and before the first bearer token.
+- ./mvnw clean verify -pl :notification-service -DskipE2ETests — 116 unit + 22 IT and coverage passed after correcting terminal deserializer selection. Tests exercise full Avro/raw malformed-byte archive, replay/deduplication, and archive failure twice followed by successful persistence with no lost record. No forced fork-exit warning occurred.
+
+Full final reactor, remaining runtime checks and E2E will be recorded after resilience, null-safety and image/JVM changes. No completed Wave 8 claim is made by these focused results.

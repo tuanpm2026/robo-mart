@@ -18,8 +18,8 @@ import com.robomart.security.converter.KeycloakRealmRoleConverter;
  *
  * <p>The WebSocket handshake ({@code /ws/**}) is permitted here — STOMP CONNECT frames are
  * authenticated separately by {@link JwtStompInterceptor}. The {@link org.springframework.security
- * .oauth2.jwt.JwtDecoder} bean defined in {@link WebSocketConfig} is reused for HTTP token
- * validation (the resource-server auto-config backs off since that bean exists).
+ * .oauth2.jwt.JwtDecoder} is managed by Boot and shared with STOMP, including issuer and
+ * audience validation. An explicit JWK URI retains lazy key fetching without issuer discovery.
  */
 @Configuration
 @EnableWebSecurity

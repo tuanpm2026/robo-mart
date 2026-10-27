@@ -169,18 +169,18 @@ cd backend
 Sau khi dependencies đã healthy, chạy **mỗi lệnh trong một terminal riêng**, tại `backend/`:
 
 ```bash
-./mvnw spring-boot:run -pl :product-service
-./mvnw spring-boot:run -pl :cart-service
-./mvnw spring-boot:run -pl :inventory-service
-./mvnw spring-boot:run -pl :payment-service
-./mvnw spring-boot:run -pl :order-service
-./mvnw spring-boot:run -pl :notification-service
-./mvnw spring-boot:run -pl :api-gateway
+./mvnw spring-boot:run -pl :product-service -Dspring-boot.run.profiles=dev
+./mvnw spring-boot:run -pl :cart-service -Dspring-boot.run.profiles=dev
+./mvnw spring-boot:run -pl :inventory-service -Dspring-boot.run.profiles=dev
+./mvnw spring-boot:run -pl :payment-service -Dspring-boot.run.profiles=dev
+./mvnw spring-boot:run -pl :order-service -Dspring-boot.run.profiles=dev
+./mvnw spring-boot:run -pl :notification-service -Dspring-boot.run.profiles=dev
+./mvnw spring-boot:run -pl :api-gateway -Dspring-boot.run.profiles=dev
 ```
 
 `install` trước giúp các service resolve shared modules từ Maven local repository. Khi sửa shared module, build/install lại module đó và dependencies liên quan. Flyway áp dụng migrations lúc service dùng PostgreSQL khởi động; Hibernate dùng `ddl-auto: validate` trong cấu hình dev đã kiểm tra.
 
-Seed data nằm ở `src/main/resources/db/seed/` của Product, Inventory, Order. Cấu hình mặc định `dev` chỉ chạy migrations; profiles `demo`/`test` bổ sung seed locations. Để chạy có dữ liệu mẫu, thêm `-Dspring-boot.run.profiles=dev,demo` vào lệnh chạy từng service Product, Inventory, Order; ví dụ `./mvnw spring-boot:run -pl :product-service -Dspring-boot.run.profiles=dev,demo`. Bảo đảm product ID khớp inventory ID và kiểm tra nội dung seed trước khi dùng DB có dữ liệu cần giữ.
+Seed data nằm ở `src/main/resources/db/seed/` của Product, Inventory, Order. Không còn tự kích hoạt profile `dev`; các lệnh trên chọn profile này rõ ràng. Profile `dev` chỉ chạy migrations; profiles `demo`/`test` bổ sung seed locations. Để chạy có dữ liệu mẫu, thêm `-Dspring-boot.run.profiles=dev,demo` vào lệnh chạy từng service Product, Inventory, Order; ví dụ `./mvnw spring-boot:run -pl :product-service -Dspring-boot.run.profiles=dev,demo`. Bảo đảm product ID khớp inventory ID và kiểm tra nội dung seed trước khi dùng DB có dữ liệu cần giữ.
 
 ### 4.4 Chạy hai frontend
 

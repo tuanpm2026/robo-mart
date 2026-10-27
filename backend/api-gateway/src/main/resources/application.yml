@@ -6,7 +6,9 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8180/realms/robomart
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/robomart}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/robomart/protocol/openid-connect/certs}
+          audiences: ${KEYCLOAK_AUDIENCE:robomart-api}
 
   data:
     redis:
@@ -30,6 +32,11 @@ spring:
 
   lifecycle:
     timeout-per-shutdown-phase: 25s
+
+logging:
+  structured:
+    format:
+      console: ${LOGGING_STRUCTURED_FORMAT_CONSOLE:ecs}
 
 server:
   forward-headers-strategy: none
@@ -64,6 +71,10 @@ management:
   server:
     port: 8090
   tracing:
+    baggage:
+      remote-fields: correlationId,X-Correlation-Id
+      correlation:
+        fields: correlationId,X-Correlation-Id
     sampling:
       probability: ${TRACING_SAMPLE_RATE:1.0}
   opentelemetry:

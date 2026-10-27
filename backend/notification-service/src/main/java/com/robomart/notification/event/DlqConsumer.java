@@ -16,7 +16,10 @@ public class DlqConsumer {
     }
 
     @KafkaListener(topics = "notification.dlq", groupId = "notification-dlq-monitor-group",
-            containerFactory = "dlqListenerContainerFactory")
+            containerFactory = "dlqListenerContainerFactory", properties = {
+                "key.deserializer=org.apache.kafka.common.serialization.ByteArrayDeserializer",
+                "value.deserializer=org.apache.kafka.common.serialization.ByteArrayDeserializer"
+            })
     public void onDlqMessage(ConsumerRecord<byte[], byte[]> record) {
         store.capture(record);
     }

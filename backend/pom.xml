@@ -24,7 +24,6 @@
         <spring-cloud.version>2025.1.4</spring-cloud.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <avro.version>1.12.2</avro.version>
-        <logstash-logback-encoder.version>9.0</logstash-logback-encoder.version>
         <confluent.version>7.9.10</confluent.version>
         <resilience4j.version>2.4.0</resilience4j.version>
         <shedlock.version>7.10.1</shedlock.version>
@@ -70,6 +69,12 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Align Testcontainers' duct-tape with OTel's Kotlin HTTP exporter. -->
+            <dependency>
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>17.0.0</version>
+            </dependency>
             <!-- First imported BOM wins: keep Resilience4j 2.4 aligned with its Boot 4 starter. -->
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
@@ -169,11 +174,6 @@
             </dependency>
 
             <!-- Logstash Logback Encoder (structured JSON logging) -->
-            <dependency>
-                <groupId>net.logstash.logback</groupId>
-                <artifactId>logstash-logback-encoder</artifactId>
-                <version>${logstash-logback-encoder.version}</version>
-            </dependency>
 
             <!-- Convergence pins for gRPC transitive deps -->
             <dependency>

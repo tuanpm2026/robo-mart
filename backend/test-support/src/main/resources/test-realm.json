@@ -33,7 +33,9 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["CUSTOMER"]
+      "realmRoles": [
+        "CUSTOMER"
+      ]
     },
     {
       "username": "adminuser",
@@ -47,7 +49,10 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["ADMIN", "CUSTOMER"]
+      "realmRoles": [
+        "ADMIN",
+        "CUSTOMER"
+      ]
     }
   ],
   "clients": [
@@ -56,8 +61,25 @@
       "enabled": true,
       "publicClient": true,
       "directAccessGrantsEnabled": true,
-      "redirectUris": ["*"],
-      "webOrigins": ["*"]
+      "redirectUris": [
+        "*"
+      ],
+      "webOrigins": [
+        "*"
+      ],
+      "protocolMappers": [
+        {
+          "name": "robomart-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "robomart-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
     }
   ]
 }

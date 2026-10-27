@@ -12,7 +12,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -122,13 +121,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         var error = new ErrorDetail("INTERNAL_ERROR", "An unexpected error occurred", null);
         var response = new ApiErrorResponse(error, getTraceId(), Instant.now(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-    }
-
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiErrorResponse> handleAccessDenied(AccessDeniedException ex) {
-        var error = new ErrorDetail("FORBIDDEN", "Access denied", null);
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(new ApiErrorResponse(error, getTraceId(), Instant.now(), HttpStatus.FORBIDDEN.value()));
     }
 
     @Override
