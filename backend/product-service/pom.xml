@@ -15,6 +15,14 @@
     <description>Product catalog management microservice</description>
 
     <dependencies>
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-spring</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-provider-jdbc-template</artifactId>
+        </dependency>
         <!-- Chaos Monkey's optional HTTP instrumentation requires Boot's RestClient module. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

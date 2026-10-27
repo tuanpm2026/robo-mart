@@ -69,7 +69,7 @@ Aborted worktrees were removed after preserving tracked diffs, untracked files a
 | Product 3 | Shared complete event payload including rating | Implemented: one snapshot mapper for live edits and demo indexing, preserving nullable rating; unit and real persisted-outbox regression passed |
 | Product 4 | Bounded paging and connectivity-only fallback | Implemented: 10,000-result window, network-cause-only fallback, mapping/auth failures propagate; real HTTP deep-page rejection and unit classification tests passed |
 | Product 5 | DLT and admin rebuild | Pending |
-| Product 6 | Outbox ordering, async send, unknown types and retention | Pending |
+| Product 6 | Outbox ordering, async send, unknown types and retention | Implemented: fenced aggregate-head claims, persisted legacy-compatible UUIDs, bounded async sends, poison retention, DB-time ShedLock cleanup; real DB/concurrency/Kafka regressions passed |
 | Product 7 | Image route/auth/storage, post-commit delete and cache eviction | Implemented: public GET through Gateway, persistent image volumes/PVC, commit-only deletion, rollback upload cleanup and transaction-aware cache invalidation; real filesystem/DB/HTTP and volume replacement tests passed |
 | Product 8 | Optional update version, conflict mapping and real trace ID | Implemented: optional version, response version after flush, 409 on stale/optimistic or duplicate SKU, real trace ID; real parallel HTTP edits/creates passed |
 | Product 9 | Redis SCAN clearing and synchronized cache loading | Implemented: SCAN batches of 1,000 and sync=true on detail/search cache loading; Redis integration and concurrent Spring cache-loader regression passed |
@@ -308,3 +308,16 @@ Executed on JDK25 with background Java compilation suspended/resumed:
 - docker build -f backend/Dockerfile.prebuilt --target product-service -t robo-w7-product-image-smoke backend — passed; the image/volume smoke does not start Spring or represent a full-stack application test.
 
 After adding the unit regression that a rejected database delete cannot remove the original file, ./mvnw clean test -pl :product-service passed 94 unit tests. Checkstyle passed again for Product/Gateway. Production code was unchanged after the successful full image verification and selected reorder integration verification.
+
+
+### Product asynchronous outbox delivery
+
+Product V8 persists event UUIDs and expiring UUID delivery claims. Historical rows retain the exact name-based UUID previously derived from product-outbox-{id}, including the MD5 UUID version/variant bits; pending rows and published history are preserved. New rows receive their persisted UUID before delivery. Only the oldest unpublished row per aggregate is eligible, including across concurrent replicas; an unknown/unmappable head remains pending and blocks its aggregate while independent aggregates progress. A stale claim cannot acknowledge/release a new owner.
+
+Publishing occurs outside database transactions/row locks, on a Micrometer-context executor with at most50 in-flight sends and one bounded batch wait (default10s, lease2min). Known failures release claims; uncertain sends retain their leases and stable IDs for retry. Event timestamp is the stored creation time. The cleanup job uses database-time ShedLock and a bounded batch of10,000 old published rows, retaining seven days by default and every unpublished row. Removed repository methods no longer permit the old unfenced poll path. Test-profile background publishing starts after an hour; delivery tests invoke the real poller explicitly. Kafka factories now respect listener auto-startup for persistence-only tests.
+
+Rollout: stop every pre-V8 Product publisher before applying V8/starting new instances; old publishers do not honor leases and could race the new implementation. Kubernetes Product uses Recreate for this transition. Expect a brief interruption and preserve the image-volume migration steps above. Compose replaces its Product container. No outbox history is retired/deleted by V8.
+
+Executed on JDK25 with the background Java compiler suspended/resumed: ./mvnw clean verify -pl :product-service -DskipE2ETests passed96 unit+73 integration tests and coverage. Tests include concurrent aggregate claims, expired-owner fencing, rollback eligibility, poison blocking, independent progress, bounded wait/MDC propagation, release of DB transaction/row locks before send, retention and exact legacy UUID backfill. A real Kafka round trip verifies the persisted UUID in ProductCreatedEvent. Existing catalog/image/search/contract suites passed. ./mvnw checkstyle:check -pl :product-service passed; no forced fork-exit warning occurred in this run.
+
+Product findings1/2/5 remain pending before final Wave7 verification/merge.

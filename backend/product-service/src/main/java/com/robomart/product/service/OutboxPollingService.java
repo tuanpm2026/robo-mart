@@ -1,88 +1,146 @@
 package com.robomart.product.service;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import jakarta.annotation.PreDestroy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.util.concurrent.TimeUnit;
 
-import com.robomart.product.entity.OutboxEvent;
-import com.robomart.product.event.producer.ProductEventProducer;
-import com.robomart.product.repository.OutboxEventRepository;
 
+import com.robomart.product.config.OutboxProperties;
 import com.robomart.events.product.ProductCreatedEvent;
 import com.robomart.events.product.ProductUpdatedEvent;
 import com.robomart.events.product.ProductDeletedEvent;
+import com.robomart.product.event.producer.ProductEventProducer;
 
+import io.micrometer.context.ContextExecutorService;
+import io.micrometer.context.ContextRegistry;
+import io.micrometer.context.ContextSnapshot;
+import io.micrometer.context.ContextSnapshotFactory;
+import io.micrometer.context.integration.Slf4jThreadLocalAccessor;
+import io.micrometer.core.instrument.MeterRegistry;
 import tools.jackson.databind.ObjectMapper;
 
+/** Sends independently claimed aggregate heads without holding a database transaction. */
 @Service
 public class OutboxPollingService {
-
     private static final Logger log = LoggerFactory.getLogger(OutboxPollingService.class);
-    private static final int BATCH_SIZE = 50;
-
-    private final OutboxEventRepository outboxEventRepository;
+    private final ProductOutboxStore store;
     private final ProductEventProducer productEventProducer;
     private final ObjectMapper objectMapper;
+    private final OutboxProperties properties;
+    private final MeterRegistry meters;
+    private final Semaphore inFlight = new Semaphore(50);
+    private final ExecutorService sends = ContextExecutorService.wrap(
+            Executors.newVirtualThreadPerTaskExecutor(), this::captureContext);
 
-    public OutboxPollingService(OutboxEventRepository outboxEventRepository,
-                                ProductEventProducer productEventProducer,
-                                ObjectMapper objectMapper) {
-        this.outboxEventRepository = outboxEventRepository;
+    public OutboxPollingService(ProductOutboxStore store, ProductEventProducer productEventProducer,
+            ObjectMapper objectMapper, OutboxProperties properties, MeterRegistry meters) {
+        this.store = store;
         this.productEventProducer = productEventProducer;
         this.objectMapper = objectMapper;
+        this.properties = properties;
+        this.meters = meters;
     }
 
-    // @Transactional so the FOR UPDATE SKIP LOCKED row locks are held until each event is marked
-    // published and committed — otherwise two instances both publish the same rows (duplicate
-    // Kafka events).
-    @Scheduled(fixedDelay = 1000)
-    @Transactional
+    @Scheduled(fixedDelayString = "${outbox.poll-interval-ms:1000}",
+            initialDelayString = "${outbox.initial-delay-ms:1000}")
     public void pollAndPublish() {
-        var events = outboxEventRepository.findUnpublishedSkipLocked(BATCH_SIZE);
-        if (events.isEmpty()) {
+        if (properties.getClaimDuration().compareTo(properties.getPublishTimeout()) <= 0) {
+            throw new IllegalStateException("Outbox claim duration must exceed the publish timeout");
+        }
+        Instant now = Instant.now();
+        List<Pending> pending = new ArrayList<>();
+        for (var delivery : store.claim(now, now.plus(properties.getClaimDuration()))) {
+            var future = CompletableFuture.supplyAsync(() -> startSend(delivery), sends)
+                    .thenCompose(result -> result);
+            pending.add(new Pending(delivery, future));
+        }
+        if (pending.isEmpty()) {
             return;
         }
-
-        log.debug("Polling {} unpublished outbox events", events.size());
-
-        for (OutboxEvent event : events) {
-            try {
-                publishEvent(event);
-                event.markPublished();
-                outboxEventRepository.save(event);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                log.error("Interrupted while publishing outbox event id={}", event.getId());
-                break;
-            } catch (Exception e) {
-                log.error("Failed to publish outbox event id={}, type={}: {}",
-                        event.getId(), event.getEventType(), e.getMessage());
+        try {
+            CompletableFuture.allOf(pending.stream().map(Pending::future).toArray(CompletableFuture[]::new))
+                    .handle((result, error) -> null).get(properties.getPublishTimeout().toMillis(), TimeUnit.MILLISECONDS);
+        } catch (TimeoutException timeout) {
+            meters.counter("robomart.outbox.publish.timeout").increment();
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+        } catch (java.util.concurrent.ExecutionException failure) {
+            throw new IllegalStateException("Outbox completion handler failed", failure);
+        }
+        for (var send : pending) {
+            if (!send.future().isDone()) {
+                // Unknown delivery: retain the lease. A stable event ID makes a later replay deduplicable.
+                continue;
+            }
+            if (send.future().isCompletedExceptionally()) {
+                store.release(send.delivery());
+            } else if (store.acknowledge(send.delivery())) {
+                meters.counter("robomart.outbox.published").increment();
             }
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void publishEvent(OutboxEvent event) throws Exception {
-        Map<String, Object> payload = objectMapper.readValue(event.getPayload(), Map.class);
-        String aggregateId = event.getAggregateId();
-        Instant now = Instant.now();
-        // Stable eventId derived from the outbox row so a re-publish carries the same id
-        // (consumer-side dedup friendly) instead of a fresh random UUID each send.
-        String eventId = UUID.nameUUIDFromBytes(
-                ("product-outbox-" + event.getId()).getBytes(StandardCharsets.UTF_8)).toString();
+    private CompletableFuture<?> startSend(ProductOutboxStore.Delivery delivery) {
+        if (!inFlight.tryAcquire()) {
+            return CompletableFuture.failedFuture(new IllegalStateException("Outbox send limit reached"));
+        }
+        try {
+            return publishEvent(delivery).whenComplete((result, error) -> {
+                inFlight.release();
+                if (error != null) {
+                    log.error("Outbox delivery failed: id={}, type={}", delivery.id(), delivery.eventType(), error);
+                    meters.counter("robomart.outbox.publish.failed").increment();
+                }
+            });
+        } catch (RuntimeException failure) {
+            inFlight.release();
+            log.error("Outbox event cannot be published: id={}, type={}", delivery.id(), delivery.eventType(), failure);
+            meters.counter("robomart.outbox.publish.failed").increment();
+            if (failure instanceof IllegalArgumentException) {
+                meters.counter("robomart.outbox.unmappable").increment();
+            }
+            return CompletableFuture.failedFuture(failure);
+        }
+    }
 
-        switch (event.getEventType()) {
+    private ContextSnapshot captureContext() {
+        ContextRegistry registry = new ContextRegistry();
+        ContextRegistry.getInstance().getThreadLocalAccessors().forEach(registry::registerThreadLocalAccessor);
+        registry.registerThreadLocalAccessor(new Slf4jThreadLocalAccessor("correlationId", "traceId", "spanId"));
+        return ContextSnapshotFactory.builder().contextRegistry(registry).build().captureAll();
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        sends.shutdownNow();
+    }
+
+    private record Pending(ProductOutboxStore.Delivery delivery, CompletableFuture<?> future) { }
+
+    @SuppressWarnings("unchecked")
+    private CompletableFuture<?> publishEvent(ProductOutboxStore.Delivery event) {
+        Map<String, Object> payload = objectMapper.readValue(event.payload(), Map.class);
+        String aggregateId = event.aggregateId();
+        Instant now = event.createdAt();
+
+        switch (event.eventType()) {
             case "PRODUCT_CREATED" -> {
                 var avroEvent = ProductCreatedEvent.newBuilder()
-                        .setEventId(eventId)
+                        .setEventId(event.eventId().toString())
                         .setEventType("PRODUCT_CREATED")
                         .setAggregateId(aggregateId)
                         .setAggregateType("PRODUCT")
@@ -99,11 +157,11 @@ public class OutboxPollingService {
                         .setRating(payload.get("rating") != null ? String.valueOf(payload.get("rating")) : null)
                         .setStockQuantity(toInt(payload.get("stockQuantity")))
                         .build();
-                productEventProducer.send(ProductEventProducer.TOPIC_PRODUCT_CREATED, aggregateId, avroEvent).get(10, TimeUnit.SECONDS);
+                return productEventProducer.send(ProductEventProducer.TOPIC_PRODUCT_CREATED, aggregateId, avroEvent);
             }
             case "PRODUCT_UPDATED" -> {
                 var avroEvent = ProductUpdatedEvent.newBuilder()
-                        .setEventId(eventId)
+                        .setEventId(event.eventId().toString())
                         .setEventType("PRODUCT_UPDATED")
                         .setAggregateId(aggregateId)
                         .setAggregateType("PRODUCT")
@@ -120,11 +178,11 @@ public class OutboxPollingService {
                         .setRating(payload.get("rating") != null ? String.valueOf(payload.get("rating")) : null)
                         .setStockQuantity(toInt(payload.get("stockQuantity")))
                         .build();
-                productEventProducer.send(ProductEventProducer.TOPIC_PRODUCT_UPDATED, aggregateId, avroEvent).get(10, TimeUnit.SECONDS);
+                return productEventProducer.send(ProductEventProducer.TOPIC_PRODUCT_UPDATED, aggregateId, avroEvent);
             }
             case "PRODUCT_DELETED" -> {
                 var avroEvent = ProductDeletedEvent.newBuilder()
-                        .setEventId(eventId)
+                        .setEventId(event.eventId().toString())
                         .setEventType("PRODUCT_DELETED")
                         .setAggregateId(aggregateId)
                         .setAggregateType("PRODUCT")
@@ -133,9 +191,9 @@ public class OutboxPollingService {
                         .setProductId(toLong(payload.get("id")))
                         .setSku((String) payload.get("sku"))
                         .build();
-                productEventProducer.send(ProductEventProducer.TOPIC_PRODUCT_DELETED, aggregateId, avroEvent).get(10, TimeUnit.SECONDS);
+                return productEventProducer.send(ProductEventProducer.TOPIC_PRODUCT_DELETED, aggregateId, avroEvent);
             }
-            default -> throw new IllegalStateException("Unknown event type: " + event.getEventType());
+            default -> throw new IllegalArgumentException("Unknown event type: " + event.eventType());
         }
     }
 

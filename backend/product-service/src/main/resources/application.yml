@@ -125,3 +125,12 @@ spring:
       ddl-auto: validate
   flyway:
     locations: classpath:db/migration,classpath:db/seed
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+outbox:
+  # Delivery integration tests invoke the real poller explicitly.
+  initial-delay-ms: 3600000
