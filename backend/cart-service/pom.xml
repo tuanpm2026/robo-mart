@@ -15,6 +15,11 @@
     <description>Shopping cart management with Redis storage</description>
 
     <dependencies>
+        <dependency>
+            <groupId>com.robomart</groupId>
+            <artifactId>build-support</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- Internal -->
         <dependency>
             <groupId>com.robomart</groupId>
@@ -50,8 +55,8 @@
 
         <!-- Kafka -->
         <dependency>
-            <groupId>org.springframework.kafka</groupId>
-            <artifactId>spring-kafka</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-kafka</artifactId>
         </dependency>
         <dependency>
             <groupId>io.confluent</groupId>

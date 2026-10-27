@@ -14,7 +14,7 @@ import au.com.dius.pact.provider.junitsupport.Provider;
 import au.com.dius.pact.provider.junitsupport.State;
 import au.com.dius.pact.provider.junitsupport.loader.PactFolder;
 
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.ProductIntegrationTest;
 
 /**
  * Pact provider test: verifies that Product Service satisfies the contract defined by
@@ -26,9 +26,9 @@ import com.robomart.test.IntegrationTest;
  * Product 10 ("Smart Fitness Watch", ELEC-010, $179.99) is pre-seeded by
  * R__seed_products.sql in the test profile. No additional setup needed.
  *
- * Uses @IntegrationTest because Product Service requires Elasticsearch + Redis at startup.
+ * Uses @ProductIntegrationTest because Product Service requires Elasticsearch + Redis at startup.
  */
-@IntegrationTest
+@ProductIntegrationTest
 @Provider("product-service")
 @PactFolder("src/test/resources/pacts")
 class ProductPactProviderIT {

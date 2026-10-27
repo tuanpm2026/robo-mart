@@ -1,4 +1,6 @@
 package com.robomart.common.dto;
 
-public record ApiResponse<T>(T data, String traceId) {
+import org.jspecify.annotations.Nullable;
+
+public record ApiResponse<T>(@Nullable T data, String traceId) {
 }

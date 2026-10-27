@@ -1,57 +1,32 @@
 package com.robomart.order.config;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.avro.specific.SpecificRecord;
-import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.kafka.autoconfigure.DefaultKafkaProducerFactoryCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
-import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.kafka.core.ProducerFactory;
+import org.springframework.kafka.support.serializer.DelegatingByTypeSerializer;
 
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientConfig;
 import io.confluent.kafka.serializers.KafkaAvroSerializer;
-import io.confluent.kafka.serializers.KafkaAvroSerializerConfig;
 
-/**
- * Avro producer for order domain events. Outbox rows store JSON, and {@code OutboxPollingService}
- * converts each row into the matching Avro {@link SpecificRecord} before publishing so that
- * downstream consumers (notification-service) — which deserialize with {@code KafkaAvroDeserializer}
- * + Schema Registry — can read the messages. This mirrors inventory-service's producer setup.
- */
-@Configuration
+/** Keep Boot's connection, security, observation and interceptor configuration. */
+@Configuration(proxyBeanMethods = false)
 public class KafkaProducerConfig {
-
-    @Value("${spring.kafka.bootstrap-servers}")
-    private String bootstrapServers;
-
-    @Value("${spring.kafka.properties.schema.registry.url}")
-    private String schemaRegistryUrl;
-
     @Bean
-    public ProducerFactory<String, SpecificRecord> producerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
-        props.put(ProducerConfig.ACKS_CONFIG, "all");
-        props.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 1000);
-        props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 10000);
-        props.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 30000);
-        props.put(SchemaRegistryClientConfig.HTTP_CONNECT_TIMEOUT_MS, 1000);
-        props.put(SchemaRegistryClientConfig.HTTP_READ_TIMEOUT_MS, 5000);
-        props.put(SchemaRegistryClientConfig.MAX_RETRIES_CONFIG, 0);
-        props.put(KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG, schemaRegistryUrl);
-        props.put(KafkaAvroSerializerConfig.AUTO_REGISTER_SCHEMAS, true);
-        return new DefaultKafkaProducerFactory<>(props);
-    }
-
-    @Bean
-    public KafkaTemplate<String, SpecificRecord> kafkaTemplate() {
-        return new KafkaTemplate<>(producerFactory());
+    @SuppressWarnings("unchecked")
+    DefaultKafkaProducerFactoryCustomizer avroAndRawRecordSerializers() {
+        return factory -> {
+            // Boot's customizer erases its Object/Object factory's type parameters.
+            var producer = (DefaultKafkaProducerFactory<Object, Object>) factory;
+            producer.setKeySerializerSupplier(() -> new DelegatingByTypeSerializer(Map.of(
+                    String.class, new StringSerializer(), byte[].class, new ByteArraySerializer())));
+            producer.setValueSerializerSupplier(() -> new DelegatingByTypeSerializer(Map.of(
+                    SpecificRecord.class, new KafkaAvroSerializer(), byte[].class, new ByteArraySerializer()), true));
+            producer.setPhysicalCloseTimeout(2);
+        };
     }
 }

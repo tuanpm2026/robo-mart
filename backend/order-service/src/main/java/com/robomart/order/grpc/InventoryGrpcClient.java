@@ -14,7 +14,7 @@ import com.robomart.proto.inventory.ReserveInventoryRequest;
 import com.robomart.proto.inventory.ReserveInventoryResponse;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
+import org.springframework.resilience.annotation.Retryable;
 import io.grpc.StatusRuntimeException;
 
 @Component
@@ -32,7 +32,8 @@ public class InventoryGrpcClient {
     }
 
     @CircuitBreaker(name = INSTANCE, fallbackMethod = "reserveFallback")
-    @Retry(name = INSTANCE)
+    @Retryable(predicate = GrpcStatusClassifier.class, maxRetries = 2,
+            delayString = "${grpc.retry.initial-delay-ms:1000}", multiplier = 2, maxDelay = 2000)
     public ReserveInventoryResponse reserveInventory(ReserveInventoryRequest request) {
         try {
             return stub.withDeadlineAfter(sagaProperties.getSteps().timeoutFor("ReserveInventory").toMillis(),
@@ -43,7 +44,8 @@ public class InventoryGrpcClient {
     }
 
     @CircuitBreaker(name = INSTANCE, fallbackMethod = "releaseFallback")
-    @Retry(name = INSTANCE)
+    @Retryable(predicate = GrpcStatusClassifier.class, maxRetries = 2,
+            delayString = "${grpc.retry.initial-delay-ms:1000}", multiplier = 2, maxDelay = 2000)
     public ReleaseInventoryResponse releaseInventory(ReleaseInventoryRequest request) {
         try {
             return stub.withDeadlineAfter(sagaProperties.getSteps().timeoutFor("ReleaseInventory").toMillis(),
@@ -54,7 +56,8 @@ public class InventoryGrpcClient {
     }
 
     @CircuitBreaker(name = INSTANCE, fallbackMethod = "releaseFallback")
-    @Retry(name = INSTANCE)
+    @Retryable(predicate = GrpcStatusClassifier.class, maxRetries = 2,
+            delayString = "${grpc.retry.initial-delay-ms:1000}", multiplier = 2, maxDelay = 2000)
     public ReleaseInventoryResponse releaseInventoryForRecovery(ReleaseInventoryRequest request) {
         try {
             return stub.withDeadlineAfter(5, TimeUnit.SECONDS).releaseInventory(request);

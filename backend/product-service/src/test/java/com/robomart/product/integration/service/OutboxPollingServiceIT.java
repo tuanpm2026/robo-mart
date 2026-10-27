@@ -16,9 +16,9 @@ import com.robomart.events.product.ProductCreatedEvent;
 import com.robomart.product.entity.OutboxEvent;
 import com.robomart.product.repository.OutboxEventRepository;
 import com.robomart.product.service.OutboxPollingService;
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.ProductIntegrationTest;
 
-@IntegrationTest
+@ProductIntegrationTest
 class OutboxPollingServiceIT {
 
     @Autowired

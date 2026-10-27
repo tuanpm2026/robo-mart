@@ -16,15 +16,11 @@ public class CorsConfig {
     @Value("${gateway.cors.admin-origin:http://localhost:5174}")
     private String adminOrigin;
 
-    @Value("${gateway.cors.keycloak-origin:http://localhost:8180}")
-    private String keycloakOrigin;
-
     @Bean
     public CorsWebFilter corsWebFilter() {
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedOrigin(stripTrailingSlash(customerOrigin));
         config.addAllowedOrigin(stripTrailingSlash(adminOrigin));
-        config.addAllowedOrigin(stripTrailingSlash(keycloakOrigin));
         config.addAllowedMethod("*");
         config.addAllowedHeader("*");
         config.setAllowCredentials(true);

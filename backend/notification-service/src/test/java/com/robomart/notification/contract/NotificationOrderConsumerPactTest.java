@@ -6,8 +6,9 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.web.client.RestClient;
+
+import com.robomart.notification.client.OrderServiceClient;
 
 import au.com.dius.pact.consumer.MockServer;
 import au.com.dius.pact.consumer.dsl.PactDslWithProvider;
@@ -64,16 +65,11 @@ class NotificationOrderConsumerPactTest {
             .baseUrl(mockServer.getUrl())
             .build();
 
-        String response = client.get()
-            .uri("/api/v1/admin/orders/4")
-            .retrieve()
-            .body(String.class);
+        var response = new OrderServiceClient(client).getOrderDetail("4");
 
         assertThat(response).isNotNull();
-        assertThat(response).contains("\"userId\"");
-        assertThat(response).contains("\"status\"");
-        assertThat(response).contains("\"CONFIRMED\"");
-        assertThat(response).contains("\"traceId\"");
+        assertThat(response.userId()).isEqualTo("user-002");
+        assertThat(response.status()).isEqualTo("CONFIRMED");
     }
 
     @Pact(consumer = "notification-service", provider = "order-service")
@@ -85,7 +81,7 @@ class NotificationOrderConsumerPactTest {
                 .method("GET")
             .willRespondWith()
                 .status(404)
-                .headers(Map.of("Content-Type", CONTENT_TYPE_JSON))
+                .headers(Map.of("Content-Type", "application/problem+json"))
                 .body("""
                     {
                       "error": {
@@ -103,17 +99,8 @@ class NotificationOrderConsumerPactTest {
     void shouldHandleOrderNotFoundGracefully(MockServer mockServer) {
         RestClient client = RestClient.builder()
             .baseUrl(mockServer.getUrl())
-            .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> {
-                // Don't throw — we assert the body directly
-            })
             .build();
 
-        String response = client.get()
-            .uri("/api/v1/admin/orders/99999")
-            .retrieve()
-            .body(String.class);
-
-        assertThat(response).isNotNull();
-        assertThat(response).contains("RESOURCE_NOT_FOUND");
+        assertThat(new OrderServiceClient(client).getOrderDetail("99999")).isNull();
     }
 }

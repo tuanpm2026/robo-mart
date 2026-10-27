@@ -1,12 +1,14 @@
 package com.robomart.order.grpc;
 
-import java.util.function.Predicate;
+import java.lang.reflect.Method;
+
+import org.springframework.resilience.retry.MethodRetryPredicate;
 
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 
 /** Separates definitive application rejections from transport failures. */
-public final class GrpcStatusClassifier implements Predicate<Throwable> {
+public final class GrpcStatusClassifier implements MethodRetryPredicate {
 
     public static boolean isBusinessError(Status.Code code) {
         return code == Status.Code.INVALID_ARGUMENT || code == Status.Code.NOT_FOUND
@@ -15,7 +17,7 @@ public final class GrpcStatusClassifier implements Predicate<Throwable> {
     }
 
     @Override
-    public boolean test(Throwable failure) {
+    public boolean shouldRetry(Method method, Throwable failure) {
         if (!(failure instanceof StatusRuntimeException grpc)) {
             return false;
         }

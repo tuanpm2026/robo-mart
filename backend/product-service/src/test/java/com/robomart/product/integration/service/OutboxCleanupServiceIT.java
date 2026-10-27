@@ -12,9 +12,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import com.robomart.product.entity.OutboxEvent;
 import com.robomart.product.repository.OutboxEventRepository;
 import com.robomart.product.service.OutboxCleanupService;
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.ProductIntegrationTest;
 
-@IntegrationTest
+@ProductIntegrationTest
 class OutboxCleanupServiceIT {
 
     @Autowired

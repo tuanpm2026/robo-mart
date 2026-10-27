@@ -22,6 +22,7 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
 
 import com.robomart.order.config.SagaProperties;
+import com.robomart.order.config.GrpcResilienceConfig;
 import com.robomart.order.grpc.InventoryBusinessException;
 import com.robomart.order.grpc.InventoryGrpcClient;
 import com.robomart.order.grpc.InventoryServiceUnavailableException;
@@ -36,9 +37,7 @@ import com.robomart.proto.payment.ProcessPaymentRequest;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
-import io.github.resilience4j.retry.RetryRegistry;
 import io.github.resilience4j.springboot.circuitbreaker.autoconfigure.CircuitBreakerAutoConfiguration;
-import io.github.resilience4j.springboot.retry.autoconfigure.RetryAutoConfiguration;
 import io.grpc.Status;
 
 /** Verifies the real annotation aspects and application configuration without external services. */
@@ -47,10 +46,9 @@ class GrpcClientResilienceTest {
     private final ApplicationContextRunner contextRunner = new ApplicationContextRunner()
             .withInitializer(new ConfigDataApplicationContextInitializer())
             .withConfiguration(AutoConfigurations.of(
-                    CircuitBreakerAutoConfiguration.class, RetryAutoConfiguration.class))
+                    CircuitBreakerAutoConfiguration.class))
             .withUserConfiguration(ClientConfiguration.class)
-            .withPropertyValues("resilience4j.retry.instances.inventory-service.wait-duration=1ms",
-                    "resilience4j.retry.instances.payment-service.wait-duration=1ms");
+            .withPropertyValues("grpc.retry.initial-delay-ms=1");
 
     @ParameterizedTest
     @EnumSource(value = Status.Code.class, names = {"INVALID_ARGUMENT", "NOT_FOUND", "ALREADY_EXISTS",
@@ -77,10 +75,8 @@ class GrpcClientResilienceTest {
             verify(inventoryStub).reserveInventory(any());
             verify(paymentStub).processPayment(any());
             CircuitBreakerRegistry registry = context.getBean(CircuitBreakerRegistry.class);
-            RetryRegistry retries = context.getBean(RetryRegistry.class);
             for (String name : new String[] {"inventory-service", "payment-service"}) {
                 CircuitBreaker breaker = registry.circuitBreaker(name);
-                assertThat(retries.retry(name).getRetryConfig().getMaxAttempts()).isEqualTo(3);
                 assertThat(breaker.getState()).isEqualTo(CircuitBreaker.State.CLOSED);
                 assertThat(breaker.getMetrics().getNumberOfFailedCalls()).isZero();
                 assertThat(breaker.getMetrics().getNumberOfBufferedCalls()).isZero();
@@ -154,7 +150,7 @@ class GrpcClientResilienceTest {
 
     @Configuration(proxyBeanMethods = false)
     @EnableAspectJAutoProxy
-    @Import({InventoryGrpcClient.class, PaymentGrpcClient.class, SagaProperties.class})
+    @Import({InventoryGrpcClient.class, PaymentGrpcClient.class, SagaProperties.class, GrpcResilienceConfig.class})
     static class ClientConfiguration {
 
         @Bean

@@ -37,9 +37,9 @@ Executed validation:
 
 Aborted worktrees were removed after preserving tracked diffs, untracked files and a manifest under `/private/tmp/robo-mart-aborted-worktrees-20261026`. Three worktrees contained uncommitted Wave 7 drafts; they were not assumed complete or copied into production wholesale. The backup is local and temporary, and is not a substitute for committed implementation.
 
-## Wave 7: in progress on `wave7/correctness`
+## Wave 7: merged
 
-“Implemented” below means present on this branch, not merged. Pending items retain the original scope; none is implicitly waived.
+Merged as PR #45, squash commit `7f9167b099e1c7167c61267d5a1584b2d7aa1d3b`. All implementation findings below are included. Final validation: 974 reactor tests, 3 isolated E2E/chaos tests and 327 frontend tests; all 16 CI checks passed. The user confirmed on 2026-10-27 that auto-deploy is not currently running, resolving the pre-merge deployment dependency. Keep the documented live provisioning/cutover requirements for the eventual rollout.
 
 | Area | Finding | Status |
 | --- | --- | --- |
@@ -94,20 +94,20 @@ Earlier validation attempts failed on obsolete retry/cancellation expectations, 
 
 No new schema, REST response fields, proto/Avro contract or infrastructure changes are included in the current order-service subset. Checkout awaiting stock release returns HTTP 202 with its existing `INVENTORY_RELEASING` status; the storefront displays cancellation progress instead of confirmation or a delivery estimate. The deadline remains a per-attempt bound; a retried operation can take up to three deadlines plus the configured exponential backoff. Do not start Wave 8 or merge Wave 7 while the remaining correctness scope is incomplete.
 
-## Wave 8: pending
+## Wave 8: in progress on `wave8/platform`
 
 | Finding | Status / dependency |
 | --- | --- |
-| 1. Modern Checkstyle engine bound to validate | Pending; fix actual violations before enabling the gate |
-| 2. OSIV off, virtual threads, explicit pools and gRPC executor | Pending; verify detached access and executor behavior |
-| 3. ProblemDetail and Spring 4xx handling | Pending; inspect frontend field usage before changing errors |
-| 4. Boot-managed Kafka factories, observations and DLT | Pending |
-| 5. Structured logging, baggage, remove duplicate tracing, OTLP setting, tracing test alignment | Pending |
-| 6. Dockerfile alignment/layers/AOT/JVM flags/image digests | Pending; side-effect-free training profile required |
-| 7. Spring resilience primitives, gateway breaker, JSpecify/NullAway | Pending |
-| 8. JWT issuer/audience and realm mapper alignment | Pending; explicitly handle internal/external issuer hostnames |
-| 9. Service-specific integration-test infrastructure | Pending |
-| 10. Remove active dev profile, Locale.ROOT, security coverage exclusions, Keycloak CORS origin and proxy spoofing | Pending |
+| 1. Modern Checkstyle engine bound to validate | Implemented: Checkstyle 12.3.1 runs at validate; existing advisory severity retained |
+| 2. OSIV off, virtual threads, explicit pools and gRPC executor | Implemented and verified: OSIV off including real HTTP fallback; servlet/gRPC virtual execution, bounded pools; full reactor and E2E passed |
+| 3. ProblemDetail and Spring 4xx handling | Implemented RFC 9457 with legacy error envelope; real MVC 400/403/405/415 tests passed |
+| 4. Boot-managed Kafka factories, observations and DLT | Implemented and verified: Boot factories/customizers, per-record baggage, raw/Avro DLT, terminal archive retry; full reactor and E2E passed |
+| 5. Structured logging, baggage, remove duplicate tracing, OTLP setting, tracing test alignment | Implemented: Boot ECS, OTel in tests, scoped HTTP/Kafka baggage; actual propagation regression passed |
+| 6. Dockerfile alignment/layers/AOT/JVM flags/image digests | Implemented and verified: all9 rendered files, source/CD/prebuilt builds, pinned layers/JVM flags, isolated training, actual cache mapping in all7 E2E JVMs |
+| 7. Spring resilience primitives, gateway breaker, JSpecify/NullAway | Implemented: Framework retries/concurrency, Gateway transport breaker, JSpecify contracts and compile-time NullAway errors |
+| 8. JWT issuer/audience and realm mapper alignment | Implemented issuer/audience/JWK validation; signed-token Gateway tests, retained E2E mapper reconciliation and actual service-identity RBAC checks passed |
+| 9. Service-specific integration-test infrastructure | Implemented and verified: resource-specific JVM-owned fixtures; no forced fork shutdown in final full reactor |
+| 10. Remove active dev profile, Locale.ROOT, security coverage exclusions, Keycloak CORS origin and proxy spoofing | Implemented; role/CORS/forwarded-header regressions and coverage including config passed |
 
 ## Wave 9: pending
 
@@ -349,7 +349,7 @@ Kafka integration fixtures explicitly own listener start/stop. Other Product tes
 
 ### Wave 7 boundary verification and coordinated cutover
 
-On 2026-10-27, JDK25 `./mvnw clean verify -DskipE2ETests` passed the whole reactor and configured coverage gates: Maven execution summaries report 691 unit tests and 282 integration tests (973 total), with no failures/errors/skips in executed suites. E2E was intentionally excluded. `./mvnw checkstyle:check` passed. The Order, Inventory and Payment forks still reported delayed shutdown after successful tests; the shared-container lifecycle investigation is tracked for Wave8's fixture work rather than disabling shutdown or coverage checks.
+On 2026-10-27, JDK25 `./mvnw clean verify -DskipE2ETests` passed the whole reactor and configured coverage gates: Maven execution summaries report 691 unit tests and 282 integration tests (973 total), with no failures/errors/skips in executed suites. E2E was intentionally excluded. `./mvnw checkstyle:check` passed. The Order, Inventory and Payment forks still reported delayed shutdown after successful tests; the shared-container lifecycle investigation is tracked for Wave 8's fixture work rather than disabling shutdown or coverage checks.
 
 In frontend/, `npm ci`, `npm run type-check --workspaces --if-present`, `npm run test:unit --workspaces --if-present -- --run`, `npm run build --workspaces --if-present`, and read-only Prettier checks for both app source trees passed. Customer ran240 tests and Admin87 (327 total). Proto `buf lint` and `buf breaking --against '../../.git#branch=main,subdir=backend/proto'` passed. Compose core/app and E2E configuration plus Kustomize base/production/ingress-tls rendered successfully.
 
@@ -362,4 +362,126 @@ Before admitting the new applications, provision the two confidential Keycloak c
 Base Compose Notification now supplies the same downstream service DNS URLs as E2E/Kubernetes; localhost defaults would otherwise break its new authenticated aggregation clients inside the container.
 
 
-Post-fix boundary result: `./mvnw clean verify -DskipE2ETests` passed 691 unit + 283 integration tests (974), all coverage gates and Checkstyle. Rebuilt isolated E2E/chaos passed 3 tests with no failures/errors/skips, preserving the 60-second restart recovery assertion. Read-only cleanup checks found all 7 new orders cancelled, all 7 payments fully refunded and all 7 reservations released, with 7 movements each of RESERVE/COMMIT/RELEASE. The stack was stopped without removing volumes; unrelated MySQL remained running. CI passed every check on implementation head 75b83d2. See [the final Wave 7 validation report](../_bmad-output/test-artifacts/wave7-correctness-validation-2026-10-27.md) for exact commands, coverage, failed-first-run evidence and deployment limits. Merge still requires the live cutover prerequisites described above to be established; Wave 8/9 have not started.
+Post-fix boundary result: `./mvnw clean verify -DskipE2ETests` passed 691 unit + 283 integration tests (974), all coverage gates and Checkstyle. Rebuilt isolated E2E/chaos passed 3 tests with no failures/errors/skips, preserving the 60-second restart recovery assertion. Read-only cleanup checks found all 7 new orders cancelled, all 7 payments fully refunded and all 7 reservations released, with 7 movements each of RESERVE/COMMIT/RELEASE. The stack was stopped without removing volumes; unrelated MySQL remained running. CI passed every check on implementation head 75b83d2. See [the final Wave 7 validation report](../_bmad-output/test-artifacts/wave7-correctness-validation-2026-10-27.md) for exact commands, coverage, failed-first-run evidence and deployment limits. At this verification snapshot, merge was waiting for live cutover status; the merged status above records its resolution.
+
+
+### Wave 8 platform foundation
+
+Started from updated main at Wave 7 squash 7f9167b. User confirmed auto-deploy is not currently running; no live deployment or Kubernetes mutation is part of this continuation.
+
+Checkstyle 12.3.1 is explicitly provided to the Maven plugin and check is bound to validate in the inherited active build. The existing rule severity is unchanged; validate passed all 14 modules with the modern parser and existing advisory warnings. The module configuration requires no removed-rule substitutions. Version reference: https://checkstyle.org/release-notes.html#Release_12.3.1.
+
+IntegrationTest now supplies only common Spring test behavior. ProductIntegrationTest starts PostgreSQL/Kafka/Elasticsearch/Redis; CartIntegrationTest starts Kafka/Redis; InventoryIntegrationTest starts PostgreSQL/Kafka. Existing Order/Payment/Notification tests retain their explicit resource selections. Shared JVM-owned containers register connection properties rather than container beans, avoiding Boot closing shared infrastructure with one cached context while other contexts still use it. Testcontainers/Ryuk owns final process cleanup; reuse is not required. Class-owned isolated containers retain their context/class lifecycle. This specifically addresses the Wave 7 teardown warning without reducing shutdown timeouts or disabling health checks.
+
+OSIV is disabled in every JPA service; all six servlet services enable virtual threads. Main Hikari pools default to maximum 10/minimum 2 with a 3-second acquisition timeout, configurable through DB_POOL_MAX_SIZE/DB_POOL_MIN_IDLE/DB_CONNECTION_TIMEOUT_MS. Payment's independent mock-provider pool remains 2 with a 1-second acquisition timeout and semaphore 2. These are explicit starting limits, not load-test sizing claims. Native gRPC does not inherit the servlet executor; Order/Inventory/Payment use Boot's GrpcServerExecutorProvider with a context-propagating managed virtual-thread executor. Inventory's real gRPC integration test captures the service execution thread and verifies isVirtual(). Boot owns gRPC observations; duplicate custom TracingConfig was removed.
+
+Removed hard-coded active dev profiles; host development now needs an explicit dev profile, while Compose/K8s use their supplied connection settings and E2E already selects dev/demo explicitly. Locale-independent role normalization is verified under tr-TR. JaCoCo no longer excludes config packages, including security configuration. Gateway no longer admits Keycloak as a browser CORS origin. Anonymous rate limits use the socket peer with framework forwarding disabled, so arbitrary Forwarded/X-Forwarded-For headers cannot create new buckets. Behind an ingress, anonymous users share the ingress peer bucket; introducing trusted proxy ranges requires an explicit, verified network boundary rather than a global trusted-hop count.
+
+The shared error response extends ProblemDetail with RFC 9457 status/title/detail/instance and code/traceId properties, while retaining error.code/error.message/error.details/timestamp for existing frontend readers. GlobalExceptionHandler extends ResponseEntityExceptionHandler, preserves framework response headers and committed-response behavior, and handles authorization denials without exposing internal details. Product's local advice uses the same response type. Standard missing headers, unreadable JSON, type mismatch, unsupported media and method errors retain their 4xx statuses. Initial MVC tests expected an explicit about:blank type, but Framework 7 correctly omits that RFC default; the assertions now validate the actual required status/detail/content type and compatibility fields.
+
+Executed JDK25 validation for this foundation (not the complete Wave 8 gate):
+
+- ./mvnw validate — all 14 modules passed with Checkstyle 12.3.1.
+- ./mvnw clean install -pl :test-support -am -DskipTests -DskipITs -DskipE2ETests — dependency installation passed; no test claim.
+- ./mvnw clean verify -pl :order-service -DskipE2ETests — 180 unit + 57 IT and coverage passed, no forced fork-exit warning.
+- ./mvnw clean verify -pl :inventory-service -DskipE2ETests — 75 unit + 49 IT and coverage passed, including the real virtual-thread assertion; no forced fork-exit warning.
+- ./mvnw clean verify -pl :common-lib,:security-lib,:api-gateway -DskipITs -DskipE2ETests — Common 48 and Security 16 passed their expanded coverage gate; Gateway initially failed due to a misplaced YAML property. The property was corrected at the root server section.
+- ./mvnw clean verify -pl :api-gateway -DskipITs -DskipE2ETests — 58 tests and coverage passed after that correction.
+
+./mvnw clean verify -pl :common-lib -DskipITs -DskipE2ETests passed 54 tests and coverage after the ProblemDetail change, including six real MVC status/content-type/envelope/header cases.
+
+Kafka/observability, remaining runtime validation, image/JVM/AOT work, resilience, null-safety and JWT hardening continue before a Wave 8 PR. No Wave 8 merge or completed-wave claim is made by these focused results.
+
+
+### Wave 8 Boot-managed Kafka, tracing and JWT boundaries
+
+Kafka services now explicitly depend on spring-boot-starter-kafka (the previous direct spring-kafka dependency did not provide Boot 4's Kafka auto-configuration). No application constructs a producer or consumer factory. Spring Kafka properties retain acknowledgement, poll and Schema Registry bounds; Boot owns factories, templates, admin clients and observation settings. Small producer customizers install Avro/raw-byte dispatch serializers without discarding configured interceptors/security/connection properties. Framework-supported listener customization retains retry/DLT behavior. Notification's terminal listener overrides its deserializers at the KafkaListener declaration; container-default properties alone were overwritten during listener creation and the initial routing test caught that error. Its terminal error handler treats every archive failure as retryable, with indefinite exponential backoff capped at 30 seconds, so conversion defects cannot acknowledge an unarchived record either.
+
+Boot's ECS structured console logging replaces the custom logback/logstash configuration in every application, including Gateway. Micrometer remote baggage fields correlationId and X-Correlation-Id propagate through HTTP/Kafka and correlate into their corresponding MDC fields. The legacy HTTP filter and batch consumer/producer interceptors are removed; absent correlation baggage is not fabricated, while normal trace IDs remain available. Incoming legacy X-Correlation-Id remains a baggage field; a generated legacy response header is no longer part of this instrumentation. Frontend does not read that header. Outbox context snapshots continue to propagate scopes. Native Boot gRPC observation remains authoritative.
+
+Test-support uses the production OTel bridge rather than Brave. OTel's Kotlin exporter and Testcontainers' duct-tape requested incompatible legacy JetBrains annotation versions; dependency management aligns them to 17.0.0 without relaxing convergence. AutoConfigureTracing(export=false) also disables propagation in Boot 4's test context. The real propagation test therefore enables tracing and disables only the OTLP exporter (management.tracing.export.otlp.enabled=false), avoiding external reporting while preserving the actual propagators. A Kafka poll processes queued records with distinct and then absent baggage; assertions verify per-record baggage/MDC, real trace scopes, no leaked caller MDC and a configured producer interceptor invoked three times. HTTP asserts baggage/MDC and a real trace ID on a virtual thread. Version references: https://docs.spring.io/spring-boot/reference/actuator/tracing.html and https://docs.spring.io/spring-boot/api/java/org/springframework/boot/micrometer/tracing/test/autoconfigure/AutoConfigureTracing.html.
+
+All JWT resource servers now validate the canonical issuer and robomart-api audience while fetching JWKs through an independent explicit URI. Compose uses the public localhost:8180 issuer and Docker-internal keycloak:8180 key endpoint; E2E uses public localhost:18180 with the same private key endpoint; K8s retains auth.tuanpm.xyz as its canonical issuer. No token issuer is rewritten to an internal hostname. Cart still delegates identity to the validated Gateway and retains anonymous guest carts; this change does not introduce a new Cart JWT resource server. Notification no longer creates a JWK-only decoder: Boot's validating decoder is shared by HTTP and STOMP. The main and test realms attach an access-token-only audience mapper; ID-token audience semantics and least-privilege roles are unchanged. Existing live realms must receive the mapper before enabling audience enforcement; no live realm was changed.
+
+E2E now has a guarded audience-only reconciliation script after Keycloak readiness and before app startup. It verifies the exact isolated project/service labels and loopback port, updates only the five known fixture clients' audience mapper, keeps credentials/tokens in memory, and preserves existing realm/order/image data. This avoids deleting persistent test volumes just because startup import does not update a realm. Python compilation, shell syntax, Compose core/app and E2E configuration, and all 3 Kustomize renders passed; the updated reconciliation script still awaits execution in the final E2E stack.
+
+Executed JDK25 checks for this continuation:
+
+- Dependency installation for common/security/proto/events/test-support passed after convergence alignment; tests skipped for this installation only.
+- ./mvnw clean test -pl :product-service,:cart-service,:inventory-service,:order-service,:notification-service -DskipE2ETests — 519 unit tests passed before later JWT/test additions.
+- ./mvnw clean verify -pl :product-service -Dit.test=ProductDltIT,PlatformBaggageIT -DskipE2ETests — the Product DLT cases passed, but early baggage fixture runs failed (stale auto-configuration metadata, a self-referencing test listener topic, then disabled test propagation). Those causes were corrected; none is counted as passing full verification.
+- ./mvnw clean verify -pl :product-service -Dit.test=PlatformBaggageIT -DskipE2ETests — 103 unit + 2 real HTTP/Kafka IT passed, including coverage.
+- ./mvnw clean verify -pl :common-lib,:security-lib,:api-gateway -DskipITs -DskipE2ETests — 41 Common + 16 Security + 59 Gateway tests and all expanded coverage gates passed. Gateway uses a local JWK server and real signed tokens to reject wrong/missing issuer, wrong/missing audience, expired tokens and invalid signatures, while accepting the valid token. Zero JWK requests occurred at startup and before the first bearer token.
+- ./mvnw clean verify -pl :notification-service -DskipE2ETests — 116 unit + 22 IT and coverage passed after correcting terminal deserializer selection. Tests exercise full Avro/raw malformed-byte archive, replay/deduplication, and archive failure twice followed by successful persistence with no lost record. No forced fork-exit warning occurred.
+
+Full final reactor, remaining runtime checks and E2E will be recorded after resilience, null-safety and image/JVM changes. No completed Wave 8 claim is made by these focused results.
+
+
+### Wave 8 resilience primitives
+
+Order's gRPC retry now uses Framework 7 Retryable with the existing status classifier as a MethodRetryPredicate: only UNAVAILABLE/RESOURCE_EXHAUSTED/ABORTED retry, at most two retries after the first attempt, with 1s/2s delays by default. Business rejections and uncertain deadlines retain their existing treatment. The dedicated Spring RetryAnnotationBeanPostProcessor appends retry inside existing circuit-breaker advice; Spring's default before-existing-advisors behavior would put it outside fallback and recreate the old no-retry bug. Resilience4j retains circuit breaking/fallback, and its unused retry configuration is removed. The focused production-proxy regression passes 10 cases, including exactly 15 RPC attempts for 5 exhausted retryable checkouts, 1 attempt per business rejection and zero calls through OPEN.
+
+PaymentProviderCalls is one shared Framework 7 ConcurrencyLimit with REJECT policy and limit 2 for both charge/refund transactions. MockPaymentGateway maps rejected invocations to the existing transient busy result, preserving the bounded independent provider pool and receipt/idempotency flow. Framework advice releases permits on completion or exception; the manual semaphore is removed. A proxy-based concurrency regression holds two operations, verifies immediate rejection of the third, releases both and checks permit reuse after failure. ./mvnw clean verify -pl :payment-service -DskipE2ETests passed 44 unit + 34 IT and expanded coverage, with no forced fork-exit warning. An initial mapping regression incorrectly exercised the deprecated direct simulation overload; it was corrected to the actual idempotent provider path before that successful run.
+
+Gateway adds one circuit per backend across its HTTP routes. Transport failures/open circuits forward to a 503 RFC 9457 response retaining the error envelope; upstream HTTP statuses/bodies remain unchanged, including an aggregation ERROR response. WebSocket upgrades retain their native lifecycle. HTTP timeouts remain 2s connect/30s response; the Cloud circuit library's default one-second TimeLimiter and automatic bulkhead are disabled explicitly. No gateway Retry filter is introduced. Default circuits use a 20-call window/minimum 5, 50% threshold, 10s open period and 3 half-open probes; service-specific properties can override these. A slow checkout probe exceeds one second and still succeeds under the existing HTTP bound. Reference: https://docs.spring.io/spring-cloud-circuitbreaker/reference/spring-cloud-circuitbreaker-resilience4j/circuit-breaker-properties-configuration.html.
+
+The Cloud 5.0.3 starter transitively includes resilience4j-spring-boot3, whose compatibility verifier correctly rejected Boot 4. That dependency is excluded and replaced with the existing managed resilience4j-spring-boot4 adapter; the verifier is not disabled. ./mvnw clean verify -pl :api-gateway -DskipITs -DskipE2ETests passed 62 tests and coverage, including real transport failure/open/half-open routing, preserved 502 body and the slow checkout bound. The first incompatible-adapter run is a failed intermediate run. Gateway tests also use Boot's tracing test module to avoid external reporting by default.
+
+The full Order recovery suite and final reactor/E2E remain required after the remaining platform work. No Wave 8 PR/merge has occurred.
+
+
+### Wave 8 null-safety compiler gate
+
+Common and Security production packages are explicitly JSpecify NullMarked. Nullable contracts describe real absence in DTO payloads, audit metadata, pre-persist entity fields, authentication and exception causes. Framework exception overrides match Spring's nullable body/return contracts; missing exception/validation messages receive stable safe defaults. Complex GrantedAuthority values without a string role are ignored, with a regression test.
+
+Both modules run NullAway 0.13.8 through Error Prone 2.51.0 during production compilation, at ERROR severity, with JSpecify mode. No blanket NullAway suppressions were introduced. Test compilation remains separate so intentional invalid-input tests exercise runtime behavior. Maven JVM exports in backend/.mvn/jvm.config support the javac plugin on JDK25. References: https://github.com/uber/NullAway/wiki/JSpecify-Support and https://github.com/uber/NullAway/releases/tag/v0.13.8.
+
+Executed ./mvnw -B -ntp clean verify -pl :common-lib,:security-lib -DskipITs -DskipE2ETests: Common44 + Security17 tests and coverage passed. A temporary production source in a marked package deliberately returned null: compilation failed with the expected NullAway error. The probe was removed and the clean positive verification repeated successfully. This demonstrates that the compiler gate is active, beyond merely declaring annotations.
+
+
+### Wave 8 aligned application images and isolated training
+
+A single Python renderer now owns all9 existing Dockerfiles. Source builds retain both the backend-root multi-target path and repository-root per-service CD paths, without changing workflows. All source builders copy Checkstyle configuration, Maven JVM exports and every reactor POM, including the new build-support and E2E modules. Runtime images use the same digest-pinned multi-platform Temurin25 JRE index, UID1001, curl health checks, correct management/gRPC ports, Boot extracted dependency/application layers, compact object headers and MaxRAMPercentage75. Obsolete container-support/entropy flags are removed. The E2E-only fourth application Dockerfile is removed: isolated E2E now builds the actual prebuilt production targets. Its build script rejects generated-file drift.
+
+The build-support module supplies an explicit aot-training profile on an isolated Spring source without component scanning, imports or auto-configuration. Its configuration is profile-guarded against normal application scans. Application configuration locations are ignored during training; no business beans, Flyway, schedulers, consumers, seeders, exporters or provider clients are started. BuildKit also disables networking for that RUN. The actual application extracted classpath and exact runtime JRE are used to create application.aot; the real service main runs from the thin JAR with that cache. This warms only core Spring classes and does not claim measured full-service startup improvements. Context exit by itself would not make normal service startup safe. References: https://docs.spring.io/spring-boot/reference/packaging/aot-cache.html and https://docs.spring.io/spring-boot/reference/packaging/container-images/dockerfiles.html.
+
+Executed before final reactor completion:
+
+- python3 backend/scripts/render-dockerfiles.py --check — all9 files match; shell syntax, Compose core/app/E2E and all3 Kustomize renders passed.
+- ./mvnw -B -ntp clean verify -pl :build-support -DskipITs -DskipE2ETests — minimal-context isolation test and coverage passed. Its first assertion omitted Boot's infrastructure metadata-reader bean; the allowed infrastructure set was corrected without admitting application beans.
+- ./mvnw -B -ntp clean install -DskipTests -DskipITs -DskipE2ETests — all15 modules packaged/installed. Tests intentionally skipped for image inputs. An earlier non-clean install found stale coverage data after IDE compilation; the clean install avoids reusing that data and is not counted as test verification.
+- docker build --progress=plain -f backend/Dockerfile.prebuilt --target product-service -t robo-w8-product-aot backend — passed; network-disabled training produced a cache. Isolated reuse reported Opened AOT cache, mapped regions and Using AOT-linked classes:true, including a512MiB container with192MiB heap.
+- docker build --progress=plain -f infra/docker/product-service/Dockerfile -t robo-w8-product-source . — source packaging, active NullAway and AOT training passed. The later profile guard and final service images still require their final builds.
+
+The initial full reactor stopped at Order's Pact provider: its committed404 contract still required application/json, whereas RFC9457 correctly selects application/problem+json. The legacy body fields matched. Both consumer declaration and provider pact now agree on the error media type; Notification's consumer test invokes the actual OrderServiceClient and verifies successful typed decoding and a404 returning null. ./mvnw -B -ntp test -pl :notification-service -Dtest=NotificationOrderConsumerPactTest passed2 cases. The whole reactor is being repeated after that correction, with no weakened status/body matchers or skipped tests.
+
+
+### Wave 8 final reactor gate
+
+After the Pact media-type and reactive-adapter corrections, ./mvnw -B -ntp clean verify -DskipE2ETests passed all15 modules:698 unit +286 IT=984, zero failures/errors/skips. Counts agree between Maven execution summaries and actual XML testcase elements (some nested-class XML suite header counts are smaller). All configured coverage gates passed, and no forced-fork-exit warning remained. ./mvnw -B -ntp checkstyle:check passed all15 modules. Proto buf lint/breaking against main passed; all3 real Avro compatibility IT passed in the reactor. Both frontend apps passed type-check/build/format and327 unit tests. See the Wave8 validation report for the per-module table. Image/E2E and CI completion still remain before merge.
+
+
+The actual Gateway image smoke then exposed a Cloud5.0.3 blocking-adapter annotation referencing a Boot3 metrics class. The reactive adapter has no such reference. Gateway now excludes only the unused blocking auto-configuration; its reactive factory and the Boot4 Resilience4j adapter remain enabled. A new regression asserts one reactive factory, no blocking factory and a successful circuit call recorded by Micrometer. Focused Gateway verification passed63 tests/coverage. Rebuilt source/prebuilt Gateway images reached liveness UP, loaded AOT-linked classes and had no Boot3 introspection warning. The final repeated reactor and Checkstyle passed after this configuration correction, with698 unit+286 IT, expanded coverage and no Boot3 introspection or forced-fork-exit warnings.
+
+
+### Wave 8 retained-data E2E findings
+
+The first guarded stack start stopped before applications because the retained isolated realm lacked Inventory's Wave7 service client. A one-time guarded fixture provisioner verified the exact Compose labels/loopback Keycloak, created only the missing Inventory client from the committed fixture and its intended service-account grant, and preserved existing identities/secrets/data. The normal audience-only reconciler then completed. Both service identities received canonical-issuer/robomart-api tokens with exactly their intended role; Inventory could read the minimal internal order-status endpoint (200) and could not list admin orders (403). No production realm/cluster was changed. The reconciler remains audience-only and refuses missing clients.
+
+All13 containers became healthy. Read-only probes verified UID1001 and an actually memory-mapped nonempty AOT cache in every application JVM (under Compose's init process). The first E2E run nevertheless failed all3 tests before creating an order: the stack lacked SPRING_ELASTICSEARCH_URIS, and PostgreSQL degraded search mapped lazy images after its repository transaction closed under OSIV=false. Aggressive100ms search polling exhausted anonymous rate-limit tokens and obscured the initial500 with429. No test-created order existed beyond the baseline21.
+
+Product's fallback now opens a read-only TransactionTemplate only around the PostgreSQL query and DTO mapping; Elasticsearch I/O stays outside it. Existing degraded-mode filter semantics and connection-only fallback classification are unchanged. A new real HTTP ProductSearchFallbackIT forces an Elasticsearch connection failure, asserts no database transaction during that I/O, and verifies category/image DTO fields from PostgreSQL with OSIV disabled. Unit cache fixtures now supply the newly explicit transaction-manager dependency. ./mvnw -B -ntp clean verify -pl :product-service -Dit.test=ProductSearchFallbackIT -DskipE2ETests passed103 unit+1 targeted IT and coverage. The initial attempt found the missing transaction-manager mock in the cache-only unit context; it was corrected before the successful run.
+
+E2E explicitly addresses Elasticsearch through container DNS. Its45second search budget is unchanged, with3second polling that respects the actual anonymous token rate. New Product source/prebuilt images and the retained-data E2E stack are being verified before the final post-fix reactor/CI gate.
+
+
+### Wave 8 isolated E2E and data cleanup completed
+
+After the fallback/Elasticsearch configuration fixes, infra/e2e/stack.sh up passed with all13 containers healthy, and audience reconciliation reported0 updates on repeat. infra/e2e/stack.sh test passed all3 real tests (full flow9.618s, both chaos65.49s, Maven1m16s). The original60second recovery assertion is unchanged: five orders created during Payment outage recover automatically with the same keys and no duplicate charges. Latency injection and asynchronous confirmation, cancellation/refund, audit and reconciliation paths passed.
+
+Read-only post-test SQL attributed only orders22–28 beyond the baseline21: all7 CANCELLED, each payment fully REFUNDED (179.99), every reservation RELEASED, and exactly7 RESERVE/7 COMMIT/7 RELEASE movements. No earlier order was removed. Teardown stopped/removed only the isolated project's containers/network, retained all volumes and left unrelated ivysport-mysql running. The first failing E2E attempt had created no orders. The full post-fallback reactor/CI gates remain before merge.
+
+
+### Wave 8 final post-fallback gate
+
+The final ./mvnw -B -ntp clean verify -DskipE2ETests passed all15 modules in6m35s after the E2E-discovered fallback fix:698 unit+287 IT=985, zero failures/errors/skips, all configured coverage gates passed. Product includes82 IT with the new real HTTP degraded-search regression. Explicit Checkstyle passed all15 modules; dependency installation then succeeded with tests intentionally skipped and the IDE compiler still suspended. No forced-fork-exit or Boot3 introspection warning remained. All3 isolated E2E/chaos tests had already passed on the same implementation, with verified refunds/stock cleanup. The final validation report consolidates evidence and limits. PR CI and squash merge remain.

@@ -10,6 +10,8 @@ x-app-env: &app-env
   SPRING_DATA_REDIS_HOST: redis
   SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
   SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
+  KEYCLOAK_ISSUER_URI: http://localhost:18180/realms/robomart
+  KEYCLOAK_AUDIENCE: robomart-api
   KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
   # Order and cart price items server-side from product-service.
   PRODUCT_SERVICE_URL: http://product-service:8081
@@ -149,9 +151,9 @@ services:
     mem_limit: 640m
     image: robomart-e2e/product-service:java25
     build:
-      context: ../..
-      dockerfile: infra/e2e/Dockerfile.app
-      args: {SERVICE: product-service}
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: product-service
     depends_on:
       postgres: {condition: service_healthy}
       redis: {condition: service_healthy}
@@ -164,6 +166,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product_db
       ROBOMART_PRODUCT_IMAGE_BASE_URL: http://localhost:18080
       ROBOMART_PRODUCT_IMAGE_STORAGE_PATH: /tmp/robomart-images
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
       PRODUCT_SEARCH_INITIALIZE_INDEX: "true"
       PRODUCT_KAFKA_DLT_REPLICATION_FACTOR: "1"
     volumes:
@@ -179,9 +182,9 @@ services:
     <<: *app
     image: robomart-e2e/cart-service:java25
     build:
-      context: ../..
-      dockerfile: infra/e2e/Dockerfile.app
-      args: {SERVICE: cart-service}
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: cart-service
     environment:
       <<: *app-env
     healthcheck:
@@ -200,9 +203,9 @@ services:
       keycloak: {condition: service_healthy}
     image: robomart-e2e/inventory-service:java25
     build:
-      context: ../..
-      dockerfile: infra/e2e/Dockerfile.app
-      args: {SERVICE: inventory-service}
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: inventory-service
     ports: ["127.0.0.1:18084:8084"]
     environment:
       ORDER_SERVICE_URL: http://order-service:8083
@@ -230,9 +233,9 @@ services:
       keycloak: {condition: service_healthy}
     image: robomart-e2e/payment-service:java25
     build:
-      context: ../..
-      dockerfile: infra/e2e/Dockerfile.app
-      args: {SERVICE: payment-service}
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: payment-service
     ports: ["127.0.0.1:18086:8086"]
     environment:
       <<: *app-env
@@ -248,9 +251,9 @@ services:
     <<: *app
     image: robomart-e2e/order-service:java25
     build:
-      context: ../..
-      dockerfile: infra/e2e/Dockerfile.app
-      args: {SERVICE: order-service}
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: order-service
     ports: ["127.0.0.1:18083:8083"]
     environment:
       <<: *app-env
@@ -269,9 +272,9 @@ services:
     mem_limit: 640m
     image: robomart-e2e/notification-service:java25
     build:
-      context: ../..
-      dockerfile: infra/e2e/Dockerfile.app
-      args: {SERVICE: notification-service}
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: notification-service
     environment:
       <<: *app-env
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/notification_db
@@ -299,9 +302,9 @@ services:
     <<: *app
     image: robomart-e2e/api-gateway:java25
     build:
-      context: ../..
-      dockerfile: infra/e2e/Dockerfile.app
-      args: {SERVICE: api-gateway}
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: api-gateway
     ports: ["127.0.0.1:18080:8080"]
     environment:
       <<: *app-env

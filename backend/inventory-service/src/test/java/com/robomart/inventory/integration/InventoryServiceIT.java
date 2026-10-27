@@ -29,7 +29,7 @@ import com.robomart.inventory.repository.ReservationLineRepository;
 import com.robomart.inventory.repository.ReservationRepository;
 import com.robomart.inventory.repository.StockMovementRepository;
 import com.robomart.inventory.service.InventoryService;
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.InventoryIntegrationTest;
 
 /**
  * Integration tests for {@link InventoryService} with real PostgreSQL via Testcontainers.
@@ -40,7 +40,7 @@ import com.robomart.test.IntegrationTest;
  * <p>Seed data provides ~50 inventory items (product IDs 1-50). Tests use various product IDs
  * to avoid interference between tests.
  */
-@IntegrationTest
+@InventoryIntegrationTest
 class InventoryServiceIT {
 
     @Autowired

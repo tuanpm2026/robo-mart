@@ -2,10 +2,10 @@ package com.robomart.payment.service;
 
 import java.math.BigDecimal;
 import java.util.UUID;
-import java.util.concurrent.Semaphore;
 import java.util.function.Supplier;
 
 import org.springframework.transaction.TransactionException;
+import org.springframework.resilience.InvocationRejectedException;
 import org.springframework.dao.TransientDataAccessException;
 
 import org.slf4j.Logger;
@@ -25,10 +25,11 @@ public class MockPaymentGateway {
     private volatile long simulatedDelayMs = 0;
 
     private final MockGatewayLedger ledger;
-    private final Semaphore providerSlots = new Semaphore(2);
+    private final PaymentProviderCalls providerCalls;
 
-    public MockPaymentGateway(MockGatewayLedger ledger) {
+    public MockPaymentGateway(MockGatewayLedger ledger, PaymentProviderCalls providerCalls) {
         this.ledger = ledger;
+        this.providerCalls = providerCalls;
     }
 
     /** Replays durable settlement even after restart or an ambiguous caller transaction rollback. */
@@ -81,13 +82,12 @@ public class MockPaymentGateway {
     }
 
     private GatewayResult withProviderSlot(Supplier<GatewayResult> request) {
-        if (!providerSlots.tryAcquire()) throw new PaymentTransientException("Payment provider is busy");
         try {
-            return request.get();
+            return providerCalls.execute(request);
+        } catch (InvocationRejectedException busy) {
+            throw new PaymentTransientException("Payment provider is busy");
         } catch (TransactionException | TransientDataAccessException unavailable) {
             throw new PaymentTransientException("Payment provider temporarily unavailable");
-        } finally {
-            providerSlots.release();
         }
     }
 

@@ -15,7 +15,6 @@ import jakarta.annotation.PreDestroy;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -48,7 +47,7 @@ public class FailedEventService {
             Executors.newVirtualThreadPerTaskExecutor(), this::captureContext);
 
     public FailedEventService(FailedEventRepository events, DlqRecordStore store, DlqRecordCodec codec,
-            @Qualifier("rawRecordKafkaTemplate") KafkaTemplate<byte[], byte[]> kafka, DlqProperties properties) {
+            KafkaTemplate<byte[], byte[]> kafka, DlqProperties properties) {
         this.events = events;
         this.store = store;
         this.codec = codec;

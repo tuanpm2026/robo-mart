@@ -14,14 +14,14 @@ data:
   SPRING_DATA_REDIS_PORT: "6379"
   # Elasticsearch
   SPRING_ELASTICSEARCH_URIS: "http://elasticsearch.robomart.svc.cluster.local:9200"
-  # Keycloak / JWT
+  # JWT issuer is the public token issuer; key-fetch addressing is configured independently.
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "https://auth.tuanpm.xyz/realms/robomart"
+  KEYCLOAK_AUDIENCE: "robomart-api"
   KEYCLOAK_JWK_SET_URI: "https://auth.tuanpm.xyz/realms/robomart/protocol/openid-connect/certs"
-  # Spring profile — override 'dev' hardcoded in application.yml
+  # Explicit deployment profile; applications no longer force dev.
   SPRING_PROFILES_ACTIVE: "k8s"
-  # Tracing — Spring Boot 4 property + legacy SB3 key + standard OTel SDK env var
+  # Tracing — Spring Boot 4 property and standard OTel SDK environment variables
   MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: "http://tempo.monitoring.svc.cluster.local:4318/v1/traces"
-  MANAGEMENT_OTLP_TRACING_ENDPOINT: "http://tempo.monitoring.svc.cluster.local:4318/v1/traces"
   OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://tempo.monitoring.svc.cluster.local:4318/v1/traces"
   OTEL_EXPORTER_OTLP_TRACES_PROTOCOL: "http/protobuf"
   MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED: "false"
@@ -51,4 +51,3 @@ data:
   # CORS allowed origins
   CORS_CUSTOMER_ORIGIN: "https://app.tuanpm.xyz"
   CORS_ADMIN_ORIGIN: "https://admin.tuanpm.xyz"
-  CORS_KEYCLOAK_ORIGIN: "https://auth.tuanpm.xyz"

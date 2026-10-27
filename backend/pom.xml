@@ -20,10 +20,11 @@
 
     <properties>
         <java.version>25</java.version>
+        <checkstyle.version>12.3.1</checkstyle.version>
+        <nullaway.version>0.13.8</nullaway.version>
         <spring-cloud.version>2025.1.4</spring-cloud.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <avro.version>1.12.2</avro.version>
-        <logstash-logback-encoder.version>9.0</logstash-logback-encoder.version>
         <confluent.version>7.9.10</confluent.version>
         <resilience4j.version>2.4.0</resilience4j.version>
         <shedlock.version>7.10.1</shedlock.version>
@@ -52,6 +53,7 @@
     </repositories>
 
     <modules>
+        <module>build-support</module>
         <module>common-lib</module>
         <module>security-lib</module>
         <module>proto</module>
@@ -69,6 +71,12 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Align Testcontainers' duct-tape with OTel's Kotlin HTTP exporter. -->
+            <dependency>
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>17.0.0</version>
+            </dependency>
             <!-- First imported BOM wins: keep Resilience4j 2.4 aligned with its Boot 4 starter. -->
             <dependency>
                 <groupId>io.github.resilience4j</groupId>
@@ -168,11 +176,6 @@
             </dependency>
 
             <!-- Logstash Logback Encoder (structured JSON logging) -->
-            <dependency>
-                <groupId>net.logstash.logback</groupId>
-                <artifactId>logstash-logback-encoder</artifactId>
-                <version>${logstash-logback-encoder.version}</version>
-            </dependency>
 
             <!-- Convergence pins for gRPC transitive deps -->
             <dependency>
@@ -232,6 +235,20 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>3.6.0</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <version>${checkstyle.version}</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <id>validate-style</id>
+                            <phase>validate</phase>
+                            <goals><goal>check</goal></goals>
+                        </execution>
+                    </executions>
                     <configuration>
                         <configLocation>config/checkstyle/checkstyle.xml</configLocation>
                         <consoleOutput>true</consoleOutput>
@@ -248,7 +265,6 @@
                             <exclude>**/*Application.class</exclude>
                             <exclude>**/dto/**</exclude>
                             <exclude>**/entity/**</exclude>
-                            <exclude>**/config/**</exclude>
                             <exclude>**/grpc/generated/**</exclude>
                             <exclude>com/robomart/events/**</exclude>
                             <exclude>com/robomart/proto/**</exclude>
@@ -289,6 +305,10 @@
         </pluginManagement>
 
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+            </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>

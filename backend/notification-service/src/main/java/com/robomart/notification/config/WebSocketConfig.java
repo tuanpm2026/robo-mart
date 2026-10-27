@@ -1,6 +1,5 @@
 package com.robomart.notification.config;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
@@ -13,7 +12,6 @@ import org.springframework.security.messaging.access.intercept.AuthorizationChan
 import org.springframework.security.messaging.access.intercept.MessageMatcherDelegatingAuthorizationManager;
 import org.springframework.security.messaging.context.SecurityContextChannelInterceptor;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
@@ -44,13 +42,12 @@ import com.robomart.security.converter.KeycloakRealmRoleConverter;
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.jwk-set-uri}")
-    private String jwkSetUri;
-
     private final KeycloakRealmRoleConverter keycloakRealmRoleConverter;
+    private final JwtDecoder jwtDecoder;
 
-    public WebSocketConfig(KeycloakRealmRoleConverter keycloakRealmRoleConverter) {
+    public WebSocketConfig(KeycloakRealmRoleConverter keycloakRealmRoleConverter, JwtDecoder jwtDecoder) {
         this.keycloakRealmRoleConverter = keycloakRealmRoleConverter;
+        this.jwtDecoder = jwtDecoder;
     }
 
     @Override
@@ -75,12 +72,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public JwtStompInterceptor jwtStompInterceptor() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(keycloakRealmRoleConverter);
-        return new JwtStompInterceptor(jwtDecoder(), converter);
-    }
-
-    @Bean
-    public JwtDecoder jwtDecoder() {
-        return NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+        return new JwtStompInterceptor(jwtDecoder, converter);
     }
 
     /**

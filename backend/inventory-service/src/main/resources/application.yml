@@ -1,8 +1,16 @@
 spring:
   application:
     name: inventory-service
-  profiles:
-    active: dev
+  jpa:
+    open-in-view: false
+  datasource:
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:3000}
+  threads:
+    virtual:
+      enabled: true
   autoconfigure:
     # Secure HTTP only. spring-grpc auto-secures the gRPC server once spring-security is present
     # (every call → UNAUTHENTICATED); gRPC here is internal and protected by the NetworkPolicy
@@ -14,6 +22,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/robomart}
+          audiences: ${KEYCLOAK_AUDIENCE:robomart-api}
           jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/robomart/protocol/openid-connect/certs}
   http:
     serviceclient:
@@ -25,15 +35,35 @@ spring:
     enabled: true
     locations: classpath:db/migration
   kafka:
-    bootstrap-servers: localhost:29092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
     properties:
-      schema.registry.url: http://localhost:8085
+      schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8085}
+      http.connect.timeout.ms: 1000
+      http.read.timeout.ms: 5000
+      max.retries: 0
     producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
       properties:
-        interceptor.classes: com.robomart.common.kafka.CorrelationIdKafkaProducerInterceptor
+        auto.register.schemas: true
+        max.block.ms: 1000
+        request.timeout.ms: 10000
+        delivery.timeout.ms: 30000
     consumer:
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      max-poll-records: 10
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
       properties:
-        interceptor.classes: com.robomart.common.kafka.CorrelationIdKafkaConsumerInterceptor
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: io.confluent.kafka.serializers.KafkaAvroDeserializer
+        specific.avro.reader: true
+        max.poll.interval.ms: 600000
+    admin:
+      operation-timeout: 5s
+      auto-create: ${spring.kafka.listener.auto-startup:true}
     template:
       observation-enabled: true
     listener:
@@ -44,12 +74,21 @@ spring:
   lifecycle:
     timeout-per-shutdown-phase: 25s
 
+logging:
+  structured:
+    format:
+      console: ${LOGGING_STRUCTURED_FORMAT_CONSOLE:ecs}
+
 server:
   port: 8084
   shutdown: graceful
 
 management:
   tracing:
+    baggage:
+      remote-fields: correlationId,X-Correlation-Id
+      correlation:
+        fields: correlationId,X-Correlation-Id
     sampling:
       probability: ${TRACING_SAMPLE_RATE:1.0}
   opentelemetry:

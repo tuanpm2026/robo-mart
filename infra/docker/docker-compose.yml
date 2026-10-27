@@ -173,7 +173,7 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:-admin}
       KC_HTTP_PORT: 8180
       KC_HEALTH_ENABLED: "true"
-      KC_HOSTNAME: localhost
+      KC_HOSTNAME: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8180}
       KC_HOSTNAME_STRICT: "false"
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
@@ -341,6 +341,9 @@ services:
       redis:
         condition: service_healthy
     environment:
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8180}/realms/robomart
+      KEYCLOAK_AUDIENCE: robomart-api
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/product_db
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-robomart}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-robomart}
@@ -418,6 +421,9 @@ services:
       schema-registry:
         condition: service_healthy
     environment:
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8180}/realms/robomart
+      KEYCLOAK_AUDIENCE: robomart-api
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-order:5432/order_db
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-robomart}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-robomart}
@@ -455,6 +461,9 @@ services:
       schema-registry:
         condition: service_healthy
     environment:
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8180}/realms/robomart
+      KEYCLOAK_AUDIENCE: robomart-api
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
       ORDER_SERVICE_URL: http://order-service:8083
       INVENTORY_SERVICE_CLIENT_SECRET: ${INVENTORY_SERVICE_CLIENT_SECRET:-}
       INVENTORY_SERVICE_TOKEN_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/token
@@ -488,6 +497,9 @@ services:
       postgres-payment:
         condition: service_healthy
     environment:
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8180}/realms/robomart
+      KEYCLOAK_AUDIENCE: robomart-api
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-payment:5432/payment_db
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-robomart}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-robomart}
@@ -522,6 +534,8 @@ services:
       schema-registry:
         condition: service_healthy
     environment:
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8180}/realms/robomart
+      KEYCLOAK_AUDIENCE: robomart-api
       NOTIFICATION_SERVICE_CLIENT_SECRET: ${NOTIFICATION_SERVICE_CLIENT_SECRET:-}
       NOTIFICATION_SERVICE_TOKEN_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/token
       NOTIFICATION_SERVICE_AUTH_ENABLED: "true"
@@ -577,6 +591,8 @@ services:
     ports:
       - "8080:8080"
     environment:
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8180}/realms/robomart
+      KEYCLOAK_AUDIENCE: robomart-api
       SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
@@ -587,7 +603,6 @@ services:
       GATEWAY_SERVICES_NOTIFICATION_SERVICE: http://notification-service:8087
       GATEWAY_CORS_CUSTOMER_ORIGIN: http://localhost:5173
       GATEWAY_CORS_ADMIN_ORIGIN: http://localhost:5174
-      GATEWAY_CORS_KEYCLOAK_ORIGIN: http://localhost:8180
     networks:
       - robomart-network
     deploy:

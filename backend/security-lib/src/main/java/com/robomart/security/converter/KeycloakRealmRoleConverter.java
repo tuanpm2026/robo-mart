@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -46,7 +47,7 @@ public class KeycloakRealmRoleConverter implements Converter<Jwt, Collection<Gra
         List<GrantedAuthority> authorities = new ArrayList<>();
         for (Object role : roles) {
             if (role instanceof String roleName) {
-                authorities.add(new SimpleGrantedAuthority(ROLE_PREFIX + roleName.toUpperCase()));
+                authorities.add(new SimpleGrantedAuthority(ROLE_PREFIX + roleName.toUpperCase(Locale.ROOT)));
             } else {
                 log.warn("Unexpected non-string role element in realm_access.roles: {}", role);
             }

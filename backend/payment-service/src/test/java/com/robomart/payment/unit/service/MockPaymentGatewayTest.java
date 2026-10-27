@@ -22,6 +22,7 @@ import com.robomart.payment.exception.PaymentDeclinedException;
 import com.robomart.payment.exception.PaymentTransientException;
 import com.robomart.payment.service.GatewayResult;
 import com.robomart.payment.service.MockPaymentGateway;
+import com.robomart.payment.service.PaymentProviderCalls;
 import com.robomart.payment.service.MockGatewayLedger;
 
 @DisplayName("MockPaymentGateway Unit Tests")
@@ -37,7 +38,16 @@ class MockPaymentGatewayTest {
                 .thenAnswer(call -> ((Supplier<GatewayResult>) call.getArgument(5)).get());
         when(ledger.settle(anyString(), any(), anyString(), anyString(), any()))
                 .thenAnswer(call -> ((Supplier<GatewayResult>) call.getArgument(4)).get());
-        gateway = new MockPaymentGateway(ledger);
+        gateway = new MockPaymentGateway(ledger, new PaymentProviderCalls());
+    }
+
+    @Test
+    void shouldMapFrameworkConcurrencyRejectionToTransientProviderFailure() {
+        var calls = mock(PaymentProviderCalls.class);
+        when(calls.execute(any())).thenThrow(new org.springframework.resilience.InvocationRejectedException("busy", calls));
+        var limited = new MockPaymentGateway(ledger, calls);
+        assertThatThrownBy(() -> limited.processPayment(new BigDecimal("10.00"), "USD", "busy-key"))
+                .isInstanceOf(PaymentTransientException.class).hasMessageContaining("busy");
     }
 
     @Nested

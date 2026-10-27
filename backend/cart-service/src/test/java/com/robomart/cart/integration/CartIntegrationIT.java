@@ -18,14 +18,14 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.client.RestClient;
 
 import com.robomart.cart.integration.support.ProductServiceStub;
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.CartIntegrationTest;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@IntegrationTest
+@CartIntegrationTest
 @TestPropertySource(properties = "robomart.cart.ttl-minutes=1")
 class CartIntegrationIT {
 

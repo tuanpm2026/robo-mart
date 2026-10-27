@@ -19,11 +19,11 @@
     "realm": [
       {
         "name": "CUSTOMER",
-        "description": "Customer role \u2014 browse, purchase, view own orders"
+        "description": "Customer role — browse, purchase, view own orders"
       },
       {
         "name": "ADMIN",
-        "description": "Admin role \u2014 full CRUD on products, inventory, orders, reports"
+        "description": "Admin role — full CRUD on products, inventory, orders, reports"
       },
       {
         "name": "INVENTORY_SERVICE",
@@ -62,7 +62,20 @@
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:5173/*##http://localhost:5174/*##https://tuanpm.xyz/*##https://admin.tuanpm.xyz/*"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "robomart-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "robomart-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
     },
     {
       "clientId": "robo-mart-admin",
@@ -86,7 +99,20 @@
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:5174/*##https://admin.tuanpm.xyz/*"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "robomart-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "robomart-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
     },
     {
       "clientId": "robo-mart-gateway",
@@ -105,6 +131,19 @@
       ],
       "webOrigins": [
         "http://localhost:8080"
+      ],
+      "protocolMappers": [
+        {
+          "name": "robomart-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "robomart-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
       ]
     },
     {
@@ -132,6 +171,17 @@
             "access.token.claim": "true",
             "id.token.claim": "false",
             "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "name": "robomart-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "robomart-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
           }
         }
       ]
@@ -161,6 +211,17 @@
             "access.token.claim": "true",
             "id.token.claim": "false",
             "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "name": "robomart-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "robomart-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
           }
         }
       ]

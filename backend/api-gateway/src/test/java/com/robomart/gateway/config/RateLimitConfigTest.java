@@ -73,19 +73,20 @@ class RateLimitConfigTest {
     }
 
     @Test
-    void anonymousRequestWithXForwardedForUsesClientIp() {
-        // Simulates a request behind a proxy: X-Forwarded-For contains real client IP
+    void anonymousRequestCannotSpoofItsBucketWithForwardingHeaders() {
+        // Client-provided forwarding headers must not override the actual socket peer.
         MockServerHttpRequest request = MockServerHttpRequest
                 .get("/api/v1/products")
                 .remoteAddress(new InetSocketAddress("172.16.0.1", 0))  // proxy IP
-                .header("X-Forwarded-For", "203.0.113.45")              // real client IP
+                .header("X-Forwarded-For", "203.0.113.45, 198.51.100.9")
+                .header("Forwarded", "for=203.0.113.45")
                 .build();
         MockServerWebExchange exchange = MockServerWebExchange.from(request);
 
         StepVerifier.create(userKeyResolver.resolve(exchange))
                 .assertNext(key -> {
                     assertThat(key).startsWith("ip:");
-                    assertThat(key).isEqualTo("ip:203.0.113.45");
+                    assertThat(key).isEqualTo("ip:172.16.0.1");
                 })
                 .verifyComplete();
     }

@@ -2,6 +2,8 @@
 
 Date: 2026-10-24. Status: implementation complete; build, schema lint, Checkstyle and all configured coverage gates passed. Latest verification, including automatic pending-payment recovery, executed 775 backend unit/integration/contract tests plus all three isolated E2E/chaos tests (778 passed, zero failures/errors/skips). See the [latest validation report](../_bmad-output/test-artifacts/payment-pending-resume-validation-2026-10-24.md) for commands, counts and limits, and the [initial upgrade snapshot](../_bmad-output/test-artifacts/java25-spring41-validation-2026-10-24.md) for earlier dependency validation.
 
+Subsequent platform changes are tracked in [Waves 6–9](backend-remediation-waves-6-9.md), including OSIV removal, Boot Kafka/tracing, issuer/audience validation and the shared [image renderer](../backend/scripts/README.md). The verification counts below describe the original upgrade snapshot; see the wave reports for later results.
+
 ## Intended versions and dependency policy
 
 | Component | Target |

@@ -35,7 +35,7 @@ import com.robomart.test.PostgresContainerConfig;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Import({PostgresContainerConfig.class, KafkaContainerConfig.class, TestKafkaProducerConfig.class})
+@Import({PostgresContainerConfig.class, KafkaContainerConfig.class})
 class NotificationAlertIT {
 
     @Autowired

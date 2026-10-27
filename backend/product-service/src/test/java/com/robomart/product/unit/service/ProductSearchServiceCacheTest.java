@@ -63,6 +63,11 @@ class ProductSearchServiceCacheTest {
         }
 
         @Bean
+        org.springframework.transaction.PlatformTransactionManager transactionManager() {
+            return mock(org.springframework.transaction.PlatformTransactionManager.class);
+        }
+
+        @Bean
         ProductMapper productMapper() {
             return mock(ProductMapper.class);
         }

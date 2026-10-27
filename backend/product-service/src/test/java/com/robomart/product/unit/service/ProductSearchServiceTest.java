@@ -52,6 +52,9 @@ class ProductSearchServiceTest {
     private ProductMapper productMapper;
 
     @Mock
+    private org.springframework.transaction.PlatformTransactionManager transactionManager;
+
+    @Mock
     private Tracer tracer;
 
     @Mock

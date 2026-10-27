@@ -1,4 +1,7 @@
 spring:
+  autoconfigure:
+    # Cloud 5.0.3's unused blocking adapter references Boot 3 metrics annotation types.
+    exclude: org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JAutoConfiguration
   application:
     name: api-gateway
 
@@ -6,7 +9,9 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8180/realms/robomart
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/robomart}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/robomart/protocol/openid-connect/certs}
+          audiences: ${KEYCLOAK_AUDIENCE:robomart-api}
 
   data:
     redis:
@@ -14,6 +19,13 @@ spring:
       port: ${SPRING_DATA_REDIS_PORT:6379}
 
   cloud:
+    circuitbreaker:
+      resilience4j:
+        # Retain the existing 30-second HTTP bound; no implicit one-second checkout deadline.
+        disable-time-limiter: true
+      bulkhead:
+        resilience4j:
+          enabled: false
     gateway:
       # Spring Cloud Gateway 5 reads only the server.webflux prefix; the legacy
       # spring.cloud.gateway.* names are silently ignored.
@@ -31,7 +43,13 @@ spring:
   lifecycle:
     timeout-per-shutdown-phase: 25s
 
+logging:
+  structured:
+    format:
+      console: ${LOGGING_STRUCTURED_FORMAT_CONSOLE:ecs}
+
 server:
+  forward-headers-strategy: none
   port: 8080
   shutdown: graceful
 
@@ -47,7 +65,6 @@ gateway:
   cors:
     customer-origin: ${CORS_CUSTOMER_ORIGIN:http://localhost:5173}
     admin-origin: ${CORS_ADMIN_ORIGIN:http://localhost:5174}
-    keycloak-origin: ${CORS_KEYCLOAK_ORIGIN:http://localhost:8180}
   # Rate limit configuration (AC3: configurable per endpoint)
   rate-limit:
     authenticated:
@@ -64,6 +81,10 @@ management:
   server:
     port: 8090
   tracing:
+    baggage:
+      remote-fields: correlationId,X-Correlation-Id
+      correlation:
+        fields: correlationId,X-Correlation-Id
     sampling:
       probability: ${TRACING_SAMPLE_RATE:1.0}
   opentelemetry:
@@ -95,3 +116,14 @@ management:
         "[http.server.requests]": true
       percentiles:
         "[http.server.requests]": 0.5,0.95,0.99
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 20
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true

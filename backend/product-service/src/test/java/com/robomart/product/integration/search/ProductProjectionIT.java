@@ -28,11 +28,11 @@ import com.robomart.product.service.ProductProjectionStore;
 import com.robomart.product.service.ProductReindexService;
 import com.robomart.product.service.ProductSearchService;
 import com.robomart.product.service.ProductService;
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.ProductIntegrationTest;
 import com.robomart.test.security.TestJwt;
 import com.robomart.test.security.TestJwtDecoderConfig;
 
-@IntegrationTest
+@ProductIntegrationTest
 @Import(TestJwtDecoderConfig.class)
 class ProductProjectionIT {
     @Autowired private ProductService products;

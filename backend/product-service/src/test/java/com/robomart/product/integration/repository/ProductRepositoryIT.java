@@ -5,11 +5,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 
 import com.robomart.product.repository.ProductRepository;
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.ProductIntegrationTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@IntegrationTest
+@ProductIntegrationTest
 class ProductRepositoryIT {
 
     @Autowired

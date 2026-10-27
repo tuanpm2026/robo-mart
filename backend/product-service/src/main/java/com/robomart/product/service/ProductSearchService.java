@@ -12,6 +12,8 @@ import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.robomart.common.dto.PagedResponse;
 import com.robomart.common.dto.PaginationMeta;
@@ -35,15 +37,18 @@ public class ProductSearchService {
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
     private final Tracer tracer;
+    private final TransactionTemplate fallbackTransactions;
 
     public ProductSearchService(ElasticsearchOperations elasticsearchOperations,
                                 ProductRepository productRepository,
                                 ProductMapper productMapper,
-                                Tracer tracer) {
+                                Tracer tracer, PlatformTransactionManager transactionManager) {
         this.elasticsearchOperations = elasticsearchOperations;
         this.productRepository = productRepository;
         this.productMapper = productMapper;
         this.tracer = tracer;
+        this.fallbackTransactions = new TransactionTemplate(transactionManager);
+        this.fallbackTransactions.setReadOnly(true);
     }
 
     @Cacheable(value = "productSearch", sync = true,
@@ -103,18 +108,21 @@ public class ProductSearchService {
     }
 
     private PagedResponse<ProductListResponse> searchWithPostgresFallback(ProductSearchRequest request, Pageable pageable) {
-        // Degraded mode: only keyword and categoryId filters are applied.
-        // brand, minPrice, maxPrice, and minRating are intentionally not supported in the JPQL fallback
-        // (acceptable per AC4 — reduced functionality means no relevance ranking and limited filter support).
-        String keyword = (request.keyword() != null && !request.keyword().isBlank()) ? request.keyword() : null;
-        Page<Product> page = productRepository.searchByKeywordLike(keyword, request.categoryId(), pageable);
-        List<ProductListResponse> products = page.getContent().stream()
-                .map(productMapper::toListResponse)
-                .toList();
-        var pagination = new PaginationMeta(
-                pageable.getPageNumber(), pageable.getPageSize(),
-                page.getTotalElements(), page.getTotalPages());
-        return new PagedResponse<>(products, pagination, getTraceId());
+        // Keep entity-to-DTO mapping inside the DB-only transaction, after Elasticsearch I/O ended.
+        return fallbackTransactions.execute(status -> {
+            // Degraded mode: only keyword and categoryId filters are applied.
+            // brand, minPrice, maxPrice, and minRating are intentionally not supported in the JPQL fallback
+            // (acceptable per AC4 — reduced functionality means no relevance ranking and limited filter support).
+            String keyword = (request.keyword() != null && !request.keyword().isBlank()) ? request.keyword() : null;
+            Page<Product> page = productRepository.searchByKeywordLike(keyword, request.categoryId(), pageable);
+            List<ProductListResponse> products = page.getContent().stream()
+                    .map(productMapper::toListResponse)
+                    .toList();
+            var pagination = new PaginationMeta(
+                    pageable.getPageNumber(), pageable.getPageSize(),
+                    page.getTotalElements(), page.getTotalPages());
+            return new PagedResponse<>(products, pagination, getTraceId());
+        });
     }
 
     private NativeQuery buildSearchQuery(ProductSearchRequest request, Pageable pageable) {

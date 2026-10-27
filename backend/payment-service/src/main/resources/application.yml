@@ -1,8 +1,16 @@
 spring:
   application:
     name: payment-service
-  profiles:
-    active: dev
+  jpa:
+    open-in-view: false
+  datasource:
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:3000}
+  threads:
+    virtual:
+      enabled: true
   autoconfigure:
     # Wave 2 secures HTTP endpoints only. Adding spring-security to the classpath makes spring-grpc
     # auto-secure the gRPC server (every call → UNAUTHENTICATED). gRPC here is internal and protected
@@ -14,8 +22,9 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          # jwk-set-uri (not issuer-uri) so the JwtDecoder is built lazily — the app/tests start
-          # without Keycloak being reachable; JWKS is fetched on first token validation.
+          # Explicit JWKS avoids startup discovery; issuer and audience remain validated.
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/robomart}
+          audiences: ${KEYCLOAK_AUDIENCE:robomart-api}
           jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/robomart/protocol/openid-connect/certs}
   flyway:
     enabled: true
@@ -26,12 +35,21 @@ spring:
   lifecycle:
     timeout-per-shutdown-phase: 25s
 
+logging:
+  structured:
+    format:
+      console: ${LOGGING_STRUCTURED_FORMAT_CONSOLE:ecs}
+
 server:
   port: 8086
   shutdown: graceful
 
 management:
   tracing:
+    baggage:
+      remote-fields: correlationId,X-Correlation-Id
+      correlation:
+        fields: correlationId,X-Correlation-Id
     sampling:
       probability: ${TRACING_SAMPLE_RATE:1.0}
   opentelemetry:

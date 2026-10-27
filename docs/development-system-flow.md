@@ -169,18 +169,18 @@ cd backend
 Sau khi dependencies đã healthy, chạy **mỗi lệnh trong một terminal riêng**, tại `backend/`:
 
 ```bash
-./mvnw spring-boot:run -pl :product-service
-./mvnw spring-boot:run -pl :cart-service
-./mvnw spring-boot:run -pl :inventory-service
-./mvnw spring-boot:run -pl :payment-service
-./mvnw spring-boot:run -pl :order-service
-./mvnw spring-boot:run -pl :notification-service
-./mvnw spring-boot:run -pl :api-gateway
+./mvnw spring-boot:run -pl :product-service -Dspring-boot.run.profiles=dev
+./mvnw spring-boot:run -pl :cart-service -Dspring-boot.run.profiles=dev
+./mvnw spring-boot:run -pl :inventory-service -Dspring-boot.run.profiles=dev
+./mvnw spring-boot:run -pl :payment-service -Dspring-boot.run.profiles=dev
+./mvnw spring-boot:run -pl :order-service -Dspring-boot.run.profiles=dev
+./mvnw spring-boot:run -pl :notification-service -Dspring-boot.run.profiles=dev
+./mvnw spring-boot:run -pl :api-gateway -Dspring-boot.run.profiles=dev
 ```
 
 `install` trước giúp các service resolve shared modules từ Maven local repository. Khi sửa shared module, build/install lại module đó và dependencies liên quan. Flyway áp dụng migrations lúc service dùng PostgreSQL khởi động; Hibernate dùng `ddl-auto: validate` trong cấu hình dev đã kiểm tra.
 
-Seed data nằm ở `src/main/resources/db/seed/` của Product, Inventory, Order. Cấu hình mặc định `dev` chỉ chạy migrations; profiles `demo`/`test` bổ sung seed locations. Để chạy có dữ liệu mẫu, thêm `-Dspring-boot.run.profiles=dev,demo` vào lệnh chạy từng service Product, Inventory, Order; ví dụ `./mvnw spring-boot:run -pl :product-service -Dspring-boot.run.profiles=dev,demo`. Bảo đảm product ID khớp inventory ID và kiểm tra nội dung seed trước khi dùng DB có dữ liệu cần giữ.
+Seed data nằm ở `src/main/resources/db/seed/` của Product, Inventory, Order. Không còn tự kích hoạt profile `dev`; các lệnh trên chọn profile này rõ ràng. Profile `dev` chỉ chạy migrations; profiles `demo`/`test` bổ sung seed locations. Để chạy có dữ liệu mẫu, thêm `-Dspring-boot.run.profiles=dev,demo` vào lệnh chạy từng service Product, Inventory, Order; ví dụ `./mvnw spring-boot:run -pl :product-service -Dspring-boot.run.profiles=dev,demo`. Bảo đảm product ID khớp inventory ID và kiểm tra nội dung seed trước khi dùng DB có dữ liệu cần giữ.
 
 ### 4.4 Chạy hai frontend
 
@@ -630,7 +630,7 @@ Các điểm sau phát hiện bằng đọc code/config, chưa là kết quả c
 | Gateway routes thiếu | Có controllers `/api/v1/admin/categories`, `/api/v1/admin/audit-logs`, `/api/v1/admin/reconciliation/**` nhưng `RouteConfig` chưa có routes tương ứng. Authorization rule không thay thế routing. |
 | WebSocket qua gateway | Client đặt Bearer trong STOMP CONNECT, trong khi gateway yêu cầu authenticated cho `/ws/**`. Cần xác minh handshake HTTP có cách xác thực phù hợp; CONNECT header không tự trở thành HTTP Authorization. |
 | Frontend container port | `frontend/nginx.conf` listen 8080; Compose map frontend `5173:80`/`5174:80`. Cần đồng bộ mapping với port thực tế trong container. |
-| Docker healthcheck | `Dockerfile.prebuilt` chưa có bước cài curl nhưng Compose backend healthchecks gọi curl; cần xác minh binary trong image, không dựa vào healthcheck để kết luận app lỗi nghiệp vụ. |
+| Docker healthcheck | Wave 8 đã thống nhất Dockerfile qua `backend/scripts/render-dockerfiles.py`, cài curl cho healthcheck và dùng chung target với E2E. Các bước kiểm chứng image/stack được ghi trong báo cáo Wave 8. |
 | Container downstream URLs | Notification defaults tới localhost cho các HTTP clients, Compose chưa override đầy đủ; gateway thiếu payment URI override; JWT JWK URL của một số service còn localhost. Trong container, localhost là chính container đó. |
 | Container OTLP | Compose full truyền `MANAGEMENT_OTLP_TRACING_ENDPOINT`; application config dùng `MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT`. Cần thống nhất property trước khi kỳ vọng trace tới Tempo. |
 | Ảnh sản phẩm | Storage mặc định `/tmp`, cần durable/shared storage nếu nhiều replica; route phục vụ ảnh qua gateway cần kiểm tra. |

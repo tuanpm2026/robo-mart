@@ -11,22 +11,16 @@ public class ElasticsearchContainerConfig {
     private static final ElasticsearchContainer ELASTICSEARCH =
             new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:9.4.8")
                     .withEnv("xpack.security.enabled", "false")
-                    .withEnv("discovery.type", "single-node")
-                    .withReuse(true);
+                    .withEnv("discovery.type", "single-node");
 
     static {
         ELASTICSEARCH.start();
     }
 
     @Bean
-    public ElasticsearchContainer elasticsearchContainer() {
-        return ELASTICSEARCH;
-    }
-
-    @Bean
-    DynamicPropertyRegistrar elasticsearchProperties(ElasticsearchContainer es) {
+    DynamicPropertyRegistrar elasticsearchProperties() {
         return registry -> {
-            registry.add("spring.elasticsearch.uris", es::getHttpHostAddress);
+            registry.add("spring.elasticsearch.uris", ELASTICSEARCH::getHttpHostAddress);
         };
     }
 }

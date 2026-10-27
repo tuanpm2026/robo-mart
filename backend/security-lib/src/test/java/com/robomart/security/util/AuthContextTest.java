@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
@@ -55,6 +56,14 @@ class AuthContextTest {
 
         assertThat(AuthContext.getRoles(auth))
                 .containsExactlyInAnyOrder("ROLE_CUSTOMER", "ROLE_ADMIN");
+    }
+
+    @Test
+    void shouldIgnoreComplexAuthoritiesWithoutAStringRole() {
+        GrantedAuthority complex = () -> null;
+        var auth = new JwtAuthenticationToken(buildJwt("user-123"),
+                List.of(complex, new SimpleGrantedAuthority("ROLE_CUSTOMER")));
+        assertThat(AuthContext.getRoles(auth)).containsExactly("ROLE_CUSTOMER");
     }
 
     @Test

@@ -3,12 +3,17 @@ package com.robomart.common.exception;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import jakarta.validation.ConstraintViolationException;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -16,6 +21,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.robomart.common.dto.ApiErrorResponse;
 import com.robomart.common.dto.ErrorDetail;
@@ -25,7 +32,7 @@ import io.micrometer.tracing.TraceContext;
 import io.micrometer.tracing.Tracer;
 
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
@@ -59,27 +66,26 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.SERVICE_UNAVAILABLE, ex);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
         log.warn("Validation error: {}", ex.getMessage());
         Map<String, String> fieldErrors = new HashMap<>();
         ex.getBindingResult().getFieldErrors()
-                .forEach(e -> fieldErrors.put(e.getField(), e.getDefaultMessage()));
+                .forEach(e -> fieldErrors.put(e.getField(), Objects.requireNonNullElse(e.getDefaultMessage(), "Invalid value")));
         var error = new ErrorDetail("VALIDATION_ERROR", "Request validation failed", fieldErrors);
-        var response = new ApiErrorResponse(error, getTraceId(), Instant.now());
+        var response = new ApiErrorResponse(error, getTraceId(), Instant.now(), HttpStatus.BAD_REQUEST.value());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    @ExceptionHandler(HandlerMethodValidationException.class)
     public ResponseEntity<ApiErrorResponse> handleHandlerMethodValidation(HandlerMethodValidationException ex) {
         log.warn("Handler method validation error: {}", ex.getMessage());
         Map<String, String> fieldErrors = new HashMap<>();
         ex.getParameterValidationResults().forEach(result ->
                 result.getResolvableErrors().forEach(error ->
-                        fieldErrors.put(result.getMethodParameter().getParameterName(),
-                                error.getDefaultMessage())));
+                        fieldErrors.put(Objects.requireNonNullElse(result.getMethodParameter().getParameterName(),
+                                        "arg" + result.getMethodParameter().getParameterIndex()),
+                                Objects.requireNonNullElse(error.getDefaultMessage(), "Invalid value"))));
         var error = new ErrorDetail("VALIDATION_ERROR", "Request validation failed", fieldErrors);
-        var response = new ApiErrorResponse(error, getTraceId(), Instant.now());
+        var response = new ApiErrorResponse(error, getTraceId(), Instant.now(), HttpStatus.BAD_REQUEST.value());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
@@ -87,21 +93,20 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleConstraintViolation(ConstraintViolationException ex) {
         log.warn("Method parameter validation failed: {}", ex.getMessage());
         var error = new ErrorDetail("VALIDATION_ERROR", "Request validation failed", null);
-        return ResponseEntity.badRequest().body(new ApiErrorResponse(error, getTraceId(), Instant.now()));
+        return ResponseEntity.badRequest().body(new ApiErrorResponse(error, getTraceId(), Instant.now(), HttpStatus.BAD_REQUEST.value()));
     }
 
-    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ApiErrorResponse> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
         log.warn("Method not supported: {}", ex.getMessage());
-        var error = new ErrorDetail("METHOD_NOT_ALLOWED", ex.getMessage(), null);
-        var response = new ApiErrorResponse(error, getTraceId(), Instant.now());
+        var error = new ErrorDetail("METHOD_NOT_ALLOWED",
+                Objects.requireNonNullElse(ex.getMessage(), "Method not allowed"), null);
+        var response = new ApiErrorResponse(error, getTraceId(), Instant.now(), HttpStatus.METHOD_NOT_ALLOWED.value());
         return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(response);
     }
 
-    @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleNoResourceFound(NoResourceFoundException ex) {
-        var error = new ErrorDetail("NOT_FOUND", ex.getMessage(), null);
-        var response = new ApiErrorResponse(error, getTraceId(), Instant.now());
+        var error = new ErrorDetail("NOT_FOUND", Objects.requireNonNullElse(ex.getMessage(), "Not found"), null);
+        var response = new ApiErrorResponse(error, getTraceId(), Instant.now(), HttpStatus.NOT_FOUND.value());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
@@ -110,7 +115,7 @@ public class GlobalExceptionHandler {
         log.warn("Invalid date format: {}", ex.getMessage());
         var error = new ErrorDetail("INVALID_DATE_FORMAT",
                 "Invalid date format: use ISO-8601 (e.g. 2026-01-01T00:00:00Z)", null);
-        var response = new ApiErrorResponse(error, getTraceId(), Instant.now());
+        var response = new ApiErrorResponse(error, getTraceId(), Instant.now(), HttpStatus.BAD_REQUEST.value());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
@@ -118,13 +123,42 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleUnexpected(Exception ex) {
         log.error("Unexpected error: {}", ex.getMessage(), ex);
         var error = new ErrorDetail("INTERNAL_ERROR", "An unexpected error occurred", null);
-        var response = new ApiErrorResponse(error, getTraceId(), Instant.now());
+        var response = new ApiErrorResponse(error, getTraceId(), Instant.now(), HttpStatus.INTERNAL_SERVER_ERROR.value());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 
+    @Override
+    protected @Nullable ResponseEntity<Object> handleExceptionInternal(Exception ex, @Nullable Object body, HttpHeaders headers,
+            HttpStatusCode status, WebRequest request) {
+        ApiErrorResponse problem;
+        if (status.is5xxServerError()) {
+            problem = new ApiErrorResponse(new ErrorDetail("INTERNAL_ERROR", "An unexpected error occurred", null),
+                    getTraceId(), Instant.now(), status.value());
+        } else if (ex instanceof MethodArgumentNotValidException invalid) {
+            problem = handleMethodArgumentNotValid(invalid).getBody();
+        } else if (ex instanceof HandlerMethodValidationException invalid) {
+            problem = handleHandlerMethodValidation(invalid).getBody();
+        } else if (ex instanceof HttpRequestMethodNotSupportedException unsupported) {
+            problem = handleMethodNotSupported(unsupported).getBody();
+        } else if (ex instanceof NoResourceFoundException missing) {
+            problem = handleNoResourceFound(missing).getBody();
+        } else {
+            HttpStatus resolved = HttpStatus.resolve(status.value());
+            String code = resolved != null ? resolved.name() : "HTTP_ERROR";
+            String message = status.is5xxServerError() ? "An unexpected error occurred"
+                    : body instanceof ProblemDetail detail && detail.getDetail() != null
+                            ? detail.getDetail() : "Invalid request";
+            problem = new ApiErrorResponse(new ErrorDetail(code, message, null), getTraceId(), Instant.now(),
+                    status.value());
+        }
+        // Preserve framework headers (Allow, Accept, etc.) and committed-response handling.
+        return super.handleExceptionInternal(ex, problem, headers, status, request);
+    }
+
     private ResponseEntity<ApiErrorResponse> buildResponse(HttpStatus status, RoboMartException ex) {
-        var error = new ErrorDetail(ex.getErrorCode().name(), ex.getMessage(), null);
-        var response = new ApiErrorResponse(error, getTraceId(), Instant.now());
+        var error = new ErrorDetail(ex.getErrorCode().name(),
+                Objects.requireNonNullElse(ex.getMessage(), status.getReasonPhrase()), null);
+        var response = new ApiErrorResponse(error, getTraceId(), Instant.now(), status.value());
         return ResponseEntity.status(status).body(response);
     }
 

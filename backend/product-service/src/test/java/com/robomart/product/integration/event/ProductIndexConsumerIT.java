@@ -31,9 +31,9 @@ import com.robomart.product.repository.ProductSearchRepository;
 import com.robomart.product.service.ProductIndexWriter;
 import com.robomart.product.service.ProductProjectionStore;
 import com.robomart.product.service.ProductService;
-import com.robomart.test.IntegrationTest;
+import com.robomart.test.ProductIntegrationTest;
 
-@IntegrationTest
+@ProductIntegrationTest
 @TestPropertySource(properties = "spring.kafka.listener.auto-startup=true")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ProductIndexConsumerIT {

@@ -12,6 +12,7 @@ case "${1:-}" in
     "${COMPOSE[@]}" config --quiet
     ;;
   build)
+    python3 "$ROOT/backend/scripts/render-dockerfiles.py" --check
     "$0" prepare
     for service in "${SERVICES[@]}"; do
       test -s "$ROOT/backend/$service/target/$service-0.0.1-SNAPSHOT.jar" || {
@@ -26,6 +27,8 @@ case "${1:-}" in
   up)
     # Dependencies first, then Spring contexts one at a time.
     "${COMPOSE[@]}" up -d --wait --wait-timeout 600 postgres redis elasticsearch kafka schema-registry keycloak
+    # Startup imports do not update an existing realm; preserve data and reconcile only test mappers.
+    python3 "$ROOT/infra/e2e/configure-realm.py"
     for service in "${SERVICES[@]}"; do
       "${COMPOSE[@]}" up -d --no-deps --wait --wait-timeout 480 "$service"
     done
