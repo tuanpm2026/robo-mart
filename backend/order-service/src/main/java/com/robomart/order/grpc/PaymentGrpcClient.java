@@ -14,7 +14,7 @@ import com.robomart.proto.payment.RefundPaymentRequest;
 import com.robomart.proto.payment.RefundPaymentResponse;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
+import org.springframework.resilience.annotation.Retryable;
 import io.grpc.StatusRuntimeException;
 
 @Component
@@ -32,7 +32,8 @@ public class PaymentGrpcClient {
     }
 
     @CircuitBreaker(name = INSTANCE, fallbackMethod = "paymentFallback")
-    @Retry(name = INSTANCE)
+    @Retryable(predicate = GrpcStatusClassifier.class, maxRetries = 2,
+            delayString = "${grpc.retry.initial-delay-ms:1000}", multiplier = 2, maxDelay = 2000)
     public ProcessPaymentResponse processPayment(ProcessPaymentRequest request) {
         try {
             return stub.withDeadlineAfter(sagaProperties.getSteps().timeoutFor("ProcessPayment").toMillis(),
@@ -43,7 +44,8 @@ public class PaymentGrpcClient {
     }
 
     @CircuitBreaker(name = INSTANCE, fallbackMethod = "paymentFallback")
-    @Retry(name = INSTANCE)
+    @Retryable(predicate = GrpcStatusClassifier.class, maxRetries = 2,
+            delayString = "${grpc.retry.initial-delay-ms:1000}", multiplier = 2, maxDelay = 2000)
     public ProcessPaymentResponse resumePayment(ProcessPaymentRequest request) {
         try {
             return stub.withDeadlineAfter(5, TimeUnit.SECONDS).processPayment(request);
@@ -53,7 +55,8 @@ public class PaymentGrpcClient {
     }
 
     @CircuitBreaker(name = INSTANCE, fallbackMethod = "refundFallback")
-    @Retry(name = INSTANCE)
+    @Retryable(predicate = GrpcStatusClassifier.class, maxRetries = 2,
+            delayString = "${grpc.retry.initial-delay-ms:1000}", multiplier = 2, maxDelay = 2000)
     public RefundPaymentResponse refundPayment(RefundPaymentRequest request) {
         try {
             return stub.withDeadlineAfter(sagaProperties.getSteps().timeoutFor("RefundPaymentStep").toMillis(),

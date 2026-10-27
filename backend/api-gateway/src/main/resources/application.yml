@@ -16,6 +16,13 @@ spring:
       port: ${SPRING_DATA_REDIS_PORT:6379}
 
   cloud:
+    circuitbreaker:
+      resilience4j:
+        # Retain the existing 30-second HTTP bound; no implicit one-second checkout deadline.
+        disable-time-limiter: true
+      bulkhead:
+        resilience4j:
+          enabled: false
     gateway:
       # Spring Cloud Gateway 5 reads only the server.webflux prefix; the legacy
       # spring.cloud.gateway.* names are silently ignored.
@@ -106,3 +113,14 @@ management:
         "[http.server.requests]": true
       percentiles:
         "[http.server.requests]": 0.5,0.95,0.99
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 20
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true

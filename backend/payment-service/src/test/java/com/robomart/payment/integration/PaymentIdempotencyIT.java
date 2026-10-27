@@ -35,6 +35,7 @@ import com.robomart.payment.service.MockGatewayLedger;
 import com.robomart.payment.service.GatewayResult;
 import com.robomart.payment.exception.PaymentDeclinedException;
 import com.robomart.payment.service.MockPaymentGateway;
+import com.robomart.payment.service.PaymentProviderCalls;
 import com.robomart.payment.service.PaymentService;
 import com.robomart.payment.service.PaymentService.PaymentResult;
 import com.robomart.test.PostgresContainerConfig;
@@ -138,7 +139,7 @@ class PaymentIdempotencyIT {
         assertThat(payments.count()).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM retired_outbox_events", Integer.class)).isZero();
         assertThat(operationCount("charge:%")).isEqualTo(1);
-        var restartedGateway = new MockPaymentGateway(new MockGatewayLedger(providerDataSource));
+        var restartedGateway = new MockPaymentGateway(new MockGatewayLedger(providerDataSource), new PaymentProviderCalls());
         var restartedService = new PaymentService(intents, restartedGateway, payments);
         PaymentResult recovered = restartedService.processPayment("ambiguous", "user-1",
                 new BigDecimal("29.99"), "USD", "key-ambiguous");
@@ -205,7 +206,7 @@ class PaymentIdempotencyIT {
         assertThatThrownBy(() -> pay("declined", "key-declined")).isInstanceOf(PaymentDeclinedException.class);
         // Even losing the caller's cache cannot turn the provider's definitive decline into a new charge.
         keys.deleteAll();
-        var restarted = new MockPaymentGateway(new MockGatewayLedger(providerDataSource));
+        var restarted = new MockPaymentGateway(new MockGatewayLedger(providerDataSource), new PaymentProviderCalls());
         var restartedService = new PaymentService(intents, restarted, payments);
         assertThatThrownBy(() -> restartedService.processPayment("declined", "user-1",
                 new BigDecimal("29.99"), "USD", "key-declined"))
@@ -222,7 +223,7 @@ class PaymentIdempotencyIT {
             status.setRollbackOnly();
         });
         assertThat(payments.count()).isEqualTo(1);
-        var restarted = new MockPaymentGateway(new MockGatewayLedger(providerDataSource));
+        var restarted = new MockPaymentGateway(new MockGatewayLedger(providerDataSource), new PaymentProviderCalls());
         var restartedService = new PaymentService(intents, restarted, payments);
         assertThatThrownBy(() -> restartedService.processPayment("unfinalized", "another-user",
                 new BigDecimal("29.99"), "USD", "key-unfinalized"))
@@ -240,7 +241,7 @@ class PaymentIdempotencyIT {
             status.setRollbackOnly();
             return result;
         });
-        var restarted = new MockPaymentGateway(new MockGatewayLedger(providerDataSource));
+        var restarted = new MockPaymentGateway(new MockGatewayLedger(providerDataSource), new PaymentProviderCalls());
         var restartedService = new PaymentService(intents, restarted, payments);
         PaymentResult recovered = restartedService.refundPayment(Long.valueOf(charge.paymentId()), "ambiguous-refund",
                 new BigDecimal("29.99"), "retry refund");
@@ -302,7 +303,7 @@ class PaymentIdempotencyIT {
         assertThat(pending.getProcessingToken()).isNotNull();
         assertThat(operationCount("charge:%")).isEqualTo(1);
         jdbc.update("UPDATE payments SET processing_until=now()-interval '1 second' WHERE id=?", pending.getId());
-        var recovered = new PaymentService(intents, new MockPaymentGateway(new MockGatewayLedger(providerDataSource)), payments)
+        var recovered = new PaymentService(intents, new MockPaymentGateway(new MockGatewayLedger(providerDataSource), new PaymentProviderCalls()), payments)
                 .processPayment("charge-crash", "user-1", new BigDecimal("29.99"), "USD", "charge-crash-key");
         assertThat(recovered.success()).isTrue();
         assertOneChargeAndPayment("charge-crash");
