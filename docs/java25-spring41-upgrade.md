@@ -17,7 +17,7 @@ Subsequent platform changes are tracked in [Waves 6–9](backend-remediation-wav
 | Avro runtime and generator | 1.12.2 |
 | Logstash Logback Encoder / ShedLock | 9.0 / 7.10.1 |
 | JaCoCo / ArchUnit | 0.8.15 / 1.5.1 |
-| Confluent serializer, Kafka and Schema Registry images | 7.9.10 |
+| Confluent serializer, Kafka and Schema Registry images | 8.2.4 (Wave9; Kafka client4.2.2) |
 | Elasticsearch local and integration-test image | 9.4.8 |
 | MapStruct | 1.6.3 |
 

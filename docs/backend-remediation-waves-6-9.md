@@ -111,14 +111,14 @@ PR [#46](https://github.com/tuanpm2026/robo-mart/pull/46), squash commit `c6d726
 | 9. Service-specific integration-test infrastructure | Implemented and verified: resource-specific JVM-owned fixtures; no forced fork shutdown in final full reactor |
 | 10. Remove active dev profile, Locale.ROOT, security coverage exclusions, Keycloak CORS origin and proxy spoofing | Implemented; role/CORS/forwarded-header regressions and coverage including config passed |
 
-## Wave 9: in progress on `wave9/data-infra`
+## Wave 9: implementation verified on `wave9/data-infra`
 
 | Finding | Status / dependency |
 | --- | --- |
-| 1. Shared outbox library with ordering, claims, IDs, retention and metrics; document CDC | Implemented shared outbox engine/JDBC claims/settings/retention/identity; focused library and service checks passed; final wave gates remain |
+| 1. Shared outbox library with ordering, claims, IDs, retention and metrics; document CDC | Implemented shared outbox engine/JDBC claims/settings/retention/identity; focused and full reactor/library/service gates passed; final image/E2E/CI remain |
 | 2. Confluent 8/KRaft and compatible consumer protocol | Implemented8.2.4 with Kafka client4.2.2; retained-data upgrade/IDs/offsets verified; Avro/group migration and Notification consumer-mode suites passed; final E2E remains |
-| 3. S3-compatible image storage and MinIO/AWS SDK v2 | Implemented SDK2.57.4, patched source-built MinIO fixtures, public URLs, transaction-safe cleanup and explicit copy/checksum migration; final full gates remain |
-| 4. Split common-core/common-web-starter, scoped errors and remove cart DB exclusions | Implemented conditional auto-configuration, domain-owned wire codes, optional persistence API and Cart exclusions removed; focused common tests/coverage passed, final gates remain |
+| 3. S3-compatible image storage and MinIO/AWS SDK v2 | Implemented SDK2.57.4, patched source-built MinIO fixtures, public URLs, transaction-safe cleanup and explicit copy/checksum migration; full reactor/style gates passed; final image/E2E/CI remain |
+| 4. Split common-core/common-web-starter, scoped errors and remove cart DB exclusions | Implemented conditional auto-configuration, domain-owned wire codes, optional persistence API and Cart exclusions removed; focused and full reactor/common tests/coverage passed; final image/E2E/CI remain |
 
 ### Order recovery/outbox continuation
 
@@ -503,3 +503,12 @@ Direct inspection of Boot4.1.2's BOM confirms kafka-clients4.2.2. Confluent8.2.4
 A label-guarded retained E2E upgrade from7.9.10 to8.2.4 preserved cluster/node/directory identity, all17 topic IDs/partition counts,4 committed partition offsets and6 schema IDs/versions/content. Metadata stayed3.9-IV0 and kraft.version0. After a successful dry-run, group.version was enabled at1 on only the stopped-app isolated fixture; metadata did not advance, and the snapshot still matched. No volume was formatted/deleted. configure-kafka.py guards the exact project/service/image, named-volume ownership and fixed cluster identity; first enablement refuses running apps and repeat execution is idempotent. Python guard tests cover wrong ownership/image/volume/cluster, app draining, read-only/idempotent operation and unexpected metadata change. Production defaults remain classic; E2E and fresh disposable service fixtures opt into consumer.
 
 ./mvnw -B -ntp clean verify -pl :events -DskipE2ETests passed2unit+5IT: all13 Avro schemas register/re-register/backward-check, and a classic group commits offset1 then migrates to GroupType.CONSUMER, receives offset1 next without replaying offset0, and commits2. An initial run exposed the old test's substring ID parser when Registry8 returned extra version/GUID/schema fields; it now uses a proper Jackson3 JSON parser, with legacy/extended response coverage. No schema compatibility assertion was removed. Full Notification verification on8.2.4/consumer mode passed116unit+22IT and coverage, including malformed bytes, archive failure/retry, replay and service reads; no forced fork exit remained. The operator runbook records feature, rollback and deployment boundaries. Final whole-wave reactor/E2E/CI remain after storage/common-module work.
+
+
+### Wave9 final reactor and storage/module validation
+
+The first full18-module verification passed748unit+298IT. The final repeated `./mvnw -B -ntp clean verify -DskipE2ETests` passed753unit+298IT=1,051 executions in7m34s after adding5 S3 configuration/CLI tests and preserving Unix backslashes as filenames rather than reinterpreting them as object path separators. Zero failures/errors/skips; all configured80% module coverage gates passed. The facade intentionally reruns36 starter tests for the existing CI selector, giving1,015 distinct tests. Explicit Checkstyle and dependency installation passed; no forced fork exit/class-data mismatch warning remained.
+
+Real MinIO tests passed upload/delete/transaction rollback/cache behavior, dry-run, conditional copy, checksum verification, idempotent repeat, conflict refusal without overwrite, source retention, symlink/invalid-key guards and302 legacy URL redirects with anonymous object reads. The first redirect test followed302 automatically and was corrected to assert the response and destination separately. Common modules passed conditional/no-scan/optional-security/domain-code tests; Cart's real integration context asserts no Hibernate/datasource/entity manager/Flyway and no exclusions. Product's repository-root CD/source image built, including NullAway and AOT; its packaged migration CLI ran network-disabled with the old, independently verified empty E2E volume mounted read-only.
+
+Both frontends passed327 tests/type-check/build/format; proto lint/breaking, five Kafka guard tests, Compose renders, all3 actual Kustomize renders and generated Dockerfile drift passed. Image/E2E/PR CI completion remains. The [complete finding checklist](backend-remediation-final-status.md) distinguishes implemented findings from explicit future/operational boundaries; the [Wave9 validation report](../_bmad-output/test-artifacts/wave9-data-infra-validation-2026-10-27.md) records commands and per-module counts.

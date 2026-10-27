@@ -1,6 +1,6 @@
 # Wave 9 data infrastructure validation — 2026-10-27
 
-Status: implementation complete; final verification/PR/merge in progress. Branch `wave9/data-infra`.
+Status: implementation and final local reactor/style verification complete; image/E2E/PR merge checks in progress. Branch `wave9/data-infra`.
 
 ## Changes and operational boundaries
 
@@ -30,4 +30,26 @@ All Maven commands use JDK25 and `backend/mvnw`. IDE background compilation was 
 
 ## Final gates
 
-Full reactor, final image/E2E checks, CI and merge results will be recorded here after completion. Operator rollout prerequisites remain in `docs/kafka-8-upgrade.md` and `docs/product-object-storage.md`; deployment is not automated in the user's current environment.
+`./mvnw -B -ntp clean verify -DskipE2ETests` passed all18 reactor modules in7m34s:753 unit+298 IT=1,051 executions, zero failures/errors/skips. The common-lib compatibility harness intentionally repeats36 starter tests; there are1,015 distinct tests. All configured80% module coverage gates passed. Explicit `./mvnw -B -ntp checkstyle:check` passed all18 modules; subsequent `./mvnw -B -ntp install -DskipTests -DskipITs -DskipE2ETests` succeeded (tests intentionally skipped only for packaging image inputs). No forced-fork-exit or mismatched-class coverage warning remained.
+
+The actual repository-root CD/source Product image built successfully, including active NullAway and the new split module inputs. Its packaged plain migration CLI ran with network disabled and the label-verified retained old image volume mounted read-only:eligible0/copied0/identical0/skipped0, matching the independently counted empty volume. All9 rendered Dockerfiles match the shared renderer.
+
+| Module | Unit executions | IT | Line coverage |
+| --- | ---: | ---: | ---: |
+| api-gateway | 63 | 0 | 98.5% |
+| build-support | 1 | 0 | 100.0% |
+| cart-service | 45 | 41 | 95.5% |
+| common-core | 12 | 0 | 90.9% |
+| common-lib | 36 | 0 | n/a (dependency-only facade) |
+| common-web-starter | 36 | 0 | 83.3% |
+| events | 2 | 5 | n/a |
+| inventory-service | 75 | 49 | 94.7% |
+| notification-service | 116 | 22 | 93.9% |
+| order-service | 180 | 57 | 95.3% |
+| outbox-lib | 10 | 6 | 98.0% |
+| payment-service | 44 | 34 | 91.0% |
+| product-service | 108 | 84 | 94.5% |
+| proto | 8 | 0 | n/a |
+| security-lib | 17 | 0 | 85.3% |
+
+Final isolated image/E2E and PR CI evidence follow below. Operator rollout prerequisites remain in `docs/kafka-8-upgrade.md` and `docs/product-object-storage.md`; deployment is not automated in the user's current environment.
