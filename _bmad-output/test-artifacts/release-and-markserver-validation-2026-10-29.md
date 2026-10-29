@@ -36,3 +36,6 @@ Final CI/merge and restoration of Argo automation are tracked in [PR48](https://
 
 
 PR48's initial security summaries identified a real pathname-check/open race in digest-record reads and standalone patch scanning that did not see inherited Pod security fields. Reads now atomically open with O_NOFOLLOW and inspect/read/close the same descriptor; a regression rejects links and non-regular files. The sidecar patch now explicitly declares its existing non-root UID/GID and RuntimeDefault seccomp at both Pod/container levels. No scanner suppression or alert dismissal was used.
+
+
+After PR48 merged as 0adfa03be3743350e94d38801a7e1a3d535ad63b, the original Argo automatic policy was restored. Source synchronized successfully, revealing a pre-existing Gateway LoadBalancer health wait on this controller-less, tunnel-based demo. A focused follow-up declares NodePort 32210 (the already allocated, tunnel-referenced port) so health no longer waits for an external LB address. Base cloud manifests remain unchanged. The follow-up is validated by rendering and server-side dry-run before its own review/CI gate.
