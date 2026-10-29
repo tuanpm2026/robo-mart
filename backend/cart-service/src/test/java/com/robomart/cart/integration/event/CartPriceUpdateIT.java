@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.web.client.RestClient;
 
 import com.robomart.cart.event.consumer.ProductEventConsumer;
@@ -22,6 +23,8 @@ import com.robomart.test.CartIntegrationTest;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @CartIntegrationTest
+// Events are invoked directly here; leave broker consumption to ProductConsumerKafkaIT.
+@TestPropertySource(properties = "spring.kafka.listener.auto-startup=false")
 class CartPriceUpdateIT {
 
     private static final ProductServiceStub PRODUCT_SERVICE = ProductServiceStub.start()

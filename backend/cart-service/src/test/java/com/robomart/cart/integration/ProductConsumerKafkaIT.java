@@ -33,11 +33,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.test.util.AopTestUtils;
 
 import com.robomart.events.product.ProductUpdatedEvent;
 import java.math.BigDecimal;
 import com.robomart.cart.repository.CartRepository;
+import com.robomart.cart.service.CartExpiryWarningScheduler;
 import com.robomart.test.KafkaContainerConfig;
 import com.robomart.test.RedisContainerConfig;
 
@@ -50,6 +53,8 @@ class ProductConsumerKafkaIT {
     @Value("${spring.kafka.bootstrap-servers}") private String bootstrap;
     @Autowired private KafkaTemplate<String, SpecificRecord> kafka;
     @MockitoSpyBean private CartRepository carts;
+    // Expiry behavior has separate coverage; it must not call the spy during stubbing.
+    @MockitoBean private CartExpiryWarningScheduler expiryWarnings;
 
     private KafkaConsumer<String, byte[]> dltConsumer() {
         KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(Map.of(
@@ -81,8 +86,10 @@ class ProductConsumerKafkaIT {
         String key = UUID.randomUUID().toString();
         String eventId = UUID.randomUUID().toString();
         Instant timestamp = Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
+        // Stub the spy directly so repository advice cannot intercept Mockito setup.
+        CartRepository repositorySpy = AopTestUtils.getUltimateTargetObject(carts);
         doThrow(new IllegalStateException("simulated storage failure"))
-                .when(carts).updateProduct(eq(9876543L), eq(key), eq(new BigDecimal("15.00")), eq(timestamp));
+                .when(repositorySpy).updateProduct(eq(9876543L), eq(key), eq(new BigDecimal("15.00")), eq(timestamp));
         var event = ProductUpdatedEvent.newBuilder().setEventId(eventId).setEventType("PRODUCT_UPDATED")
                 .setAggregateId(key).setAggregateType("Product").setTimestamp(timestamp).setVersion(1)
                 .setProductId(9876543L).setSku(key).setName(key).setPrice("15.00")
