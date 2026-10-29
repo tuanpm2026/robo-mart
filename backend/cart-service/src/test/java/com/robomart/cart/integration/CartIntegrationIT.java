@@ -26,7 +26,8 @@ import tools.jackson.databind.json.JsonMapper;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @CartIntegrationTest
-@TestPropertySource(properties = "robomart.cart.ttl-minutes=1")
+// HTTP tests must not compete with the real Kafka consumer integration test.
+@TestPropertySource(properties = {"robomart.cart.ttl-minutes=1", "spring.kafka.listener.auto-startup=false"})
 class CartIntegrationIT {
 
     /** Server-side catalog: the cart must use these names/prices whatever the client sends. */
