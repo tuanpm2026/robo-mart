@@ -31,30 +31,30 @@ images:
 - digest: sha256:db816c5b782670e2f0e4def26a8aaa2d78ea57d1a48b21d989731310f61f5a13
   name: ghcr.io/robomart/admin-dashboard
   newName: ghcr.io/tuanpm2026/robomart/admin-dashboard
-- name: ghcr.io/robomart/api-gateway
+- digest: sha256:b7dd5b9c4af6e31892943b9f4cd0724effea3913f4d41d0d979bc032abb736c6
+  name: ghcr.io/robomart/api-gateway
   newName: ghcr.io/tuanpm2026/robomart/api-gateway
-  newTag: main-e67142e
-- name: ghcr.io/robomart/cart-service
+- digest: sha256:58b9ef66518328449bf6707b263d54361a4bb00823ea54c5e2a1c9da2a300daa
+  name: ghcr.io/robomart/cart-service
   newName: ghcr.io/tuanpm2026/robomart/cart-service
-  newTag: main-e67142e
 - digest: sha256:03dc6f39b8cdbf1c73162ded746a42b59c59d0ca260973104d3d257c07554130
   name: ghcr.io/robomart/customer-website
   newName: ghcr.io/tuanpm2026/robomart/customer-website
-- name: ghcr.io/robomart/inventory-service
+- digest: sha256:49236a242d081ae56252faec9fb735b91dbc1b8774e7715238016ea3582d3584
+  name: ghcr.io/robomart/inventory-service
   newName: ghcr.io/tuanpm2026/robomart/inventory-service
-  newTag: main-e67142e
-- name: ghcr.io/robomart/notification-service
+- digest: sha256:5e4257193f09992a0d089cf38c70119731e429594ed8b92b08603aee46774be2
+  name: ghcr.io/robomart/notification-service
   newName: ghcr.io/tuanpm2026/robomart/notification-service
-  newTag: main-e67142e
-- name: ghcr.io/robomart/order-service
+- digest: sha256:7098044f49c7b69cc01d27faf93eb6e99d79b1f871a1fcf3f8351f475046b80f
+  name: ghcr.io/robomart/order-service
   newName: ghcr.io/tuanpm2026/robomart/order-service
-  newTag: main-e67142e
-- name: ghcr.io/robomart/payment-service
+- digest: sha256:ec5a62be7a461e4b9d879a29428109ccecc9f8bdf2d11e30784358abe4ea914d
+  name: ghcr.io/robomart/payment-service
   newName: ghcr.io/tuanpm2026/robomart/payment-service
-  newTag: main-e67142e
-- name: ghcr.io/robomart/product-service
+- digest: sha256:49db9221f8a1b7ededdd1f557566f2b34d003115180dc2f0ddc62b6b0afd1dc9
+  name: ghcr.io/robomart/product-service
   newName: ghcr.io/tuanpm2026/robomart/product-service
-  newTag: main-e67142e
 
 configMapGenerator:
 - files:
