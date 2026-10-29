@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: robomart
+spec:
+  template:
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+      - name: product-image-proxy
+        image: nginx:stable-alpine@sha256:47928bf67eb62a1863cb08d9ecb52d3e704304ba614eaee17884204677702951
+        command: [nginx]
+        args: [-c, /etc/nginx/nginx.conf, -g, "daemon off;"]
+        ports: [{name: image-proxy, containerPort: 8088}]
+        resources:
+          requests: {memory: 16Mi, cpu: 10m}
+          limits: {memory: 64Mi, cpu: 250m}
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          runAsGroup: 1001
+          seccompProfile: {type: RuntimeDefault}
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+        readinessProbe:
+          httpGet: {path: /proxy-health, port: image-proxy}
+        volumeMounts:
+        - {name: image-proxy-config, mountPath: /etc/nginx/nginx.conf, subPath: nginx.conf, readOnly: true}
+        - {name: image-proxy-tmp, mountPath: /tmp}
+      volumes:
+      - {name: image-proxy-config, configMap: {name: product-image-proxy}}
+      - {name: image-proxy-tmp, emptyDir: {sizeLimit: 64Mi}}

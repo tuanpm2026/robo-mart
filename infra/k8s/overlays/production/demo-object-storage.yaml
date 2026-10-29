@@ -1,0 +1,237 @@
+# markserver demo only. Secrets are provisioned out of band; local PVs are retained.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: robomart-minio-demo
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+spec:
+  capacity: {storage: 10Gi}
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  persistentVolumeReclaimPolicy: Retain
+  local: {path: /home/tuanpm/.robomart-data/minio}
+  claimRef: {namespace: robomart, name: robomart-minio-demo}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - {key: kubernetes.io/hostname, operator: In, values: [markserver]}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: robomart-product-images-demo
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+spec:
+  capacity: {storage: 2Gi}
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  persistentVolumeReclaimPolicy: Retain
+  local: {path: /home/tuanpm/.robomart-data/product-images}
+  claimRef: {namespace: robomart, name: product-images}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - {key: kubernetes.io/hostname, operator: In, values: [markserver]}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: robomart-minio-demo
+  namespace: robomart
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  volumeName: robomart-minio-demo
+  resources:
+    requests: {storage: 10Gi}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: robomart-minio-build
+  namespace: robomart
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+data:
+  build.sh: |
+    #!/bin/sh
+    set -eu
+    cd /build
+    wget -q -O source.tar.gz https://codeload.github.com/minio/minio/tar.gz/9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a
+    echo '45521908307306e925c98d629e1c17d78c8b72b6ee242b1bfb1409f7d8ee5841  source.tar.gz' | sha256sum -c -
+    mkdir -p source bin /build/tmp
+    tar -xzf source.tar.gz --strip-components=1 -C source
+    cd source
+    go mod download
+    go build -p 2 -trimpath -ldflags='-s -w' -o /build/bin/minio .
+    cp LICENSE /build/bin/LICENSE
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: robomart-minio-demo
+  namespace: robomart
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  replicas: 1
+  strategy: {type: Recreate}
+  selector:
+    matchLabels: {app: robomart-minio-demo}
+  template:
+    metadata:
+      labels: {app: robomart-minio-demo}
+      annotations:
+        robomart.io/source-revision: 9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+      - name: build-patched-minio
+        image: golang:1.26-alpine@sha256:a2012b4a1d1f9f7e9f44e0d39b805a901e856b1dd80b4e6ee4338db547050308
+        command: [/bin/sh, /source-build/build.sh]
+        env:
+        - {name: CGO_ENABLED, value: "0"}
+        - {name: GOMAXPROCS, value: "2"}
+        - {name: GOMEMLIMIT, value: 512MiB}
+        - {name: TMPDIR, value: /build/tmp}
+        - {name: GOTMPDIR, value: /build/tmp}
+        - {name: GOTOOLCHAIN, value: local}
+        - {name: GOPATH, value: /build/go}
+        - {name: GOCACHE, value: /build/cache}
+        resources:
+          requests: {memory: 256Mi, cpu: 250m}
+          limits: {memory: 2Gi, cpu: "2"}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+        volumeMounts:
+        - {name: build, mountPath: /build}
+        - {name: source-build, mountPath: /source-build, readOnly: true}
+        - {name: tmp, mountPath: /tmp}
+      containers:
+      - name: minio
+        image: alpine:3.23@sha256:ff7f0c727dd796aa36787bfcd9a64bf35a6ce72a73451b3359fde849b6703d63
+        command: [/build/bin/minio]
+        args: [server, /data, --address, ":9000", --console-address, ":9001"]
+        env:
+        - name: MINIO_ROOT_USER
+          valueFrom: {secretKeyRef: {name: robomart-minio-demo-auth, key: access-key}}
+        - name: MINIO_ROOT_PASSWORD
+          valueFrom: {secretKeyRef: {name: robomart-minio-demo-auth, key: secret-key}}
+        - {name: GOMEMLIMIT, value: 256MiB}
+        - {name: GOMAXPROCS, value: "2"}
+        - {name: HOME, value: /tmp}
+        ports: [{name: s3, containerPort: 9000}]
+        resources:
+          requests: {memory: 128Mi, cpu: 50m}
+          limits: {memory: 384Mi, cpu: 500m}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+        readinessProbe:
+          httpGet: {path: /minio/health/ready, port: s3}
+          periodSeconds: 5
+        livenessProbe:
+          httpGet: {path: /minio/health/live, port: s3}
+          initialDelaySeconds: 20
+          periodSeconds: 15
+        volumeMounts:
+        - {name: data, mountPath: /data}
+        - {name: build, mountPath: /build, readOnly: true}
+        - {name: tmp, mountPath: /tmp}
+      volumes:
+      - {name: data, persistentVolumeClaim: {claimName: robomart-minio-demo}}
+      - {name: build, emptyDir: {sizeLimit: 8Gi}}
+      - {name: tmp, emptyDir: {sizeLimit: 64Mi}}
+      - {name: source-build, configMap: {name: robomart-minio-build}}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: robomart-minio-demo
+  namespace: robomart
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  selector: {app: robomart-minio-demo}
+  ports: [{name: s3, port: 9000, targetPort: s3}]
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: robomart-minio-bootstrap-v1
+  namespace: robomart
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 1200
+  template:
+    metadata:
+      labels: {app: robomart-minio-bootstrap}
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile: {type: RuntimeDefault}
+      initContainers:
+      - name: wait-for-object-storage
+        image: alpine:3.23@sha256:ff7f0c727dd796aa36787bfcd9a64bf35a6ce72a73451b3359fde849b6703d63
+        command: [/bin/sh, -ec]
+        args:
+        - |
+          for attempt in $(seq 1 300); do
+            wget -q -T 2 -O /dev/null http://robomart-minio-demo:9000/minio/health/ready && exit 0
+            sleep 2
+          done
+          exit 1
+        resources:
+          requests: {memory: 8Mi, cpu: 10m}
+          limits: {memory: 32Mi, cpu: 100m}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+      containers:
+      - name: bootstrap
+        image: amazon/aws-cli:latest@sha256:bdb0dd07c54dfc7fe6526387dcf23eaab269875a20d647ae4de8196ea04d6bd4
+        command: [/bin/sh, -ec]
+        args:
+        - |
+          export AWS_EC2_METADATA_DISABLED=true AWS_DEFAULT_REGION=us-east-1 HOME=/tmp
+          endpoint=http://robomart-minio-demo:9000
+          aws --endpoint-url "$endpoint" s3api head-bucket --bucket robomart-images 2>/dev/null || aws --endpoint-url "$endpoint" s3api create-bucket --bucket robomart-images
+          aws --endpoint-url "$endpoint" s3api put-bucket-policy --bucket robomart-images --policy '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":["s3:GetObject"],"Resource":["arn:aws:s3:::robomart-images/*"]}]}'
+          echo 'Dedicated demo image bucket ready; anonymous GET only.'
+        env:
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom: {secretKeyRef: {name: robomart-minio-demo-auth, key: access-key}}
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom: {secretKeyRef: {name: robomart-minio-demo-auth, key: secret-key}}
+        resources:
+          requests: {memory: 64Mi, cpu: 25m}
+          limits: {memory: 128Mi, cpu: 250m}
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities: {drop: [ALL]}
+        volumeMounts: [{name: tmp, mountPath: /tmp}]
+      volumes: [{name: tmp, emptyDir: {sizeLimit: 64Mi}}]

@@ -19,6 +19,44 @@ spec:
     server: https://kubernetes.default.svc  # in-cluster (ArgoCD runs in same cluster)
     namespace: robomart
 
+  # HPA owns replicas after creation; self-heal must not fight the autoscaler.
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      namespace: robomart
+      name: api-gateway
+      jsonPointers: [/spec/replicas]
+    - group: apps
+      kind: Deployment
+      namespace: robomart
+      name: product-service
+      jsonPointers: [/spec/replicas]
+    - group: apps
+      kind: Deployment
+      namespace: robomart
+      name: cart-service
+      jsonPointers: [/spec/replicas]
+    - group: apps
+      kind: Deployment
+      namespace: robomart
+      name: order-service
+      jsonPointers: [/spec/replicas]
+    - group: apps
+      kind: Deployment
+      namespace: robomart
+      name: inventory-service
+      jsonPointers: [/spec/replicas]
+    - group: apps
+      kind: Deployment
+      namespace: robomart
+      name: payment-service
+      jsonPointers: [/spec/replicas]
+    - group: apps
+      kind: Deployment
+      namespace: robomart
+      name: notification-service
+      jsonPointers: [/spec/replicas]
+
   syncPolicy:
     automated:
       prune: true      # delete K8s resources removed from git
@@ -26,6 +64,7 @@ spec:
     syncOptions:
       - CreateNamespace=true           # create namespace if it doesn't exist
       - PrunePropagationPolicy=foreground  # wait for child resources to delete first
+      - RespectIgnoreDifferences=true
       - ServerSideApply=true           # use server-side apply to avoid annotation bloat
     retry:
       limit: 3

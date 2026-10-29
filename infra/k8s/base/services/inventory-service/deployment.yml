@@ -58,7 +58,7 @@ spec:
               name: inventory-service-auth
               key: client-secret
         - name: INVENTORY_SERVICE_TOKEN_URI
-          value: "https://auth.tuanpm.xyz/realms/robomart/protocol/openid-connect/token"
+          value: "http://keycloak:80/realms/robomart/protocol/openid-connect/token"
         - name: MANAGEMENT_ENDPOINT_HEALTH_GROUP_READINESS_INCLUDE
           value: "readinessState,db,kafka"
         - name: GRPC_SERVER_PORT
