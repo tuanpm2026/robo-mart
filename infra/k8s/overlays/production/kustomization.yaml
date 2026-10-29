@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: robomart
 resources:
 - ../../base
+- demo-object-storage.yaml
 
 # Image tags are updated automatically by CD workflow after each successful build.
 # Do not edit the newTag values manually — they are managed by:
@@ -10,6 +11,21 @@ resources:
 patches:
 - path: patches/single-node-replicas.yaml
 - path: patches/product-image-storage.yaml
+- path: patches/product-image-proxy.yaml
+- target:
+    version: v1
+    kind: Service
+    name: product-service
+  path: patches/product-image-proxy-service.yaml
+- target:
+    group: networking.k8s.io
+    version: v1
+    kind: NetworkPolicy
+    name: allow-product-ingress
+  patch: |-
+    - op: add
+      path: /spec/ingress/0/ports/-
+      value: {port: 8088, protocol: TCP}
 
 images:
 - name: ghcr.io/robomart/admin-dashboard
@@ -39,3 +55,11 @@ images:
 - name: ghcr.io/robomart/product-service
   newName: ghcr.io/tuanpm2026/robomart/product-service
   newTag: main-e67142e
+
+configMapGenerator:
+- name: product-image-proxy
+  files:
+  - nginx.conf=product-image-proxy.conf
+  options:
+    annotations:
+      argocd.argoproj.io/sync-wave: "-3"

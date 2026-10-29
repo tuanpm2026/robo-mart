@@ -8,28 +8,58 @@ on:
   workflow_dispatch:
     inputs:
       sha:
-        description: 'Git SHA to build & deploy (defaults to HEAD of main)'
+        description: 'Full main commit SHA with successful Backend CI (defaults to main HEAD)'
         required: false
         default: ''
 
 concurrency:
   group: deploy-main
-  cancel-in-progress: false  # Never cancel an in-progress deploy
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_PREFIX: ${{ github.repository_owner }}/robomart
+  cancel-in-progress: false
 
 jobs:
-  build-and-push:
-    name: Build & Push Docker Images
+  resolve:
+    name: Resolve CI-approved release
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 5
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
-
     permissions:
       contents: read
-      packages: write  # Required for ghcr.io push
+      actions: read
+      checks: read
+    outputs:
+      sha: ${{ steps.release.outputs.sha }}
+      tag: ${{ steps.release.outputs.tag }}
+      prefix: ${{ steps.release.outputs.prefix }}
+      ci_run_id: ${{ steps.release.outputs.ci_run_id }}
+    steps:
+      - name: Checkout trusted release policy
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - name: Resolve and verify source commit
+        id: release
+        uses: actions/github-script@v7
+        env:
+          REQUESTED_SHA: ${{ inputs.sha }}
+        with:
+          script: |
+            const { resolveRelease } = require('./infra/ci/scripts/release-policy.cjs');
+            const release = await resolveRelease({ github, context, kind: 'backend', requestedSha: process.env.REQUESTED_SHA });
+            core.setOutput('sha', release.sha);
+            core.setOutput('tag', release.tag);
+            core.setOutput('prefix', release.prefix);
+            core.setOutput('ci_run_id', release.ciRunId);
+            core.info(`Approved source ${release.sha} from CI run ${release.ciRunId}`);
+
+  build-and-push:
+    name: Build & Push Docker Images
+    needs: resolve
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
 
     strategy:
       matrix:
@@ -50,88 +80,94 @@ jobs:
             port: 8080
 
     steps:
-      - name: Checkout
+      - name: Checkout trusted release policy
         uses: actions/checkout@v4
-
+        with:
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - name: Preserve release policy outside the source checkout
+        run: install -m 0644 infra/ci/scripts/release-policy.cjs "${RUNNER_TEMP}/release-policy.cjs"
+      - name: Checkout exact CI-approved source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service.name }}
-          tags: |
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
-
-      - name: Build and Push ${{ matrix.service.name }}
+      - name: Build and push ${{ matrix.service.name }}
+        id: image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: infra/docker/${{ matrix.service.name }}/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ${{ needs.resolve.outputs.prefix }}/${{ matrix.service.name }}:${{ needs.resolve.outputs.tag }}
+          labels: |
+            org.opencontainers.image.revision=${{ needs.resolve.outputs.sha }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: type=gha,scope=backend-${{ matrix.service.name }}
+          cache-to: type=gha,scope=backend-${{ matrix.service.name }},mode=max
+      - name: Record image digest and source
+        env:
+          RELEASE_SHA: ${{ needs.resolve.outputs.sha }}
+          RELEASE_IMAGE_NAME: ${{ matrix.service.name }}
+          RELEASE_IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
+        run: node "${RUNNER_TEMP}/release-policy.cjs" record backend "${RUNNER_TEMP}/release-images"
+      - name: Upload image provenance
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-image-${{ matrix.service.name }}
+          path: ${{ runner.temp }}/release-images/*.json
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 7
 
   update-image-tags:
-    name: Update Image Tags (GitOps)
-    needs: build-and-push
+    name: Update verified image digests (GitOps)
+    needs: [resolve, build-and-push]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.head_branch == 'main'
-
     permissions:
-      contents: write  # needed to commit updated kustomization.yaml
-
+      contents: write
     steps:
-      - name: Checkout
+      - name: Checkout trusted release policy
         uses: actions/checkout@v4
         with:
-          # Use a PAT so the commit triggers downstream workflows if needed.
-          # Falls back to GITHUB_TOKEN (push will have [skip ci] anyway).
-          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.workflow_sha }}
+          persist-credentials: false
+      - name: Preserve release policy outside the GitOps checkout
+        run: install -m 0644 infra/ci/scripts/release-policy.cjs "${RUNNER_TEMP}/release-policy.cjs"
+      - name: Checkout current GitOps branch
+        uses: actions/checkout@v4
+        with:
           ref: main
-
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download this run's image records
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-image-*
+          path: ${{ runner.temp }}/release-images
+          merge-multiple: true
       - name: Install kustomize
         uses: imranismail/setup-kustomize@v2
         with:
           kustomize-version: '5.4.3'
-
-      - name: Update image tags in overlay
-        run: |
-          # workflow_dispatch: use input SHA if provided, else HEAD; workflow_run: use triggering SHA
-          INPUT_SHA="${{ github.event.inputs.sha }}"
-          SHA="${INPUT_SHA:-${{ github.event.workflow_run.head_sha || github.sha }}}"
-          SHORT_SHA="${SHA:0:7}"
-          IMAGE_TAG="main-${SHORT_SHA}"
-          REGISTRY="ghcr.io/${{ env.IMAGE_PREFIX }}"
-
-          cd infra/k8s/overlays/production
-
-          for SERVICE in api-gateway product-service cart-service order-service \
-                         inventory-service payment-service notification-service; do
-            kustomize edit set image \
-              ghcr.io/robomart/${SERVICE}=${REGISTRY}/${SERVICE}:${IMAGE_TAG}
-          done
-
-          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
-
-      - name: Commit and push
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add infra/k8s/overlays/production/kustomization.yaml
-          # Only commit if there's an actual change (idempotent)
-          git diff --cached --quiet && echo "No tag change, skipping commit" && exit 0
-          git commit -m "chore: bump all images to ${{ env.IMAGE_TAG }} [skip ci]"
-          git push
+      - name: Publish only current CI-approved image digests
+        env:
+          RELEASE_SHA: ${{ needs.resolve.outputs.sha }}
+        run: node "${RUNNER_TEMP}/release-policy.cjs" publish backend "${RUNNER_TEMP}/release-images"
