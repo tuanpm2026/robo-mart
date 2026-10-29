@@ -12,34 +12,34 @@ patches:
 - path: patches/single-node-replicas.yaml
 - path: patches/product-image-storage.yaml
 - path: patches/product-image-proxy.yaml
-- target:
-    version: v1
+- path: patches/product-image-proxy-service.yaml
+  target:
     kind: Service
     name: product-service
-  path: patches/product-image-proxy-service.yaml
-- target:
-    group: networking.k8s.io
     version: v1
-    kind: NetworkPolicy
-    name: allow-product-ingress
-  patch: |-
+- patch: |-
     - op: add
       path: /spec/ingress/0/ports/-
       value: {port: 8088, protocol: TCP}
+  target:
+    group: networking.k8s.io
+    kind: NetworkPolicy
+    name: allow-product-ingress
+    version: v1
 
 images:
-- name: ghcr.io/robomart/admin-dashboard
+- digest: sha256:db816c5b782670e2f0e4def26a8aaa2d78ea57d1a48b21d989731310f61f5a13
+  name: ghcr.io/robomart/admin-dashboard
   newName: ghcr.io/tuanpm2026/robomart/admin-dashboard
-  newTag: main-7f9167b
 - name: ghcr.io/robomart/api-gateway
   newName: ghcr.io/tuanpm2026/robomart/api-gateway
   newTag: main-e67142e
 - name: ghcr.io/robomart/cart-service
   newName: ghcr.io/tuanpm2026/robomart/cart-service
   newTag: main-e67142e
-- name: ghcr.io/robomart/customer-website
+- digest: sha256:03dc6f39b8cdbf1c73162ded746a42b59c59d0ca260973104d3d257c07554130
+  name: ghcr.io/robomart/customer-website
   newName: ghcr.io/tuanpm2026/robomart/customer-website
-  newTag: main-7f9167b
 - name: ghcr.io/robomart/inventory-service
   newName: ghcr.io/tuanpm2026/robomart/inventory-service
   newTag: main-e67142e
@@ -57,9 +57,9 @@ images:
   newTag: main-e67142e
 
 configMapGenerator:
-- name: product-image-proxy
-  files:
+- files:
   - nginx.conf=product-image-proxy.conf
+  name: product-image-proxy
   options:
     annotations:
       argocd.argoproj.io/sync-wave: "-3"
