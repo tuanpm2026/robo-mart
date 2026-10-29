@@ -138,10 +138,16 @@ function readRecords({ kind, sha, prefix, directory }) {
   if (JSON.stringify(files) !== JSON.stringify(expected)) throw new Error('Missing or unexpected image records')
   return cfg.names.map(name => {
     const file = path.join(directory, `${name}.json`)
-    if (fs.lstatSync(file).isSymbolicLink()) throw new Error('Image records cannot be symlinks')
-    const record = validateRecord(JSON.parse(fs.readFileSync(file, 'utf8')), kind, sha, prefix)
-    if (record.name !== name) throw new Error('Image record filename/name mismatch')
-    return record
+    // Open atomically without following links; inspect/read the same descriptor.
+    const descriptor = fs.openSync(file, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW)
+    try {
+      if (!fs.fstatSync(descriptor).isFile()) throw new Error('Image records must be regular files')
+      const record = validateRecord(JSON.parse(fs.readFileSync(descriptor, 'utf8')), kind, sha, prefix)
+      if (record.name !== name) throw new Error('Image record filename/name mismatch')
+      return record
+    } finally {
+      fs.closeSync(descriptor)
+    }
   })
 }
 

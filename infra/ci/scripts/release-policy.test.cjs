@@ -225,3 +225,14 @@ test('quality checks must complete, with a bounded wait and no bypass for manual
   state.quality = []
   await assert.rejects(resolveRelease({ ...options, qualityAttempts: 1 }), /missing or unfinished/)
 })
+
+
+test('image records reject symlinks and directories using the opened file descriptor', t => {
+  const directory = temporary(t); records(directory, 'frontend')
+  const file = path.join(directory, 'customer-website.json')
+  const outside = path.join(temporary(t), 'record.json')
+  fs.copyFileSync(file, outside); fs.unlinkSync(file); fs.symlinkSync(outside, file)
+  assert.throws(() => readRecords({ directory, kind: 'frontend', sha, prefix }), { code: 'ELOOP' })
+  fs.unlinkSync(file); fs.mkdirSync(file)
+  assert.throws(() => readRecords({ directory, kind: 'frontend', sha, prefix }), /regular files/)
+})

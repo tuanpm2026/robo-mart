@@ -4,7 +4,7 @@ Incident recovery started2026-10-28 and continued2026-10-29. Scope: CI-approved 
 
 ## Source/configuration checks
 
-- `node --test infra/ci/scripts/release-policy.test.cjs` with the existing CI kustomize5.4.3:21 tests passed, zero failures/skips. Tests cover CI-head identity, manual SHA gating, failed/fork/PR/non-main rejection, security/schema/summary failures, bounded pending quality checks, complete digest sets, real Git/Kustomize publication, stale relevant source, older identical-source revisions, simultaneous frontend/backend push races, and a newer source arriving during retry. The actual production overlay wiring is checked too.
+- `node --test infra/ci/scripts/release-policy.test.cjs` with the existing CI kustomize5.4.3:22 tests passed, zero failures/skips. Tests cover CI-head identity, manual SHA gating, failed/fork/PR/non-main rejection, security/schema/summary failures, bounded pending quality checks, complete digest sets, real Git/Kustomize publication, stale relevant source, older identical-source revisions, simultaneous frontend/backend push races, and a newer source arriving during retry. The actual production overlay wiring is checked too.
 - `actionlint` v1.7.12 passed all4 changed CI/CD workflows. `node --check` and `git diff --check` passed. Kustomize renders passed for base, production and ingress-tls.
 - The pinned Nginx image's real `nginx -t` passed as UID1001 with network disabled, read-only root filesystem and writable `/tmp` only. The first attempt identified missing default fastcgi temporary paths; all temp paths were corrected before success.
 - The live GitHub API read-only release-resolution probe and PR CI evidence are recorded after their final execution below. No claim of CI/CD publication is based on an unexecuted workflow.
@@ -25,11 +25,14 @@ Incident recovery started2026-10-28 and continued2026-10-29. Scope: CI-approved 
 
 A restricted one-off Job used signed S3 upload, anonymous retrieval through the **actual Gateway /images route**, SHA-256 byte comparison, denied anonymous bucket listing/write, and an EXIT-trap object deletion. The final Job `robomart-storage-smoke-d686e8` completed1/1 and printed PASS. The earlier attempt ran before bucket initialization and failed NoSuchBucket; the next reached successful upload/download but its image lacked cmp. Preconditions were completed and comparison changed to SHA-256 before the successful repeat. No PostgreSQL image row or financial order/payment was created by this smoke.
 
-Remaining final evidence: public browser probes, final service health, source publication/PR CI and restoration of Argo's automated policy after main is aligned. These are not claimed complete until verified.
+Final CI/merge and restoration of Argo automation are tracked in [PR48](https://github.com/tuanpm2026/robo-mart/pull/48); the completed runtime/browser evidence is recorded below.
 
 ## Completed origin/browser checks
 
 - Read-only integration against the real GitHub REST API successfully resolved main source `e67142e3b9a69a5e32525433cf193fe285773544` from Backend CI run40476549212 to the exact full-SHA tag and expected registry prefix. An initial probe exposed the legitimate absence of PR SARIF summary checks on default-branch pushes; the resolver now enforces the mandatory Security workflow and any registered summaries, rather than requiring nonexistent main summaries. Regression coverage includes this case.
 - Normal browser-user-agent requests to the public customer site, product-list API and Robomart OIDC discovery endpoint all returned200 from the server. The403/error1010 diagnostic was specific to the default Python client signature; no Cloudflare policy/tunnel change was made.
 - The object-storage smoke completed with SHA-256 equality through the real Gateway and cleanup. Only the three temporary smoke Jobs and the recovery's own evicted MinIO build Pod were removed after evidence collection; no volume or database data was removed.
-- CI/source publication and re-enabling automatic Argo sync remain dependent on the reviewed branch reaching main; the associated PR is the authoritative final CI/merge record.
+- The reviewed source and final Argo alignment are tracked in [PR48](https://github.com/tuanpm2026/robo-mart/pull/48), the authoritative CI/merge and operational completion record.
+
+
+PR48's initial security summaries identified a real pathname-check/open race in digest-record reads and standalone patch scanning that did not see inherited Pod security fields. Reads now atomically open with O_NOFOLLOW and inspect/read/close the same descriptor; a regression rejects links and non-regular files. The sidecar patch now explicitly declares its existing non-root UID/GID and RuntimeDefault seccomp at both Pod/container levels. No scanner suppression or alert dismissal was used.
