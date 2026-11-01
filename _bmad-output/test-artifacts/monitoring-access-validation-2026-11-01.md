@@ -100,7 +100,11 @@ not proof of stable block flushing.
 The follow-up change raises the container limit to 2 GiB/request to 512 MiB and sets
 `GOMEMLIMIT=1536MiB`. It serializes ingester flushes, cuts head blocks at 16 MiB or
 5 minutes, and uses 5 MB Parquet row groups. An HTTP `/ready` readiness probe now
-governs availability. No WAL, trace files or claims were removed.
+governs availability. Recovery did not manually delete data or recreate claims.
+Tempo's startup log reported automatic removal of incomplete WAL entries missing
+`meta.json` after the previous OOMs; recovery of those incomplete entries is not
+claimed. Valid existing local blocks were reloaded, and the previously failing
+block completed successfully under the new budget.
 
 Configuration keys/defaults were checked against Tempo **v2.9.3** source:
 [ingester configuration](https://github.com/grafana/tempo/blob/v2.9.3/modules/ingester/config.go)
