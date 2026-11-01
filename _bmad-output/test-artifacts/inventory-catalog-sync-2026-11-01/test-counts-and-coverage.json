@@ -1,0 +1,70 @@
+{
+  "outbox-lib": {
+    "surefire": {
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "failsafe": {
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lineCoverage": {
+      "covered": 100,
+      "missed": 2
+    }
+  },
+  "events": {
+    "surefire": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "failsafe": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "product-service": {
+    "surefire": {
+      "tests": 109,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "failsafe": {
+      "tests": 89,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lineCoverage": {
+      "covered": 850,
+      "missed": 50
+    }
+  },
+  "inventory-service": {
+    "surefire": {
+      "tests": 72,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "failsafe": {
+      "tests": 55,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "lineCoverage": {
+      "covered": 708,
+      "missed": 38
+    }
+  }
+}

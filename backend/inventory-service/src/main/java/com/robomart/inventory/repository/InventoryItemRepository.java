@@ -16,6 +16,11 @@ public interface InventoryItemRepository extends JpaRepository<InventoryItem, Lo
 
     Optional<InventoryItem> findByProductId(Long productId);
 
+    @Modifying
+    @Query(value = "INSERT INTO inventory_items (product_id) VALUES (:productId) "
+            + "ON CONFLICT (product_id) DO NOTHING", nativeQuery = true)
+    int initializeProduct(@Param("productId") Long productId);
+
     /** Loads the item with a row lock ({@code SELECT ... FOR UPDATE}) held until the transaction ends. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT i FROM InventoryItem i WHERE i.productId = :productId")

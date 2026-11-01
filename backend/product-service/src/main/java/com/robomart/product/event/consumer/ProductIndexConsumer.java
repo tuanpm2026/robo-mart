@@ -24,12 +24,14 @@ public class ProductIndexConsumer {
     private final ProductProjectionStore source;
     private final ProductIndexWriter writer;
     private final ProcessedEventService processedEventService;
+    private final ProductCacheInvalidationConsumer caches;
 
     public ProductIndexConsumer(ProductProjectionStore source, ProductIndexWriter writer,
-                                ProcessedEventService processedEventService) {
+                                ProcessedEventService processedEventService, ProductCacheInvalidationConsumer caches) {
         this.source = source;
         this.writer = writer;
         this.processedEventService = processedEventService;
+        this.caches = caches;
     }
 
     @KafkaListener(
@@ -76,7 +78,8 @@ public class ProductIndexConsumer {
             log.debug("Skipping duplicate PRODUCT_DELETED event: eventId={}", eventId);
             return;
         }
-        writer.write(source.load(event.getProductId()));
+        writer.writeVisible(source.load(event.getProductId()));
+        caches.evictProductCaches(event.getProductId());
         log.info("Reconciled product projection after deletion event: id={}", event.getProductId());
         processedEventService.markProcessed(CONSUMER_GROUP, eventId);
     }
@@ -86,6 +89,7 @@ public class ProductIndexConsumer {
         if (record instanceof ProductCreatedEvent event) id = event.getProductId();
         else if (record instanceof ProductUpdatedEvent event) id = event.getProductId();
         else throw new IllegalArgumentException("Unsupported product projection event");
-        writer.write(source.load(id));
+        writer.writeVisible(source.load(id));
+        caches.evictProductCaches(id);
     }
 }

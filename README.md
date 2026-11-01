@@ -4,7 +4,7 @@ Nền tảng thương mại điện tử microservices: Java 21 / Spring Boot, V
 
 ## Tài liệu bắt đầu
 
-**[Luồng development và hoạt động toàn hệ thống](docs/development-system-flow.md)** — bản tổng hợp tiếng Việt, đối chiếu mã nguồn ngày 24/10/2026:
+**[Luồng development và hoạt động toàn hệ thống](docs/development-system-flow.md)** — bản tổng hợp tiếng Việt, đối chiếu mã nguồn ngày 01/11/2026:
 
 - Kiến trúc, service, dữ liệu và giao tiếp REST/GraphQL/gRPC/Kafka.
 - Dựng môi trường local, quy trình phát triển và kiểm thử.
@@ -17,6 +17,9 @@ Nền tảng thương mại điện tử microservices: Java 21 / Spring Boot, V
 - [Yêu cầu sản phẩm](_bmad-output/planning-artifacts/prd.md)
 - [Thiết kế kiến trúc](_bmad-output/planning-artifacts/architecture.md)
 - [Epics và stories](_bmad-output/planning-artifacts/epics.md)
+- [Đồng bộ tồn kho Inventory → catalog](docs/inventory-catalog-sync.md)
+- [Release provenance và vận hành demo](docs/release-provenance-and-demo-operations.md)
+- [Backend remediation status](docs/backend-remediation-final-status.md)
 - [CI/CD guide](docs/cicd-guide.md)
 - [ArgoCD và GitOps](docs/argocd-gitops-guide.md)
 - [Dựng Kubernetes từng bước](docs/k8s-setup-step-by-step.md)

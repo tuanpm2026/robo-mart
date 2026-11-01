@@ -4,6 +4,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config'
 import ToastService from 'primevue/toastservice'
+import ConfirmationService from 'primevue/confirmationservice'
 import { customerTheme } from '@robo-mart/shared'
 
 import App from './App.vue'
@@ -26,6 +27,7 @@ app.use(PrimeVue, {
   },
 })
 app.use(ToastService)
+app.use(ConfirmationService)
 
 // Wire auth store into API client (avoids circular import)
 const authStore = useAuthStore()

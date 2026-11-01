@@ -44,6 +44,7 @@ public interface ProductMapper {
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "rating", ignore = true)
     @Mapping(target = "stockQuantity", ignore = true)
+    @Mapping(target = "inventoryVersion", ignore = true)
     @Mapping(target = "category", ignore = true)
     Product toEntity(CreateProductRequest request);
 
@@ -57,6 +58,7 @@ public interface ProductMapper {
     @Mapping(target = "active", ignore = true)
     @Mapping(target = "rating", ignore = true)
     @Mapping(target = "stockQuantity", ignore = true)
+    @Mapping(target = "inventoryVersion", ignore = true)
     @Mapping(target = "category", ignore = true)
     void updateEntityFromRequest(UpdateProductRequest request, @MappingTarget Product product);
 

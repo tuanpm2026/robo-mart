@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import com.robomart.events.inventory.StockLowAlertEvent;
 import com.robomart.events.inventory.StockReleasedEvent;
 import com.robomart.events.inventory.StockReservedEvent;
+import com.robomart.events.inventory.StockUpdatedEvent;
 import com.robomart.inventory.config.OutboxProperties;
 import com.robomart.inventory.event.producer.InventoryEventProducer;
 import com.robomart.outbox.OutboxDispatcher;
@@ -66,6 +67,21 @@ public class OutboxPollingService {
         Instant now = event.createdAt();
 
         switch (event.eventType()) {
+            case "stock_updated" -> {
+                var avroEvent = StockUpdatedEvent.newBuilder()
+                        .setEventId(event.eventId().toString())
+                        .setEventType("STOCK_UPDATED")
+                        .setAggregateId(aggregateId)
+                        .setAggregateType("InventoryItem")
+                        .setTimestamp(now)
+                        .setVersion(EVENT_VERSION)
+                        .setProductId(String.valueOf(payload.get("productId")))
+                        .setAvailableQuantity(toInt(payload.get("availableQuantity")))
+                        .setInventoryVersion(Long.parseLong(String.valueOf(payload.get("inventoryVersion"))))
+                        .build();
+                return inventoryEventProducer.send(InventoryEventProducer.TOPIC_STOCK_UPDATED,
+                        aggregateId, avroEvent);
+            }
             case "stock_low_alert" -> {
                 var avroEvent = StockLowAlertEvent.newBuilder()
                         .setEventId(event.eventId().toString())

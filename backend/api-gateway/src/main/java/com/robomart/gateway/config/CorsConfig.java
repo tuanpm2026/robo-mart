@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.reactive.CorsWebFilter;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 
 @Configuration
@@ -17,7 +17,7 @@ public class CorsConfig {
     private String adminOrigin;
 
     @Bean
-    public CorsWebFilter corsWebFilter() {
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.addAllowedOrigin(stripTrailingSlash(customerOrigin));
         config.addAllowedOrigin(stripTrailingSlash(adminOrigin));
@@ -28,7 +28,8 @@ public class CorsConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
-        return new CorsWebFilter(source);
+        // Spring Security installs CORS before authentication when this source is a bean.
+        return source;
     }
 
     private static String stripTrailingSlash(String origin) {

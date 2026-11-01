@@ -1,0 +1,17 @@
+{
+  "type": "record",
+  "name": "StockUpdatedEvent",
+  "namespace": "com.robomart.events.inventory",
+  "doc": "Authoritative available-stock snapshot. inventoryVersion fences duplicate and delayed delivery.",
+  "fields": [
+    {"name": "eventId", "type": "string"},
+    {"name": "eventType", "type": "string"},
+    {"name": "aggregateId", "type": "string"},
+    {"name": "aggregateType", "type": "string"},
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}},
+    {"name": "version", "type": "int"},
+    {"name": "productId", "type": "string"},
+    {"name": "availableQuantity", "type": "int"},
+    {"name": "inventoryVersion", "type": "long"}
+  ]
+}

@@ -18,6 +18,30 @@ class OutboxArchiveMigrationIT {
     private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:17-alpine");
 
     @Test
+    void stockSnapshotBackfillPreservesExistingQuantitiesAndRunsOnce() {
+        var dataSource = new DriverManagerDataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
+        Flyway.configure().dataSource(dataSource).schemas("stock_snapshot_upgrade").target("8").load().migrate();
+        JdbcTemplate jdbc = new JdbcTemplate(dataSource);
+        jdbc.update("INSERT INTO stock_snapshot_upgrade.inventory_items "
+                + "(product_id,available_quantity,reserved_quantity,total_quantity,version) VALUES (42,17,3,20,9)");
+        var upgraded = Flyway.configure().dataSource(dataSource).schemas("stock_snapshot_upgrade").load();
+        upgraded.migrate();
+        upgraded.migrate();
+        assertThat(jdbc.queryForObject("SELECT available_quantity FROM stock_snapshot_upgrade.inventory_items",
+                Integer.class)).isEqualTo(17);
+        assertThat(jdbc.queryForObject("SELECT reserved_quantity FROM stock_snapshot_upgrade.inventory_items",
+                Integer.class)).isEqualTo(3);
+        assertThat(jdbc.queryForObject("SELECT total_quantity FROM stock_snapshot_upgrade.inventory_items",
+                Integer.class)).isEqualTo(20);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM stock_snapshot_upgrade.outbox_events",
+                Integer.class)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT payload->>'inventoryVersion' FROM stock_snapshot_upgrade.outbox_events",
+                String.class)).isEqualTo("9");
+        assertThat(jdbc.queryForObject("SELECT payload->>'availableQuantity' FROM stock_snapshot_upgrade.outbox_events",
+                String.class)).isEqualTo("17");
+    }
+
+    @Test
     void retiredRestockRowsKeepTheirPayloadAndValidRowsReceiveStableIds() {
         var dataSource = new DriverManagerDataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword());
         Flyway.configure().dataSource(dataSource).target("6").load().migrate();

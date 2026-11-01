@@ -58,7 +58,7 @@ class OutboxPollingServiceTest {
     private Delivery event(long id, String aggregate, String type) {
         return new Delivery(id, aggregate, type,
                 "{\"orderId\":\"order-1\",\"productId\":\"" + aggregate
-                        + "\",\"quantity\":5,\"availableQuantity\":3,\"lowStockThreshold\":10}",
+                        + "\",\"quantity\":5,\"availableQuantity\":3,\"lowStockThreshold\":10,\"inventoryVersion\":3000000000}",
                 Instant.now(), UUID.randomUUID(), UUID.randomUUID());
     }
 
@@ -67,19 +67,23 @@ class OutboxPollingServiceTest {
         Delivery reserved = event(10, "1", "stock_reserved");
         Delivery released = event(11, "2", "stock_released");
         Delivery low = event(12, "3", "stock_low_alert");
-        when(store.claim(any(), any())).thenReturn(List.of(reserved, released, low));
+        Delivery updated = event(13, "4", "stock_updated");
+        when(store.claim(any(), any())).thenReturn(List.of(reserved, released, low, updated));
         when(producer.send(anyString(), anyString(), any())).thenReturn(CompletableFuture.completedFuture(null));
         service.pollAndPublish();
         service.pollAndPublish();
         var capture = ArgumentCaptor.forClass(SpecificRecord.class);
-        verify(producer, org.mockito.Mockito.times(6)).send(anyString(), anyString(), capture.capture());
-        for (var delivery : List.of(reserved, released, low)) {
+        verify(producer, org.mockito.Mockito.times(8)).send(anyString(), anyString(), capture.capture());
+        for (var delivery : List.of(reserved, released, low, updated)) {
             assertThat(capture.getAllValues().stream()
                     .filter(record -> record.get(0).toString().equals(delivery.eventId().toString())).count())
                     .isEqualTo(2);
         }
         assertThat(capture.getAllValues()).extracting(record -> record.getSchema().getName())
-                .contains("StockReservedEvent", "StockReleasedEvent", "StockLowAlertEvent");
+                .contains("StockReservedEvent", "StockReleasedEvent", "StockLowAlertEvent", "StockUpdatedEvent");
+        assertThat(capture.getAllValues()).filteredOn(record -> record instanceof com.robomart.events.inventory.StockUpdatedEvent)
+                .allSatisfy(record -> assertThat(((com.robomart.events.inventory.StockUpdatedEvent) record)
+                        .getInventoryVersion()).isEqualTo(3000000000L));
     }
 
     @Test

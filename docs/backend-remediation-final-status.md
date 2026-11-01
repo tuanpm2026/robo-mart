@@ -1,6 +1,6 @@
 # Backend remediation final finding status
 
-The original continuation plan is preserved in [the wave roadmap](backend-remediation-waves-6-9.md). This checklist covers every numbered Wave7–9 finding and the Wave6 continuation checks. “Done” describes implemented and locally verified behavior; the PR records are the authoritative CI and merge history. Production rollout is separate and auto-deploy is disabled.
+The original continuation plan is preserved in [the wave roadmap](backend-remediation-waves-6-9.md). This checklist covers every numbered Wave7–9 finding and the Wave6 continuation checks. “Done” describes implemented and locally verified behavior; the PR records are the authoritative CI and merge history. Runtime rollout is tracked separately. The markserver release recovery on 2026-10-29 restored its Argo automation; consult [release operations](release-provenance-and-demo-operations.md) and the corresponding test reports instead of assuming auto-deploy is disabled.
 
 ## Wave6 continuation
 
@@ -81,6 +81,6 @@ CI/merge record: [PR #47](https://github.com/tuanpm2026/robo-mart/pull/47). All 
 | Remove the common-lib compatibility artifact/old CI selector | Deferred maintenance | Services already use the split modules; facade keeps existing CI selection exercising starter tests without workflow edits. Retire artifact and selector together |
 | ZooKeeper-to-KRaft/quorum migration | Not applicable | Owned Compose brokers already used KRaft; no external production broker is managed here |
 | Copy existing isolated E2E volume contents | Not applicable to retained fixture | Volume was verified empty; nonempty copy/conflict/source-preservation behavior is tested against separate real MinIO fixtures |
-| Live production bucket/client/secret/feature rollout | Deferred operational rollout | No auto-deploy/live cluster apply; provision and verify using the committed rollout runbooks before manual deployment |
+| Bucket/client/secret/feature rollout | Environment-specific | markserver demo storage and service identities were provisioned and verified in the 2026-10-29 recovery. Other environments still require the committed rollout prerequisites; this is not a claim of real-provider production readiness. |
 
 Detailed commands, test counts and limits: [Wave7](../_bmad-output/test-artifacts/wave7-correctness-validation-2026-10-27.md), [Wave8](../_bmad-output/test-artifacts/wave8-platform-validation-2026-10-27.md), [Wave9](../_bmad-output/test-artifacts/wave9-data-infra-validation-2026-10-27.md).

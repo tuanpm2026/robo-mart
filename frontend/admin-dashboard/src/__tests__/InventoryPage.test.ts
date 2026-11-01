@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { shallowMount } from '@vue/test-utils'
+import { flushPromises, mount, shallowMount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PrimeVue from 'primevue/config'
 import ToastService from 'primevue/toastservice'
@@ -124,6 +124,26 @@ describe('InventoryPage', () => {
       pagination: { page: 0, size: 1000, totalElements: 2, totalPages: 1 },
       traceId: 'test',
     })
+  })
+
+  it('loads the next server page from the real table paginator', async () => {
+    vi.mocked(listInventory).mockResolvedValue({
+      data: mockInventoryItems,
+      pagination: { page: 0, size: 25, totalElements: 60, totalPages: 3 },
+      traceId: 'test',
+    })
+    const config = createGlobalConfig()
+    const wrapper = mount(InventoryPage, {
+      global: {
+        ...config,
+        stubs: { ...config.stubs, DataTable: false, Column: false, Select: true },
+      },
+    })
+    await flushPromises()
+    await wrapper.get('button[aria-label="Next Page"]').trigger('click')
+    await flushPromises()
+    expect(listInventory).toHaveBeenLastCalledWith(1, 25)
+    wrapper.unmount()
   })
 
   it('renders DataTable', async () => {

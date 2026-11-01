@@ -74,6 +74,8 @@ class AvroEventSecurityTest {
                             });
                     assertThat(ClassUtils.forName("com.robomart.events.product.ProductCreatedEvent"))
                             .isEqualTo(ProductCreatedEvent.class);
+                    assertThat(ClassUtils.forName("com.robomart.events.inventory.StockUpdatedEvent"))
+                            .isEqualTo(com.robomart.events.inventory.StockUpdatedEvent.class);
                     assertThatThrownBy(() -> ClassUtils.forName("java.io.File"))
                             .isInstanceOf(SecurityException.class);
                     // Even classes in the events namespace are rejected unless explicitly generated and trusted.

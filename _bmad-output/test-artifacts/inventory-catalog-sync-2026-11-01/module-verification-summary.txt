@@ -1,0 +1,91 @@
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.099 s -- in com.robomart.product.unit.mapper.ProductMapperTest
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.832 s -- in com.robomart.product.unit.controller.AdminProductRestControllerTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.035 s -- in com.robomart.product.unit.controller.ProductRestControllerTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.068 s -- in com.robomart.product.unit.service.ProcessedEventServiceTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.122 s -- in com.robomart.product.unit.service.ProductProjectionTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.339 s -- in com.robomart.product.unit.service.ProductIndexLifecycleTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.587 s -- in com.robomart.product.unit.service.OutboxPollingServiceTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.145 s -- in com.robomart.product.unit.service.ProductServiceTest
+[INFO] Tests run: 14, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.140 s -- in com.robomart.product.unit.service.ProductSearchServiceTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.021 s -- in com.robomart.product.unit.service.ProductEventPayloadMapperTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.023 s -- in com.robomart.product.unit.service.OutboxPublisherTest
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.062 s -- in com.robomart.product.unit.service.ProductIndexWriterTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.576 s -- in com.robomart.product.unit.service.ProductSearchServiceCacheTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.354 s -- in com.robomart.product.unit.service.ImageStorageConfigurationTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in com.robomart.product.unit.service.OutboxCleanupServiceTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.054 s -- in com.robomart.product.unit.service.ProductImageServiceTest
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.018 s -- in com.robomart.product.unit.service.AdminProductServiceTest
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.181 s -- in com.robomart.product.unit.service.ImageStorageServiceTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.148 s -- in com.robomart.product.unit.service.ProductServiceCacheTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in com.robomart.product.unit.exception.ProductServiceExceptionHandlerTest
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.044 s -- in com.robomart.product.unit.event.ProductEventProducerTest
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.049 s -- in com.robomart.product.unit.event.ProductCacheInvalidationConsumerTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.125 s -- in com.robomart.product.unit.arch.ProductServiceArchTest
+[INFO] Tests run: 109, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 39.67 s -- in com.robomart.product.contract.ProductPactProviderIT
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.331 s -- in com.robomart.product.integration.repository.ElasticsearchIndexIT
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.067 s -- in com.robomart.product.integration.repository.ProductRepositoryIT
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.968 s -- in com.robomart.product.integration.cache.ProductCacheIT
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.457 s -- in com.robomart.product.integration.controller.AdminProductImageIT
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.110 s -- in com.robomart.product.integration.controller.ProductRestControllerIT
+[INFO] Tests run: 10, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.327 s -- in com.robomart.product.integration.controller.AdminProductRestControllerIT
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.148 s -- in com.robomart.product.integration.controller.ImageMigrationIT
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.128 s -- in com.robomart.product.integration.controller.ProductWriteConcurrencyIT
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.882 s -- in com.robomart.product.integration.search.ProductSearchIT
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.298 s -- in com.robomart.product.integration.search.ProductProjectionIT
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.275 s -- in com.robomart.product.integration.search.ProductSearchFallbackIT
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.836 s -- in com.robomart.product.integration.graphql.ProductGraphQLIT
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.101 s -- in com.robomart.product.integration.service.OutboxPollingServiceIT
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.373 s -- in com.robomart.product.integration.service.ProductOutboxMigrationIT
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.060 s -- in com.robomart.product.integration.service.OutboxCleanupServiceIT
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.102 s -- in com.robomart.product.integration.service.ProductOutboxDeliveryIT
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 12.87 s -- in com.robomart.product.integration.event.InventoryStockConsumerIT
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.510 s -- in com.robomart.product.integration.event.ProductDltIT
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.281 s -- in com.robomart.product.integration.event.PlatformBaggageIT
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.403 s -- in com.robomart.product.integration.event.ProductIndexConsumerIT
+[INFO] Tests run: 89, Failures: 0, Errors: 0, Skipped: 0
+[INFO] All coverage checks have been met.
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.741 s -- in releaseInventory
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.036 s -- in reserveInventory
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in getInventory
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.794 s -- in InventoryGrpcService Unit Tests
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in releaseInventory validation and errors
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in getInventory errors
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.006 s -- in reserveInventory validation
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.005 s -- in reserveInventory additional error paths
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in reserveInventory validates the whole request first
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.004 s -- in releaseInventory additional error paths
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.039 s -- in InventoryGrpcService Error Path Tests
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.290 s -- in InventoryService - Metrics
+[INFO] Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.049 s -- in com.robomart.inventory.unit.controller.InventoryControllerTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.112 s -- in com.robomart.inventory.unit.InventoryKafkaHealthIndicatorTest
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.466 s -- in com.robomart.inventory.unit.service.OutboxPollingServiceTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.075 s -- in com.robomart.inventory.unit.service.ReservationExpiryJobTest
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.015 s -- in restockItem
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.002 s -- in bulkRestock
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.001 s -- in getInventory
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.105 s -- in releaseReservation
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.029 s -- in reserveOrder
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.003 s -- in findReservation
+[INFO] Tests run: 0, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.289 s -- in InventoryService Unit Tests
+[INFO] Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.091 s -- in com.robomart.inventory.unit.event.InventoryEventProducerTest
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.579 s -- in com.robomart.inventory.config.OrderStatusClientConfigTest
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.068 s -- in com.robomart.inventory.unit.arch.InventoryServiceArchTest
+[INFO] Tests run: 75, Failures: 0, Errors: 0, Skipped: 0
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.107 s -- in com.robomart.inventory.integration.ReservationExpiryIT
+[INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 4.015 s -- in com.robomart.inventory.integration.InventoryGrpcIT
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.646 s -- in com.robomart.inventory.integration.InventoryOutboxDeliveryIT
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.710 s -- in com.robomart.inventory.integration.InventoryStockSnapshotIT
+[INFO] Tests run: 11, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.330 s -- in com.robomart.inventory.integration.InventoryServiceIT
+[INFO] Tests run: 2, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.369 s -- in com.robomart.inventory.integration.OutboxArchiveMigrationIT
+[INFO] Tests run: 4, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.822 s -- in com.robomart.inventory.integration.OrderLifecycleKafkaIT
+[INFO] Tests run: 6, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.278 s -- in com.robomart.inventory.integration.OrderLifecycleIT
+[INFO] Tests run: 7, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.119 s -- in com.robomart.inventory.integration.InventoryAdminRestIT
+[INFO] Tests run: 55, Failures: 0, Errors: 0, Skipped: 0
+[INFO] All coverage checks have been met.
+[INFO] Reactor Summary for Robo-Mart Product Service 0.0.1-SNAPSHOT:
+[INFO] Robo-Mart Product Service .......................... SUCCESS [01:59 min]
+[INFO] Robo-Mart Inventory Service ........................ SUCCESS [ 50.007 s]
+[INFO] BUILD SUCCESS
+[INFO] Total time:  02:49 min
+[INFO] Finished at: 2026-11-01T14:36:36+07:00

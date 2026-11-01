@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { shallowMount } from '@vue/test-utils'
+import { flushPromises, mount, shallowMount } from '@vue/test-utils'
 import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config'
 import ToastService from 'primevue/toastservice'
@@ -86,6 +86,28 @@ function createGlobalConfig() {
 describe('ProductsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+  })
+
+  it('renders and filters products with the real PrimeVue table', async () => {
+    vi.mocked(listProducts).mockResolvedValue({
+      data: mockProducts,
+      pagination: { page: 0, size: 100, totalElements: 3, totalPages: 1 },
+      traceId: 'test',
+    })
+    const config = createGlobalConfig()
+    const wrapper = mount(ProductsPage, {
+      global: {
+        ...config,
+        stubs: { ...config.stubs, DataTable: false, Column: false, Select: true },
+      },
+    })
+    await flushPromises()
+    expect(wrapper.text()).toContain('Product A')
+    await wrapper.get('input[placeholder="Search name"]').setValue('Product B')
+    await flushPromises()
+    expect(wrapper.text()).toContain('Product B')
+    expect(wrapper.text()).not.toContain('Product A')
+    wrapper.unmount()
   })
 
   it('renders DataTable after products are loaded', async () => {

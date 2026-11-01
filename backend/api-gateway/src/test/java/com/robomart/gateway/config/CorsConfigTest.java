@@ -24,7 +24,7 @@ class CorsConfigTest {
 
     @Test
     void shouldCreateCorsWebFilterWhenBeanInitialized() {
-        CorsWebFilter filter = corsConfig.corsWebFilter();
+        CorsWebFilter filter = new CorsWebFilter(corsConfig.corsConfigurationSource());
 
         assertThat(filter).isNotNull();
     }
@@ -34,14 +34,14 @@ class CorsConfigTest {
         ReflectionTestUtils.setField(corsConfig, "customerOrigin", "http://localhost:5173/");
         ReflectionTestUtils.setField(corsConfig, "adminOrigin", "http://localhost:5174/");
 
-        CorsWebFilter filter = corsConfig.corsWebFilter();
+        CorsWebFilter filter = new CorsWebFilter(corsConfig.corsConfigurationSource());
 
         assertThat(filter).isNotNull();
     }
 
     @Test
     void shouldRejectKeycloakOriginAndAllowStorefrontPreflight() {
-        CorsWebFilter filter = corsConfig.corsWebFilter();
+        CorsWebFilter filter = new CorsWebFilter(corsConfig.corsConfigurationSource());
         for (String origin : new String[] {"http://localhost:5173", "http://localhost:8180"}) {
             var exchange = MockServerWebExchange.from(MockServerHttpRequest.options("http://localhost:8080/api/v1/products")
                     .header("Origin", origin).header("Access-Control-Request-Method", "GET"));
@@ -60,7 +60,7 @@ class CorsConfigTest {
         ReflectionTestUtils.setField(corsConfig, "customerOrigin", "https://shop.robomart.com");
         ReflectionTestUtils.setField(corsConfig, "adminOrigin", "https://admin.robomart.com");
 
-        CorsWebFilter filter = corsConfig.corsWebFilter();
+        CorsWebFilter filter = new CorsWebFilter(corsConfig.corsConfigurationSource());
 
         assertThat(filter).isNotNull();
     }
