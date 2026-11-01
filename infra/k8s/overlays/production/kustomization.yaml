@@ -31,28 +31,28 @@ images:
 - digest: sha256:c7b421717a6dac614cfe4181998210d014544786aae2cfd3cf7045ef00145eef
   name: ghcr.io/robomart/admin-dashboard
   newName: ghcr.io/tuanpm2026/robomart/admin-dashboard
-- digest: sha256:b6d0afdae79127b6cb3032fddca1df5ace4f5fc0c190a2048f03a3c2bd264517
+- digest: sha256:7d48682a53277f3124f0c097d2a24271be5b48ccd85f0dea3410a438027a17bf
   name: ghcr.io/robomart/api-gateway
   newName: ghcr.io/tuanpm2026/robomart/api-gateway
-- digest: sha256:3d863cf3c6398ee40d93afeeb82b0e71d323bf4e6ac3f0b15be937cbc9899963
+- digest: sha256:672117e07689bea703e5070b526d393ef84c189d7e1b023beb94956824ba6eeb
   name: ghcr.io/robomart/cart-service
   newName: ghcr.io/tuanpm2026/robomart/cart-service
 - digest: sha256:bc2e447177f0d2c7a5cfa29b6f859fd1c8bc6c62d844bd3e2e14c1705cd26fcd
   name: ghcr.io/robomart/customer-website
   newName: ghcr.io/tuanpm2026/robomart/customer-website
-- digest: sha256:ea73e5473972c638133b31cec9647b0f961f7e86dd1672d2ab5c5887a881b21c
+- digest: sha256:26982a5a398d2071d1c9bf8aab8ba407ea70891371724c0fa6dad0d88a6f84fe
   name: ghcr.io/robomart/inventory-service
   newName: ghcr.io/tuanpm2026/robomart/inventory-service
-- digest: sha256:154c843f045f7937b9acdffa4847582aa7a2b4576f60626d4f1b2a03ae7f3579
+- digest: sha256:28d7a5f152ec1d59dbac0a8a4de4ca8717b5009c34eb40b5ec0792fc7782361d
   name: ghcr.io/robomart/notification-service
   newName: ghcr.io/tuanpm2026/robomart/notification-service
-- digest: sha256:ccecca8cc0467ad3db1fa8e6f4b288ad9abf16fd06bf6cc58b473f31ff59f740
+- digest: sha256:d4879228cad0ac96c98a1d9a700698c4d65f2bb7d22b62accf3e13e20e98b39a
   name: ghcr.io/robomart/order-service
   newName: ghcr.io/tuanpm2026/robomart/order-service
-- digest: sha256:a48ee8433cb98a14d4a636565bb57d0051b9cc779169d5e3b23ffeaae971e78a
+- digest: sha256:5d5508b37a8b097bdd8894540a614fd7037e32cbaf49919c4cc448351598ffbd
   name: ghcr.io/robomart/payment-service
   newName: ghcr.io/tuanpm2026/robomart/payment-service
-- digest: sha256:ccfb8d25c48bcd6036873d131685e4c08d963a9e893db1526e520964a7de5451
+- digest: sha256:a31d6539ad4aa09b67e22185fb349217ff1b0cab5add6680d32e0cc3ff5f1e64
   name: ghcr.io/robomart/product-service
   newName: ghcr.io/tuanpm2026/robomart/product-service
 
