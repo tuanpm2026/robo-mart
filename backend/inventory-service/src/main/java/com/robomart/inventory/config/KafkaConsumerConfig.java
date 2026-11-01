@@ -38,6 +38,8 @@ public class KafkaConsumerConfig {
     @Bean
     public KafkaAdmin.NewTopics inventoryLifecycleTopics() {
         return new KafkaAdmin.NewTopics(
+                TopicBuilder.name("inventory.stock.updated").partitions(3).replicas(1).build(),
+                TopicBuilder.name("product.product.created.DLT").partitions(3).replicas(1).build(),
                 TopicBuilder.name("order.order.status-changed.DLT").partitions(3).replicas(1).build(),
                 TopicBuilder.name("order.order.cancelled.DLT").partitions(3).replicas(1).build());
     }

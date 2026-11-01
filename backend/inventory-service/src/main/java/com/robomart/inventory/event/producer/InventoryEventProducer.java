@@ -21,6 +21,7 @@ public class InventoryEventProducer {
     public static final String TOPIC_STOCK_LOW_ALERT = "inventory.stock.low-alert";
     public static final String TOPIC_STOCK_RESERVED = "inventory.stock.reserved";
     public static final String TOPIC_STOCK_RELEASED = "inventory.stock.released";
+    public static final String TOPIC_STOCK_UPDATED = "inventory.stock.updated";
 
     private final KafkaTemplate<String, SpecificRecord> kafkaTemplate;
     private final Tracer tracer;

@@ -130,4 +130,33 @@ class ApiGatewayApplicationTests {
                 .expectHeader().valueEquals("Access-Control-Allow-Origin", "http://localhost:5173")
                 .expectHeader().exists("Access-Control-Allow-Methods");
     }
+
+    @Test
+    void shouldHandleProtectedRoutePreflightBeforeAuthentication() {
+        for (String path : new String[] {"/api/v1/orders", "/api/v1/admin/products"}) {
+            webTestClient.options().uri(path)
+                    .header("Origin", "http://localhost:5173")
+                    .header("Access-Control-Request-Method", "POST")
+                    .header("Access-Control-Request-Headers", "authorization,content-type,x-user-id")
+                    .exchange()
+                    .expectStatus().isOk()
+                    .expectHeader().valueEquals("Access-Control-Allow-Origin", "http://localhost:5173")
+                    .expectHeader().valueEquals("Access-Control-Allow-Credentials", "true");
+        }
+        webTestClient.get().uri("/api/v1/orders")
+                .header("Origin", "http://localhost:5173")
+                .exchange()
+                .expectStatus().isUnauthorized()
+                .expectHeader().valueEquals("Access-Control-Allow-Origin", "http://localhost:5173");
+    }
+
+    @Test
+    void shouldRejectUntrustedPreflightOrigin() {
+        webTestClient.options().uri("/api/v1/orders")
+                .header("Origin", "https://untrusted.example")
+                .header("Access-Control-Request-Method", "POST")
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectHeader().doesNotExist("Access-Control-Allow-Origin");
+    }
 }

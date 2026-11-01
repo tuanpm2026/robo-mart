@@ -45,6 +45,8 @@ public class KafkaConsumerConfig {
             @Value("${product.kafka.dlt-replication-factor:1}") short replicationFactor) {
         if (replicationFactor < 1) throw new IllegalArgumentException("DLT replication factor must be positive");
         return new KafkaAdmin.NewTopics(
+                TopicBuilder.name("inventory.stock.updated").partitions(3).replicas(replicationFactor).build(),
+                TopicBuilder.name("inventory.stock.updated.DLT").partitions(3).replicas(replicationFactor).build(),
                 TopicBuilder.name("product.product.created.DLT").partitions(3).replicas(replicationFactor).build(),
                 TopicBuilder.name("product.product.updated.DLT").partitions(3).replicas(replicationFactor).build(),
                 TopicBuilder.name("product.product.deleted.DLT").partitions(3).replicas(replicationFactor).build());

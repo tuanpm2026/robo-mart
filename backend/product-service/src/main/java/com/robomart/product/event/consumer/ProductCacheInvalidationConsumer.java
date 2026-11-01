@@ -60,7 +60,7 @@ public class ProductCacheInvalidationConsumer {
         processedEventService.markProcessed(CONSUMER_GROUP, eventId);
     }
 
-    private void evictProductCaches(long productId) {
+    void evictProductCaches(long productId) {
         Cache productDetailCache = cacheManager.getCache(CacheConfig.CACHE_PRODUCT_DETAIL);
         if (productDetailCache != null) {
             productDetailCache.evict(productId);

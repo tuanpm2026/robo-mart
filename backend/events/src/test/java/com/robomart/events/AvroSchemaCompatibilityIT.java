@@ -41,6 +41,7 @@ import com.robomart.events.cart.CartExpiryWarningEvent;
 import com.robomart.events.inventory.StockLowAlertEvent;
 import com.robomart.events.inventory.StockReleasedEvent;
 import com.robomart.events.inventory.StockReservedEvent;
+import com.robomart.events.inventory.StockUpdatedEvent;
 import com.robomart.events.order.OrderCancelledEvent;
 import com.robomart.events.order.OrderCreatedEvent;
 import com.robomart.events.order.OrderStatusChangedEvent;
@@ -51,7 +52,7 @@ import com.robomart.events.product.ProductDeletedEvent;
 import com.robomart.events.product.ProductUpdatedEvent;
 
 /**
- * Integration test: verifies all 13 Avro schemas in the events module can be
+ * Integration test: verifies all Avro schemas in the events module can be
  * registered successfully against a real Confluent Schema Registry instance,
  * and that re-registration is idempotent (backward-compatible with itself).
  *
@@ -183,10 +184,10 @@ class AvroSchemaCompatibilityIT {
     }
 
     @Test
-    void allThirteenAvroSchemasRegisterSuccessfully() throws Exception {
+    void allAvroSchemasRegisterSuccessfully() throws Exception {
         Map<String, Schema> schemas = allSchemas();
 
-        assertThat(schemas).hasSize(13);
+        assertThat(schemas).hasSize(14);
 
         for (Map.Entry<String, Schema> entry : schemas.entrySet()) {
             String subject = entry.getKey();
@@ -244,6 +245,7 @@ class AvroSchemaCompatibilityIT {
         schemas.put(subjectFor(StockLowAlertEvent.getClassSchema()),         StockLowAlertEvent.getClassSchema());
         schemas.put(subjectFor(StockReleasedEvent.getClassSchema()),         StockReleasedEvent.getClassSchema());
         schemas.put(subjectFor(StockReservedEvent.getClassSchema()),         StockReservedEvent.getClassSchema());
+        schemas.put(subjectFor(StockUpdatedEvent.getClassSchema()),          StockUpdatedEvent.getClassSchema());
         schemas.put(subjectFor(OrderCancelledEvent.getClassSchema()),        OrderCancelledEvent.getClassSchema());
         schemas.put(subjectFor(OrderCreatedEvent.getClassSchema()),          OrderCreatedEvent.getClassSchema());
         schemas.put(subjectFor(OrderStatusChangedEvent.getClassSchema()),    OrderStatusChangedEvent.getClassSchema());

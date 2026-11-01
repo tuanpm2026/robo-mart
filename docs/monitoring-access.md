@@ -37,12 +37,38 @@ prevent clients from reaching the application through that external listener.
    browser requests work, and a direct request to the former `30808` NodePort fails.
    Prometheus scraping inside the cluster must continue independently of Access.
 
-On 2026-11-01, the Access application was created and both anonymous requests
-returned 302 to the team's `cloudflareaccess.com` login. The authorized browser
-opened Kafka UI and Prometheus; the query
-`count(up{job="spring-boot-services"} == 1)` returned 7. Origin configuration and
-the Service change require the rollout steps above; these observations alone do
-not prove that the old NodePort has been closed.
+On 2026-11-01, [PR 51](https://github.com/tuanpm2026/robo-mart/pull/51) completed
+the Service rollout after the tunnel configuration was activated. Anonymous
+requests returned 302 to the team's `cloudflareaccess.com` login, authenticated
+browser reloads opened both tools, and the former NodePort refused connections.
+Prometheus reported seven healthy Spring Boot targets. See the
+[execution and incident report](../_bmad-output/test-artifacts/monitoring-access-validation-2026-11-01.md).
+
+## Persistent storage prerequisites
+
+The generic monitoring manifest requests PVCs and expects a default StorageClass.
+markserver has no default provisioner. Its retained claims are bound to dedicated
+static local PVs with an empty storage class and node affinity to `markserver`:
+
+| Claim | PV | Host directory | Owner |
+| --- | --- | --- | --- |
+| `prometheus-data` | `markserver-monitoring-prometheus` | `/home/tuanpm/.robomart-data/monitoring/prometheus` | `65534:65534` |
+| `tempo-data` | `markserver-monitoring-tempo` | `/home/tuanpm/.robomart-data/monitoring/tempo` | `10001:10001` |
+| `grafana-data` | `markserver-monitoring-grafana` | `/home/tuanpm/.robomart-data/monitoring/grafana` | `472:472` |
+
+All three PVs use `Retain`. The exact provisioned manifest and preservation evidence
+are stored privately on the node under `~/.robomart-ops/2026-11-01-access/`.
+Do not recreate a bound claim or replace a nonempty target directory as a retry.
+Grafana additionally requires the external `grafana-admin` Secret; preserve its
+existing identity and database when converting a legacy literal environment value.
+
+Before changing an older installation, inspect the full Argo diff. A source sync
+can also apply previously pending storage/security changes. Provision PVCs and
+back up live data before replacing any `emptyDir` Pod. When a live Deployment still
+has `RollingUpdate` fields, replace its entire strategy with the already-declared
+`Recreate` strategy before retrying SSA; changing only `type` can leave an invalid
+combination. A literal environment `value` must likewise be removed when switching
+that same entry to `valueFrom`.
 
 ## Recovery
 

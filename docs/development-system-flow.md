@@ -1,6 +1,6 @@
 # Robo-Mart — Luồng development và hoạt động hệ thống
 
-> Đối chiếu mã nguồn và cấu hình trong repository ngày 24/10/2026.
+> Cập nhật các luồng chính theo mã nguồn ngày 01/11/2026, sau các wave 6–9 và sửa release ngày 29/10. Kết quả chạy và phạm vi môi trường được ghi trong từng báo cáo kiểm chứng.
 > Đây là mô tả hiện trạng checkout, không phải xác nhận hệ thống đang chạy thành công trên local hoặc production. Những bước đề xuất và phần chưa hoàn thiện được ghi riêng.
 
 ## Mục lục
@@ -41,7 +41,7 @@ Bản này nối các phần thành luồng onboarding → phát triển → ki�
 
 ## 2. Tổng quan kiến trúc
 
-Robo-Mart là ứng dụng thương mại điện tử theo microservices, có website khách hàng và dashboard quản trị. Backend dùng Java 21, Spring Boot 4.0.4, Spring Cloud 2025.1.1; frontend dùng Vue 3, TypeScript, Pinia, PrimeVue, Tailwind và Vite.
+Robo-Mart là ứng dụng thương mại điện tử theo microservices, có website khách hàng và dashboard quản trị. Backend dùng Java 25, Spring Boot 4.1.2, Spring Cloud 2025.1.4; frontend dùng Vue 3, TypeScript, Pinia, PrimeVue, Tailwind và Vite.
 
 ```mermaid
 flowchart TB
@@ -65,7 +65,6 @@ flowchart TB
     P <--> ES[(Elasticsearch)]
     P <--> R[(Redis)]
     CA <--> R
-    I <--> R
     G <--> R
     P -->|outbox| Q[Kafka + Schema Registry]
     O -->|outbox| Q
@@ -73,6 +72,7 @@ flowchart TB
     CA -->|cart expiry warning| Q
     Q --> P
     Q --> CA
+    Q --> I
     Q --> N
     N -->|STOMP / SockJS qua gateway| A
 ```
@@ -127,7 +127,7 @@ _bmad-output/             Yêu cầu, thiết kế và hồ sơ implementation
 | Product | 8081 | — | `product_db`, PostgreSQL 5432; Elasticsearch; Redis cache |
 | Cart | 8082 | — | Redis, TTL mặc định 24 giờ |
 | Order | 8083 | 9093 | `order_db`, PostgreSQL 5434 |
-| Inventory | 8084 | 9094 | `inventory_db`, PostgreSQL 5435; Redis lock |
+| Inventory | 8084 | 9094 | `inventory_db`, PostgreSQL 5435; conditional SQL và row lock |
 | Payment | 8086 | 9095 | `payment_db`, PostgreSQL 5436 |
 | Notification | 8087 | — | `notification_db`, PostgreSQL 5437 |
 | Keycloak | 8180 | — | PostgreSQL 5433 |
@@ -143,7 +143,7 @@ Nguồn: [`backend/pom.xml`](../backend/pom.xml), [`docker-compose.yml`](../infr
 
 ### 4.1 Chuẩn bị
 
-- JDK 21; dùng Maven Wrapper đã có trong `backend/`.
+- JDK 25; dùng Maven Wrapper đã có trong `backend/`, khớp parent POM và Backend CI.
 - Docker có Compose v2 để chạy dependencies và Testcontainers.
 - Node phù hợp `engines` của frontend (`^20.19.0 || >=22.12.0`); CI dùng Node 22. Dùng npm với lockfile đã commit.
 - Chừa đủ tài nguyên cho PostgreSQL, Kafka, Elasticsearch và nhiều JVM. Dựng một phần stack khi chỉ sửa một service sẽ nhẹ hơn chạy toàn bộ.
@@ -340,10 +340,11 @@ Customer và Admin dùng OIDC client khác nhau; OIDC user được lưu trong `
 | `/api/v1/cart/**` | Public, trừ POST merge cần authenticated |
 | `/api/v1/orders/**` | Authenticated; service kiểm tra đơn thuộc user |
 | `/api/v1/admin/**` | Role `ADMIN` |
-| `/actuator/**` | Permit all tại gateway; mức thông tin trả về còn do actuator config |
+| `/actuator/**` | Bị chặn trên listener public; management port riêng phục vụ health/metrics nội bộ |
+| `/ws/**` | Cho qua HTTP handshake; Notification xác thực JWT trong STOMP CONNECT |
 | Path còn lại | Authenticated; vẫn cần có route để chuyển downstream |
 
-`/ws` còn liên quan xác thực STOMP CONNECT và HTTP handshake. Không chỉ kiểm tra token trong CONNECT rồi kết luận browser handshake sẽ thành công qua gateway; xem giới hạn tại mục 14.
+JWT resource servers kiểm tra issuer và audience `robomart-api`; JWK có thể lấy qua URL nội bộ riêng. Gateway cho phép HTTP handshake `/ws/**`, còn Notification kiểm tra token và quyền trong STOMP. Khi kiểm chứng realtime phải xác nhận cả subscription và event nhận được.
 
 Nguồn: [`RouteConfig.java`](../backend/api-gateway/src/main/java/com/robomart/gateway/config/RouteConfig.java), [`GatewaySecurityConfig.java`](../backend/api-gateway/src/main/java/com/robomart/gateway/config/GatewaySecurityConfig.java), [`security-lib/`](../backend/security-lib/), `src/auth/` của hai frontend.
 
@@ -379,6 +380,8 @@ sequenceDiagram
 ```
 
 API ghi thành công không đảm bảo Elasticsearch và mọi giỏ hàng đã cập nhật ngay. Nếu catalog đúng nhưng search cũ, kiểm tra outbox và consumer trước khi kết luận DB bị mất dữ liệu.
+
+Tồn kho hiển thị là projection từ Inventory: Product creation tạo inventory bằng 0 nếu chưa có; mỗi thay đổi stock ghi snapshot có version vào outbox. Product chỉ nhận version mới hơn rồi phát event cập nhật thông thường để index/cache tiếp tục xử lý. Không dùng SQL copy số tồn giữa database; xem [luồng đồng bộ tồn kho](inventory-catalog-sync.md).
 
 Ảnh sản phẩm có API upload/delete/reorder, lưu object qua AWS SDK v2 và trả URL công khai của S3/CDN. Compose dùng MinIO ở cổng9002; E2E dùng19002. Volume/PVC cũ được giữ chỉ đọc tại `/migration/images`; URL `/images/**` cũ chuyển hướng sau bước copy/kiểm checksum tường minh. Production cần provision bucket và `product-s3-secret` trước rollout; xem [hướng dẫn migration](product-object-storage.md).
 
@@ -428,21 +431,21 @@ sequenceDiagram
     O->>Q: Poll outbox và publish status event
 ```
 
-Saga chạy trong đường thực thi `createOrder`; mỗi forward step được chạy qua virtual-thread executor với timeout. API không chỉ enqueue rồi lập tức trả một job ID. Các transaction DB được tách theo bước, không giữ một transaction DB mở xuyên suốt mọi gRPC call.
+Saga chạy đồng bộ trong đường thực thi `createOrder`; forward step chạy trên caller thread với gRPC deadline và retry có giới hạn. Không có background step tiếp tục sửa order sau khi API đã trả về. Payment tách committed intent, provider call và receipt/result; pending recovery giữ row claim trong lúc gọi RPC có deadline.
 
-**Payload hiện tại:** frontend gửi `productId`, `productName`, `quantity`, `unitPrice`, `shippingAddress`. Order tính tổng từ giá request. `paymentData` của form không được đưa vào request tạo đơn; step payment dùng tổng đơn và currency `USD`. Đây là luồng mô phỏng thanh toán hiện tại.
+**Payload hiện tại:** frontend gửi `productId`, `productName`, `quantity`, `unitPrice`, `shippingAddress`. Order bỏ qua tên/giá do client gửi và lấy giá hiện tại từ Product trước transaction tạo đơn. API hỗ trợ `Idempotency-Key` theo user để replay cùng order. `paymentData` của form không được đưa vào request tạo đơn; Payment vẫn dùng mock provider với currency `USD`.
 
 ### 9.2 Bảo vệ tồn kho
 
-Inventory dùng Redis distributed lock theo product, TTL lock mặc định 10 giây, kết hợp transaction và optimistic locking bằng `@Version` trên `InventoryItem`. Repository `findByProductId` hiện không khai báo pessimistic lock, dù comment trong service có nhắc tới nó. Reserve kiểm tra quantity, giảm available, tăng reserved, ghi stock movement/outbox và low-stock alert khi dưới ngưỡng. Sau transaction có kiểm tra lock ownership; mất lock sẽ đi vào xử lý bù.
+Inventory reserve dùng conditional SQL theo thứ tự product ID, trong một transaction cho toàn bộ order; không phụ thuộc Redis lock. Thao tác đồng thời có retry contention giới hạn; thiếu một dòng stock sẽ rollback tất cả reservation lines, movements và outbox của lần reserve đó. Low-stock alert chỉ phát khi vượt qua ngưỡng từ trên xuống.
 
-Reservation được lưu phục vụ idempotency/release theo order. gRPC handler kiểm tra replay theo order, reserve lần lượt từng item, theo dõi item đã thành công và gọi rollback cho chúng nếu bước sau thất bại. Đây là thao tác bù giữa các lần reserve, không phải một transaction duy nhất cho mọi item; lỗi rollback được ghi log. Cần kiểm thử cả tình huống một item thành công nhưng item tiếp theo hết hàng.
+Reservation và các line đã lưu là nguồn cho replay, commit và release theo order. Release claim trạng thái và khóa row Inventory; chỉ hoàn lại đúng các line đã reserve. Event xác nhận đơn commit phần reserved, còn cancellation/refund có thể trả lại stock đã commit. Expiry job hỏi trạng thái order; kết quả chưa rõ giữ stock và chuyển sang kiểm tra/manual review, không tự giải phóng chỉ vì hết TTL.
 
 ### 9.3 Payment và idempotency
 
-Payment Service lưu payment/idempotency data trong PostgreSQL; TTL idempotency key khai báo 24 giờ. Saga charge dùng order ID làm idempotency key. `MockPaymentGateway` hỗ trợ replay cùng key và mô phỏng transient failure, decline, delay; map charge của mock ở RAM không phải sổ giao dịch bền vững của nhà cung cấp thật.
+Payment Service lưu intent, payment, refund receipts và mock provider ledger trong PostgreSQL. Saga charge dùng order ID làm idempotency key; lease có fencing và provider call nằm ngoài transaction của application. Mock hỗ trợ replay sau restart và các tình huống transient failure, decline, delay; đây vẫn chưa phải tích hợp PSP thật.
 
-Không suy ra POST tạo order có idempotency end-to-end: tạo hai order mới sẽ có hai order ID và hai payment keys khác nhau. UI chỉ chặn double-submit trong cùng store đang xử lý.
+POST tạo order có idempotency khi caller gửi lại cùng `Idempotency-Key` cho cùng user. Caller bỏ header hoặc tạo key mới vẫn có thể tạo order khác. Frontend hiện chặn double-submit trong cùng store; cần phân biệt điều này với việc giữ lại một key qua retry HTTP.
 
 ### 9.4 Các nhánh lỗi chính
 
@@ -452,8 +455,8 @@ Không suy ra POST tạo order có idempotency end-to-end: tạo hai order mới
 | Inventory circuit open | Lỗi tạm thời; Saga đi nhánh cancellation/compensation theo step, API trả lỗi inventory. |
 | Payment bị decline | Release inventory qua compensation, chuyển `CANCELLED`, API trả lỗi payment. |
 | Payment circuit open | Giữ inventory, chuyển `PAYMENT_PENDING`, trả HTTP 202. |
-| Forward step quá timeout | Ghi audit `TIMED_OUT`, đi nhánh lỗi/bù; không xem timeout là bằng chứng service đích chưa tạo side effect. |
-| Lỗi release khi bù | Ghi `COMPENSATION_FAILED`; một số đường vẫn finalize cancellation. Cần đối soát, không hứa rollback tuyệt đối. |
+| Forward step quá timeout | RPC deadline chặn thời gian chờ; payment outcome chưa rõ giữ stock để recovery/đối soát, không coi timeout là bằng chứng chưa charge. |
+| Lỗi release khi bù | Giữ trạng thái có thể phục hồi, chưa finalize `CANCELLED` trước khi nhận xác nhận release. |
 
 Nguồn: [`useCheckoutStore.ts`](../frontend/customer-website/src/stores/useCheckoutStore.ts), [`OrderService.java`](../backend/order-service/src/main/java/com/robomart/order/service/OrderService.java), [`OrderSagaOrchestrator.java`](../backend/order-service/src/main/java/com/robomart/order/saga/OrderSagaOrchestrator.java), [`inventory/service/`](../backend/inventory-service/src/main/java/com/robomart/inventory/service/), [`payment/service/`](../backend/payment-service/src/main/java/com/robomart/payment/service/).
 
@@ -494,7 +497,7 @@ stateDiagram-v2
 
 Saga lưu audit theo bước với key `{orderId}:{stepName}`; nếu đã ghi `SUCCESS` thì forward step có thể skip khi thực thi lại. Khi app ready, orchestrator tìm các Saga ở trạng thái trung gian để phục hồi. Scheduled job chạy mặc định mỗi 60 giây, sau initial delay 30 giây, ngưỡng kẹt 5 phút; ShedLock hạn chế job chạy đồng thời giữa replica.
 
-`PAYMENT_PENDING` bị loại khỏi cả danh sách dead Saga và startup recovery hiện tại. Chưa thấy worker tự charge lại/resume trạng thái này; customer cancellation cũng không cho phép trạng thái đó. Vì vậy cần xem đây là phần recovery chưa khép kín, không mô tả “payment phục hồi thì đơn tự chạy tiếp”.
+`PAYMENT_PENDING` có worker riêng `PendingPaymentRecoveryJob`, mặc định scan mỗi 5 giây và backoff 30 giây sau provider failure. Worker dùng lại order/payment key và reservation cũ; giới hạn attempt/age được lưu bền vững. Hết budget chuyển manual review, giữ stock và có ADMIN API để review/resume. Customer cancel vẫn chỉ nhận `PENDING` hoặc `CONFIRMED`; không xem pending là đơn có thể tự bỏ qua charge rồi giải phóng stock.
 
 Nguồn: [`OrderStatus.java`](../backend/order-service/src/main/java/com/robomart/order/enums/OrderStatus.java), [`DeadSagaDetectionJob.java`](../backend/order-service/src/main/java/com/robomart/order/saga/DeadSagaDetectionJob.java), [`OrderSagaOrchestrator.java`](../backend/order-service/src/main/java/com/robomart/order/saga/OrderSagaOrchestrator.java).
 
@@ -504,15 +507,16 @@ Nguồn: [`OrderStatus.java`](../backend/order-service/src/main/java/com/robomar
 
 Product, Inventory, Order có outbox polling mặc định mỗi giây. Poller chuyển payload sang event và publish Kafka, sau đó cập nhật trạng thái xử lý. Đây là mô hình có khả năng phát lại/nhận trùng; không coi là exactly-once end-to-end. Các consumer có cơ chế chống trùng ở một số đường, cần kiểm tra theo từng handler.
 
-Đặc biệt, Order Saga cập nhật status và tạo status-changed outbox trong các transaction riêng ở một số đường; không giả định mọi status update luôn atomic với event. Riêng `finalizeCancellation` ghi cancellation/history/outbox trong cùng transaction.
+Các đường chuyển trạng thái và phục hồi chính ghi status/history/outbox trong transaction của service sở hữu. Shared `outbox-lib` claim aggregate head có fencing, giữ thứ tự theo aggregate, gửi ngoài transaction DB và chỉ acknowledge sau Kafka ACK. Unknown event được giữ lại và có metric; không giả vờ đã publish thành công.
 
 | Kafka topic được đối chiếu | Producer / nguồn | Consumer và tác dụng |
 | --- | --- | --- |
-| `product.product.created` | Product outbox | Product index consumer tạo document search |
+| `product.product.created` | Product outbox | Product index; Inventory khởi tạo stock bằng 0 nếu chưa tồn tại |
 | `product.product.updated` | Product outbox | Index, cache invalidation, Cart product update |
 | `product.product.deleted` | Product outbox | Index delete, cache invalidation |
 | `order.order.status-changed` | Order outbox | Notification tạo thông báo và push admin feed |
 | `inventory.stock.low-alert` | Inventory outbox | Notification cảnh báo tồn kho và push admin |
+| `inventory.stock.updated` | Inventory outbox | Product cập nhật projection theo Inventory version, rồi phát Product updated |
 | `cart.cart.expiry-warning` | Cart scheduler | Notification cảnh báo giỏ sắp hết hạn |
 | `notification.dlq` | Kafka error handling | DLQ consumer lưu failed events để quản trị/retry |
 
@@ -551,7 +555,7 @@ flowchart TD
     FC -->|success trên main| FD[CD Frontend: build 2 frontend images]
     BD --> GH[Push GHCR]
     FD --> GH
-    GH --> TAG[Commit image tags vào production overlay]
+    GH --> TAG[Commit image digests vào production overlay]
     TAG --> AR[ArgoCD theo dõi main]
     AR --> KU[Kustomize production + base]
     KU --> K8[Kubernetes reconcile / rollout]
@@ -565,16 +569,17 @@ flowchart TD
 
 **Security Scan:** có scan dependency/secret/IaC và cấu hình scan khác trong workflow; riêng Trivy đang `--exit-code 0`, kết quả là báo cáo, không phải hard gate chặn mọi finding.
 
-**CD:** Backend CI và Frontend CI kích hoạt hai workflow CD riêng trên main; cả hai còn hỗ trợ manual dispatch. Images đẩy lên GHCR, job sau sửa `infra/k8s/overlays/production/kustomization.yaml`, commit `[skip ci]`. ArgoCD Application theo dõi overlay này, cấu hình auto-sync, prune và self-heal. Monitoring có Application riêng.
+**CD:** Backend CI và Frontend CI kích hoạt hai workflow CD riêng trên main; cả hai còn hỗ trợ manual dispatch. Images đẩy lên GHCR, job publish digest đã kiểm chứng vào `infra/k8s/overlays/production/kustomization.yaml` cùng release audit record, commit `[skip ci]`. ArgoCD Application theo dõi overlay này, cấu hình auto-sync, prune và self-heal. Monitoring có Application riêng.
 
 **Điều kiện triển khai:** cluster, ArgoCD, databases/Kafka/Redis/Elasticsearch/Keycloak, secrets, registry access, DNS/TLS và network phải được provision đúng. App manifests không tự chứng minh các dependencies đã được dựng. Hướng dẫn chi tiết nằm trong bộ tài liệu K8s đã dẫn ở mục 1.
 
-### Giới hạn CD cần kiểm tra trước release
+### Release revision và quality gates
 
-- Hai job build dùng `actions/checkout` mặc định, chưa pin `ref` vào `workflow_run.head_sha` hoặc input `sha`, trong khi job cập nhật tags tính tag theo những SHA đó. Code build và tag mà overlay tham chiếu có thể lệch; cần đối chiếu checkout/image digest/tag trước khi release một revision cụ thể.
-- CD chỉ phụ thuộc CI tương ứng; YAML không thể hiện gate bắt buộc chờ cả Schema Compatibility và Security Scan. Required branch checks trên GitHub chưa được xác minh ở lần đọc repo này.
-- Backend và frontend CD dùng concurrency groups riêng nhưng cùng push vào một overlay trên main; cần xử lý khả năng push conflict khi chạy đồng thời.
-- Có ArgoCD manifest trong repo không xác nhận Application đã được cài hay cluster đã sync. Xác minh trạng thái thực tế ở ArgoCD và Kubernetes.
+CD resolve một SHA đã qua push CI trên `main`, kiểm tra Security Scan và Schema Compatibility đã đăng ký cho cùng SHA. Helper policy được lấy từ `github.workflow_sha`; source build được checkout tường minh theo SHA đã resolve. OCI revision, full-SHA tag, image record và GitOps digest phải cùng nguồn.
+
+GitOps pin digest và lưu audit record cho từng component. Publish dùng main mới nhất và retry non-fast-forward có giới hạn; component bị superseded không ghi đè release mới hơn. Rollback code cũ thực hiện bằng reviewed GitOps digest revert. Xem [release provenance và demo operations](release-provenance-and-demo-operations.md) cùng `infra/ci/scripts/release-policy.cjs`.
+
+ArgoCD Application trong repo chưa tự chứng minh cluster đã sync. Với markserver, báo cáo ngày 29/10 ghi nhận đã khôi phục auto-sync; phải kiểm tra Application revision, health và prerequisite của chính môi trường trước mỗi rollout.
 
 ### Rollback đề xuất
 
@@ -595,7 +600,7 @@ Lấy order ID, user ID, thời điểm và correlation/trace ID từ response/l
 | Product DB đúng nhưng search cũ | Outbox status, Kafka topic, consumer lag/error, Elasticsearch index, cache TTL |
 | Cart mất hoặc đổi giỏ | TTL, anonymous ID, header, auth cart key và kết quả merge |
 | Order không xác nhận | Status/history, `saga_audit_log`, inventory reservation, payment/idempotency records |
-| Order `PAYMENT_PENDING` kéo dài | Circuit state và khoảng trống resume hiện tại; không chờ dead-saga job tự xử lý |
+| Order `PAYMENT_PENDING` kéo dài | Recovery due time/attempt/age, circuit state, `saga_recovery_state` và manual-review API |
 | Order `REFUND_FAILED` | Refund logs, payment trạng thái thực, recovery job/ShedLock; kiểm tra trước khi thao tác tiền |
 | Admin không nhận realtime | HTTP `/ws` handshake, STOMP CONNECT/auth, subscriptions, consumer, route/gateway security |
 | Notification log SENT nhưng không có mail | Kiểm tra mock implementation/profile và địa chỉ recipient |
@@ -617,28 +622,22 @@ Khi dừng dependencies, dùng `docker compose ... down` giữ volumes nếu cò
 
 ## 14. Giới hạn hiện tại cần nắm
 
-Các điểm sau phát hiện bằng đọc code/config, chưa là kết quả chạy tái hiện. Tài liệu này ghi nhận để onboarding và đánh giá độ hoàn thiện; không thay đổi implementation trong cùng lần cập nhật.
+Các nhận định cũ về giá do client quyết định, thiếu API idempotency, Redis inventory lock, không có pending-payment recovery, thiếu gateway routes và CD không pin source đã được thay thế bởi implementation các wave 6–9 và release policy mới. Xem [finding status](backend-remediation-final-status.md), source hiện tại và các báo cáo chạy trong `_bmad-output/test-artifacts/`.
 
 | Điểm | Hiện trạng và tác động |
 | --- | --- |
-| Root frontend scripts | `frontend/package.json` chỉ có workspaces/devDependencies và lint-staged; chạy `npm run dev` ở đó theo hướng dẫn cũ sẽ không có script. |
-| Payment thật | Dùng `MockPaymentGateway`; dữ liệu form payment không được gửi xuống create-order. Chưa có bằng chứng tích hợp PSP thật. |
-| Giá tạo đơn | `OrderService.createOrder` tính tổng từ `unitPrice` client gửi, chưa gọi Product để chốt giá phía server. Cần giải quyết trước khi dùng cho giao dịch thật. |
-| Order idempotency | Chưa thấy idempotency key cho POST tạo order; idempotency payment theo order ID không chống hai lần tạo hai order. |
-| Pending payment | Không thấy auto-resume/expiry/worker xử lý `PAYMENT_PENDING`; dead-saga/startup recovery loại trạng thái này, customer cancel cũng không nhận nó. |
-| Compensation | Một số release failure chỉ ghi audit rồi vẫn cancel. Status/outbox không luôn trong một transaction. Timeout có thể xảy ra khi downstream đã tạo side effect; cần đối soát. |
-| Cart checkout | Chỉ thấy reset frontend cart; không có bước clear Redis cart tương ứng trong đường checkout đã đọc. |
-| Email | `MockEmailService` chỉ log và bị loại ở profile production; cần implementation thật khi bật profile đó. Recipient ở một số đường hiện là user ID. |
-| Reporting | Query trực tiếp order DB; rebuild chỉ trả timestamp, chưa có read model CQRS độc lập như mô tả thiết kế có thể gợi ý. |
-| Gateway routes thiếu | Có controllers `/api/v1/admin/categories`, `/api/v1/admin/audit-logs`, `/api/v1/admin/reconciliation/**` nhưng `RouteConfig` chưa có routes tương ứng. Authorization rule không thay thế routing. |
-| WebSocket qua gateway | Client đặt Bearer trong STOMP CONNECT, trong khi gateway yêu cầu authenticated cho `/ws/**`. Cần xác minh handshake HTTP có cách xác thực phù hợp; CONNECT header không tự trở thành HTTP Authorization. |
-| Frontend container port | `frontend/nginx.conf` listen 8080; Compose map frontend `5173:80`/`5174:80`. Cần đồng bộ mapping với port thực tế trong container. |
-| Docker healthcheck | Wave 8 đã thống nhất Dockerfile qua `backend/scripts/render-dockerfiles.py`, cài curl cho healthcheck và dùng chung target với E2E. Các bước kiểm chứng image/stack được ghi trong báo cáo Wave 8. |
-| Container downstream URLs | Notification defaults tới localhost cho các HTTP clients, Compose chưa override đầy đủ; gateway thiếu payment URI override; JWT JWK URL của một số service còn localhost. Trong container, localhost là chính container đó. |
-| Container OTLP | Compose full truyền `MANAGEMENT_OTLP_TRACING_ENDPOINT`; application config dùng `MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT`. Cần thống nhất property trước khi kỳ vọng trace tới Tempo. |
-| Ảnh sản phẩm | Wave9 dùng S3-compatible storage, MinIO trong Compose và URL công khai. Volume/PVC cũ chỉ đọc để migration; production cần bucket/secret và xác minh copy trước rollout. |
-| CD revision | Checkout build và SHA dùng tạo overlay tag chưa được pin nhất quán; hai workflow cùng sửa overlay có thể conflict. |
-| Docs so với runtime | CI/CD/K8s guides cũ có phần migration/đường dẫn/luồng deploy khác hiện tại; ưu tiên workflows, Kustomize, `application.yml`, controller/service trong checkout. |
+| Root frontend scripts | Chạy scripts theo workspace; root không có `dev`/`build`/`test:unit`. |
+| Payment thật | `MockPaymentGateway` có ledger bền vững nhưng chưa phải PSP thật; dữ liệu card của form không dùng để charge provider. |
+| Checkout retry từ UI | API nhận `Idempotency-Key`; frontend hiện chưa gửi key ổn định qua HTTP retry. Chặn double-submit trong store chưa đủ chống tạo order mới sau một kết quả chưa rõ. |
+| Cart checkout | Frontend reset Pinia sau checkout; chưa có bước tương ứng clear Redis cart trong đường hiện tại. Kiểm tra sau reload. |
+| Email | `MockEmailService` chỉ log; trạng thái `SENT` chưa chứng minh email tới inbox. Production cần provider thật và recipient phù hợp. |
+| Reporting | Query trực tiếp Order DB; rebuild hiện chưa dựng read model độc lập. |
+| Stock projection | Catalog/search/cache cập nhật bất đồng bộ. Inventory vẫn quyết định có reserve được không; sản phẩm mới có thể cần chờ consumer khởi tạo inventory trước khi restock. |
+| Frontend container port | Nginx listen 8080 nhưng Compose app còn map `5173:80`/`5174:80`; cần đồng bộ khi dùng frontend containers. Vite trên host không dùng mapping này. |
+| Gateway Payment URL trong Compose | Gateway app env chưa override URI Payment; kiểm tra trước khi dùng đường admin Payment trong container. Các HTTP clients/JWK đã có override riêng, không xem tất cả là lỗi localhost cũ. |
+| Reconciliation scalability | Inventory/Order còn summary không phân trang; Payment đã có paging. Không dùng triage cũ để suy ra cả ba service đều còn cùng implementation. |
+| Môi trường demo | Markserver có các dependencies được provision riêng. Version Kafka/Schema Registry, bucket/secret, DNS/tunnel và state ArgoCD phải kiểm tra trực tiếp; không suy từ Compose local. |
+| Runtime so với tài liệu | Story `done` và checklist implementation không thay thế test/runtime evidence. Phân biệt local fixture, demo markserver và provider thật. |
 
 ## 15. Điểm vào mã nguồn
 

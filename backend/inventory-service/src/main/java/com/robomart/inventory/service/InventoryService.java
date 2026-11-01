@@ -89,6 +89,17 @@ public class InventoryService {
                 .orElseThrow(() -> new ResourceNotFoundException("InventoryItem", productId));
     }
 
+    /** Product creation provisions only missing inventory; replay never resets existing stock. */
+    @Transactional
+    public void initializeProduct(Long productId) {
+        if (productId == null || productId <= 0) {
+            throw new IllegalArgumentException("Product ID must be positive");
+        }
+        if (inventoryItemRepository.initializeProduct(productId) == 1) {
+            recordStockSnapshot(inventoryItemRepository.findByProductId(productId).orElseThrow());
+        }
+    }
+
     /**
      * Looks up the reservation record for an order, if any. The record is the idempotency anchor for
      * the gRPC reserve/release calls (keyed by {@code orderId}).
@@ -248,7 +259,8 @@ public class InventoryService {
                 }
                 item.setReservedQuantity(item.getReservedQuantity() - line.getQuantity());
                 item.setTotalQuantity(item.getTotalQuantity() - line.getQuantity());
-                inventoryItemRepository.save(item);
+                inventoryItemRepository.saveAndFlush(item);
+                recordStockSnapshot(item);
                 StockMovement movement = new StockMovement();
                 movement.setInventoryItemId(item.getId());
                 movement.setType(StockMovementType.COMMIT);
@@ -334,7 +346,7 @@ public class InventoryService {
         }
         item.setAvailableQuantity(available);
         item.setTotalQuantity(total);
-        InventoryItem saved = inventoryItemRepository.save(item);
+        InventoryItem saved = inventoryItemRepository.saveAndFlush(item);
 
         StockMovement movement = new StockMovement();
         movement.setInventoryItemId(saved.getId());
@@ -343,7 +355,7 @@ public class InventoryService {
         movement.setReason(reason != null ? reason : "Admin restock");
         stockMovementRepository.save(movement);
 
-        // RESTOCK movements are the durable audit; there is no external restock event contract.
+        recordStockSnapshot(saved);
 
         log.info("Stock restocked: productId={}, quantity={}, newAvailable={}, newTotal={}",
                 productId, quantity, saved.getAvailableQuantity(), saved.getTotalQuantity());
@@ -442,6 +454,8 @@ public class InventoryService {
             outboxEventRepository.save(alertEvent);
         }
 
+        recordStockSnapshot(savedItem);
+
         log.info("Stock reserved successfully: productId={}, quantity={}, orderId={}, newAvailable={}",
                 productId, quantity, orderId, savedItem.getAvailableQuantity());
 
@@ -472,7 +486,7 @@ public class InventoryService {
         }
 
         // Save InventoryItem
-        InventoryItem savedItem = inventoryItemRepository.save(item);
+        InventoryItem savedItem = inventoryItemRepository.saveAndFlush(item);
 
         // Create StockMovement record
         StockMovement movement = new StockMovement();
@@ -504,9 +518,19 @@ public class InventoryService {
             throw new RuntimeException("Failed to create outbox event", e);
         }
 
+        recordStockSnapshot(savedItem);
+
         log.info("Stock released successfully: productId={}, quantity={}, orderId={}, newAvailable={}",
                 productId, quantity, orderId, savedItem.getAvailableQuantity());
 
         return savedItem;
+    }
+
+    /** Must run after the row version advances, in the same transaction as its stock mutation. */
+    private void recordStockSnapshot(InventoryItem item) {
+        var payload = Map.of("productId", item.getProductId(),
+                "availableQuantity", item.getAvailableQuantity(), "inventoryVersion", item.getVersion());
+        outboxEventRepository.save(new OutboxEvent("InventoryItem", item.getProductId().toString(),
+                "stock_updated", objectMapper.writeValueAsString(payload)));
     }
 }

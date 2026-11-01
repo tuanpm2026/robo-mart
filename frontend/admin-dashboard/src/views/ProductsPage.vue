@@ -24,6 +24,7 @@ const confirm = useConfirm()
 const products = ref<AdminProductListItem[]>([])
 const isLoading = ref(true)
 const selectedRows = ref<AdminProductListItem[]>([])
+const filters = ref({ name: { value: null, matchMode: 'contains' } })
 const showForm = ref(false)
 const editingProduct = ref<AdminProductListItem | null>(null)
 
@@ -194,6 +195,7 @@ async function executeBulkDelete(toDelete: typeof selectedRows.value) {
       :value="products"
       :loading="isLoading"
       v-model:selection="selectedRows"
+      v-model:filters="filters"
       selection-mode="multiple"
       :paginator="true"
       :rows="25"

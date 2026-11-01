@@ -26,6 +26,29 @@ import com.robomart.product.service.ProductIndexWriter;
 
 class ProductIndexWriterTest {
     @Test
+    @SuppressWarnings("unchecked")
+    void conflictingBootstrapWriteMustBecomeSearchableBeforeCacheInvalidation() throws Exception {
+        var client = mock(ElasticsearchClient.class);
+        var indices = mock(co.elastic.clients.elasticsearch.indices.ElasticsearchIndicesClient.class);
+        var elastic = mock(ElasticsearchOperations.class);
+        var converter = mock(ElasticsearchConverter.class);
+        when(elastic.getElasticsearchConverter()).thenReturn(converter);
+        when(converter.mapObject(any())).thenReturn(Document.create());
+        when(client.indices()).thenReturn(indices);
+        var conflict = new co.elastic.clients.elasticsearch._types.ElasticsearchException("index",
+                co.elastic.clients.elasticsearch._types.ErrorResponse.of(response -> response.status(409)
+                        .error(error -> error.type("version_conflict_engine_exception").reason("already indexed"))));
+        when(client.index(any(Function.class))).thenThrow(conflict);
+        var meters = new SimpleMeterRegistry();
+        try {
+            var document = new ProductDocument(); document.setId(1L); document.setSourceVersion(1L);
+            new ProductIndexWriter(client, elastic, meters).writeVisible(document);
+            verify(indices).refresh(any(Function.class));
+            assertThat(meters.counter("product.projection.stale").count()).isEqualTo(1);
+        } finally { meters.close(); }
+    }
+
+    @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
     void zeroBasedSourceVersionUsesPositiveExternalVersionAndCannotAutoCreateADynamicIndex() throws Exception {
         var client = mock(ElasticsearchClient.class);

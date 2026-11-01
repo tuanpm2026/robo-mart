@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import DataTable from 'primevue/datatable'
+import type { DataTablePageEvent } from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import InputNumber from 'primevue/inputnumber'
@@ -28,6 +29,13 @@ interface EditingCell {
 const editingCell = ref<EditingCell | null>(null)
 
 onMounted(() => inventoryStore.loadInventory())
+
+async function onPage(event: DataTablePageEvent) {
+  selectedRows.value = []
+  editingCell.value = null
+  inventoryStore.pageSize = event.rows
+  await inventoryStore.loadInventory(event.page)
+}
 
 function isLowStock(item: InventoryItemEnriched): boolean {
   return item.availableQuantity < item.lowStockThreshold
@@ -170,11 +178,13 @@ async function confirmBulkRestock() {
       selection-mode="multiple"
       :row-class="rowClass"
       :paginator="true"
-      :rows="25"
+      lazy
+      :rows="inventoryStore.pageSize"
+      :first="inventoryStore.currentPage * inventoryStore.pageSize"
+      :total-records="inventoryStore.totalElements"
       :rows-per-page-options="[10, 25, 50, 100]"
-      sort-field="productName"
-      :sort-order="1"
       data-key="productId"
+      @page="onPage"
     >
       <template #loading>
         <div class="flex flex-col gap-2 p-4">
@@ -193,19 +203,19 @@ async function confirmBulkRestock() {
 
       <Column selection-mode="multiple" style="width: 40px" />
 
-      <Column field="productName" header="Product Name" sortable>
+      <Column field="productName" header="Product Name">
         <template #body="{ data }">
           <span class="font-medium text-gray-900">{{ data.productName }}</span>
         </template>
       </Column>
 
-      <Column field="sku" header="SKU" sortable>
+      <Column field="sku" header="SKU">
         <template #body="{ data }">
           <span class="text-gray-500 text-sm font-mono">{{ data.sku }}</span>
         </template>
       </Column>
 
-      <Column field="availableQuantity" header="Current Stock" sortable style="width: 160px">
+      <Column field="availableQuantity" header="Current Stock" style="width: 160px">
         <template #body="{ data }">
           <!-- Inline edit mode -->
           <div v-if="editingCell?.productId === data.productId" class="flex items-center gap-1">
@@ -250,19 +260,19 @@ async function confirmBulkRestock() {
         </template>
       </Column>
 
-      <Column field="reservedQuantity" header="Reserved" sortable style="width: 100px">
+      <Column field="reservedQuantity" header="Reserved" style="width: 100px">
         <template #body="{ data }">
           <span class="text-gray-600 text-sm">{{ data.reservedQuantity }}</span>
         </template>
       </Column>
 
-      <Column field="totalQuantity" header="Total" sortable style="width: 100px">
+      <Column field="totalQuantity" header="Total" style="width: 100px">
         <template #body="{ data }">
           <span class="text-gray-600 text-sm">{{ data.totalQuantity }}</span>
         </template>
       </Column>
 
-      <Column field="lowStockThreshold" header="Threshold" sortable style="width: 100px">
+      <Column field="lowStockThreshold" header="Threshold" style="width: 100px">
         <template #body="{ data }">
           <span class="text-gray-500 text-sm">{{ data.lowStockThreshold }}</span>
         </template>

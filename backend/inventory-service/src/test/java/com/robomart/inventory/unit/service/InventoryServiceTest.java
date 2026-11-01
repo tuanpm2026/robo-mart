@@ -111,6 +111,7 @@ class InventoryServiceTest {
         item.setReservedQuantity(reserved);
         item.setTotalQuantity(total);
         item.setLowStockThreshold(10);
+        org.springframework.test.util.ReflectionTestUtils.setField(item, "version", 1);
         return item;
     }
 
@@ -145,7 +146,7 @@ class InventoryServiceTest {
             // given
             InventoryItem item = createTestInventoryItem(PRODUCT_ID, 50, 5, 55);
             when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-            lenient().when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
+            lenient().when(inventoryItemRepository.saveAndFlush(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
             when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // when
@@ -184,7 +185,7 @@ class InventoryServiceTest {
             // given
             InventoryItem item = createTestInventoryItem(PRODUCT_ID, 50, 0, 50);
             when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-            lenient().when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
+            lenient().when(inventoryItemRepository.saveAndFlush(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
             when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // when
@@ -206,7 +207,7 @@ class InventoryServiceTest {
             // given
             InventoryItem item = createTestInventoryItem(PRODUCT_ID, 50, 0, 50);
             when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-            lenient().when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
+            lenient().when(inventoryItemRepository.saveAndFlush(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
             when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // when
@@ -223,7 +224,7 @@ class InventoryServiceTest {
             // given
             InventoryItem item = createTestInventoryItem(PRODUCT_ID, 50, 0, 50);
             when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
-            when(inventoryItemRepository.save(any(InventoryItem.class)))
+            when(inventoryItemRepository.saveAndFlush(any(InventoryItem.class)))
                     .thenThrow(new org.springframework.orm.ObjectOptimisticLockingFailureException(
                             InventoryItem.class.getName(), PRODUCT_ID));
 
@@ -246,7 +247,7 @@ class InventoryServiceTest {
             InventoryItem item2 = createTestInventoryItem(productId2, 10, 0, 10);
             when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item1));
             when(inventoryItemRepository.findByProductId(productId2)).thenReturn(Optional.of(item2));
-            lenient().when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
+            lenient().when(inventoryItemRepository.saveAndFlush(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
             when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));
 
             // when
@@ -287,7 +288,7 @@ class InventoryServiceTest {
     }
 
     private void stubStockWrites() {
-        lenient().when(inventoryItemRepository.save(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(inventoryItemRepository.saveAndFlush(any(InventoryItem.class))).thenAnswer(inv -> inv.getArgument(0));
         when(objectMapper.writeValueAsString(any())).thenReturn("{}");
         when(outboxEventRepository.save(any(OutboxEvent.class))).thenAnswer(inv -> inv.getArgument(0));
         when(stockMovementRepository.save(any(StockMovement.class))).thenAnswer(inv -> inv.getArgument(0));

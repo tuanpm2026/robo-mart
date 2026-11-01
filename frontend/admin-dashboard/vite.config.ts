@@ -6,6 +6,10 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // SockJS's browser transport references the Node-style global alias.
+  define: {
+    global: 'globalThis',
+  },
   plugins: [
     tailwindcss(),
     vue(),

@@ -47,6 +47,9 @@ public class Product extends BaseEntity {
     @Column(name = "stock_quantity", nullable = false)
     private Integer stockQuantity = 0;
 
+    @Column(name = "inventory_version", nullable = false)
+    private Long inventoryVersion = -1L;
+
     @Column(nullable = false)
     private boolean active = true;
 
@@ -120,6 +123,14 @@ public class Product extends BaseEntity {
 
     public void setStockQuantity(Integer stockQuantity) {
         this.stockQuantity = stockQuantity;
+    }
+
+    public Long getInventoryVersion() {
+        return inventoryVersion;
+    }
+
+    public void setInventoryVersion(Long inventoryVersion) {
+        this.inventoryVersion = inventoryVersion;
     }
 
     public boolean isActive() {

@@ -5,6 +5,7 @@ import java.io.IOException;
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch._types.ElasticsearchException;
 import co.elastic.clients.elasticsearch._types.VersionType;
+import co.elastic.clients.elasticsearch._types.Refresh;
 import co.elastic.clients.json.JsonData;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
@@ -32,17 +33,38 @@ public class ProductIndexWriter {
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void write(ProductDocument snapshot) {
+        write(snapshot, Refresh.False);
+    }
+
+    /** Event consumers evict search caches only after the new document is searchable. */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public void writeVisible(ProductDocument snapshot) {
+        if (!write(snapshot, Refresh.WaitFor)) {
+            // A bootstrap/reindex write can win before its refresh. A rejected index request
+            // does not honour refresh=wait_for, so make the winning document visible explicitly.
+            try {
+                client.indices().refresh(request -> request.index(ALIAS));
+            } catch (IOException unavailable) {
+                throw new DataAccessResourceFailureException("Elasticsearch projection refresh failed", unavailable);
+            }
+        }
+    }
+
+    private boolean write(ProductDocument snapshot, Refresh refresh) {
         if (snapshot.getSourceVersion() == null || snapshot.getSourceVersion() < 0) {
             throw new IllegalArgumentException("Product projection requires a source version");
         }
         String source = elastic.getElasticsearchConverter().mapObject(snapshot).toJson();
         try {
             client.index(request -> request.index(ALIAS).id(snapshot.getId().toString()).requireAlias(true)
+                    .refresh(refresh)
                     .version(Math.addExact(snapshot.getSourceVersion(), 1)).versionType(VersionType.External)
                     .document(JsonData.fromJson(source)));
+            return true;
         } catch (ElasticsearchException failure) {
             if (failure.status() != 409 || !"version_conflict_engine_exception".equals(failure.error().type())) throw failure;
             meters.counter("product.projection.stale").increment();
+            return false;
         } catch (IOException unavailable) {
             throw new DataAccessResourceFailureException("Elasticsearch projection write failed", unavailable);
         }

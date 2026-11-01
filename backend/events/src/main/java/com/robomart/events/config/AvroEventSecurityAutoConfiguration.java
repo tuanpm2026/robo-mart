@@ -17,6 +17,7 @@ public class AvroEventSecurityAutoConfiguration {
                     .add("com.robomart.events.inventory.StockLowAlertEvent")
                     .add("com.robomart.events.inventory.StockReleasedEvent")
                     .add("com.robomart.events.inventory.StockReservedEvent")
+                    .add("com.robomart.events.inventory.StockUpdatedEvent")
                     .add("com.robomart.events.order.OrderCancelledEvent")
                     .add("com.robomart.events.order.OrderCreatedEvent")
                     .add("com.robomart.events.order.OrderItemDetail")

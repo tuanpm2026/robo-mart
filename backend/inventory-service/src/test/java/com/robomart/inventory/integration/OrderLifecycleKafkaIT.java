@@ -54,6 +54,33 @@ class OrderLifecycleKafkaIT {
     @Autowired private com.robomart.inventory.service.OutboxPollingService poller;
     @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbc;
 
+    @Test
+    void productCreationProvisionsZeroStockAndReplayPreservesRestockedInventory() throws Exception {
+        long id = java.util.concurrent.ThreadLocalRandom.current().nextLong(10000000, 20000000);
+        var created = com.robomart.events.product.ProductCreatedEvent.newBuilder()
+                .setEventId(UUID.randomUUID().toString()).setEventType("PRODUCT_CREATED")
+                .setAggregateId(Long.toString(id)).setAggregateType("PRODUCT").setTimestamp(Instant.now()).setVersion(1)
+                .setProductId(id).setSku("stock-init-" + id).setName("Stock initialization")
+                .setPrice("19.95").setCategoryId(1L).setCategoryName("Test").setStockQuantity(999).build();
+        kafka.send("product.product.created", Long.toString(id), created).get(10, TimeUnit.SECONDS);
+        await().atMost(Duration.ofSeconds(30)).untilAsserted(() ->
+                assertThat(items.findByProductId(id)).hasValueSatisfying(item ->
+                        assertThat(item.getAvailableQuantity()).isZero()));
+        inventory.restockItem(id, 17, "Bootstrap regression");
+        kafka.send("product.product.created", Long.toString(id), created).get(10, TimeUnit.SECONDS);
+        // Deliver a distinct second product afterwards on the same partition as a replay-consumption barrier.
+        var next = com.robomart.events.product.ProductCreatedEvent.newBuilder(created).setProductId(id + 1)
+                .setEventId(UUID.randomUUID().toString()).build();
+        kafka.send(new ProducerRecord<>("product.product.created", 0, Long.toString(id), created))
+                .get(10, TimeUnit.SECONDS);
+        kafka.send(new ProducerRecord<>("product.product.created", 0, Long.toString(id + 1), next))
+                .get(10, TimeUnit.SECONDS);
+        await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> assertThat(items.findByProductId(id + 1)).isPresent());
+        assertThat(inventory.getInventory(id).getAvailableQuantity()).isEqualTo(17);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM outbox_events WHERE event_type='stock_updated' "
+                + "AND aggregate_id=?", Integer.class, Long.toString(id))).isEqualTo(2);
+    }
+
     private KafkaConsumer<String, byte[]> dltConsumer() {
         KafkaConsumer<String, byte[]> consumer = new KafkaConsumer<>(Map.of(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap,

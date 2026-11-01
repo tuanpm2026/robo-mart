@@ -14,9 +14,21 @@ CI fixed: the old `Integration Tests` step (which skipped failsafe via `-DskipTe
 
 Two within-service ES IT isolation bugs were also fixed (the matrix split alone could not — both are inside product-service): a poisoned shared-Redis `@Cacheable` search cache (an empty result cached for 60s during an ES near-real-time gap caused later identical queries to hit the stale empty cache and time out) and cross-class index contamination from the live `ProductIndexConsumer` indexing sibling-IT products into the shared `products` index. Fixed by clearing the caches per class, pausing the consumer for the class lifetime, seeding once with `RefreshPolicy.IMMEDIATE`. Backend CI is green end-to-end.
 
-## Triage Summary (2026-05-07)
+## Current baseline (2026-11-01)
 
-Total open items: 19. Grouped by theme and prioritized for post-Epic-10 production hardening.
+The May/June triage below is historical, not the current open-item count or execution order. Consult [the remediation finding status](../../docs/backend-remediation-final-status.md), [current system flow](../../docs/development-system-flow.md), and dated validation reports before selecting work. All original epics are marked done; follow-up maintenance is tracked by the actual change and evidence rather than reopening completed stories automatically.
+
+- `TEST-IT-COVERAGE`: resolved by the existing CI matrix and enforced coverage gates; retain the historical investigation below.
+- `RETRY-NOOP`: superseded by the Wave 7/8 bounded gRPC retry implementation. Current clients use Framework `@Retryable` with the circuit-breaker fallback outside retry.
+- `SCHEMA-CI`: the June failure is not a current baseline. Wave 9 and the 2026-11-01 local Schema Registry suite provide newer evidence; check the exact release SHA's GitHub run before publication.
+- `RECON-PAGE`: still relevant to Inventory/Order summaries; Payment's summary is now paged.
+- `CHAOS-CB`: current `ServiceKillChaosIT` asserts breaker state and recovery of the same pending orders. Do not describe it as checking only order status. DLQ and true transport chaos remain separate concerns.
+- Monitoring Access/origin protection is deployed via PR #51; see [validation and recovery limitations](../test-artifacts/monitoring-access-validation-2026-11-01.md). The synchronization fix and browser integration repairs have passed local verification; see [the dated report](../test-artifacts/inventory-catalog-sync-validation-2026-11-01.md) for release scope. Do not infer a live rollout from local results.
+- Remaining browser follow-ups: persist one checkout idempotency key across HTTP retries, clear the server cart after successful checkout, and preserve protected deep links while restoring authentication on page load. Local validation observed the cart reappear after reload and an authenticated order deep link return to home; normal in-app order navigation works.
+
+## Historical triage (2026-05-07)
+
+The original 19-item count and sequencing below describe the post-Epic-10 review at that time.
 
 ### P0 — Block real-prod traffic (do before opening to external users)
 
