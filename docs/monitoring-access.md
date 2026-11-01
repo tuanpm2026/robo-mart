@@ -76,3 +76,17 @@ Keep the Access policies enabled during origin troubleshooting. Restore a known
 working tunnel configuration if its restart fails. Prefer repairing the ClusterIP
 route over reopening a NodePort. Do not remove databases, volumes, topics or
 monitoring data as part of Access configuration.
+
+## Tempo memory and readiness
+
+The single-binary Tempo deployment uses a 2 GiB container limit, a 1536 MiB Go
+memory target and a 512 MiB request. One concurrent flush, 16 MiB head blocks,
+5-minute block duration and 5 MB Parquet row groups bound the demo's flush work.
+These settings address a kernel-confirmed cgroup OOM under the former 512 MiB
+limit. They are demo sizing, not a production capacity guarantee.
+
+Check `/ready`, restart count and memory through a completed block flush after
+changing these settings. The Deployment readiness probe prevents Kubernetes from
+declaring the process available before Tempo reports readiness. Preserve the WAL,
+trace directories and PVC during diagnosis; validate candidate configuration with
+the exact deployed Tempo image using `-config.verify=true` before rollout.

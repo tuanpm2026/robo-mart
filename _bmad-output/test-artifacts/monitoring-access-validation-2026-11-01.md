@@ -88,3 +88,28 @@ successfully. Readiness and scrape checks passed, the original automated policy
 was restored, and the temporary Jobs were removed. Private evidence is retained at
 `~/.robomart-ops/2026-11-01-access/`, including activation logs, the previous
 Application, `monitoring-local-pvs.json` and `storage-preservation.json`.
+
+## Follow-up: Tempo flush memory pressure
+
+Continued observation found Tempo repeatedly exiting 137 while completing its
+retained WAL blocks. Kernel logs explicitly reported `CONSTRAINT_MEMCG` and killed
+the Tempo process at approximately 512 MiB RSS; the node still had approximately
+37 GiB available. The earlier `/ready` success was a point-in-time recovery check,
+not proof of stable block flushing.
+
+The follow-up change raises the container limit to 2 GiB/request to 512 MiB and sets
+`GOMEMLIMIT=1536MiB`. It serializes ingester flushes, cuts head blocks at 16 MiB or
+5 minutes, and uses 5 MB Parquet row groups. An HTTP `/ready` readiness probe now
+governs availability. Recovery did not manually delete data or recreate claims.
+Tempo's startup log reported automatic removal of incomplete WAL entries missing
+`meta.json` after the previous OOMs; recovery of those incomplete entries is not
+claimed. Valid existing local blocks were reloaded, and the previously failing
+block completed successfully under the new budget.
+
+Configuration keys/defaults were checked against Tempo **v2.9.3** source:
+[ingester configuration](https://github.com/grafana/tempo/blob/v2.9.3/modules/ingester/config.go)
+and [Parquet block configuration](https://github.com/grafana/tempo/blob/v2.9.3/tempodb/encoding/common/config.go).
+`kubectl kustomize infra/k8s/monitoring` and server-side dry runs passed. The exact
+running image `grafana/tempo@sha256:0d355cc7d9d23f93641a999fd9432084acf647f7731c732ed80f7b9a122ec85b`
+accepted the rendered candidate with `-config.file=/etc/tempo/tempo.yml -config.verify=true`.
+Runtime stability evidence and GitOps restoration are recorded with the follow-up PR.

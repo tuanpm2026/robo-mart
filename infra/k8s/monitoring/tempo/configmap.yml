@@ -8,6 +8,12 @@ data:
     server:
       http_listen_port: 3200
 
+    # Small blocks and serialized flushes fit this single-node demo's memory budget.
+    ingester:
+      concurrent_flushes: 1
+      max_block_bytes: 16777216
+      max_block_duration: 5m
+
     distributor:
       receivers:
         otlp:
@@ -20,5 +26,7 @@ data:
     storage:
       trace:
         backend: local
+        block:
+          parquet_row_group_size_bytes: 5000000
         local:
           path: /var/tempo/traces
