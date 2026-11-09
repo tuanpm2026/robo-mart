@@ -1,5 +1,50 @@
 # Isolated Java 25 E2E stack
 
+## Customer browser regression tests
+
+The Customer suite uses Playwright Chromium against this same isolated backend and real
+Keycloak OIDC. It creates a separate disposable customer/product per test, restocks only
+that product, and cancels its orders before removing the customer and soft-deleting the
+product. Existing realm users, carts, business data, and volumes are preserved. Payments
+and email remain the existing mocks.
+
+After packaging/building/starting the stack as below, run from `frontend/`:
+
+```bash
+npm ci
+npx playwright install chromium
+npm run test:e2e --workspace=customer-website
+```
+
+The runner builds the actual Customer bundle with isolated API/Keycloak URLs and serves
+it on `http://localhost:5173`. Stop any existing Vite server on that port first; reusing an
+unverified server is disabled. The suite targets fixed loopback ports 18080/18180 and
+never accepts a production base URL. Failed runs retain screenshots/traces under the
+ignored `customer-website/test-results/`; the HTML report is in `playwright-report/`.
+
+Covered behavior: a committed order whose HTTP response is lost replays the same order
+after reload; purchased cart quantities disappear after reload while later additions in
+another authenticated tab survive; cleanup outage/lost acknowledgement preserves the
+accepted order and retries cart cleanup; protected order links retain path/query/fragment
+with a restored session and after a fresh login. These are real service calls; network
+interception drops selected responses or simulates cleanup unavailability only.
+
+The `Customer Browser E2E` workflow runs the suite on relevant pull requests and manual
+dispatch. It packages backend apps without tests (Backend CI owns those unit/integration
+gates), builds/starts this stack, installs Chromium, runs the browser suite, uploads
+failure diagnostics, and tears down containers without deleting volumes. Run browser
+tests and `stack.sh test` sequentially: the Java chaos suite deliberately stops Payment.
+
+Checkout recovery keeps only a per-user key, shipping/order payload, and cart snapshot in
+sessionStorage; card numbers/CVV are never persisted. An ambiguous retry uses the saved
+payload even if the current cart changed. Cart acknowledgement is an authenticated
+cart-only operation: Redis atomically consumes matching line generations once per order;
+additions remain, while explicit quantity replacements or remove/re-add create a new
+generation that an old snapshot cannot consume. Receipts live with the cart's TTL. A cart
+cleanup failure retains the saved order receipt for the confirmation page to retry.
+
+## Backend stack operations
+
 This standalone Compose stack uses the project `robomart-java25-e2e-resume`, project-scoped volumes, no fixed container names, and loopback-only alternate ports. It never references developer Compose volumes. Do not merge it with the default Compose file or reuse its volumes for production.
 
 Prerequisites: JDK 25, Python 3, Docker Compose, approximately 8 GiB allocated to Docker, and packaged backend JARs. Finish integration tests before starting this stack so Testcontainers do not compete for memory. Service-owned PostgreSQL databases share one dedicated PostgreSQL container. Memory caps total approximately 7.7 GiB (plus a short-lived128MiB bucket initializer); application JVMs use 192 MiB maximum heaps and 256 MiB maximum metaspace. Startup is sequential. Frontend and monitoring services are not required by these HTTP tests.

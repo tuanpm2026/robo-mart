@@ -21,6 +21,8 @@ const cartStore = useCartStore()
 
 onMounted(async () => {
   checkoutStore.$reset()
+  checkoutStore.restoreAttempt()
+  if (checkoutStore.hasPendingAttempt) return
   if (cartStore.items.length === 0) {
     await cartStore.fetchCart()
   }
@@ -44,7 +46,7 @@ watch(
 watch(
   () => cartStore.items.length,
   (len) => {
-    if (len === 0 && !checkoutStore.isPlacingOrder) {
+    if (len === 0 && !checkoutStore.isPlacingOrder && !checkoutStore.hasPendingAttempt) {
       router.replace('/cart')
     }
   },
@@ -85,7 +87,10 @@ watch(
       </div>
 
       <div class="checkout__sidebar">
-        <CheckoutOrderSummary :items="cartStore.items" :total-price="cartStore.totalPrice" />
+        <CheckoutOrderSummary
+          :items="checkoutStore.checkoutItems"
+          :total-price="checkoutStore.checkoutTotal"
+        />
       </div>
     </div>
 

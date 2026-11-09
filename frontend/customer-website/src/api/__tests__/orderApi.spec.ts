@@ -105,9 +105,11 @@ describe('orderApi', () => {
         items: [{ productId: '1', productName: 'Widget', quantity: 2, unitPrice: 10 }],
         shippingAddress: 'Jane Doe, 123 Main St, SF, CA 12345, US',
       }
-      const result = await placeOrder(request)
+      const result = await placeOrder(request, 'checkout-key')
 
-      expect(apiClient.post).toHaveBeenCalledWith('/api/v1/orders', request)
+      expect(apiClient.post).toHaveBeenCalledWith('/api/v1/orders', request, {
+        headers: { 'Idempotency-Key': 'checkout-key' },
+      })
       expect(result.data.id).toBe(1)
       expect(result.data.status).toBe('CONFIRMED')
     })

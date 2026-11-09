@@ -23,6 +23,7 @@ onMounted(async () => {
   }
   checkoutStore.$reset()
   await orderStore.fetchOrder(orderId)
+  if (orderStore.currentOrder) await checkoutStore.reconcileCart(orderStore.currentOrder)
 })
 </script>
 
@@ -81,6 +82,13 @@ onMounted(async () => {
       </div>
 
       <div class="ocv__summary">
+        <div v-if="checkoutStore.cartCleanupPending" role="status">
+          <p>Your order was received. Your cart still needs to be refreshed.</p>
+          <Button
+            label="Refresh Cart"
+            @click="checkoutStore.reconcileCart(orderStore.currentOrder!)"
+          />
+        </div>
         <h2 class="ocv__summary-title">Order Summary</h2>
         <ul class="ocv__items">
           <li v-for="item in orderStore.currentOrder.items" :key="item.productId" class="ocv__item">

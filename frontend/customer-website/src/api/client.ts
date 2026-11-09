@@ -158,10 +158,19 @@ apiClient.interceptors.response.use(
       }
     } else if (error.request) {
       // No response at all — network/gateway down
-      try {
-        getUiState?.().setDegradationTier('maintenance')
-      } catch {
-        // Ignore store errors
+      // A lost checkout response is ambiguous, not evidence that the entire site is down.
+      // Keep its retry action available so the same persisted order key can be replayed.
+      const checkout =
+        originalRequest?.method === 'post' &&
+        (originalRequest.url === '/api/v1/cart/checkout' ||
+          (originalRequest.url === '/api/v1/orders' &&
+            originalRequest.headers?.has('Idempotency-Key')))
+      if (!checkout) {
+        try {
+          getUiState?.().setDegradationTier('maintenance')
+        } catch {
+          // Ignore store errors
+        }
       }
       return Promise.reject(new Error('Network error. Please check your connection.'))
     }

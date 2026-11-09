@@ -2,11 +2,9 @@
 import { computed } from 'vue'
 import Button from 'primevue/button'
 import { useCheckoutStore } from '@/stores/useCheckoutStore'
-import { useCartStore } from '@/stores/useCartStore'
 
 const emit = defineEmits<{ back: [] }>()
 const checkoutStore = useCheckoutStore()
-const cartStore = useCartStore()
 
 const maskedCard = computed(() => {
   if (!checkoutStore.paymentData?.cardNumber) return '**** **** **** ****'
@@ -19,17 +17,23 @@ const maskedCard = computed(() => {
   <div class="sco">
     <h2 class="sco__heading">Confirm Your Order</h2>
 
+    <p v-if="checkoutStore.error" role="alert">{{ checkoutStore.error.message }}</p>
+    <p v-else-if="checkoutStore.hasPendingAttempt" role="status">
+      Your previous checkout may already have been received. Check the same order before placing
+      another.
+    </p>
+
     <section class="sco__section">
       <h3 class="sco__section-title">Items</h3>
       <ul class="sco__items">
-        <li v-for="item in cartStore.items" :key="item.productId" class="sco__item">
+        <li v-for="item in checkoutStore.checkoutItems" :key="item.productId" class="sco__item">
           <span class="sco__item-name">{{ item.productName }}</span>
           <span class="sco__item-qty">× {{ item.quantity }}</span>
           <span class="sco__item-price">${{ item.subtotal.toFixed(2) }}</span>
         </li>
       </ul>
       <div class="sco__total">
-        <strong>Total: ${{ cartStore.totalPrice.toFixed(2) }}</strong>
+        <strong>Total: ${{ checkoutStore.checkoutTotal.toFixed(2) }}</strong>
       </div>
     </section>
 
@@ -44,16 +48,22 @@ const maskedCard = computed(() => {
       <p class="sco__detail">{{ checkoutStore.shippingData?.country }}</p>
     </section>
 
-    <section class="sco__section">
+    <section v-if="checkoutStore.paymentData" class="sco__section">
       <h3 class="sco__section-title">Payment</h3>
       <p class="sco__detail">{{ checkoutStore.paymentData?.cardholderName }}</p>
       <p class="sco__detail sco__card">{{ maskedCard }}</p>
     </section>
 
     <div class="sco__actions">
-      <Button label="← Back to Payment" severity="secondary" outlined @click="emit('back')" />
       <Button
-        label="Place Order"
+        v-if="!checkoutStore.hasPendingAttempt"
+        label="← Back to Payment"
+        severity="secondary"
+        outlined
+        @click="emit('back')"
+      />
+      <Button
+        :label="checkoutStore.hasPendingAttempt ? 'Check Order' : 'Place Order'"
         severity="primary"
         :loading="checkoutStore.isPlacingOrder"
         class="sco__place-order"

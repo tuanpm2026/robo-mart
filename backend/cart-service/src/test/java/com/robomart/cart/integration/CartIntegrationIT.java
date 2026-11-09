@@ -85,6 +85,32 @@ class CartIntegrationIT {
     // === Story 2.1 tests (unchanged behavior) ===
 
     @Test
+    void checkoutIsAuthenticatedValidatedAndConfinedToTheCallersCart() {
+        String user = "checkout-" + UUID.randomUUID();
+        String other = "other-" + UUID.randomUUID();
+        for (String subject : java.util.List.of(user, other)) {
+            restClient.post().uri("/api/v1/cart/items").header("X-User-Id", subject)
+                    .contentType(MediaType.APPLICATION_JSON).body("{\"productId\":1,\"quantity\":2}")
+                    .retrieve().toBodilessEntity();
+        }
+        var cart = jsonMapper.readTree(restClient.get().uri("/api/v1/cart").header("X-User-Id", user)
+                .retrieve().body(String.class));
+        String lineId = cart.path("data").path("items").get(0).path("lineId").asText();
+        String body = "{\"orderId\":99,\"items\":[{\"productId\":1,\"quantity\":2,\"lineId\":\"" + lineId + "\"}]}";
+        assertThat(restClient.post().uri("/api/v1/cart/checkout").contentType(MediaType.APPLICATION_JSON)
+                .body(body).retrieve().toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(restClient.post().uri("/api/v1/cart/checkout").header("X-User-Id", user)
+                .contentType(MediaType.APPLICATION_JSON).body("{\"orderId\":99,\"items\":[]}")
+                .retrieve().toBodilessEntity().getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        var result = restClient.post().uri("/api/v1/cart/checkout").header("X-User-Id", user)
+                .contentType(MediaType.APPLICATION_JSON).body(body).retrieve().toEntity(String.class);
+        assertThat(result.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(jsonMapper.readTree(result.getBody()).path("data").path("items").size()).isZero();
+        var untouched = restClient.get().uri("/api/v1/cart").header("X-User-Id", other).retrieve().body(String.class);
+        assertThat(jsonMapper.readTree(untouched).path("data").path("totalItems").asInt()).isEqualTo(2);
+    }
+
+    @Test
     void shouldCreateCartAndAddItemWhenNoCartIdProvided() {
         var response = restClient.post()
                 .uri("/api/v1/cart/items")

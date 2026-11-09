@@ -14,7 +14,7 @@ const { orderStore, resetCheckout } = vi.hoisted(() => ({
 
 vi.mock('@/stores/useOrderStore', () => ({ useOrderStore: () => orderStore }))
 vi.mock('@/stores/useCheckoutStore', () => ({
-  useCheckoutStore: () => ({ $reset: resetCheckout }),
+  useCheckoutStore: () => ({ $reset: resetCheckout, reconcileCart: vi.fn() }),
 }))
 vi.mock('vue-router', () => ({
   useRoute: () => ({ params: { orderId: '42' } }),

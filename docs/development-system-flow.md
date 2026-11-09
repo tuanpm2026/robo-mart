@@ -1,6 +1,6 @@
 # Robo-Mart — Luồng development và hoạt động hệ thống
 
-> Cập nhật các luồng chính theo mã nguồn ngày 01/11/2026, sau các wave 6–9 và sửa release ngày 29/10. Kết quả chạy và phạm vi môi trường được ghi trong từng báo cáo kiểm chứng.
+> Cập nhật các luồng chính theo mã nguồn ngày 05/11/2026, gồm các wave 6–9 và sửa checkout/retry/deep link. Kết quả chạy và phạm vi môi trường được ghi trong từng báo cáo kiểm chứng.
 > Đây là mô tả hiện trạng checkout, không phải xác nhận hệ thống đang chạy thành công trên local hoặc production. Những bước đề xuất và phần chưa hoàn thiện được ghi riêng.
 
 ## Mục lục
@@ -294,7 +294,7 @@ npm run build --workspace customer-website
 npm run build --workspace admin-dashboard
 ```
 
-Scripts lint hiện dùng `--fix`, có thể đổi file. Kiểm tra formatting từ từng app bằng `npx prettier --check src/`. Các checks trên là runbook cho thay đổi code; lần bổ sung tài liệu này chỉ kiểm tra tài liệu, không chạy lại toàn bộ test suite.
+Scripts lint hiện dùng `--fix`, có thể đổi file. Kiểm tra formatting từ từng app bằng `npx prettier --check src/`. Browser E2E dùng Chromium, Keycloak và backend thật trong stack riêng: xem [`infra/e2e/README.md`](../infra/e2e/README.md). Chạy `npm run test:e2e --workspace=customer-website` tại `frontend/` sau khi stack đã khỏe; runner tự build và mở preview ở `localhost:5173`.
 
 ## 6. Luồng request, đăng nhập và phân quyền
 
@@ -310,6 +310,8 @@ Scripts lint hiện dùng `--fix`, có thể đổi file. Kiểm tra formatting 
 JWT roles được lấy từ claim lồng `realm_access.roles` qua `KeycloakRealmRoleConverter`. Luồng header định danh phải đi qua gateway và các security filters hiện có; không coi header do browser tự gửi là bằng chứng xác thực.
 
 ### 6.2 Đăng nhập và đăng ký
+
+Customer khôi phục auth trước khi cài router, vì việc cài router bắt đầu navigation đầu tiên. Guard của route được bảo vệ chuyển tới Keycloak khi chưa đăng nhập và lưu `to.fullPath`; sau callback giữ nguyên path, query và fragment, kể cả khi mở trực tiếp hoặc reload trang đơn hàng.
 
 ```mermaid
 sequenceDiagram
@@ -396,7 +398,9 @@ Nguồn: [`product/service/`](../backend/product-service/src/main/java/com/robom
 5. Khi login, merge cộng số lượng sản phẩm trùng (giới hạn 9.999), lưu cart của user, xóa cart anonymous. Tự merge vào chính nó là no-op.
 6. Scheduler cảnh báo hết hạn chạy mỗi 30 phút, kiểm tra giỏ có user, có item và TTL còn tối đa 2 giờ rồi publish `cart.cart.expiry-warning`; Notification nhận để tạo cảnh báo theo điều kiện của consumer.
 
-Cart là ý định mua, chưa giữ tồn kho. Tồn kho được reserve ở checkout. Checkout hiện reset Pinia cart sau khi API đặt đơn trả thành công; chưa thấy bước tương ứng xóa cart Redis trong luồng này, nên không coi UI rỗng là cart server đã bị xóa.
+Cart là ý định mua, chưa giữ tồn kho. Tồn kho được reserve ở checkout. Sau khi order được chấp nhận (`CONFIRMED`, `PAYMENT_PENDING`, `SHIPPED`, `DELIVERED`), frontend gọi `POST /api/v1/cart/checkout` với order ID và bản chụp các dòng đã mua. Redis Lua trừ đúng quantity một lần cho mỗi order; `lineId` giữ các dòng đã xóa/thêm lại hoặc sửa quantity từ tab khác. Hàng thêm cùng dòng sau lúc gửi order được giữ lại ở phần quantity dư. API này chỉ sửa giỏ của JWT subject, không tạo hoặc charge order. Cart rỗng vẫn giữ receipt theo TTL để retry không xóa hàng mới thêm.
+
+Lỗi dọn giỏ không đổi kết quả đặt hàng thành thất bại. Bản ghi checkout được giữ để trang xác nhận tự thử lại sau reload hoặc qua nút Refresh Cart. Order bị hủy/đang giải phóng tồn kho không dọn giỏ. Client mới cần Cart Service mới; giữ chiến lược Recreate hiện có khi thay Cart writers.
 
 Nguồn: [`CartRestController.java`](../backend/cart-service/src/main/java/com/robomart/cart/controller/CartRestController.java), [`CartMergeService.java`](../backend/cart-service/src/main/java/com/robomart/cart/service/CartMergeService.java), [`useCartStore.ts`](../frontend/customer-website/src/stores/useCartStore.ts).
 
@@ -445,7 +449,7 @@ Reservation và các line đã lưu là nguồn cho replay, commit và release t
 
 Payment Service lưu intent, payment, refund receipts và mock provider ledger trong PostgreSQL. Saga charge dùng order ID làm idempotency key; lease có fencing và provider call nằm ngoài transaction của application. Mock hỗ trợ replay sau restart và các tình huống transient failure, decline, delay; đây vẫn chưa phải tích hợp PSP thật.
 
-POST tạo order có idempotency khi caller gửi lại cùng `Idempotency-Key` cho cùng user. Caller bỏ header hoặc tạo key mới vẫn có thể tạo order khác. Frontend hiện chặn double-submit trong cùng store; cần phân biệt điều này với việc giữ lại một key qua retry HTTP.
+POST tạo order có idempotency khi caller gửi lại cùng `Idempotency-Key` cho cùng user. Customer lưu key và payload gốc vào sessionStorage theo user trước request đầu tiên; retry HTTP/token refresh và reload gửi lại đúng key/payload đó. Bản ghi không lưu số thẻ/CVV. Lỗi chưa rõ kết quả giữ nguyên lần checkout; lỗi nghiệp vụ xác định hoặc validation trước tạo order cho phép bắt đầu lần mới. Khi order được chấp nhận, chỉ bỏ bản ghi sau khi dọn giỏ được xác nhận hoặc biết order đã hủy. sessionStorage có phạm vi từng tab và bị mất khi đóng/xóa phiên; đây không phải cơ chế chống hai lần mua độc lập trên nhiều thiết bị.
 
 ### 9.4 Các nhánh lỗi chính
 
@@ -628,8 +632,8 @@ Các nhận định cũ về giá do client quyết định, thiếu API idempot
 | --- | --- |
 | Root frontend scripts | Chạy scripts theo workspace; root không có `dev`/`build`/`test:unit`. |
 | Payment thật | `MockPaymentGateway` có ledger bền vững nhưng chưa phải PSP thật; dữ liệu card của form không dùng để charge provider. |
-| Checkout retry từ UI | API nhận `Idempotency-Key`; frontend hiện chưa gửi key ổn định qua HTTP retry. Chặn double-submit trong store chưa đủ chống tạo order mới sau một kết quả chưa rõ. |
-| Cart checkout | Frontend reset Pinia sau checkout; chưa có bước tương ứng clear Redis cart trong đường hiện tại. Kiểm tra sau reload. |
+| Checkout retry từ UI | Key/payload lưu theo user trong sessionStorage và giữ qua retry/reload. Đóng/xóa phiên làm mất bản ghi; giá vẫn do backend quyết định. |
+| Cart checkout | Dọn bản chụp bằng Redis Lua nguyên tử, có receipt chống trừ lặp và line identity giữ chỉnh sửa sau checkout; lỗi dọn giỏ có thể thử lại tại trang xác nhận. |
 | Email | `MockEmailService` chỉ log; trạng thái `SENT` chưa chứng minh email tới inbox. Production cần provider thật và recipient phù hợp. |
 | Reporting | Query trực tiếp Order DB; rebuild hiện chưa dựng read model độc lập. |
 | Stock projection | Catalog/search/cache cập nhật bất đồng bộ. Inventory vẫn quyết định có reserve được không; sản phẩm mới có thể cần chờ consumer khởi tạo inventory trước khi restock. |

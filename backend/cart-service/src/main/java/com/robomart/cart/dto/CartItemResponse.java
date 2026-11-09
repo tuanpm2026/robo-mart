@@ -7,6 +7,7 @@ public record CartItemResponse(
         String productName,
         BigDecimal price,
         int quantity,
-        BigDecimal subtotal
+        BigDecimal subtotal,
+        String lineId
 ) {
 }
