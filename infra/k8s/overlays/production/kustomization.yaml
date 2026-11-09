@@ -29,7 +29,7 @@ patches:
 
 # CD sets the first real Saga digest; do not invent provenance for the previous release.
 images:
-- digest: sha256:212204b89ad2e42949d1b55195b12ba730514f6dd91e00054ca63be9c9fd8d93
+- digest: sha256:db66068f6a26d8f866d1f06a3f738b3e7bc7504c722432b26581ca6cb6e3fbf5
   name: ghcr.io/robomart/admin-dashboard
   newName: ghcr.io/tuanpm2026/robomart/admin-dashboard
 - digest: sha256:a8ed4d34466c31908fc1fd1a5b03133d1bcdbda4a6848b12587c62b685783c62
@@ -41,7 +41,7 @@ images:
 - digest: sha256:fbb2b7168891d8448c6da6a2336a841f38ad5555a9f0fe8ad4dd3593faeb3356
   name: ghcr.io/robomart/checkout-saga-service
   newName: ghcr.io/tuanpm2026/robomart/checkout-saga-service
-- digest: sha256:50120c6d86277f121bd6c5f1d5a746038acf33e9661c9a8688e69482b8bcdcec
+- digest: sha256:4824af12c375a78d1917f250bcf72856c84c4a442d70c67fb97f53b5ba32f303
   name: ghcr.io/robomart/customer-website
   newName: ghcr.io/tuanpm2026/robomart/customer-website
 - digest: sha256:96dd05f7f9cdf7ec5c7fe524d832ce87fa7b32ecd00768edd8924520589143b9
