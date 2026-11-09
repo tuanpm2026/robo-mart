@@ -1,14 +1,5 @@
 package com.robomart.order.service;
 
-import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
-import jakarta.annotation.PreDestroy;
-
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-
 import com.robomart.events.order.OrderCancelledEvent;
 import com.robomart.events.order.OrderStatusChangedEvent;
 import com.robomart.order.config.OutboxProperties;
@@ -18,8 +9,19 @@ import com.robomart.outbox.OutboxRetention;
 import com.robomart.outbox.StableEventIds;
 
 import io.micrometer.core.instrument.MeterRegistry;
+
+import jakarta.annotation.PreDestroy;
+
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
 import tools.jackson.databind.ObjectMapper;
+
+import java.time.Instant;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /** Owns event mapping and schedules; the shared engine owns delivery and fencing semantics. */
 @Service
@@ -69,6 +71,26 @@ public class OutboxPollingService {
         Instant timestamp = event.createdAt();
 
         switch (event.eventType()) {
+            case "checkout_saga_requested" -> {
+                var request =
+                        com.robomart.events.order.CheckoutSagaRequestedEvent.newBuilder()
+                                .setEventId(eventId)
+                                .setRequestId(asString(payload.get("requestId")))
+                                .setRequestType(asString(payload.get("requestType")))
+                                .setRequestSequence(
+                                        ((Number) payload.get("requestSequence")).longValue())
+                                .setOrderId(aggregateId)
+                                .setSagaId(asString(payload.get("sagaId")))
+                                .setOwnerEpoch(((Number) payload.get("ownerEpoch")).longValue())
+                                .setWorkflowVersion(1)
+                                .setSnapshotJson(asString(payload.get("snapshotJson")))
+                                .setReason(asString(payload.get("reason")))
+                                .build();
+                return orderEventProducer.send(
+                        com.robomart.order.workflow.OrderWorkflowCoordinator.TOPIC,
+                        aggregateId,
+                        request);
+            }
             case "order_status_changed" -> {
                 var avroEvent = OrderStatusChangedEvent.newBuilder()
                         .setEventId(eventId)
@@ -97,7 +119,9 @@ public class OutboxPollingService {
                         .build();
                 return orderEventProducer.send(OrderEventProducer.TOPIC_CANCELLED, aggregateId, avroEvent);
             }
-            default -> throw new IllegalArgumentException("Unknown order outbox event type: " + event.eventType());
+            default ->
+                    throw new IllegalArgumentException(
+                            "Unknown order outbox event type: " + event.eventType());
         }
     }
 

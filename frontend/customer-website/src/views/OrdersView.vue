@@ -24,6 +24,8 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
   DELIVERED: 'Delivered',
   PAYMENT_REFUNDING: 'Cancelling',
   INVENTORY_RELEASING: 'Cancelling',
+  CANCELLATION_PENDING: 'Cancellation in progress',
+  REFUND_FAILED: 'Refund needs review',
   CANCELLED: 'Cancelled',
 }
 
@@ -37,6 +39,8 @@ const STATUS_SEVERITY: Record<OrderStatus, 'success' | 'warn' | 'danger' | 'info
   DELIVERED: 'info',
   PAYMENT_REFUNDING: 'warn',
   INVENTORY_RELEASING: 'warn',
+  CANCELLATION_PENDING: 'warn',
+  REFUND_FAILED: 'danger',
   CANCELLED: 'danger',
 }
 

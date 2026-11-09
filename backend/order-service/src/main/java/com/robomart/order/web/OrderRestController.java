@@ -1,6 +1,17 @@
 package com.robomart.order.web;
 
-import java.util.List;
+import com.robomart.common.dto.ApiResponse;
+import com.robomart.common.dto.PagedResponse;
+import com.robomart.common.dto.PaginationMeta;
+import com.robomart.common.exception.ResourceNotFoundException;
+import com.robomart.order.entity.Order;
+import com.robomart.order.enums.OrderStatus;
+import com.robomart.order.exception.OrderInventoryFailedException;
+import com.robomart.order.exception.OrderPaymentFailedException;
+import com.robomart.order.saga.steps.ReserveInventoryStep;
+import com.robomart.order.service.OrderService;
+
+import jakarta.validation.Valid;
 
 import org.slf4j.MDC;
 import org.springframework.data.domain.Page;
@@ -15,18 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
-
-import com.robomart.common.dto.ApiResponse;
-import com.robomart.common.dto.PagedResponse;
-import com.robomart.common.dto.PaginationMeta;
-import com.robomart.common.exception.ResourceNotFoundException;
-import com.robomart.order.entity.Order;
-import com.robomart.order.enums.OrderStatus;
-import com.robomart.order.exception.OrderInventoryFailedException;
-import com.robomart.order.exception.OrderPaymentFailedException;
-import com.robomart.order.saga.steps.ReserveInventoryStep;
-import com.robomart.order.service.OrderService;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -57,23 +57,44 @@ public class OrderRestController {
         // A replayed Idempotency-Key returns the original order; the response mirrors its current state.
         Order order = orderService.createOrder(userId, items, request.shippingAddress(), idempotencyKey);
 
+        if ("EXTERNAL".equals(order.getOrchestratorOwner())) {
+            var summary =
+                    new OrderSummaryResponse(
+                            order.getId(),
+                            order.getCreatedAt(),
+                            order.getTotalAmount(),
+                            order.getStatus(),
+                            order.getItems().size(),
+                            order.getCancellationReason());
+            boolean pending =
+                    order.getStatus() == OrderStatus.PENDING
+                            || order.getStatus() == OrderStatus.CANCELLATION_PENDING;
+            return ResponseEntity.status(pending ? HttpStatus.ACCEPTED : HttpStatus.OK)
+                    .body(new ApiResponse<>(summary, MDC.get("traceId")));
+        }
+
         if (order.getStatus() == OrderStatus.PAYMENT_PENDING
                 || order.getStatus() == OrderStatus.INVENTORY_RELEASING) {
             // Checkout or compensation is still in progress; expose the current state.
             OrderSummaryResponse summary = new OrderSummaryResponse(
                     order.getId(), order.getCreatedAt(), order.getTotalAmount(),
                     order.getStatus(), order.getItems().size(), order.getCancellationReason());
-            return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponse<>(summary, MDC.get("traceId")));
+            return ResponseEntity.status(HttpStatus.ACCEPTED)
+                    .body(new ApiResponse<>(summary, MDC.get("traceId")));
         }
 
         if (order.getStatus() == OrderStatus.CANCELLED) {
-            String reason = order.getCancellationReason() != null ? order.getCancellationReason() : "Order processing failed";
+            String reason =
+                    order.getCancellationReason() != null
+                            ? order.getCancellationReason()
+                            : "Order processing failed";
             if (INVENTORY_CANCELLATION_REASON.equals(reason)) {
                 throw new OrderInventoryFailedException(reason);
             }
             if (INVENTORY_CIRCUIT_REASON.equals(reason)) {
                 // AC2: Inventory circuit open — retry messaging
-                throw new OrderInventoryFailedException("We're experiencing a temporary issue. Please try again in a moment.");
+                throw new OrderInventoryFailedException(
+                        "We're experiencing a temporary issue. Please try again in a moment.");
             }
             throw new OrderPaymentFailedException(reason);
         }
@@ -85,7 +106,8 @@ public class OrderRestController {
                 order.getStatus(),
                 order.getItems().size(),
                 order.getCancellationReason());
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(summary, MDC.get("traceId")));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(summary, MDC.get("traceId")));
     }
 
     @GetMapping
@@ -131,7 +153,11 @@ public class OrderRestController {
             throw new ResourceNotFoundException("Order not found: " + orderId);
         }
         String reason = (request != null) ? request.reason() : null;
-        orderService.cancelOrder(orderId, reason, userId);
-        return ResponseEntity.ok().build();
+        Order order = orderService.cancelOrder(orderId, reason, userId);
+        return ResponseEntity.status(
+                        order.getStatus() == OrderStatus.CANCELLATION_PENDING
+                                ? HttpStatus.ACCEPTED
+                                : HttpStatus.OK)
+                .build();
     }
 }

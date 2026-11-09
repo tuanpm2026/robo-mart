@@ -1,8 +1,15 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
-import { getCart, addToCart, updateQuantity, removeItem, mergeCart } from '@/api/cartApi'
+import {
+  getCart,
+  addToCart,
+  updateQuantity,
+  removeItem,
+  mergeCart,
+  completeCheckout as completeCheckoutApi,
+} from '@/api/cartApi'
 import { clearAnonymousIdCache } from '@/api/client'
-import type { CartItem, AddToCartRequest } from '@/types/cart'
+import type { CartItem, AddToCartRequest, CheckoutCartItem } from '@/types/cart'
 
 export const useCartStore = defineStore('cart', () => {
   const items = ref<CartItem[]>([])
@@ -99,6 +106,11 @@ export const useCartStore = defineStore('cart', () => {
     error.value = null
   }
 
+  async function completeCheckout(orderId: number, purchased: CheckoutCartItem[]) {
+    const response = await completeCheckoutApi(orderId, purchased)
+    items.value = response.data.items
+  }
+
   return {
     items,
     isLoading,
@@ -110,6 +122,7 @@ export const useCartStore = defineStore('cart', () => {
     updateItemQuantity,
     removeCartItem,
     mergeAnonymousCart,
+    completeCheckout,
     $reset,
   }
 })

@@ -16,7 +16,12 @@ export async function cancelOrder(orderId: number, reason?: string): Promise<voi
   await apiClient.post(`/api/v1/orders/${orderId}/cancel`, { reason })
 }
 
-export async function placeOrder(request: PlaceOrderRequest): Promise<ApiResponse<OrderSummary>> {
-  const { data } = await apiClient.post<ApiResponse<OrderSummary>>('/api/v1/orders', request)
+export async function placeOrder(
+  request: PlaceOrderRequest,
+  idempotencyKey: string,
+): Promise<ApiResponse<OrderSummary>> {
+  const { data } = await apiClient.post<ApiResponse<OrderSummary>>('/api/v1/orders', request, {
+    headers: { 'Idempotency-Key': idempotencyKey },
+  })
   return data
 }

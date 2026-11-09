@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onMounted, nextTick, ref } from 'vue'
+import { watch, computed, nextTick, ref } from 'vue'
+import { useOrderPolling } from '@/composables/useOrderPolling'
 import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import Skeleton from 'primevue/skeleton'
@@ -11,22 +12,33 @@ const router = useRouter()
 const orderStore = useOrderStore()
 const checkoutStore = useCheckoutStore()
 const page = ref<HTMLElement | null>(null)
+useOrderPolling(() => Number(route.params.orderId))
+const isCheckoutPending = computed(() =>
+  ['PENDING', 'PAYMENT_PENDING', 'INVENTORY_RESERVING', 'PAYMENT_PROCESSING'].includes(
+    orderStore.currentOrder?.status ?? '',
+  ),
+)
 
-onMounted(async () => {
-  const rawParam = Array.isArray(route.params.orderId)
-    ? route.params.orderId[0]
-    : route.params.orderId
-  const raw = rawParam ?? ''
-  const orderId = parseInt(raw, 10)
-  if (isNaN(orderId)) {
-    router.replace('/orders')
-    return
-  }
-  checkoutStore.$reset()
-  await orderStore.fetchOrder(orderId)
-  await nextTick()
-  page.value?.querySelector<HTMLElement>('h1')?.focus()
-})
+watch(
+  () => route.params.orderId,
+  async () => {
+    const rawParam = Array.isArray(route.params.orderId)
+      ? route.params.orderId[0]
+      : route.params.orderId
+    const raw = rawParam ?? ''
+    const orderId = parseInt(raw, 10)
+    if (isNaN(orderId)) {
+      router.replace('/orders')
+      return
+    }
+    checkoutStore.$reset()
+    await orderStore.fetchOrder(orderId)
+    if (orderStore.currentOrder) await checkoutStore.reconcileCart(orderStore.currentOrder)
+    await nextTick()
+    page.value?.querySelector<HTMLElement>('h1')?.focus()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -48,25 +60,23 @@ onMounted(async () => {
     <!-- Success -->
     <div v-else-if="orderStore.currentOrder" class="ocv__content">
       <div class="ocv__hero" role="status" aria-live="polite">
-        <template
-          v-if="
-            ['PENDING', 'PAYMENT_PENDING', 'INVENTORY_RESERVING', 'PAYMENT_PROCESSING'].includes(
-              orderStore.currentOrder.status,
-            )
-          "
-        >
+        <template v-if="isCheckoutPending">
           <div class="ocv__icon ocv__icon--pending" aria-hidden="true">⏳</div>
           <h1 class="ocv__heading" tabindex="-1">Order Received!</h1>
           <p class="ocv__order-number">Order #{{ orderStore.currentOrder.id }}</p>
           <p class="ocv__payment-pending">
-            Order received. Processing is still in progress; confirmation is pending. Track your
-            order for the latest status.
+            Your order is being processed. Confirmation is pending; this page will update with the
+            latest status.
           </p>
         </template>
         <template
           v-else-if="
-            orderStore.currentOrder.status === 'PAYMENT_REFUNDING' ||
-            orderStore.currentOrder.status === 'INVENTORY_RELEASING' ||
+            [
+              'CANCELLATION_PENDING',
+              'PAYMENT_REFUNDING',
+              'REFUND_FAILED',
+              'INVENTORY_RELEASING',
+            ].includes(orderStore.currentOrder.status) ||
             orderStore.currentOrder.status === 'CANCELLED'
           "
         >
@@ -92,6 +102,13 @@ onMounted(async () => {
       </div>
 
       <div class="ocv__summary">
+        <div v-if="checkoutStore.cartCleanupPending" role="status">
+          <p>Your order was received. Your cart still needs to be refreshed.</p>
+          <Button
+            label="Refresh Cart"
+            @click="checkoutStore.reconcileCart(orderStore.currentOrder!)"
+          />
+        </div>
         <h2 class="ocv__summary-title">Order Summary</h2>
         <ul class="ocv__items">
           <li v-for="item in orderStore.currentOrder.items" :key="item.productId" class="ocv__item">

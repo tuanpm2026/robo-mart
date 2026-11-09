@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.ScanOptions;
@@ -14,6 +15,7 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Repository;
 
 import com.robomart.cart.config.CartProperties;
+import com.robomart.cart.dto.CompleteCheckoutRequest;
 import com.robomart.cart.entity.Cart;
 import com.robomart.cart.entity.CartItem;
 import com.robomart.cart.exception.CartItemNotFoundException;
@@ -65,6 +67,15 @@ public class CartRepository {
         return execute("GET", id, List.of(key(id), EXPIRY_KEY));
     }
 
+    public Cart completeCheckout(String id, CompleteCheckoutRequest request) {
+        try {
+            return execute("CHECKOUT", id, List.of(key(id), EXPIRY_KEY), request.orderId().toString(),
+                    mapper.writeValueAsString(request.items()));
+        } catch (CartNotFoundException expired) {
+            return new Cart(id);
+        }
+    }
+
     /** Scheduler read: does not refresh a cart's lifetime. */
     public Optional<Cart> findById(String id) {
         try {
@@ -100,6 +111,8 @@ public class CartRepository {
         List<String> args = new ArrayList<>(List.of(operation, String.valueOf(properties.getTtlSeconds()),
                 Instant.now().toString()));
         args.addAll(List.of(extra));
+        // Unique line generations protect remove/re-add and explicit quantity edits during checkout.
+        args.add(UUID.randomUUID().toString());
         List<?> values = redis.execute(CART, keys, args.toArray());
         if (values == null || values.isEmpty() || "MISSING_CART".equals(values.getFirst())) {
             throw new CartNotFoundException(id);
@@ -115,9 +128,11 @@ public class CartRepository {
             String value = values.get(i + 1).toString();
             if (field.startsWith("p:")) {
                 var item = mapper.readTree(value);
-                items.add(new CartItem(Long.valueOf(item.get("productId").asText()),
+                CartItem cartItem = new CartItem(Long.valueOf(item.get("productId").asText()),
                         item.get("productName").asText(), new BigDecimal(item.get("price").asText()),
-                        item.get("quantity").asInt()));
+                        item.get("quantity").asInt());
+                cartItem.setLineId(item.get("lineId").asText());
+                items.add(cartItem);
             } else if ("__user".equals(field)) {
                 cart.setUserId(value.isEmpty() ? null : value);
             } else if ("__created".equals(field)) {

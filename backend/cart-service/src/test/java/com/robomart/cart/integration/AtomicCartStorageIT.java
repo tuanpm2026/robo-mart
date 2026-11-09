@@ -34,6 +34,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import com.robomart.cart.config.CartProperties;
+import com.robomart.cart.dto.CompleteCheckoutRequest;
 import com.robomart.cart.entity.Cart;
 import com.robomart.cart.entity.CartItem;
 import com.robomart.cart.event.producer.CartEventProducer;
@@ -78,6 +79,68 @@ class AtomicCartStorageIT {
     private String id() { return "u:" + UUID.randomUUID(); }
     private CartItem item(long product, int quantity) {
         return new CartItem(product, "Robot " + product, new BigDecimal("12.50"), quantity);
+    }
+
+    private CompleteCheckoutRequest purchase(long order, Cart snapshot) {
+        return new CompleteCheckoutRequest(order, snapshot.getItems().stream().map(i ->
+                new CompleteCheckoutRequest.Item(i.getProductId(), i.getQuantity(), i.getLineId())).toList());
+    }
+
+    @Test
+    void checkoutConsumesPurchasedUnitsOnceAndPreservesLaterAdds() {
+        String id = id();
+        Cart snapshot = carts.add(id, item(1, 2), "user");
+        var request = purchase(41, snapshot);
+        carts.add(id, item(1, 1), "user");
+        carts.add(id, item(2, 3), "user");
+        Cart result = carts.completeCheckout(id, request);
+        assertThat(result.findItem(1L).orElseThrow().getQuantity()).isEqualTo(1);
+        assertThat(result.findItem(2L).orElseThrow().getQuantity()).isEqualTo(3);
+        carts.completeCheckout(id, request); // response lost: no second subtraction
+        assertThat(carts.getAndRefresh(id).getTotalItems()).isEqualTo(4);
+    }
+
+    @Test
+    void checkoutCannotRemoveAReaddedLineOrAnExplicitQuantityEdit() {
+        String id = id();
+        Cart snapshot = carts.add(id, item(1, 2), "user");
+        var request = purchase(42, snapshot);
+        carts.remove(id, 1L);
+        carts.add(id, item(1, 1), "user");
+        assertThat(carts.completeCheckout(id, request).getTotalItems()).isEqualTo(1);
+        var next = purchase(43, carts.getAndRefresh(id));
+        carts.setQuantity(id, 1L, 4);
+        assertThat(carts.completeCheckout(id, next).getTotalItems()).isEqualTo(4);
+    }
+
+    @Test
+    void concurrentCheckoutAcknowledgementsConsumeASnapshotOnlyOnce() throws Exception {
+        String id = id();
+        var request = purchase(44, carts.add(id, item(1, 2), "user"));
+        carts.add(id, item(1, 3), "user");
+        try (var pool = Executors.newVirtualThreadPerTaskExecutor()) {
+            List<Future<?>> acknowledgements = new ArrayList<>();
+            for (int i = 0; i < 20; i++) {
+                acknowledgements.add(pool.submit(() -> carts.completeCheckout(id, request)));
+            }
+            for (Future<?> ack : acknowledgements) ack.get(10, TimeUnit.SECONDS);
+        }
+        assertThat(carts.getAndRefresh(id).getTotalItems()).isEqualTo(3);
+    }
+
+    @Test
+    void checkoutEmptiesCartAndRemovesReverseIndexesWithoutDeletingLaterLines() {
+        String id = id();
+        var request = purchase(45, carts.add(id, item(1, 2), "user"));
+        assertThat(carts.completeCheckout(id, request).getItems()).isEmpty();
+        assertThat(redis.opsForZSet().score("cart:product:1", CartRepository.key(id))).isNull();
+        assertThat(redis.getExpire(CartRepository.key(id))).isPositive();
+        carts.add(id, item(1, 3), "user");
+        assertThat(carts.completeCheckout(id, request).getTotalItems()).isEqualTo(3);
+        redis.delete(CartRepository.key(id));
+        assertThat(carts.completeCheckout(id, request).getItems()).isEmpty();
+        carts.add(id, item(1, 4), "user");
+        assertThat(carts.completeCheckout(id, request).getTotalItems()).isEqualTo(4);
     }
 
     @Test

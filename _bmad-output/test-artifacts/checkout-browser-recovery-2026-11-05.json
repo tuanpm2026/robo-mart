@@ -1,0 +1,148 @@
+{
+  "date": "2026-11-05",
+  "timezone": "Asia/Ho_Chi_Minh",
+  "branch": "codex/checkout-browser-regressions",
+  "source_base": "4ec50bbaa04933c43a37066f88c293e056c24012",
+  "uncommitted_implementation": true,
+  "environment": "Local isolated robomart-java25-e2e-resume Compose stack; Chromium; real Keycloak OIDC; existing mock payment/email",
+  "changes": [
+    "Persist per-user checkout key and original request/cart snapshot in sessionStorage before POST; reuse across token refresh, ambiguous failures and reload. Never persist card/CVV.",
+    "Authenticated POST /api/v1/cart/checkout atomically consumes matching line generations once per order; preserves later additions, explicit quantity edits and remove/re-add. Cleanup failure retains recovery state without failing the accepted order.",
+    "Restore auth before installing router; preserve protected fullPath including query/fragment through OIDC login.",
+    "Add Playwright Chromium regressions and a PR/manual GitHub Actions workflow."
+  ],
+  "checks": [
+    {
+      "command": "./mvnw -B -ntp install -DskipTests -DskipITs -DskipE2ETests",
+      "cwd": "backend",
+      "result": "PASS: all 18 modules packaged/installed; this command skips tests"
+    },
+    {
+      "command": "./mvnw -B -ntp verify -pl :cart-service -DskipE2ETests",
+      "cwd": "backend",
+      "result": "PASS",
+      "unit": {
+        "tests": 45,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "integration": {
+        "tests": 46,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "line_coverage": {
+        "covered": 351,
+        "missed": 22,
+        "ratio": 0.941019,
+        "gate": 0.8
+      }
+    },
+    {
+      "command": "npm run type-check --workspaces --if-present",
+      "cwd": "frontend",
+      "result": "PASS: both apps"
+    },
+    {
+      "command": "npm run test:unit --workspaces --if-present -- --run",
+      "cwd": "frontend",
+      "result": "PASS",
+      "customer_tests": 250,
+      "admin_tests": 89
+    },
+    {
+      "command": "npm run build --workspaces --if-present",
+      "cwd": "frontend",
+      "result": "PASS: both apps"
+    },
+    {
+      "command": "npx eslint <changed source, tests, E2E and Playwright config>",
+      "cwd": "frontend/customer-website",
+      "result": "PASS: read-only focused check; no --fix"
+    },
+    {
+      "command": "npx prettier --check customer-website/src/ customer-website/e2e/ customer-website/playwright.config.ts customer-website/tsconfig.node.json customer-website/package.json ../.github/workflows/ci-browser-e2e.yml",
+      "cwd": "frontend",
+      "result": "PASS"
+    },
+    {
+      "command": "infra/e2e/stack.sh build; infra/e2e/stack.sh up",
+      "result": "PASS: production Dockerfile targets built and isolated stack healthy"
+    },
+    {
+      "command": "npm run test:e2e --workspace=customer-website",
+      "cwd": "frontend",
+      "result": "PASS",
+      "tests": 5,
+      "failures": 0,
+      "duration_seconds": 52.4
+    },
+    {
+      "command": "infra/e2e/stack.sh test",
+      "result": "PASS",
+      "summary": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "command": "Ruby YAML parse of ci-browser-e2e.yml and PR-trigger/read-only-permissions assertions",
+      "result": "PASS; workflow has not executed on GitHub"
+    },
+    {
+      "command": "git diff --check",
+      "result": "PASS"
+    }
+  ],
+  "browser_scenarios": [
+    "Server commits order, browser loses POST response, reload then replay returns same order/key and clears server cart.",
+    "Second authenticated tab adds one unit after checkout snapshot; consume two purchased units once and retain the added unit through reload/replay.",
+    "Cleanup returns 503: order remains confirmed, saved cart receipt completes cleanup after reload.",
+    "Protected order URL retains path/query/fragment through session reload and a fresh browser/OIDC login.",
+    "Redis commits cart cleanup but response is lost: confirmation retries idempotently without a maintenance overlay."
+  ],
+  "ledger_audit": [
+    {
+      "order_id": 69,
+      "status": "CANCELLED",
+      "fully_refunded_payments": 1,
+      "completed_provider_charges": 1
+    },
+    {
+      "order_id": 68,
+      "status": "CANCELLED",
+      "fully_refunded_payments": 1,
+      "completed_provider_charges": 1
+    },
+    {
+      "order_id": 67,
+      "status": "CANCELLED",
+      "fully_refunded_payments": 1,
+      "completed_provider_charges": 1
+    },
+    {
+      "order_id": 66,
+      "status": "CANCELLED",
+      "fully_refunded_payments": 1,
+      "completed_provider_charges": 1
+    },
+    {
+      "order_id": 65,
+      "status": "CANCELLED",
+      "fully_refunded_payments": 1,
+      "completed_provider_charges": 1
+    }
+  ],
+  "test_iteration_note": "The first browser run passed 3/4; the fresh-login fixture reused the same document after clearing browser state. It was corrected to use a genuinely fresh browser context. Both subsequent five-scenario runs passed.",
+  "limits": [
+    "No demo/production deployment or real PSP/email integration.",
+    "No full backend reactor integration run in this change; Cart unit/integration/coverage and existing full-stack Java E2E/chaos passed.",
+    "Saved checkout attempts are scoped to one user and browser tab session; closing/clearing that session loses the saved key.",
+    "Cart acknowledgement changes only the authenticated callers cart and does not verify or mutate order/payment state.",
+    "GitHub workflow YAML parsed locally; the hosted Ubuntu job has not run yet."
+  ]
+}

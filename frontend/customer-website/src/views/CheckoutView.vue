@@ -21,6 +21,8 @@ const cartStore = useCartStore()
 
 onMounted(async () => {
   checkoutStore.$reset()
+  checkoutStore.restoreAttempt()
+  if (checkoutStore.hasPendingAttempt) return
   if (cartStore.items.length === 0) {
     await cartStore.fetchCart()
   }
@@ -60,7 +62,7 @@ watch(
 watch(
   () => cartStore.items.length,
   (len) => {
-    if (len === 0 && !checkoutStore.isPlacingOrder) {
+    if (len === 0 && !checkoutStore.isPlacingOrder && !checkoutStore.hasPendingAttempt) {
       router.replace('/cart')
     }
   },
@@ -71,7 +73,11 @@ watch(
   <div class="checkout">
     <h1 class="checkout__title">Checkout</h1>
 
-    <div v-if="checkoutStore.error?.type === 'UNKNOWN'" class="checkout__error" role="alert">
+    <div
+      v-if="checkoutStore.error?.type === 'UNKNOWN' && checkoutStore.currentStep !== 4"
+      class="checkout__error"
+      role="alert"
+    >
       {{ checkoutStore.error.message }}
     </div>
     <div class="checkout__layout">
@@ -141,7 +147,10 @@ watch(
       </div>
 
       <div class="checkout__sidebar">
-        <CheckoutOrderSummary :items="cartStore.items" :total-price="cartStore.totalPrice" />
+        <CheckoutOrderSummary
+          :items="checkoutStore.checkoutItems"
+          :total-price="checkoutStore.checkoutTotal"
+        />
       </div>
     </div>
 

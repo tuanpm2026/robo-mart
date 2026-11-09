@@ -6,6 +6,7 @@ import PrimeVue from 'primevue/config'
 import ToastService from 'primevue/toastservice'
 import CheckoutView from '../CheckoutView.vue'
 import { useCartStore } from '@/stores/useCartStore'
+import { useCheckoutStore } from '@/stores/useCheckoutStore'
 
 // Keep the real PrimeVue stepper and cart review button: this guards ownership,
 // tab/panel associations and selected state as checkout advances.
@@ -50,5 +51,32 @@ it('exposes checkout tabs as direct children of a named tablist and selects the 
     'false',
   ])
   expect(wrapper.get('#checkout-panel-2').isVisible()).toBe(true)
+  wrapper.unmount()
+})
+
+// The recovery implementation also announces errors from StepConfirm. Keep the
+// global fallback on earlier steps without duplicating the confirmation alert.
+it('announces an unknown checkout result once on the confirmation step', async () => {
+  const pinia = createPinia()
+  useCartStore(pinia).items = [
+    { productId: 1, productName: 'Fixture', quantity: 1, price: 10, subtotal: 10 },
+  ]
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/checkout', component: CheckoutView }],
+  })
+  await router.push('/checkout')
+  await router.isReady()
+  const wrapper = mount(CheckoutView, {
+    global: { plugins: [pinia, router, PrimeVue, ToastService] },
+  })
+  await flushPromises()
+  const checkout = useCheckoutStore(pinia)
+  checkout.currentStep = 4
+  checkout.error = { type: 'UNKNOWN', message: 'Retry to check the same order.' }
+  await flushPromises()
+  const visibleAlerts = wrapper.findAll('[role="alert"]').filter((alert) => alert.isVisible())
+  expect(visibleAlerts).toHaveLength(1)
+  expect(visibleAlerts[0]!.text()).toBe('Retry to check the same order.')
   wrapper.unmount()
 })

@@ -55,3 +55,44 @@ The final recovery probes with a normal browser user agent returned200 for the c
 
 
 The demo Gateway Service uses NodePort 32210, matching the existing Cloudflare tunnel. A LoadBalancer Service without an installed load-balancer controller remains Progressing indefinitely even while its allocated NodePort serves traffic; the markserver overlay therefore declares the actual NodePort topology. The generic base remains suitable for a cloud LoadBalancer. No new listener/port is allocated by this correction.
+
+## Monitoring recovery and external access (2026-10-29)
+
+The live Prometheus ConfigMap and repository already targeted
+`api-gateway-management.robomart.svc.cluster.local:8090`, but the running
+Prometheus process still scraped the public Gateway port 8080 and received 401.
+`promtool check config /etc/prometheus/prometheus.yml` passed inside the
+Prometheus container. Restarting only `deployment/prometheus` loaded the updated
+configuration; rollout completed and all seven Spring Boot targets became UP.
+ConfigMap projection alone does not reload the running Prometheus configuration.
+After future scrape changes, validate and explicitly reload/restart Prometheus,
+then check `/api/v1/targets` rather than relying on ConfigMap contents alone.
+
+`prometheus.tuanpm.xyz` now has a DNS route to the existing Cloudflare tunnel.
+The active host-managed `/etc/cloudflared/config.yml` sends this hostname to
+`http://10.106.247.154:9090`, the current Prometheus ClusterIP. No new NodePort was
+created. If the Service is deleted and recreated with a different ClusterIP,
+update this route. Preserve the other tunnel routes and final 404 fallback.
+The older `~/.cloudflared/config.yml` is not the system service configuration;
+pass `--config /etc/cloudflared/config.yml` explicitly when validating rules.
+
+The prior tunnel configuration is backed up on markserver under
+`~/.robomart-ops/2026-10-29-monitoring/cloudflared.before.yml`; the validated
+candidate is in the same directory. The operator installed the candidate and
+restarted cloudflared. Although the terminal reported a directory-watch error,
+the service was subsequently confirmed active/running with a new process start
+time. The active rule matched the Prometheus hostname. External HTTPS readiness
+returned 200 through both Cloudflare edge addresses, and the public PromQL query
+`count(up{job="spring-boot-services"} == 1)` returned 7. The workstation resolver
+temporarily retained a negative DNS result; public resolvers already resolved
+the hostname, so initial HTTPS checks used curl `--resolve` with those addresses.
+
+Kafka UI Access protection remains pending as of this verification: the
+Cloudflare dashboard returned `Rate Limit Exceeded`, and no Access API token
+was available. The authorized policy is an Allow rule for the single confirmed
+operator email; do not use an Everyone or Bypass policy. Kafka UI still returned
+200 without authentication. Before declaring protection complete, verify an
+anonymous request is intercepted by Access and an authorized login succeeds.
+Also check that direct origin access cannot bypass Access. Prometheus currently
+has no Access policy either; its public query endpoint was intentionally used
+for the external verification above.

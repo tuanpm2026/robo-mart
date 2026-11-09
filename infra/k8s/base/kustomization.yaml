@@ -25,6 +25,9 @@ resources:
   - services/payment-service/deployment.yml
   - services/payment-service/service.yml
   - services/payment-service/hpa.yml
+  - services/checkout-saga-service/deployment.yml
+  - services/checkout-saga-service/service.yml
+  - services/checkout-saga-service/hpa.yml
   - services/notification-service/deployment.yml
   - services/notification-service/service.yml
   - services/notification-service/hpa.yml

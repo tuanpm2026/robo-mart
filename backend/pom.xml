@@ -71,6 +71,7 @@
         <module>inventory-service</module>
         <module>payment-service</module>
         <module>notification-service</module>
+        <module>checkout-saga-service</module>
         <module>e2e-tests</module>
     </modules>
 

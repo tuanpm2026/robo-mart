@@ -128,7 +128,7 @@ class CartControllerTest {
     void shouldReturnOkWhenUpdateItemQuantity() {
         UpdateCartItemRequest request = new UpdateCartItemRequest(3);
         CartItemResponse item = new CartItemResponse(1L, "Test Product",
-                BigDecimal.valueOf(29.99), 3, BigDecimal.valueOf(89.97));
+                BigDecimal.valueOf(29.99), 3, BigDecimal.valueOf(89.97), "line-1");
         CartResponse updatedCart = new CartResponse(USER_ID, List.of(item), 3, BigDecimal.valueOf(89.97));
         when(cartService.updateItemQuantity(eq(USER_KEY), eq(1L), eq(request)))
                 .thenReturn(updatedCart);

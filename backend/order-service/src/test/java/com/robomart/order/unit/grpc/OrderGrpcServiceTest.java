@@ -8,19 +8,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.math.BigDecimal;
-import java.util.List;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
 import com.robomart.common.exception.ExternalServiceException;
 import com.robomart.common.exception.ResourceNotFoundException;
 import com.robomart.common.exception.ValidationException;
@@ -45,6 +32,19 @@ import com.robomart.proto.order.OrderItemRequest;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("OrderGrpcService Unit Tests")
@@ -117,15 +117,25 @@ class OrderGrpcServiceTest {
     private CreateOrderRequest buildCreateRequest(String userId) {
         return CreateOrderRequest.newBuilder()
                 .setUserId(userId)
-                .addItems(OrderItemRequest.newBuilder()
-                        .setProductId("1")
-                        .setProductName("Widget")
-                        .setQuantity(2)
-                        .setUnitPrice(Money.newBuilder().setAmount("49.99").setCurrency("USD").build())
-                        .build())
-                .setShippingAddress(Address.newBuilder()
-                        .setStreet("123 Main St").setCity("NYC").setState("NY")
-                        .setZip("10001").setCountry("US").build())
+                .addItems(
+                        OrderItemRequest.newBuilder()
+                                .setProductId("1")
+                                .setProductName("Widget")
+                                .setQuantity(2)
+                                .setUnitPrice(
+                                        Money.newBuilder()
+                                                .setAmount("49.99")
+                                                .setCurrency("USD")
+                                                .build())
+                                .build())
+                .setShippingAddress(
+                        Address.newBuilder()
+                                .setStreet("123 Main St")
+                                .setCity("NYC")
+                                .setState("NY")
+                                .setZip("10001")
+                                .setCountry("US")
+                                .build())
                 .build();
     }
 
@@ -176,11 +186,13 @@ class OrderGrpcServiceTest {
             Order order = buildOrder("user-1", OrderStatus.CONFIRMED);
             when(orderService.createOrder(anyString(), anyList(), anyString(), anyString())).thenReturn(order);
 
-            grpcService.createOrder(buildCreateRequest("user-1").toBuilder().setIdempotencyKey("idem-1").build(),
+            grpcService.createOrder(
+                    buildCreateRequest("user-1").toBuilder().setIdempotencyKey("idem-1").build(),
                     createObserver);
 
             ArgumentCaptor<List<OrderService.OrderItemRequest>> items = ArgumentCaptor.forClass(List.class);
-            verify(orderService).createOrder(eq("user-1"), items.capture(), anyString(), eq("idem-1"));
+            verify(orderService)
+                    .createOrder(eq("user-1"), items.capture(), anyString(), eq("idem-1"));
             assertThat(items.getValue()).singleElement().satisfies(item -> {
                 assertThat(item.productId()).isEqualTo("1");
                 assertThat(item.quantity()).isEqualTo(2);
@@ -204,7 +216,9 @@ class OrderGrpcServiceTest {
         @Test
         void shouldMapCatalogOutageToUnavailableAndValidationToInvalidArgument() {
             when(orderService.createOrder(anyString(), anyList(), anyString(), anyString()))
-                    .thenThrow(new ExternalServiceException("Product catalog is temporarily unavailable"))
+                    .thenThrow(
+                            new ExternalServiceException(
+                                    "Product catalog is temporarily unavailable"))
                     .thenThrow(new ValidationException("Quantity must be positive"));
 
             grpcService.createOrder(buildCreateRequest("user-1"), createObserver);
@@ -252,7 +266,8 @@ class OrderGrpcServiceTest {
         void shouldReturnNotFoundWhenOrderDoesNotExist() {
             when(orderService.getOrder(99L)).thenThrow(new ResourceNotFoundException("Order", 99L));
 
-            grpcService.getOrder(GetOrderRequest.newBuilder().setOrderId("99").build(), getObserver);
+            grpcService.getOrder(
+                    GetOrderRequest.newBuilder().setOrderId("99").build(), getObserver);
 
             verify(getObserver).onError(errorCaptor.capture());
             assertThat(((StatusRuntimeException) errorCaptor.getValue()).getStatus().getCode())
@@ -261,7 +276,8 @@ class OrderGrpcServiceTest {
 
         @Test
         void shouldReturnInvalidArgumentWhenOrderIdNotANumber() {
-            grpcService.getOrder(GetOrderRequest.newBuilder().setOrderId("not-a-number").build(), getObserver);
+            grpcService.getOrder(
+                    GetOrderRequest.newBuilder().setOrderId("not-a-number").build(), getObserver);
 
             verify(getObserver).onError(errorCaptor.capture());
             assertThat(((StatusRuntimeException) errorCaptor.getValue()).getStatus().getCode())
@@ -286,8 +302,9 @@ class OrderGrpcServiceTest {
 
         @Test
         void shouldReturnSuccessWhenOrderCancelled() {
-            when(orderService.cancelOrder(eq(1L), anyString(), anyString()))
-                    .thenReturn(org.mockito.Mockito.mock(Order.class));
+            Order cancelled = org.mockito.Mockito.mock(Order.class);
+            when(cancelled.getStatus()).thenReturn(com.robomart.order.enums.OrderStatus.CANCELLED);
+            when(orderService.cancelOrder(eq(1L), anyString(), anyString())).thenReturn(cancelled);
 
             CancelOrderRequest request = CancelOrderRequest.newBuilder()
                     .setOrderId("1")
@@ -308,8 +325,12 @@ class OrderGrpcServiceTest {
             doThrow(new OrderNotCancellableException("Order already shipped"))
                     .when(orderService).cancelOrder(eq(2L), anyString(), anyString());
 
-            CancelOrderRequest request = CancelOrderRequest.newBuilder()
-                    .setOrderId("2").setReason("Customer changed mind").setCancelledBy("user-1").build();
+            CancelOrderRequest request =
+                    CancelOrderRequest.newBuilder()
+                            .setOrderId("2")
+                            .setReason("Customer changed mind")
+                            .setCancelledBy("user-1")
+                            .build();
 
             grpcService.cancelOrder(request, cancelObserver);
 

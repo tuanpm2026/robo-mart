@@ -5,23 +5,6 @@ import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doAnswer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.grpc.server.lifecycle.GrpcServerLifecycle;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-
 import com.robomart.inventory.entity.InventoryItem;
 import com.robomart.inventory.entity.Reservation;
 import com.robomart.inventory.entity.ReservationLine;
@@ -44,6 +27,23 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.grpc.server.lifecycle.GrpcServerLifecycle;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Integration tests for the Inventory gRPC endpoints with real PostgreSQL, Kafka, and gRPC server
@@ -94,6 +94,34 @@ class InventoryGrpcIT {
         if (channel != null && !channel.isShutdown()) {
             channel.shutdownNow();
         }
+    }
+
+    @Test
+    void sameOrderCannotReplayWithDifferentQuantities() {
+        InventoryItem item = new InventoryItem();
+        item.setProductId(92001L);
+        item.setAvailableQuantity(10);
+        item.setReservedQuantity(0);
+        item.setTotalQuantity(10);
+        item.setLowStockThreshold(1);
+        inventoryItemRepository.saveAndFlush(item);
+        String order = "binding-" + java.util.UUID.randomUUID();
+        var original =
+                ReserveInventoryRequest.newBuilder()
+                        .setOrderId(order)
+                        .addItems(ReservationItem.newBuilder().setProductId("92001").setQuantity(2))
+                        .build();
+        stub.reserveInventory(original);
+        var conflict =
+                original.toBuilder()
+                        .setItems(
+                                0,
+                                ReservationItem.newBuilder().setProductId("92001").setQuantity(3))
+                        .build();
+        var error =
+                assertThrows(StatusRuntimeException.class, () -> stub.reserveInventory(conflict));
+        assertThat(error.getStatus().getCode()).isEqualTo(Status.Code.INVALID_ARGUMENT);
+        assertStock(92001L, 8, 2);
     }
 
     @Test
@@ -198,7 +226,9 @@ class InventoryGrpcIT {
         GetInventoryResponse response = stub.getInventory(request);
 
         // Assert
-        assertThat(virtualThread).as("The actual gRPC service executes on a virtual thread").isTrue();
+        assertThat(virtualThread)
+                .as("The actual gRPC service executes on a virtual thread")
+                .isTrue();
         assertThat(response.getProductId()).isEqualTo("8");
         assertThat(response.getAvailableQuantity()).isGreaterThan(0);
         assertThat(response.getTotalQuantity()).isGreaterThan(0);
@@ -321,11 +351,19 @@ class InventoryGrpcIT {
         assertThat(reservationLineRepository.findByOrderIdOrderByProductIdAsc(orderId)).isEmpty();
 
         // Act: the original reserve arrives late for the same order
-        StatusRuntimeException late = assertThrows(StatusRuntimeException.class,
-                () -> stub.reserveInventory(ReserveInventoryRequest.newBuilder()
-                        .setOrderId(orderId)
-                        .addItems(ReservationItem.newBuilder().setProductId("14").setQuantity(2).build())
-                        .build()));
+        StatusRuntimeException late =
+                assertThrows(
+                        StatusRuntimeException.class,
+                        () ->
+                                stub.reserveInventory(
+                                        ReserveInventoryRequest.newBuilder()
+                                                .setOrderId(orderId)
+                                                .addItems(
+                                                        ReservationItem.newBuilder()
+                                                                .setProductId("14")
+                                                                .setQuantity(2)
+                                                                .build())
+                                                .build()));
 
         // Assert: rejected and no stock reserved for it
         assertThat(late.getStatus().getCode()).isEqualTo(Status.Code.FAILED_PRECONDITION);
@@ -436,7 +474,11 @@ class InventoryGrpcIT {
 
     private void assertStock(Long productId, int available, int reserved) {
         InventoryItem item = inventoryItemRepository.findByProductId(productId).orElseThrow();
-        assertThat(item.getAvailableQuantity()).as("available of product %d", productId).isEqualTo(available);
-        assertThat(item.getReservedQuantity()).as("reserved of product %d", productId).isEqualTo(reserved);
+        assertThat(item.getAvailableQuantity())
+                .as("available of product %d", productId)
+                .isEqualTo(available);
+        assertThat(item.getReservedQuantity())
+                .as("reserved of product %d", productId)
+                .isEqualTo(reserved);
     }
 }

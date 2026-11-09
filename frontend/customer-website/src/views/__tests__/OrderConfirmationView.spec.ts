@@ -3,18 +3,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { OrderDetail, OrderStatus } from '@/types/order'
 import OrderConfirmationView from '../OrderConfirmationView.vue'
 
-const { orderStore, resetCheckout } = vi.hoisted(() => ({
+const { orderStore, resetCheckout, reconcileCart } = vi.hoisted(() => ({
   orderStore: {
     isLoading: false,
     currentOrder: null as OrderDetail | null,
     fetchOrder: vi.fn(),
   },
   resetCheckout: vi.fn(),
+  reconcileCart: vi.fn(),
 }))
 
 vi.mock('@/stores/useOrderStore', () => ({ useOrderStore: () => orderStore }))
 vi.mock('@/stores/useCheckoutStore', () => ({
-  useCheckoutStore: () => ({ $reset: resetCheckout }),
+  useCheckoutStore: () => ({ $reset: resetCheckout, reconcileCart }),
 }))
 vi.mock('vue-router', () => ({
   useRoute: () => ({ params: { orderId: '42' } }),
@@ -43,6 +44,8 @@ describe('OrderConfirmationView', () => {
     ['INVENTORY_RESERVING', 'Order Received!'],
     ['PAYMENT_PROCESSING', 'Order Received!'],
     ['PAYMENT_REFUNDING', 'Order Cancellation in Progress'],
+    ['CANCELLATION_PENDING', 'Order Cancellation in Progress'],
+    ['REFUND_FAILED', 'Order Cancellation in Progress'],
     ['INVENTORY_RELEASING', 'Order Cancellation in Progress'],
     ['CANCELLED', 'Order Cancelled'],
   ])('shows %s without promising confirmation or delivery', async (status, heading) => {
@@ -56,6 +59,19 @@ describe('OrderConfirmationView', () => {
     expect(wrapper.text()).not.toContain('Order Confirmed!')
     expect(wrapper.text()).not.toContain('Estimated delivery')
     expect(orderStore.fetchOrder).toHaveBeenCalledWith(42)
+    wrapper.unmount()
+  })
+
+  it('reconciles the accepted order and focuses its result heading after loading', async () => {
+    const wrapper = mount(OrderConfirmationView, {
+      attachTo: document.body,
+      global: { stubs: { Button: true, Skeleton: true } },
+    })
+    await flushPromises()
+
+    expect(reconcileCart).toHaveBeenCalledWith(orderStore.currentOrder)
+    expect(document.activeElement).toBe(wrapper.get('h1').element)
+    wrapper.unmount()
   })
 
   it('continues to show confirmation and delivery for confirmed orders', async () => {

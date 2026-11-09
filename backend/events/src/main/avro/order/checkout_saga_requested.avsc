@@ -1,0 +1,15 @@
+{
+  "type": "record", "name": "CheckoutSagaRequestedEvent", "namespace": "com.robomart.events.order",
+  "fields": [
+    {"name":"eventId","type":"string"},
+    {"name":"requestId","type":"string"},
+    {"name":"requestType","type":"string"},
+    {"name":"requestSequence","type":"long"},
+    {"name":"orderId","type":"string"},
+    {"name":"sagaId","type":"string"},
+    {"name":"ownerEpoch","type":"long"},
+    {"name":"workflowVersion","type":"int"},
+    {"name":"snapshotJson","type":"string"},
+    {"name":"reason","type":"string","default":""}
+  ]
+}
