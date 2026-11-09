@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: checkout-saga-service
+  namespace: robomart
+  labels:
+    app: checkout-saga-service
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: checkout-saga-service
+  template:
+    metadata:
+      labels:
+        app: checkout-saga-service
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+      - name: checkout-saga-service
+        image: ghcr.io/robomart/checkout-saga-service:latest
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        ports:
+        - containerPort: 8091
+          name: http
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        envFrom:
+        - configMapRef:
+            name: robomart-config
+        - secretRef:
+            name: saga-db-secret
+        env:
+        - name: MANAGEMENT_ENDPOINT_HEALTH_GROUP_READINESS_INCLUDE
+          value: "readinessState,db"
+        - name: SAGA_WORKER_ENABLED
+          value: "true"
+        - name: SAGA_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef: {name: checkout-saga-auth, key: client-secret}
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        livenessProbe:
+          httpGet:
+            path: /actuator/health/liveness
+            port: 8091
+          initialDelaySeconds: 120
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 6
+        readinessProbe:
+          httpGet:
+            path: /actuator/health/readiness
+            port: 8091
+          initialDelaySeconds: 90
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 6
+      volumes:
+      - name: tmp
+        emptyDir: {}

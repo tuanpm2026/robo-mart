@@ -1,17 +1,18 @@
 package com.robomart.notification.service;
 
+import com.robomart.notification.web.ActuatorHealthResponse;
+import com.robomart.notification.web.ActuatorMetricResponse;
+import com.robomart.notification.web.ServiceHealthData;
+import com.robomart.notification.web.SystemHealthResponse;
+
 import jakarta.annotation.PostConstruct;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
-
-import com.robomart.notification.web.ActuatorHealthResponse;
-import com.robomart.notification.web.ActuatorMetricResponse;
-import com.robomart.notification.web.ServiceHealthData;
-import com.robomart.notification.web.SystemHealthResponse;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -45,6 +46,9 @@ public class HealthAggregatorService {
     @Value("${notification.api-gateway.url:http://localhost:8080}")
     private String gatewayUrl;
 
+    @Value("${SAGA_SERVICE_URL:http://localhost:8091}")
+    private String sagaUrl;
+
     private List<ServiceConfig> serviceConfigs;
     private Map<String, RestClient> clients;
     private volatile SystemHealthResponse latestHealth;
@@ -63,15 +67,49 @@ public class HealthAggregatorService {
         factory.setConnectTimeout(Duration.ofSeconds(3));
         factory.setReadTimeout(Duration.ofSeconds(3));
 
-        serviceConfigs = List.of(
-                new ServiceConfig("product-service", "Product Service", productUrl, true, true, "product-service-product-index-group"),
-                new ServiceConfig("cart-service", "Cart Service", cartUrl, false, false, null),
-                new ServiceConfig("order-service", "Order Service", orderUrl, true, false, null),
-                new ServiceConfig("inventory-service", "Inventory Service", inventoryUrl, true, false, null),
-                new ServiceConfig("payment-service", "Payment Service", paymentUrl, true, false, null),
-                new ServiceConfig("notification-service", "Notification Service", notifUrl, true, true, "notification-order-status-group"),
-                new ServiceConfig("api-gateway", "API Gateway", gatewayUrl, false, false, null)
-        );
+        serviceConfigs =
+                List.of(
+                        new ServiceConfig(
+                                "product-service",
+                                "Product Service",
+                                productUrl,
+                                true,
+                                true,
+                                "product-service-product-index-group"),
+                        new ServiceConfig(
+                                "cart-service", "Cart Service", cartUrl, false, false, null),
+                        new ServiceConfig(
+                                "order-service", "Order Service", orderUrl, true, false, null),
+                        new ServiceConfig(
+                                "inventory-service",
+                                "Inventory Service",
+                                inventoryUrl,
+                                true,
+                                false,
+                                null),
+                        new ServiceConfig(
+                                "payment-service",
+                                "Payment Service",
+                                paymentUrl,
+                                true,
+                                false,
+                                null),
+                        new ServiceConfig(
+                                "notification-service",
+                                "Notification Service",
+                                notifUrl,
+                                true,
+                                true,
+                                "notification-order-status-group"),
+                        new ServiceConfig(
+                                "checkout-saga-service",
+                                "Checkout Saga Service",
+                                sagaUrl,
+                                true,
+                                true,
+                                "checkout-saga-v1"),
+                        new ServiceConfig(
+                                "api-gateway", "API Gateway", gatewayUrl, false, false, null));
 
         clients = serviceConfigs.stream().collect(Collectors.toMap(
                 ServiceConfig::name,
@@ -99,7 +137,8 @@ public class HealthAggregatorService {
             ActuatorHealthResponse healthResp = client.get().uri("/actuator/health")
                     .retrieve()
                     .body(ActuatorHealthResponse.class);
-            if (healthResp == null || healthResp.status() == null) throw new IllegalStateException("Invalid actuator response");
+            if (healthResp == null || healthResp.status() == null)
+                throw new IllegalStateException("Invalid actuator response");
             String actuatorStatus = healthResp.status();
 
             // Step 2: p95 response time (value in seconds → ms)

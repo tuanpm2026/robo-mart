@@ -1,110 +1,152 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed } from "vue";
 
 export type OrderStatus =
-  | 'PENDING'
-  | 'PAYMENT_PENDING'
-  | 'INVENTORY_RESERVING'
-  | 'PAYMENT_PROCESSING'
-  | 'CONFIRMED'
-  | 'SHIPPED'
-  | 'DELIVERED'
-  | 'PAYMENT_REFUNDING'
-  | 'INVENTORY_RELEASING'
-  | 'CANCELLED'
+  | "PENDING"
+  | "PAYMENT_PENDING"
+  | "INVENTORY_RESERVING"
+  | "PAYMENT_PROCESSING"
+  | "CONFIRMED"
+  | "SHIPPED"
+  | "DELIVERED"
+  | "PAYMENT_REFUNDING"
+  | "INVENTORY_RELEASING"
+  | "CANCELLATION_PENDING"
+  | "REFUND_FAILED"
+  | "CANCELLED";
 
 export interface OrderStatusHistoryEntry {
-  status: OrderStatus
-  changedAt: string
+  status: OrderStatus;
+  changedAt: string;
 }
 
 interface Props {
-  status: OrderStatus
-  statusHistory?: OrderStatusHistoryEntry[]
-  cancellationReason?: string
+  status: OrderStatus;
+  statusHistory?: OrderStatusHistoryEntry[];
+  cancellationReason?: string;
 }
 
-const props = defineProps<Props>()
+const props = defineProps<Props>();
 
 const STEPS: { label: string; statuses: OrderStatus[] }[] = [
-  { label: 'Order received', statuses: ['PENDING', 'PAYMENT_PENDING', 'INVENTORY_RESERVING'] },
-  { label: 'Processing payment', statuses: ['PAYMENT_PROCESSING', 'PAYMENT_REFUNDING', 'INVENTORY_RELEASING'] },
-  { label: 'Order confirmed', statuses: ['CONFIRMED'] },
-  { label: 'Shipped', statuses: ['SHIPPED'] },
-  { label: 'Delivered', statuses: ['DELIVERED'] },
-]
+  {
+    label: "Order received",
+    statuses: ["PENDING", "PAYMENT_PENDING", "INVENTORY_RESERVING"],
+  },
+  {
+    label: "Processing payment",
+    statuses: [
+      "PAYMENT_PROCESSING",
+      "PAYMENT_REFUNDING",
+      "INVENTORY_RELEASING",
+    ],
+  },
+  { label: "Order confirmed", statuses: ["CONFIRMED"] },
+  { label: "Shipped", statuses: ["SHIPPED"] },
+  { label: "Delivered", statuses: ["DELIVERED"] },
+];
 
 function statusToStepIndex(s: OrderStatus): number {
   switch (s) {
-    case 'PENDING':
-    case 'PAYMENT_PENDING':
-    case 'INVENTORY_RESERVING':
-      return 0
-    case 'PAYMENT_PROCESSING':
-    case 'PAYMENT_REFUNDING':
-    case 'INVENTORY_RELEASING':
-      return 1
-    case 'CONFIRMED':
-      return 2
-    case 'SHIPPED':
-      return 3
-    case 'DELIVERED':
-      return 4
+    case "PENDING":
+    case "PAYMENT_PENDING":
+    case "INVENTORY_RESERVING":
+      return 0;
+    case "PAYMENT_PROCESSING":
+    case "CANCELLATION_PENDING":
+    case "REFUND_FAILED":
+    case "PAYMENT_REFUNDING":
+    case "INVENTORY_RELEASING":
+      return 1;
+    case "CONFIRMED":
+      return 2;
+    case "SHIPPED":
+      return 3;
+    case "DELIVERED":
+      return 4;
     default:
-      return 0
+      return 0;
   }
 }
 
-const isCancelled = computed(() => props.status === 'CANCELLED')
+const isCancelled = computed(() => props.status === "CANCELLED");
 
 const currentStepIndex = computed<number>(() => {
   if (!isCancelled.value) {
-    return statusToStepIndex(props.status)
+    return statusToStepIndex(props.status);
   }
   // For CANCELLED: find last non-cancelled status in history
-  const history = props.statusHistory ?? []
+  const history = props.statusHistory ?? [];
   for (let i = history.length - 1; i >= 0; i--) {
-    const entry = history[i]!
-    if (entry.status !== 'CANCELLED') {
-      return statusToStepIndex(entry.status)
+    const entry = history[i]!;
+    if (entry.status !== "CANCELLED") {
+      return statusToStepIndex(entry.status);
     }
   }
-  return 0
-})
+  return 0;
+});
 
-const isDelivered = computed(() => props.status === 'DELIVERED')
+const isDelivered = computed(() => props.status === "DELIVERED");
 
 /** Find the earliest changedAt for a given step from statusHistory. */
 function getTimestampForStep(stepIndex: number): string | undefined {
-  const history = props.statusHistory ?? []
-  const relevantStatuses = STEPS[stepIndex]!.statuses
+  const history = props.statusHistory ?? [];
+  const relevantStatuses = STEPS[stepIndex]!.statuses;
   // Use the first occurrence of any status in this step
-  const entry = history.find((e) => relevantStatuses.includes(e.status))
-  return entry?.changedAt
+  const entry = history.find((e) => relevantStatuses.includes(e.status));
+  return entry?.changedAt;
 }
 
 function formatDate(iso: string): string {
-  const d = new Date(iso)
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-  const month = months[d.getMonth()]!
-  const day = d.getDate()
-  const year = d.getFullYear()
-  const hh = String(d.getHours()).padStart(2, '0')
-  const mm = String(d.getMinutes()).padStart(2, '0')
-  return `${month} ${day}, ${year} ${hh}:${mm}`
+  const d = new Date(iso);
+  const months = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const month = months[d.getMonth()]!;
+  const day = d.getDate();
+  const year = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${month} ${day}, ${year} ${hh}:${mm}`;
 }
 
-type StepState = 'completed' | 'active' | 'cancelled' | 'upcoming'
+type StepState = "completed" | "active" | "cancelled" | "upcoming";
 
 function getStepState(stepIndex: number): StepState {
-  if (isCancelled.value && stepIndex === currentStepIndex.value) return 'cancelled'
-  if (isDelivered.value || stepIndex < currentStepIndex.value) return 'completed'
-  if (stepIndex === currentStepIndex.value) return 'active'
-  return 'upcoming'
+  if (isCancelled.value && stepIndex === currentStepIndex.value)
+    return "cancelled";
+  if (isDelivered.value || stepIndex < currentStepIndex.value)
+    return "completed";
+  if (stepIndex === currentStepIndex.value) return "active";
+  return "upcoming";
 }
 </script>
 
 <template>
+  <p
+    v-if="
+      [
+        'CANCELLATION_PENDING',
+        'PAYMENT_REFUNDING',
+        'INVENTORY_RELEASING',
+      ].includes(status)
+    "
+    role="status"
+  >
+    Cancellation in progress
+  </p>
+  <p v-if="status === 'REFUND_FAILED'" role="status">Refund needs review</p>
   <div
     class="osm"
     role="progressbar"
@@ -120,7 +162,9 @@ function getStepState(stepIndex: number): StepState {
           v-if="index > 0"
           class="osm__connector"
           :class="{
-            'osm__connector--completed': getStepState(index) === 'completed' || getStepState(index - 1) === 'completed',
+            'osm__connector--completed':
+              getStepState(index) === 'completed' ||
+              getStepState(index - 1) === 'completed',
           }"
         />
 
@@ -130,20 +174,40 @@ function getStepState(stepIndex: number): StepState {
           <div
             class="osm__circle"
             :class="`osm__circle--${getStepState(index)}`"
-            :title="getStepState(index) === 'cancelled' && cancellationReason ? cancellationReason : undefined"
+            :title="
+              getStepState(index) === 'cancelled' && cancellationReason
+                ? cancellationReason
+                : undefined
+            "
           >
-            <span v-if="getStepState(index) === 'completed'" class="osm__icon" aria-hidden="true">✓</span>
-            <span v-else-if="getStepState(index) === 'cancelled'" class="osm__icon" aria-hidden="true">✗</span>
+            <span
+              v-if="getStepState(index) === 'completed'"
+              class="osm__icon"
+              aria-hidden="true"
+              >✓</span
+            >
+            <span
+              v-else-if="getStepState(index) === 'cancelled'"
+              class="osm__icon"
+              aria-hidden="true"
+              >✗</span
+            >
             <span v-else class="osm__dot" aria-hidden="true" />
           </div>
 
           <!-- Label + timestamp wrapper (used by mobile layout) -->
           <div class="osm__step-text">
-            <span class="osm__label" :class="`osm__label--${getStepState(index)}`">
+            <span
+              class="osm__label"
+              :class="`osm__label--${getStepState(index)}`"
+            >
               {{ step.label }}
             </span>
             <span
-              v-if="getStepState(index) === 'completed' && getTimestampForStep(index)"
+              v-if="
+                getStepState(index) === 'completed' &&
+                getTimestampForStep(index)
+              "
               class="osm__timestamp"
             >
               {{ formatDate(getTimestampForStep(index)!) }}
@@ -154,7 +218,10 @@ function getStepState(stepIndex: number): StepState {
     </div>
 
     <!-- Cancellation reason banner -->
-    <div v-if="isCancelled && cancellationReason" class="osm__cancellation-banner">
+    <div
+      v-if="isCancelled && cancellationReason"
+      class="osm__cancellation-banner"
+    >
       <span class="osm__cancellation-icon" aria-hidden="true">✗</span>
       Order cancelled: {{ cancellationReason }}
     </div>
@@ -214,7 +281,9 @@ function getStepState(stepIndex: number): StepState {
   border: 2px solid transparent;
   box-sizing: border-box;
   position: relative;
-  transition: border-color 200ms, background-color 200ms;
+  transition:
+    border-color 200ms,
+    background-color 200ms;
 }
 
 .osm__circle--upcoming {
@@ -266,7 +335,9 @@ function getStepState(stepIndex: number): StepState {
   line-height: 1.4;
   text-align: center;
   color: var(--p-text-muted-color, #6b7280);
-  transition: color 200ms, font-weight 200ms;
+  transition:
+    color 200ms,
+    font-weight 200ms;
   word-break: break-word;
 }
 
@@ -299,8 +370,13 @@ function getStepState(stepIndex: number): StepState {
   gap: 8px;
   margin-top: 20px;
   padding: 10px 14px;
-  background-color: color-mix(in srgb, var(--p-red-500, #ef4444) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--p-red-500, #ef4444) 30%, transparent);
+  background-color: color-mix(
+    in srgb,
+    var(--p-red-500, #ef4444) 10%,
+    transparent
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--p-red-500, #ef4444) 30%, transparent);
   border-radius: 8px;
   font-size: 13px;
   color: var(--p-red-500, #ef4444);
@@ -314,7 +390,8 @@ function getStepState(stepIndex: number): StepState {
 
 /* ── Pulse animation ───────────────────────────────────────── */
 @keyframes pulse-ring {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 0 0 var(--p-primary-color, #2563eb);
     opacity: 0.7;
   }

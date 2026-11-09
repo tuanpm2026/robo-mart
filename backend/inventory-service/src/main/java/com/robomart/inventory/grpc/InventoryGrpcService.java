@@ -1,14 +1,5 @@
 package com.robomart.inventory.grpc;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.ConcurrencyFailureException;
-import org.springframework.grpc.server.service.GrpcService;
-
 import com.robomart.common.exception.ResourceNotFoundException;
 import com.robomart.inventory.entity.InventoryItem;
 import com.robomart.inventory.entity.Reservation;
@@ -28,6 +19,15 @@ import com.robomart.proto.inventory.ReserveInventoryResponse;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.ConcurrencyFailureException;
+import org.springframework.grpc.server.service.GrpcService;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+
 @GrpcService
 public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceImplBase {
 
@@ -43,7 +43,10 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
     public void reserveInventory(ReserveInventoryRequest request,
                                  StreamObserver<ReserveInventoryResponse> responseObserver) {
         String orderId = request.getOrderId();
-        log.info("gRPC reserveInventory called: orderId={}, itemCount={}", orderId, request.getItemsCount());
+        log.info(
+                "gRPC reserveInventory called: orderId={}, itemCount={}",
+                orderId,
+                request.getItemsCount());
 
         if (orderId.isEmpty()) {
             responseObserver.onError(Status.INVALID_ARGUMENT
@@ -59,6 +62,21 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
         }
 
         try {
+            // Validate the whole request before touching stock. Duplicate product lines are merged.
+            Map<Long, Integer> quantities = new LinkedHashMap<>();
+            for (ReservationItem item : request.getItemsList()) {
+                Long productId = parseProductId(item.getProductId());
+                int quantity = item.getQuantity();
+                if (quantity <= 0) {
+                    throw new IllegalArgumentException(
+                            "Quantity must be positive for product "
+                                    + item.getProductId()
+                                    + ", got: "
+                                    + quantity);
+                }
+                quantities.merge(productId, quantity, Math::addExact);
+            }
+
             // Fast path for retries/replays: answer from the existing reservation without taking any
             // locks. reserveOrder re-checks atomically under the order_id unique key.
             Optional<Reservation> existing = inventoryService.findReservation(orderId);
@@ -67,33 +85,32 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
                 if (reservation.getStatus() == ReservationStatus.RELEASED) {
                     throw new ReservationReleasedException(orderId);
                 }
-                log.info("reserveInventory idempotent replay: returning existing reservationId={} for orderId={}",
-                        reservation.getReservationId(), orderId);
+                inventoryService.assertReservationBinding(orderId, quantities);
+                log.info(
+                        "reserveInventory idempotent replay: returning existing reservationId={}"
+                            + " for orderId={}",
+                        reservation.getReservationId(),
+                        orderId);
                 respondReserved(responseObserver, reservation.getReservationId(), true);
                 return;
-            }
-
-            // Validate the whole request before touching stock. Duplicate product lines are merged.
-            Map<Long, Integer> quantities = new LinkedHashMap<>();
-            for (ReservationItem item : request.getItemsList()) {
-                Long productId = parseProductId(item.getProductId());
-                int quantity = item.getQuantity();
-                if (quantity <= 0) {
-                    throw new IllegalArgumentException(
-                            "Quantity must be positive for product " + item.getProductId() + ", got: " + quantity);
-                }
-                quantities.merge(productId, quantity, Math::addExact);
             }
 
             // Reservation row, lines and all stock decrements commit in one transaction: a failure on
             // any item rolls everything back, so there is nothing to compensate here.
             InventoryService.ReservationResult result = inventoryService.reserveOrder(orderId, quantities);
             if (result.replayed()) {
-                log.info("reserveInventory idempotent replay: returning existing reservationId={} for orderId={}",
-                        result.reservationId(), orderId);
+                log.info(
+                        "reserveInventory idempotent replay: returning existing reservationId={}"
+                            + " for orderId={}",
+                        result.reservationId(),
+                        orderId);
             } else {
-                log.info("All items reserved successfully: orderId={}, reservationId={}, itemCount={}",
-                        orderId, result.reservationId(), quantities.size());
+                log.info(
+                        "All items reserved successfully: orderId={}, reservationId={},"
+                            + " itemCount={}",
+                        orderId,
+                        result.reservationId(),
+                        quantities.size());
             }
             respondReserved(responseObserver, result.reservationId(), result.replayed());
 
@@ -111,13 +128,19 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
                     .asRuntimeException());
 
         } catch (ReservationReleasedException e) {
-            log.warn("reserveInventory rejected: reservation already released for orderId={}", orderId);
+            log.warn(
+                    "reserveInventory rejected: reservation already released for orderId={}",
+                    orderId);
             responseObserver.onError(Status.FAILED_PRECONDITION
                     .withDescription(e.getMessage())
                     .asRuntimeException());
 
         } catch (InsufficientStockException e) {
-            log.warn("Insufficient stock in reserveInventory: orderId={}, productId={}", orderId, e.getProductId(), e);
+            log.warn(
+                    "Insufficient stock in reserveInventory: orderId={}, productId={}",
+                    orderId,
+                    e.getProductId(),
+                    e);
             responseObserver.onError(Status.FAILED_PRECONDITION
                     .withDescription(e.getMessage())
                     .withCause(e)
@@ -209,7 +232,10 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
                     .asRuntimeException());
 
         } catch (IllegalStateException e) {
-            log.error("Illegal state in releaseInventory: orderId={} — reservation left RESERVED", orderId, e);
+            log.error(
+                    "Illegal state in releaseInventory: orderId={} — reservation left RESERVED",
+                    orderId,
+                    e);
             responseObserver.onError(Status.FAILED_PRECONDITION
                     .withDescription(e.getMessage())
                     .withCause(e)
@@ -281,11 +307,15 @@ public class InventoryGrpcService extends InventoryServiceGrpc.InventoryServiceI
 
     private void respondReserved(StreamObserver<ReserveInventoryResponse> responseObserver,
                                  String reservationId, boolean replayed) {
-        responseObserver.onNext(ReserveInventoryResponse.newBuilder()
-                .setSuccess(true)
-                .setMessage(replayed ? "Inventory already reserved" : "Inventory reserved successfully")
-                .setReservationId(reservationId)
-                .build());
+        responseObserver.onNext(
+                ReserveInventoryResponse.newBuilder()
+                        .setSuccess(true)
+                        .setMessage(
+                                replayed
+                                        ? "Inventory already reserved"
+                                        : "Inventory reserved successfully")
+                        .setReservationId(reservationId)
+                        .build());
         responseObserver.onCompleted();
     }
 }

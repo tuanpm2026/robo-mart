@@ -1,6 +1,6 @@
 import apiClient from './client'
 import type { ApiResponse } from '@/types/product'
-import type { Cart, AddToCartRequest, UpdateQuantityRequest } from '@/types/cart'
+import type { Cart, AddToCartRequest, UpdateQuantityRequest, CheckoutCartItem } from '@/types/cart'
 
 export async function getCart(): Promise<ApiResponse<Cart>> {
   const { data } = await apiClient.get<ApiResponse<Cart>>('/api/v1/cart')
@@ -30,6 +30,17 @@ export async function removeItem(productId: number): Promise<void> {
 export async function mergeCart(anonymousCartId: string): Promise<ApiResponse<Cart>> {
   const { data } = await apiClient.post<ApiResponse<Cart>>('/api/v1/cart/merge', {
     anonymousCartId,
+  })
+  return data
+}
+
+export async function completeCheckout(
+  orderId: number,
+  items: CheckoutCartItem[],
+): Promise<ApiResponse<Cart>> {
+  const { data } = await apiClient.post<ApiResponse<Cart>>('/api/v1/cart/checkout', {
+    orderId,
+    items,
   })
   return data
 }

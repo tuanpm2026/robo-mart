@@ -19,11 +19,11 @@
     "realm": [
       {
         "name": "CUSTOMER",
-        "description": "Customer role — browse, purchase, view own orders"
+        "description": "Customer role \u2014 browse, purchase, view own orders"
       },
       {
         "name": "ADMIN",
-        "description": "Admin role — full CRUD on products, inventory, orders, reports"
+        "description": "Admin role \u2014 full CRUD on products, inventory, orders, reports"
       },
       {
         "name": "INVENTORY_SERVICE",
@@ -32,6 +32,10 @@
       {
         "name": "NOTIFICATION_SERVICE",
         "description": "Read only order details, reconciliation and audit endpoints for notification operations"
+      },
+      {
+        "name": "SAGA_SERVICE",
+        "description": "Checkout Saga participant RPC identity"
       }
     ]
   },
@@ -225,6 +229,47 @@
           }
         }
       ]
+    },
+    {
+      "clientId": "checkout-saga-service",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "REPLACE_ME",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "fullScopeAllowed": false,
+      "defaultClientScopes": [],
+      "protocolMappers": [
+        {
+          "name": "saga-role",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "realm_access.roles",
+            "claim.value": "[\"SAGA_SERVICE\"]",
+            "jsonType.label": "JSON",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "name": "robomart-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "robomart-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ],
+      "name": "Checkout Saga Service"
     }
   ],
   "identityProviders": [
@@ -2122,6 +2167,14 @@
       "serviceAccountClientId": "notification-service",
       "realmRoles": [
         "NOTIFICATION_SERVICE"
+      ]
+    },
+    {
+      "username": "service-account-checkout-saga-service",
+      "enabled": true,
+      "serviceAccountClientId": "checkout-saga-service",
+      "realmRoles": [
+        "SAGA_SERVICE"
       ]
     }
   ]

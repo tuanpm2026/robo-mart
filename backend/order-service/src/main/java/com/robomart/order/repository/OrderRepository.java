@@ -1,9 +1,7 @@
 package com.robomart.order.repository;
 
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
+import com.robomart.order.entity.Order;
+import com.robomart.order.enums.OrderStatus;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,8 +11,10 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.robomart.order.entity.Order;
-import com.robomart.order.enums.OrderStatus;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
@@ -22,16 +22,26 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @EntityGraph(attributePaths = {"items"})
     Optional<Order> findById(Long id);
 
-    @Query(value = "SELECT * FROM orders WHERE status = 'PAYMENT_PENDING' "
-            + "AND NOT EXISTS (SELECT 1 FROM saga_recovery_state s WHERE s.order_id=orders.id "
-            + "AND s.phase='PAYMENT' AND (s.manual_review_at IS NOT NULL OR s.completed_at IS NOT NULL)) "
-            + "AND (next_payment_retry_at IS NULL OR next_payment_retry_at <= :now) "
-            + "ORDER BY next_payment_retry_at NULLS FIRST, id LIMIT 1 FOR NO KEY UPDATE SKIP LOCKED", nativeQuery = true)
+    @Query(
+            value =
+                    "SELECT * FROM orders WHERE status = 'PAYMENT_PENDING' AND"
+                        + " orchestrator_owner='EMBEDDED' AND NOT EXISTS (SELECT 1 FROM"
+                        + " saga_recovery_state s WHERE s.order_id=orders.id AND s.phase='PAYMENT'"
+                        + " AND (s.manual_review_at IS NOT NULL OR s.completed_at IS NOT NULL)) AND"
+                        + " (next_payment_retry_at IS NULL OR next_payment_retry_at <= :now) ORDER"
+                        + " BY next_payment_retry_at NULLS FIRST, id LIMIT 1 FOR NO KEY UPDATE SKIP"
+                        + " LOCKED",
+            nativeQuery = true)
     Optional<Order> findNextPendingPaymentForUpdate(@Param("now") Instant now);
 
-    @Query(value = "SELECT * FROM orders WHERE id = :id AND status = 'PAYMENT_PROCESSING' "
-            + "AND updated_at <= :cutoff FOR UPDATE SKIP LOCKED", nativeQuery = true)
-    Optional<Order> findUncertainPaymentForUpdate(@Param("id") Long id, @Param("cutoff") Instant cutoff);
+    @Query(
+            value =
+                    "SELECT * FROM orders WHERE id = :id AND orchestrator_owner='EMBEDDED' AND"
+                        + " status = 'PAYMENT_PROCESSING' AND updated_at <= :cutoff FOR UPDATE SKIP"
+                        + " LOCKED",
+            nativeQuery = true)
+    Optional<Order> findUncertainPaymentForUpdate(
+            @Param("id") Long id, @Param("cutoff") Instant cutoff);
 
     @EntityGraph(attributePaths = {"items"})
     Optional<Order> findByUserIdAndIdempotencyKey(String userId, String idempotencyKey);
@@ -50,16 +60,24 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
                 order.getCancellationReason(), order.getNextPaymentRetryAt(), Instant.now()) == 1;
     }
 
-    // clearAutomatically: under open-in-view the saga's Order may still be managed; detaching it stops a
+    // clearAutomatically: under open-in-view the saga's Order may still be managed; detaching it
+    // stops a
     // later flush from overwriting this conditional write with stale in-memory state.
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE Order o SET o.status = :to, o.reservationId = :reservationId, o.paymentId = :paymentId, "
-            + "o.cancellationReason = :cancellationReason, o.nextPaymentRetryAt = :nextPaymentRetryAt, "
-            + "o.version = o.version + 1, o.updatedAt = :now WHERE o.id = :id AND o.status = :from")
-    int updateStatusIfCurrent(@Param("id") Long id, @Param("from") OrderStatus from, @Param("to") OrderStatus to,
-            @Param("reservationId") String reservationId, @Param("paymentId") String paymentId,
+    @Query(
+            "UPDATE Order o SET o.status = :to, o.reservationId = :reservationId, o.paymentId ="
+                + " :paymentId, o.cancellationReason = :cancellationReason, o.nextPaymentRetryAt ="
+                + " :nextPaymentRetryAt, o.version = o.version + 1, o.updatedAt = :now WHERE o.id ="
+                + " :id AND o.status = :from AND o.orchestratorOwner = 'EMBEDDED'")
+    int updateStatusIfCurrent(
+            @Param("id") Long id,
+            @Param("from") OrderStatus from,
+            @Param("to") OrderStatus to,
+            @Param("reservationId") String reservationId,
+            @Param("paymentId") String paymentId,
             @Param("cancellationReason") String cancellationReason,
-            @Param("nextPaymentRetryAt") Instant nextPaymentRetryAt, @Param("now") Instant now);
+            @Param("nextPaymentRetryAt") Instant nextPaymentRetryAt,
+            @Param("now") Instant now);
 
     Page<Order> findByUserId(String userId, Pageable pageable);
 
@@ -81,9 +99,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     // Items are needed by inventory release; the scheduled job has no session to load them lazily.
     @EntityGraph(attributePaths = {"items"})
-    @Query("SELECT o FROM Order o WHERE o.status IN :statuses AND o.updatedAt < :cutoff")
+    @Query(
+            "SELECT o FROM Order o WHERE o.orchestratorOwner = 'EMBEDDED' AND o.status IN :statuses"
+                + " AND o.updatedAt < :cutoff")
     List<Order> findStuckSagas(
-            @Param("statuses") List<OrderStatus> statuses,
-            @Param("cutoff") Instant cutoff
-    );
+            @Param("statuses") List<OrderStatus> statuses, @Param("cutoff") Instant cutoff);
 }

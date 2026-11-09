@@ -14,6 +14,7 @@ export const useOrderStore = defineStore('order', () => {
   const pagination = ref<PaginationMeta | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  let orderReadVersion = 0
 
   async function fetchOrders(page = 0, size = 10) {
     isLoading.value = true
@@ -29,17 +30,19 @@ export const useOrderStore = defineStore('order', () => {
     }
   }
 
-  async function fetchOrder(orderId: number) {
-    isLoading.value = true
+  async function fetchOrder(orderId: number, background = false) {
+    const version = ++orderReadVersion
+    if (!background) isLoading.value = true
     error.value = null
-    currentOrder.value = null
+    if (!background) currentOrder.value = null
     try {
       const response = await fetchOrderApi(orderId)
-      currentOrder.value = response.data
+      if (version === orderReadVersion) currentOrder.value = response.data
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to load order'
+      if (version === orderReadVersion)
+        error.value = err instanceof Error ? err.message : 'Failed to load order'
     } finally {
-      isLoading.value = false
+      if (version === orderReadVersion) isLoading.value = false
     }
   }
 
@@ -53,16 +56,18 @@ export const useOrderStore = defineStore('order', () => {
       isLoading.value = false
       throw err
     }
-    // Cancel succeeded — refresh silently; refetch errors don't indicate cancel failure
+    // Fence an earlier polling GET before reading the admitted cancellation state.
+    const version = ++orderReadVersion
     try {
       const response = await fetchOrderApi(orderId)
-      currentOrder.value = response.data
+      if (version === orderReadVersion) currentOrder.value = response.data
     } finally {
       isLoading.value = false
     }
   }
 
   function $reset() {
+    orderReadVersion++
     orders.value = []
     currentOrder.value = null
     pagination.value = null

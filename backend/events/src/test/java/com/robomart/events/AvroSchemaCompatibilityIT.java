@@ -2,41 +2,6 @@ package com.robomart.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.UUID;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.time.Duration;
-import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.clients.admin.FeatureUpdate;
-import org.apache.kafka.clients.admin.UpdateFeaturesOptions;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.GroupType;
-import org.apache.kafka.common.TopicPartition;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
-import org.apache.avro.Schema;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.Network;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.ConfluentKafkaContainer;
-
 import com.robomart.events.cart.CartExpiryWarningEvent;
 import com.robomart.events.inventory.StockLowAlertEvent;
 import com.robomart.events.inventory.StockReleasedEvent;
@@ -50,6 +15,40 @@ import com.robomart.events.payment.PaymentRefundedEvent;
 import com.robomart.events.product.ProductCreatedEvent;
 import com.robomart.events.product.ProductDeletedEvent;
 import com.robomart.events.product.ProductUpdatedEvent;
+
+import org.apache.avro.Schema;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.FeatureUpdate;
+import org.apache.kafka.clients.admin.NewTopic;
+import org.apache.kafka.clients.admin.UpdateFeaturesOptions;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.GroupType;
+import org.apache.kafka.common.TopicPartition;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.Network;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.kafka.ConfluentKafkaContainer;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Integration test: verifies all Avro schemas in the events module can be
@@ -127,15 +126,28 @@ class AvroSchemaCompatibilityIT {
             // This is a fresh disposable broker, not an upgrade of any developer/production data.
             var feature = admin.describeFeatures().featureMetadata().get(10, TimeUnit.SECONDS)
                     .finalizedFeatures().get("group.version");
-            if (feature == null || feature.maxVersionLevel() < 1) admin.updateFeatures(Map.of("group.version", new FeatureUpdate(
-                    (short) 1, FeatureUpdate.UpgradeType.UPGRADE)),
-                    new UpdateFeaturesOptions()).all().get(30, TimeUnit.SECONDS);
+            if (feature == null || feature.maxVersionLevel() < 1)
+                admin.updateFeatures(
+                                Map.of(
+                                        "group.version",
+                                        new FeatureUpdate(
+                                                (short) 1, FeatureUpdate.UpgradeType.UPGRADE)),
+                                new UpdateFeaturesOptions())
+                        .all()
+                        .get(30, TimeUnit.SECONDS);
             admin.createTopics(List.of(new NewTopic(topic, 1, (short) 1)))
                     .all().get(10, TimeUnit.SECONDS);
-            try (var producer = new KafkaProducer<String, String>(Map.of(
-                    "bootstrap.servers", KAFKA.getBootstrapServers(), "acks", "all",
-                    "key.serializer", "org.apache.kafka.common.serialization.StringSerializer",
-                    "value.serializer", "org.apache.kafka.common.serialization.StringSerializer"))) {
+            try (var producer =
+                    new KafkaProducer<String, String>(
+                            Map.of(
+                                    "bootstrap.servers",
+                                    KAFKA.getBootstrapServers(),
+                                    "acks",
+                                    "all",
+                                    "key.serializer",
+                                    "org.apache.kafka.common.serialization.StringSerializer",
+                                    "value.serializer",
+                                    "org.apache.kafka.common.serialization.StringSerializer"))) {
                 producer.send(new ProducerRecord<>(topic, "first")).get(10, TimeUnit.SECONDS);
                 producer.send(new ProducerRecord<>(topic, "second")).get(10, TimeUnit.SECONDS);
             }
@@ -160,11 +172,24 @@ class AvroSchemaCompatibilityIT {
     }
 
     private static KafkaConsumer<String, String> protocolConsumer(String group, String protocol) {
-        return new KafkaConsumer<>(Map.of(
-                "bootstrap.servers", KAFKA.getBootstrapServers(), "group.id", group, "group.protocol", protocol,
-                "auto.offset.reset", "earliest", "enable.auto.commit", false, "max.poll.records", 1,
-                "key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer",
-                "value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer"));
+        return new KafkaConsumer<>(
+                Map.of(
+                        "bootstrap.servers",
+                        KAFKA.getBootstrapServers(),
+                        "group.id",
+                        group,
+                        "group.protocol",
+                        protocol,
+                        "auto.offset.reset",
+                        "earliest",
+                        "enable.auto.commit",
+                        false,
+                        "max.poll.records",
+                        1,
+                        "key.deserializer",
+                        "org.apache.kafka.common.serialization.StringDeserializer",
+                        "value.deserializer",
+                        "org.apache.kafka.common.serialization.StringDeserializer"));
     }
 
     private static ConsumerRecord<String, String> nextRecord(
@@ -180,14 +205,15 @@ class AvroSchemaCompatibilityIT {
     @Test
     void parsesBothLegacyAndExtendedRegistrationResponses() {
         assertThat(extractId("{\"id\":7}")).isEqualTo(7);
-        assertThat(extractId("{\"version\":2,\"id\":7,\"guid\":\"metadata\",\"schema\":\"{}\"}")).isEqualTo(7);
+        assertThat(extractId("{\"version\":2,\"id\":7,\"guid\":\"metadata\",\"schema\":\"{}\"}"))
+                .isEqualTo(7);
     }
 
     @Test
     void allAvroSchemasRegisterSuccessfully() throws Exception {
         Map<String, Schema> schemas = allSchemas();
 
-        assertThat(schemas).hasSize(14);
+        assertThat(schemas).hasSize(15);
 
         for (Map.Entry<String, Schema> entry : schemas.entrySet()) {
             String subject = entry.getKey();
@@ -229,7 +255,9 @@ class AvroSchemaCompatibilityIT {
 
             boolean compatible = checkCompatibility(subject, schema);
             assertThat(compatible)
-                    .as("Schema '%s' must be backward-compatible with its registered version", subject)
+                    .as(
+                            "Schema '%s' must be backward-compatible with its registered version",
+                            subject)
                     .isTrue();
         }
     }
@@ -246,6 +274,9 @@ class AvroSchemaCompatibilityIT {
         schemas.put(subjectFor(StockReleasedEvent.getClassSchema()),         StockReleasedEvent.getClassSchema());
         schemas.put(subjectFor(StockReservedEvent.getClassSchema()),         StockReservedEvent.getClassSchema());
         schemas.put(subjectFor(StockUpdatedEvent.getClassSchema()),          StockUpdatedEvent.getClassSchema());
+        schemas.put(
+                "order.checkout.requests.v1-value",
+                com.robomart.events.order.CheckoutSagaRequestedEvent.getClassSchema());
         schemas.put(subjectFor(OrderCancelledEvent.getClassSchema()),        OrderCancelledEvent.getClassSchema());
         schemas.put(subjectFor(OrderCreatedEvent.getClassSchema()),          OrderCreatedEvent.getClassSchema());
         schemas.put(subjectFor(OrderStatusChangedEvent.getClassSchema()),    OrderStatusChangedEvent.getClassSchema());
@@ -275,7 +306,9 @@ class AvroSchemaCompatibilityIT {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         assertThat(response.statusCode())
-                .as("Schema Registry must accept schema for subject '%s', got: %s", subject, response.body())
+                .as(
+                        "Schema Registry must accept schema for subject '%s', got: %s",
+                        subject, response.body())
                 .isEqualTo(200);
 
         return extractId(response.body());
@@ -287,11 +320,17 @@ class AvroSchemaCompatibilityIT {
      */
     private boolean checkCompatibility(String subject, Schema schema) throws IOException, InterruptedException {
         String body = toSchemaRegistryPayload(schema);
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(schemaRegistryUrl + "/compatibility/subjects/" + subject + "/versions/latest"))
-                .header("Content-Type", "application/vnd.schemaregistry.v1+json")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
+        HttpRequest request =
+                HttpRequest.newBuilder()
+                        .uri(
+                                URI.create(
+                                        schemaRegistryUrl
+                                                + "/compatibility/subjects/"
+                                                + subject
+                                                + "/versions/latest"))
+                        .header("Content-Type", "application/vnd.schemaregistry.v1+json")
+                        .POST(HttpRequest.BodyPublishers.ofString(body))
+                        .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         assertThat(response.statusCode())
@@ -324,8 +363,14 @@ class AvroSchemaCompatibilityIT {
      * Reads the stable ID field while allowing additional Schema Registry response metadata.
      */
     private static int extractId(String responseBody) {
-        var id = tools.jackson.databind.json.JsonMapper.builder().build().readTree(responseBody).path("id");
-        assertThat(id.isIntegralNumber()).as("Registration response must contain an integral schema ID").isTrue();
+        var id =
+                tools.jackson.databind.json.JsonMapper.builder()
+                        .build()
+                        .readTree(responseBody)
+                        .path("id");
+        assertThat(id.isIntegralNumber())
+                .as("Registration response must contain an integral schema ID")
+                .isTrue();
         return id.intValue();
     }
 }

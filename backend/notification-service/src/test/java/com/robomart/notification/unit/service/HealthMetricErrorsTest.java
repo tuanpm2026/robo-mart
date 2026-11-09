@@ -1,16 +1,21 @@
 package com.robomart.notification.unit.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import java.util.List;
+
+import com.robomart.notification.service.HealthAggregatorService;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
-import com.robomart.notification.service.HealthAggregatorService;
+
+import java.util.List;
 
 class HealthMetricErrorsTest {
     private final HealthAggregatorService service = new HealthAggregatorService();
     @Test
     void optionalMetric404IsAllowedButAuthenticationFailureMakesHealthError() throws Exception {
-        var server = com.sun.net.httpserver.HttpServer.create(new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+        var server =
+                com.sun.net.httpserver.HttpServer.create(
+                        new java.net.InetSocketAddress("127.0.0.1", 0), 0);
         var metricStatus = new java.util.concurrent.atomic.AtomicInteger(404);
         server.createContext("/", exchange -> {
             boolean health = exchange.getRequestURI().getPath().equals("/actuator/health");
@@ -23,8 +28,18 @@ class HealthMetricErrorsTest {
         });
         server.start();
         try {
-            for (String name : List.of("productUrl", "cartUrl", "orderUrl", "inventoryUrl", "paymentUrl", "notifUrl", "gatewayUrl")) {
-                ReflectionTestUtils.setField(service, name, "http://127.0.0.1:" + server.getAddress().getPort());
+            for (String name :
+                    List.of(
+                            "productUrl",
+                            "cartUrl",
+                            "orderUrl",
+                            "inventoryUrl",
+                            "paymentUrl",
+                            "notifUrl",
+                            "sagaUrl",
+                            "gatewayUrl")) {
+                ReflectionTestUtils.setField(
+                        service, name, "http://127.0.0.1:" + server.getAddress().getPort());
             }
             service.init();
             assertThat(service.aggregateHealth().services()).allMatch(row -> "UP".equals(row.actuatorStatus()));

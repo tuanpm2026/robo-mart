@@ -8,6 +8,9 @@ data:
     global:
       scrape_interval: 15s
 
+    rule_files:
+      - /etc/prometheus/saga-rules.yml
+
     scrape_configs:
       - job_name: 'spring-boot-services'
         metrics_path: '/actuator/prometheus'
@@ -20,3 +23,20 @@ data:
               - 'inventory-service.robomart.svc.cluster.local:8084'
               - 'payment-service.robomart.svc.cluster.local:8086'
               - 'notification-service.robomart.svc.cluster.local:8087'
+              - 'checkout-saga-service.robomart.svc.cluster.local:8091'
+  saga-rules.yml: |
+    groups:
+      - name: checkout-saga
+        rules:
+          - alert: CheckoutSagaNeedsReview
+            expr: saga_workflows_manual > 0
+            for: 2m
+            labels: {severity: warning}
+            annotations:
+              summary: "Checkout compensation requires operator review"
+          - alert: CheckoutSagaBacklog
+            expr: saga_queue_oldest_seconds > 300
+            for: 5m
+            labels: {severity: warning}
+            annotations:
+              summary: "Checkout work has remained due for more than five minutes"

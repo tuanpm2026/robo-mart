@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import com.robomart.cart.config.CartProperties;
 import com.robomart.cart.dto.AddCartItemRequest;
 import com.robomart.cart.dto.CartResponse;
+import com.robomart.cart.dto.CompleteCheckoutRequest;
 import com.robomart.cart.dto.UpdateCartItemRequest;
 import com.robomart.cart.entity.CartItem;
 import com.robomart.cart.mapper.CartMapper;
@@ -40,5 +41,9 @@ public class CartService {
 
     public CartResponse getCart(String key) {
         return mapper.toCartResponse(carts.getAndRefresh(key));
+    }
+
+    public CartResponse completeCheckout(String key, CompleteCheckoutRequest request) {
+        return mapper.toCartResponse(carts.completeCheckout(key, request));
     }
 }

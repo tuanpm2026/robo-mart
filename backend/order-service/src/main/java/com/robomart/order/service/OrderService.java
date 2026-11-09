@@ -1,29 +1,5 @@
 package com.robomart.order.service;
 
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
-
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
-
 import com.robomart.common.audit.AuditAction;
 import com.robomart.common.audit.Auditable;
 import com.robomart.common.exception.ResourceNotFoundException;
@@ -46,6 +22,29 @@ import com.robomart.order.web.OrderReconciliationSummary;
 import com.robomart.order.web.OrderStatusHistoryResponse;
 import com.robomart.order.web.OrderSummaryResponse;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 @Service
 public class OrderService {
 
@@ -65,6 +64,30 @@ public class OrderService {
     private final OrderSagaOrchestrator orderSagaOrchestrator;
     private final TransactionTemplate transactionTemplate;
     private final ProductPricingService productPricingService;
+    private com.robomart.order.workflow.OrderWorkflowCoordinator workflow;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setWorkflowCoordinator(com.robomart.order.workflow.OrderWorkflowCoordinator value) {
+        workflow = value;
+    }
+
+    private String requestFingerprint(List<OrderItemRequest> items, String address) {
+        var lines = new java.util.TreeMap<Long, Integer>();
+        items.forEach(
+                i -> lines.merge(parseProductId(i.productId()), i.quantity(), Math::addExact));
+        return com.robomart.order.workflow.OrderWorkflowCoordinator.hash(
+                (lines.toString() + "\n" + address)
+                        .getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    private Order replay(Order order, String fingerprint) {
+        if (order.getRequestFingerprint() != null
+                && !order.getRequestFingerprint().equals(fingerprint)) {
+            throw new com.robomart.common.exception.BusinessRuleException(
+                    "Idempotency key is bound to a different checkout");
+        }
+        return order;
+    }
 
     public OrderService(
             OrderRepository orderRepository,
@@ -82,26 +105,34 @@ public class OrderService {
     }
 
     /**
-     * Creates an order priced from product-service (client-supplied names and prices are ignored) and
-     * runs the checkout saga. With an {@code idempotencyKey}, a retry by the same user returns the
-     * order created by the first attempt instead of creating and charging a second one.
+     * Creates an order priced from product-service (client-supplied names and prices are ignored)
+     * and runs the checkout saga. With an {@code idempotencyKey}, a retry by the same user returns
+     * the order created by the first attempt instead of creating and charging a second one.
      */
-    @Auditable(action = AuditAction.CREATE, entityType = "Order", entityIdExpression = "#result?.id?.toString()")
-    public Order createOrder(String userId, List<OrderItemRequest> items, String shippingAddress,
+    @Auditable(
+            action = AuditAction.CREATE,
+            entityType = "Order",
+            entityIdExpression = "#result?.id?.toString()")
+    public Order createOrder(
+            String userId,
+            List<OrderItemRequest> items,
+            String shippingAddress,
             String idempotencyKey) {
         String key = normalizeIdempotencyKey(idempotencyKey);
+        String fingerprint = requestFingerprint(items, shippingAddress);
         if (key != null) {
             Optional<Order> existing = orderRepository.findByUserIdAndIdempotencyKey(userId, key);
             if (existing.isPresent()) {
                 log.info("Idempotent replay of order creation: orderId={}", existing.get().getId());
-                return existing.get();
+                return replay(existing.get(), fingerprint);
             }
         }
 
         List<Long> productIds = items.stream().map(item -> parseProductId(item.productId())).toList();
         for (OrderItemRequest item : items) {
             if (item.quantity() <= 0) {
-                throw new ValidationException("Quantity must be positive for product " + item.productId());
+                throw new ValidationException(
+                        "Quantity must be positive for product " + item.productId());
             }
         }
         // Remote lookups stay outside the creation transaction so no DB connection waits on the network.
@@ -109,44 +140,73 @@ public class OrderService {
 
         Order order;
         try {
-            order = transactionTemplate.execute(status -> insertOrder(userId, items, productIds, prices,
-                    shippingAddress, key));
+            order =
+                    transactionTemplate.execute(
+                            status ->
+                                    insertOrder(
+                                            userId,
+                                            items,
+                                            productIds,
+                                            prices,
+                                            shippingAddress,
+                                            key,
+                                            fingerprint));
         } catch (DataIntegrityViolationException e) {
             // A concurrent request with the same key won the unique (user_id, idempotency_key) index.
             if (key == null) {
                 throw e;
             }
             Order winner = orderRepository.findByUserIdAndIdempotencyKey(userId, key).orElseThrow(() -> e);
-            log.info("Concurrent idempotent create resolved to existing orderId={}", winner.getId());
-            return winner;
+            log.info(
+                    "Concurrent idempotent create resolved to existing orderId={}", winner.getId());
+            return replay(winner, fingerprint);
         }
+
+        if ("EXTERNAL".equals(order.getOrchestratorOwner())) return order;
 
         // Items were initialized with the owning order in the creation transaction.
         try {
             orderSagaOrchestrator.executeSaga(order);
         } catch (Exception e) {
-            log.error("Unexpected error during saga execution for orderId={}: {}", order.getId(), e.getMessage(), e);
+            log.error(
+                    "Unexpected error during saga execution for orderId={}: {}",
+                    order.getId(),
+                    e.getMessage(),
+                    e);
             try {
                 final Long orderId = order.getId();
-                transactionTemplate.execute(status -> {
-                    Order fresh = orderRepository.findById(orderId).orElse(null);
-                    if (fresh != null && fresh.getStatus() == OrderStatus.PENDING) {
-                        fresh.setStatus(OrderStatus.CANCELLED);
-                        fresh.setCancellationReason("Internal error during order processing");
-                        orderRepository.save(fresh);
-                    }
-                    return null;
-                });
+                transactionTemplate.execute(
+                        status -> {
+                            Order fresh = orderRepository.findById(orderId).orElse(null);
+                            if (fresh != null
+                                    && "EMBEDDED".equals(fresh.getOrchestratorOwner())
+                                    && fresh.getStatus() == OrderStatus.PENDING) {
+                                fresh.setStatus(OrderStatus.CANCELLED);
+                                fresh.setCancellationReason(
+                                        "Internal error during order processing");
+                                orderRepository.save(fresh);
+                            }
+                            return null;
+                        });
             } catch (Exception innerEx) {
-                log.error("Failed to cancel order {} after saga error: {}", order.getId(), innerEx.getMessage());
+                log.error(
+                        "Failed to cancel order {} after saga error: {}",
+                        order.getId(),
+                        innerEx.getMessage());
             }
             throw e;
         }
         return order;
     }
 
-    private Order insertOrder(String userId, List<OrderItemRequest> items, List<Long> productIds,
-            Map<Long, ProductPricingService.PricedProduct> prices, String shippingAddress, String idempotencyKey) {
+    private Order insertOrder(
+            String userId,
+            List<OrderItemRequest> items,
+            List<Long> productIds,
+            Map<Long, ProductPricingService.PricedProduct> prices,
+            String shippingAddress,
+            String idempotencyKey,
+            String fingerprint) {
         Order newOrder = new Order();
         newOrder.setUserId(userId);
         newOrder.setStatus(OrderStatus.PENDING);
@@ -176,6 +236,8 @@ public class OrderService {
             savedOrder.getItems().add(orderItem);
         }
 
+        if (workflow != null) workflow.enroll(savedOrder, fingerprint);
+
         OrderStatusHistory history = new OrderStatusHistory();
         history.setOrder(savedOrder);
         history.setStatus(OrderStatus.PENDING);
@@ -192,7 +254,9 @@ public class OrderService {
         String key = idempotencyKey.strip();
         if (key.length() > MAX_IDEMPOTENCY_KEY_LENGTH) {
             throw new ValidationException(
-                    "Idempotency key must be at most " + MAX_IDEMPOTENCY_KEY_LENGTH + " characters");
+                    "Idempotency key must be at most "
+                            + MAX_IDEMPOTENCY_KEY_LENGTH
+                            + " characters");
         }
         return key;
     }
@@ -312,7 +376,10 @@ public class OrderService {
                 historyResponses);
     }
 
-    @Auditable(action = AuditAction.UPDATE, entityType = "Order", entityIdExpression = "#result?.id?.toString()")
+    @Auditable(
+            action = AuditAction.UPDATE,
+            entityType = "Order",
+            entityIdExpression = "#result?.id?.toString()")
     @Transactional
     public Order updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
@@ -337,13 +404,22 @@ public class OrderService {
                         .collect(Collectors.toMap(row -> (Long) row[0], row -> (Long) row[1]));
     }
 
-    @Auditable(action = AuditAction.DELETE, entityType = "ORDER", entityIdExpression = "#result?.id?.toString()")
+    @Auditable(
+            action = AuditAction.DELETE,
+            entityType = "ORDER",
+            entityIdExpression = "#result?.id?.toString()")
     public Order cancelOrder(Long orderId, String reason, String cancelledBy) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
 
         if (!order.getUserId().equals(cancelledBy)) {
             throw new ResourceNotFoundException("Order not found: " + orderId);
+        }
+
+        if ("EXTERNAL".equals(order.getOrchestratorOwner())) {
+            if (workflow == null) throw new IllegalStateException("Missing workflow coordinator");
+            workflow.requestCancellation(orderId, reason);
+            return getOrder(orderId);
         }
 
         if (!CANCELLABLE_STATUSES.contains(order.getStatus())) {
@@ -353,7 +429,8 @@ public class OrderService {
 
         order.setItems(orderItemRepository.findByOrderId(orderId));
 
-        String cancelReason = (reason != null && !reason.isBlank()) ? reason : "Customer requested cancellation";
+        String cancelReason =
+                (reason != null && !reason.isBlank()) ? reason : "Customer requested cancellation";
 
         try {
             if (order.getStatus() == OrderStatus.PENDING) {
@@ -372,16 +449,18 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<OrderReconciliationSummary> getOrderReconciliationSummary() {
-        List<OrderStatus> activeStatuses = List.of(
-                OrderStatus.PENDING,
-                OrderStatus.PAYMENT_PENDING,
-                OrderStatus.INVENTORY_RESERVING,
-                OrderStatus.PAYMENT_PROCESSING,
-                OrderStatus.CONFIRMED,
-                OrderStatus.SHIPPED,
-                OrderStatus.DELIVERED,
-                OrderStatus.PAYMENT_REFUNDING,
-                OrderStatus.INVENTORY_RELEASING);
+        List<OrderStatus> activeStatuses =
+                List.of(
+                        OrderStatus.PENDING,
+                        OrderStatus.PAYMENT_PENDING,
+                        OrderStatus.CANCELLATION_PENDING,
+                        OrderStatus.INVENTORY_RESERVING,
+                        OrderStatus.PAYMENT_PROCESSING,
+                        OrderStatus.CONFIRMED,
+                        OrderStatus.SHIPPED,
+                        OrderStatus.DELIVERED,
+                        OrderStatus.PAYMENT_REFUNDING,
+                        OrderStatus.INVENTORY_RELEASING);
         List<Order> orders = orderRepository.findByStatusIn(activeStatuses);
         if (orders.isEmpty()) {
             return List.of();

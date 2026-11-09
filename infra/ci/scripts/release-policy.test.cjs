@@ -125,7 +125,7 @@ test('GitOps pins exact digests, preserves unrelated images, and repeats without
   const options = repo.publishOptions('backend', cwd)
   assert.equal(publishRelease(options).status, 'published')
   const file = fs.readFileSync(path.join(cwd, 'infra/k8s/overlays/production/kustomization.yaml'), 'utf8')
-  assert.equal((file.match(/digest: sha256:/g) || []).length, 7)
+  assert.equal((file.match(/digest: sha256:/g) || []).length, 8)
   assert.equal((file.match(/newTag: previous/g) || []).length, 2)
   assert.equal(publishRelease(options).status, 'unchanged')
   assert.equal(git(cwd, 'status', '--porcelain'), '')
@@ -162,7 +162,7 @@ test('simultaneous frontend/backend pushes retry from fresh main and retain both
   }
   const result = publishRelease({ ...backendOptions, command })
   assert.equal(result.attempts, 2)
-  assert.equal((fs.readFileSync(path.join(backend, 'infra/k8s/overlays/production/kustomization.yaml'), 'utf8').match(/digest: sha256:/g) || []).length, 9)
+  assert.equal((fs.readFileSync(path.join(backend, 'infra/k8s/overlays/production/kustomization.yaml'), 'utf8').match(/digest: sha256:/g) || []).length, 10)
 })
 
 test('a new source arriving during a push race prevents retrying the old release', t => {

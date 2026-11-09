@@ -25,6 +25,8 @@ const statusOptions = [
   { label: 'Confirmed', value: 'CONFIRMED' },
   { label: 'Shipped', value: 'SHIPPED' },
   { label: 'Delivered', value: 'DELIVERED' },
+  { label: 'Cancellation in progress', value: 'CANCELLATION_PENDING' },
+  { label: 'Refund needs review', value: 'REFUND_FAILED' },
   { label: 'Cancelled', value: 'CANCELLED' },
 ]
 
@@ -35,6 +37,8 @@ const statusSeverity: Record<string, string> = {
   CONFIRMED: 'info',
   SHIPPED: 'info',
   DELIVERED: 'success',
+  CANCELLATION_PENDING: 'warn',
+  REFUND_FAILED: 'danger',
   CANCELLED: 'danger',
   PAYMENT_REFUNDING: 'warn',
   INVENTORY_RELEASING: 'warn',
@@ -47,6 +51,8 @@ const statusLabels: Record<string, string> = {
   CONFIRMED: 'Confirmed',
   SHIPPED: 'Shipped',
   DELIVERED: 'Delivered',
+  CANCELLATION_PENDING: 'Cancellation in progress',
+  REFUND_FAILED: 'Refund needs review',
   CANCELLED: 'Cancelled',
   PAYMENT_REFUNDING: 'Refunding Payment',
   INVENTORY_RELEASING: 'Releasing Inventory',
@@ -62,7 +68,10 @@ const PAID_STATUSES = new Set(['CONFIRMED', 'SHIPPED', 'DELIVERED'])
 function getPaymentStatus(status: string): string {
   if (PAID_STATUSES.has(status)) return 'Paid'
   if (status === 'CANCELLED') return 'Refunded / Cancelled'
-  return 'Unpaid'
+  if (status === 'REFUND_FAILED') return 'Refund needs review'
+  if (['CANCELLATION_PENDING', 'PAYMENT_REFUNDING', 'INVENTORY_RELEASING'].includes(status))
+    return 'Cancellation pending'
+  return 'Processing'
 }
 
 onMounted(() => orderStore.loadOrders())

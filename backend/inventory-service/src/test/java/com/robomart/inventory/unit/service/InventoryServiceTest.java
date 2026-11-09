@@ -14,25 +14,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.InOrder;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.ConcurrencyFailureException;
-import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.support.TransactionTemplate;
-
 import com.robomart.common.exception.ResourceNotFoundException;
 import com.robomart.inventory.entity.InventoryItem;
 import com.robomart.inventory.entity.OutboxEvent;
@@ -50,7 +31,26 @@ import com.robomart.inventory.repository.ReservationRepository;
 import com.robomart.inventory.repository.StockMovementRepository;
 import com.robomart.inventory.service.InventoryService;
 
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InOrder;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.ConcurrencyFailureException;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
+
 import tools.jackson.databind.ObjectMapper;
+
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("InventoryService Unit Tests")
@@ -268,7 +268,8 @@ class InventoryServiceTest {
         @Test
         @DisplayName("findReservation delegates to repository by orderId")
         void findReservationDelegatesToRepository() {
-            Reservation reservation = new Reservation("res-1", ORDER_ID, ReservationStatus.RESERVED);
+            Reservation reservation =
+                    new Reservation("res-1", ORDER_ID, ReservationStatus.RESERVED);
             when(reservationRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.of(reservation));
 
             Optional<Reservation> result = inventoryService.findReservation(ORDER_ID);
@@ -307,7 +308,8 @@ class InventoryServiceTest {
             stubStockWrites();
             InventoryItem item1 = createTestInventoryItem(PRODUCT_ID, 95, 5, 100);
             InventoryItem item2 = createTestInventoryItem(PRODUCT_2, 47, 3, 50);
-            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RESERVED"))).thenReturn(1);
+            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RESERVED")))
+                    .thenReturn(1);
             when(inventoryItemRepository.reserveAvailable(PRODUCT_ID, 5)).thenReturn(1);
             when(inventoryItemRepository.reserveAvailable(PRODUCT_2, 3)).thenReturn(1);
             when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item1));
@@ -342,10 +344,16 @@ class InventoryServiceTest {
         @DisplayName("replays an existing RESERVED reservation without touching stock")
         void replaysExistingReservation() {
             setupTransactionOnly();
-            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RESERVED"))).thenReturn(0);
+            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RESERVED")))
+                    .thenReturn(0);
             when(reservationRepository.findByOrderId(ORDER_ID))
-                    .thenReturn(Optional.of(new Reservation("existing", ORDER_ID, ReservationStatus.RESERVED)));
+                    .thenReturn(
+                            Optional.of(
+                                    new Reservation(
+                                            "existing", ORDER_ID, ReservationStatus.RESERVED)));
 
+            when(reservationLineRepository.findByOrderIdOrderByProductIdAsc(ORDER_ID))
+                    .thenReturn(List.of(new ReservationLine(ORDER_ID, PRODUCT_ID, 5)));
             InventoryService.ReservationResult result = inventoryService.reserveOrder(ORDER_ID, Map.of(PRODUCT_ID, 5));
 
             assertThat(result.replayed()).isTrue();
@@ -358,9 +366,12 @@ class InventoryServiceTest {
         @DisplayName("rejects a reserve after a RELEASED tombstone without touching stock")
         void rejectsAfterReleasedTombstone() {
             setupTransactionOnly();
-            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RESERVED"))).thenReturn(0);
+            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RESERVED")))
+                    .thenReturn(0);
             when(reservationRepository.findByOrderId(ORDER_ID))
-                    .thenReturn(Optional.of(new Reservation("tomb", ORDER_ID, ReservationStatus.RELEASED)));
+                    .thenReturn(
+                            Optional.of(
+                                    new Reservation("tomb", ORDER_ID, ReservationStatus.RELEASED)));
 
             assertThatThrownBy(() -> inventoryService.reserveOrder(ORDER_ID, Map.of(PRODUCT_ID, 5)))
                     .isInstanceOf(ReservationReleasedException.class);
@@ -374,7 +385,8 @@ class InventoryServiceTest {
         @DisplayName("propagates InsufficientStockException so the whole transaction rolls back")
         void propagatesInsufficientStock() {
             setupTransactionOnly();
-            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RESERVED"))).thenReturn(1);
+            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RESERVED")))
+                    .thenReturn(1);
             when(inventoryItemRepository.findByProductId(PRODUCT_ID))
                     .thenReturn(Optional.of(createTestInventoryItem(PRODUCT_ID, 2, 0, 2)));
 
@@ -387,7 +399,8 @@ class InventoryServiceTest {
         @DisplayName("throws ResourceNotFoundException for an unknown product")
         void throwsNotFoundForUnknownProduct() {
             setupTransactionOnly();
-            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RESERVED"))).thenReturn(1);
+            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RESERVED")))
+                    .thenReturn(1);
             when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> inventoryService.reserveOrder(ORDER_ID, Map.of(PRODUCT_ID, 5)))
@@ -437,7 +450,10 @@ class InventoryServiceTest {
             setupTransactionOnly();
             when(reservationRepository.claimRelease(ORDER_ID)).thenReturn(0);
             when(reservationRepository.findByOrderId(ORDER_ID))
-                    .thenReturn(Optional.of(new Reservation("res-1", ORDER_ID, ReservationStatus.RELEASED)));
+                    .thenReturn(
+                            Optional.of(
+                                    new Reservation(
+                                            "res-1", ORDER_ID, ReservationStatus.RELEASED)));
 
             assertThat(inventoryService.releaseReservation(ORDER_ID))
                     .isEqualTo(InventoryService.ReleaseOutcome.ALREADY_RELEASED);
@@ -451,7 +467,8 @@ class InventoryServiceTest {
             setupTransactionOnly();
             when(reservationRepository.claimRelease(ORDER_ID)).thenReturn(0);
             when(reservationRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
-            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RELEASED"))).thenReturn(1);
+            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RELEASED")))
+                    .thenReturn(1);
 
             assertThat(inventoryService.releaseReservation(ORDER_ID))
                     .isEqualTo(InventoryService.ReleaseOutcome.NO_RESERVATION);
@@ -460,12 +477,14 @@ class InventoryServiceTest {
         }
 
         @Test
-        @DisplayName("claims again when a reserve commits between the claim and the tombstone insert")
+        @DisplayName(
+                "claims again when a reserve commits between the claim and the tombstone insert")
         void retriesClaimWhenReserveWinsTombstoneRace() {
             setupTransactionOnly();
             when(reservationRepository.claimRelease(ORDER_ID)).thenReturn(0, 1);
             when(reservationRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
-            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RELEASED"))).thenReturn(0);
+            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RELEASED")))
+                    .thenReturn(0);
             when(reservationLineRepository.findByOrderIdOrderByProductIdAsc(ORDER_ID)).thenReturn(List.of());
 
             assertThat(inventoryService.releaseReservation(ORDER_ID))
@@ -474,12 +493,16 @@ class InventoryServiceTest {
         }
 
         @Test
-        @DisplayName("claims again when the reservation became RESERVED after the first claim attempt")
+        @DisplayName(
+                "claims again when the reservation became RESERVED after the first claim attempt")
         void retriesClaimWhenReservationAppearsReserved() {
             setupTransactionOnly();
             when(reservationRepository.claimRelease(ORDER_ID)).thenReturn(0, 1);
             when(reservationRepository.findByOrderId(ORDER_ID))
-                    .thenReturn(Optional.of(new Reservation("res-1", ORDER_ID, ReservationStatus.RESERVED)));
+                    .thenReturn(
+                            Optional.of(
+                                    new Reservation(
+                                            "res-1", ORDER_ID, ReservationStatus.RESERVED)));
             when(reservationLineRepository.findByOrderIdOrderByProductIdAsc(ORDER_ID)).thenReturn(List.of());
 
             assertThat(inventoryService.releaseReservation(ORDER_ID))
@@ -488,19 +511,22 @@ class InventoryServiceTest {
         }
 
         @Test
-        @DisplayName("gives up with a ConcurrencyFailureException when it cannot settle the reservation")
+        @DisplayName(
+                "gives up with a ConcurrencyFailureException when it cannot settle the reservation")
         void throwsConcurrencyFailureWhenUnsettled() {
             setupTransactionOnly();
             when(reservationRepository.claimRelease(ORDER_ID)).thenReturn(0);
             when(reservationRepository.findByOrderId(ORDER_ID)).thenReturn(Optional.empty());
-            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RELEASED"))).thenReturn(0);
+            when(reservationRepository.insertIfAbsent(anyString(), eq(ORDER_ID), eq("RELEASED")))
+                    .thenReturn(0);
 
             assertThatThrownBy(() -> inventoryService.releaseReservation(ORDER_ID))
                     .isInstanceOf(ConcurrencyFailureException.class);
         }
 
         @Test
-        @DisplayName("fails (rolling back the claim) when a stored line exceeds the reserved quantity")
+        @DisplayName(
+                "fails (rolling back the claim) when a stored line exceeds the reserved quantity")
         void failsWhenStoredLineExceedsReserved() {
             setupTransactionOnly();
             when(reservationRepository.claimRelease(ORDER_ID)).thenReturn(1);
@@ -514,7 +540,8 @@ class InventoryServiceTest {
         }
     }    @Test
     void retriesDatabaseContentionWithBoundedAttempts() {
-        when(transactionTemplate.execute(any())).thenThrow(new ConcurrencyFailureException("deadlock"));
+        when(transactionTemplate.execute(any()))
+                .thenThrow(new ConcurrencyFailureException("deadlock"));
         assertThatThrownBy(() -> inventoryService.reserveOrder(ORDER_ID, Map.of(PRODUCT_ID, 1)))
                 .isInstanceOf(ConcurrencyFailureException.class);
         verify(transactionTemplate, times(3)).execute(any());

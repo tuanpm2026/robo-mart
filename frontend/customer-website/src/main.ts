@@ -17,7 +17,6 @@ const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
-app.use(router)
 app.use(PrimeVue, {
   theme: {
     preset: customerTheme,
@@ -43,6 +42,9 @@ const uiStore = useUiStore()
 setUiAccessor(() => uiStore)
 
 // Initialize auth state before mounting (restore session from storage)
-authStore.initAuth().finally(() => {
+authStore.initAuth().then(async () => {
+  // Installing the router starts its first navigation, so restore auth before its guards run.
+  app.use(router)
+  await router.isReady()
   app.mount('#app')
 })

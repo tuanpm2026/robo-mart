@@ -146,12 +146,36 @@ describe('apiClient', () => {
     })
     apiClient.defaults.adapter = adapter
 
-    const result = await apiClient.get('/protected')
+    const result = await apiClient.post(
+      '/api/v1/orders',
+      { items: [] },
+      { headers: { 'Idempotency-Key': 'same-checkout' } },
+    )
 
     expect(mockRefresh).toHaveBeenCalledTimes(1)
     expect(result.data).toEqual({ ok: true })
     expect(callCount).toBe(2)
+    expect(adapter.mock.calls.map(([config]) => config.headers.get('Idempotency-Key'))).toEqual([
+      'same-checkout',
+      'same-checkout',
+    ])
   })
+
+  it.each(['/api/v1/orders', '/api/v1/cart/checkout'])(
+    'keeps recovery available after a lost %s response',
+    async (url) => {
+      const { setUiAccessor } = await import('../client')
+      const setDegradationTier = vi.fn()
+      setUiAccessor(() => ({ setDegradationTier }))
+      apiClient.defaults.adapter = vi
+        .fn()
+        .mockImplementation((config) => Promise.reject({ config, request: {} }))
+      await expect(
+        apiClient.post(url, {}, { headers: { 'Idempotency-Key': 'same-checkout' } }),
+      ).rejects.toThrow('Network error')
+      expect(setDegradationTier).not.toHaveBeenCalledWith('maintenance')
+    },
+  )
 
   it('should logout when token refresh fails on 401', async () => {
     const mockRefresh = vi.fn().mockResolvedValue(false)

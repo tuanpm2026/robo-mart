@@ -202,6 +202,14 @@ describe('OrdersPage', () => {
     expect(updateOrderStatus).toHaveBeenCalledWith(1, 'SHIPPED')
   })
 
+  it('keeps pending and failed-refund payment labels nonterminal', () => {
+    const wrapper = shallowMount(OrdersPage, { global: createGlobalConfig() })
+    const vm = wrapper.vm as any
+    expect(vm.getPaymentStatus('CANCELLATION_PENDING')).toBe('Cancellation pending')
+    expect(vm.getPaymentStatus('REFUND_FAILED')).toBe('Refund needs review')
+    expect(vm.getPaymentStatus('PENDING')).toBe('Processing')
+  })
+
   it('formats currency correctly', () => {
     const wrapper = shallowMount(OrdersPage, { global: createGlobalConfig() })
     const vm = wrapper.vm as any

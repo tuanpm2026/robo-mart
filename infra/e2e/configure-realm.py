@@ -11,7 +11,7 @@ PROJECT = "robomart-java25-e2e-resume"
 BASE = "http://127.0.0.1:18180"
 CLIENTS = {
     "robo-mart-frontend", "robo-mart-admin", "robo-mart-gateway",
-    "inventory-service", "notification-service",
+    "inventory-service", "notification-service", "checkout-saga-service",
 }
 
 
@@ -70,8 +70,11 @@ def main():
         matches = request("/admin/realms/robomart/clients?" + urllib.parse.urlencode({
             "clientId": client["clientId"],
         }), token=token)
+        if not matches and client["clientId"] == "checkout-saga-service":
+            request("/admin/realms/robomart/clients", "POST", client, token)
+            matches = request("/admin/realms/robomart/clients?clientId=checkout-saga-service", token=token)
         if len(matches) != 1:
-            raise RuntimeError("Expected one isolated realm client; no clients are created or deleted here")
+            raise RuntimeError("Expected one isolated realm client")
         path = f'/admin/realms/robomart/clients/{matches[0]["id"]}/protocol-mappers/models'
         current = [m for m in request(path, token=token) if m["name"] == desired["name"]]
         if len(current) > 1:
@@ -86,6 +89,27 @@ def main():
             updated["config"] = current[0].get("config", {}) | desired["config"]
             request(path + "/" + current[0]["id"], "PUT", updated, token)
             updates += 1
+    saga_fixture = next(c for c in fixture["clients"] if c["clientId"] == "checkout-saga-service")
+    saga_client = request("/admin/realms/robomart/clients?clientId=checkout-saga-service", token=token)[0]
+    mapper_path = f'/admin/realms/robomart/clients/{saga_client["id"]}/protocol-mappers/models'
+    desired_role = next(m for m in saga_fixture["protocolMappers"] if m["name"] == "saga-role")
+    existing_role = [m for m in request(mapper_path, token=token) if m["protocolMapper"] == "oidc-hardcoded-claim-mapper" and m.get("config", {}).get("claim.name") == "realm_access.roles"]
+    if len(existing_role) > 1:
+        raise RuntimeError("Unexpected duplicate Saga role mappers")
+    if not existing_role:
+        request(mapper_path, "POST", desired_role, token)
+    elif existing_role[0].get("config") != desired_role["config"] or existing_role[0]["name"] != desired_role["name"]:
+        request(mapper_path + "/" + existing_role[0]["id"], "PUT", existing_role[0] | desired_role, token)
+    # Startup realm imports do not update retained Keycloak data. Provision only the new fixture identity.
+    roles = request("/admin/realms/robomart/roles", token=token)
+    if not any(role["name"] == "SAGA_SERVICE" for role in roles):
+        request("/admin/realms/robomart/roles", "POST", {"name": "SAGA_SERVICE"}, token)
+    role = request("/admin/realms/robomart/roles/SAGA_SERVICE", token=token)
+    client = request("/admin/realms/robomart/clients?clientId=checkout-saga-service", token=token)[0]
+    account = request(f'/admin/realms/robomart/clients/{client["id"]}/service-account-user', token=token)
+    assigned = request(f'/admin/realms/robomart/users/{account["id"]}/role-mappings/realm', token=token)
+    if not any(value["name"] == "SAGA_SERVICE" for value in assigned):
+        request(f'/admin/realms/robomart/users/{account["id"]}/role-mappings/realm', "POST", [role], token)
     print(f"Isolated API audience mappers reconciled ({updates} updates); existing data preserved")
 
 

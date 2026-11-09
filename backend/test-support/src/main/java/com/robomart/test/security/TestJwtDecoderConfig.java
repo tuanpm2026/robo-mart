@@ -1,14 +1,14 @@
 package com.robomart.test.security;
 
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.oauth2.jwt.BadJwtException;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Test-only {@link JwtDecoder} that resolves the fixed {@link TestJwt} tokens into a Keycloak-shaped
@@ -26,17 +26,25 @@ public class TestJwtDecoderConfig {
     @Bean
     public JwtDecoder jwtDecoder() {
         return token -> {
-            List<String> roles = switch (token) {
-                case TestJwt.ADMIN_TOKEN -> List.of("ADMIN");
-                case TestJwt.CUSTOMER_TOKEN -> List.of("CUSTOMER");
-                case TestJwt.INVENTORY_TOKEN -> List.of("INVENTORY_SERVICE");
-                case TestJwt.NOTIFICATION_TOKEN -> List.of("NOTIFICATION_SERVICE");
-                default -> throw new BadJwtException("Unknown test token: " + token);
-            };
+            List<String> roles =
+                    switch (token) {
+                        case TestJwt.SAGA_TOKEN -> List.of("SAGA_SERVICE");
+                        case TestJwt.ADMIN_TOKEN -> List.of("ADMIN");
+                        case TestJwt.CUSTOMER_TOKEN -> List.of("CUSTOMER");
+                        case TestJwt.INVENTORY_TOKEN -> List.of("INVENTORY_SERVICE");
+                        case TestJwt.NOTIFICATION_TOKEN -> List.of("NOTIFICATION_SERVICE");
+                        default -> throw new BadJwtException("Unknown test token: " + token);
+                    };
             Instant now = Instant.now();
             return Jwt.withTokenValue(token)
                     .header("alg", "none")
                     .subject("test-user-" + roles.get(0).toLowerCase())
+                    .audience(List.of("robomart-api"))
+                    .claim(
+                            "azp",
+                            token.equals(TestJwt.SAGA_TOKEN)
+                                    ? "checkout-saga-service"
+                                    : "test-client")
                     .claim("realm_access", Map.of("roles", roles))
                     .issuedAt(now)
                     .expiresAt(now.plusSeconds(3600))

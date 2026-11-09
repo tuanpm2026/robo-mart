@@ -24,7 +24,7 @@ The May/June triage below is historical, not the current open-item count or exec
 - `RECON-PAGE`: still relevant to Inventory/Order summaries; Payment's summary is now paged.
 - `CHAOS-CB`: current `ServiceKillChaosIT` asserts breaker state and recovery of the same pending orders. Do not describe it as checking only order status. DLQ and true transport chaos remain separate concerns.
 - Monitoring Access/origin protection is deployed via PR #51; see [validation and recovery limitations](../test-artifacts/monitoring-access-validation-2026-11-01.md). The synchronization fix and browser integration repairs have passed local verification; see [the dated report](../test-artifacts/inventory-catalog-sync-validation-2026-11-01.md) for release scope. Do not infer a live rollout from local results.
-- Remaining browser follow-ups: persist one checkout idempotency key across HTTP retries, clear the server cart after successful checkout, and preserve protected deep links while restoring authentication on page load. Local validation observed the cart reappear after reload and an authenticated order deep link return to home; normal in-app order navigation works.
+- Browser follow-ups resolved locally on 2026-11-05: persist the original checkout key/payload across HTTP retries and reload; consume the server cart snapshot atomically/idempotently while preserving later edits; restore authentication before initial routing and retain protected deep links through OIDC. Five real Chromium/Keycloak/backend regression scenarios cover these flows and cleanup failures. See `checkout-browser-recovery-2026-11-05.json` in test artifacts for executed checks. This does not assert a demo rollout; all original story statuses remain unchanged.
 
 ## Historical triage (2026-05-07)
 

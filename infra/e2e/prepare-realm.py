@@ -6,7 +6,7 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[2]
 realm = json.loads((root / "infra/docker/keycloak/robomart-realm.json").read_text())
 # These are public isolated test fixtures, never production credentials.
-secrets = {"inventory-service": "e2e-inventory-secret", "notification-service": "e2e-notification-secret"}
+secrets = {"inventory-service": "e2e-inventory-secret", "notification-service": "e2e-notification-secret", "checkout-saga-service": "e2e-saga-secret"}
 for client in realm["clients"]:
     if client["clientId"] in secrets:
         client["secret"] = secrets[client["clientId"]]

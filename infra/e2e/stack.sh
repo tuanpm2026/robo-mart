@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PROJECT=robomart-java25-e2e-resume
 COMPOSE=(docker compose --env-file /dev/null --project-name "$PROJECT" --file "$ROOT/infra/docker/docker-compose.e2e.yml")
-SERVICES=(product-service cart-service inventory-service payment-service order-service notification-service api-gateway)
+SERVICES=(product-service cart-service inventory-service payment-service order-service checkout-saga-service notification-service api-gateway)
 
 case "${1:-}" in
   prepare)
@@ -32,6 +32,7 @@ case "${1:-}" in
     python3 "$ROOT/infra/e2e/configure-kafka.py" --enable-consumer-protocol
     # Startup imports do not update an existing realm; preserve data and reconcile only test mappers.
     python3 "$ROOT/infra/e2e/configure-realm.py"
+    python3 "$ROOT/infra/e2e/provision-saga-db.py"
     for service in "${SERVICES[@]}"; do
       "${COMPOSE[@]}" up -d --no-deps --wait --wait-timeout 480 "$service"
     done
@@ -42,15 +43,22 @@ case "${1:-}" in
     # Keep this project's data for diagnosis; never remove existing user volumes.
     "${COMPOSE[@]}" down --remove-orphans
     ;;
-  payment-stop|payment-start)
-    id="$("${COMPOSE[@]}" ps -a -q payment-service)"
+  saga-scale-two|saga-scale-one)
+    replicas=1
+    if [ "$1" = saga-scale-two ]; then replicas=2; fi
+    "${COMPOSE[@]}" up -d --no-deps --wait --wait-timeout 180 --scale "checkout-saga-service=$replicas" checkout-saga-service
+    ;;
+  payment-stop|payment-start|saga-stop|saga-start)
+    service=payment-service
+    case "$1" in saga-*) service=checkout-saga-service ;; esac
+    id="$("${COMPOSE[@]}" ps -a -q "$service")"
     test -n "$id" || { echo 'No isolated payment container found.' >&2; exit 1; }
     actual_project="$(docker inspect --format '{{index .Config.Labels "com.docker.compose.project"}}' "$id")"
     actual_service="$(docker inspect --format '{{index .Config.Labels "com.docker.compose.service"}}' "$id")"
-    test "$actual_project" = "$PROJECT" && test "$actual_service" = payment-service || {
+    test "$actual_project" = "$PROJECT" && test "$actual_service" = "$service" || {
       echo 'Container ownership check failed.' >&2; exit 1;
     }
-    if [ "$1" = payment-stop ]; then docker stop "$id"; else docker start "$id"; fi
+    if [[ "$1" = *-stop ]]; then docker stop "$id"; else docker start "$id"; fi
     ;;
   test)
     # Tokens stay in process environment; do not echo them or put them in Maven arguments.
@@ -74,5 +82,5 @@ PY
     cd "$ROOT/backend"
     ./mvnw verify -pl :e2e-tests -DskipE2ETests=false -De2e.enabled=true -Dchaos.enabled=true
     ;;
-  *) echo "Usage: $0 {prepare|build|up|ps|logs|test|down|payment-stop|payment-start}" >&2; exit 2 ;;
+  *) echo "Usage: $0 {prepare|build|up|ps|logs|test|down|payment-stop|payment-start|saga-stop|saga-start|saga-scale-two|saga-scale-one}" >&2; exit 2 ;;
 esac

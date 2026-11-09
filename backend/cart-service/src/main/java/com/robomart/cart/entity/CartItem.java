@@ -8,6 +8,7 @@ public class CartItem {
     private String productName;
     private BigDecimal price;
     private int quantity;
+    private String lineId;
 
     public CartItem() {
     }
@@ -56,5 +57,13 @@ public class CartItem {
             return BigDecimal.ZERO;
         }
         return price.multiply(BigDecimal.valueOf(quantity));
+    }
+
+    public String getLineId() {
+        return lineId;
+    }
+
+    public void setLineId(String lineId) {
+        this.lineId = lineId;
     }
 }

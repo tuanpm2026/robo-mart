@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.robomart.cart.dto.AddCartItemRequest;
 import com.robomart.cart.dto.CartResponse;
+import com.robomart.cart.dto.CompleteCheckoutRequest;
 import com.robomart.cart.dto.MergeCartRequest;
 import com.robomart.cart.dto.UpdateCartItemRequest;
 import com.robomart.cart.entity.CartKeys;
@@ -122,6 +123,19 @@ public class CartRestController {
         return ResponseEntity.ok()
                 .header(CART_ID_HEADER, cart.cartId())
                 .body(new ApiResponse<>(cart, getTraceId()));
+    }
+
+    /** Cart-only acknowledgement, scoped to the JWT subject; it never creates or charges an order. */
+    @PostMapping("/checkout")
+    public ResponseEntity<ApiResponse<CartResponse>> completeCheckout(
+            @RequestHeader(value = USER_ID_HEADER, required = false) String userId,
+            @RequestBody @Valid CompleteCheckoutRequest request) {
+        String authenticatedUserId = normalizedUserId(userId);
+        if (authenticatedUserId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        CartResponse cart = cartService.completeCheckout(CartKeys.forUser(authenticatedUserId), request);
+        return ResponseEntity.ok(new ApiResponse<>(cart, getTraceId()));
     }
 
     /**

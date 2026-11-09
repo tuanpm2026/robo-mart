@@ -76,6 +76,8 @@ jobs:
             port: 8086
           - name: notification-service
             port: 8087
+          - name: checkout-saga-service
+            port: 8091
           - name: api-gateway
             port: 8080
 

@@ -53,3 +53,9 @@ data:
   # CORS allowed origins
   CORS_CUSTOMER_ORIGIN: "https://app.tuanpm.xyz"
   CORS_ADMIN_ORIGIN: "https://admin.tuanpm.xyz"
+  GATEWAY_SERVICES_CHECKOUT_SAGA_SERVICE: "http://checkout-saga-service:8091"
+  SAGA_SERVICE_URL: "http://checkout-saga-service:8091"
+  GRPC_CLIENT_ORDER_SERVICE_ADDRESS: "static://order-service:9093"
+  SAGA_TOKEN_URL: "https://auth.tuanpm.xyz/realms/robomart/protocol/openid-connect/token"
+  # Admission stays off until the new DB, identity and compatible worker are available.
+  ROBOMART_ORDER_EXTERNAL_SAGA_ENABLED: "false"

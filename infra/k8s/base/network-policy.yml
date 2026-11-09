@@ -107,6 +107,9 @@ spec:
       ports:
         - port: 8083
           protocol: TCP
+    - from:
+        - podSelector: {matchLabels: {app: checkout-saga-service}}
+      ports: [{port: 9093, protocol: TCP}]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -134,11 +137,14 @@ spec:
       ports:
         - port: 8084
           protocol: TCP
-    # gRPC reserve/release calls from the order saga
+    # gRPC reserve/release calls from either persisted owner
     - from:
         - podSelector:
             matchLabels:
               app: order-service
+        - podSelector:
+            matchLabels:
+              app: checkout-saga-service
       ports:
         - port: 9094
           protocol: TCP
@@ -174,6 +180,22 @@ spec:
         - podSelector:
             matchLabels:
               app: order-service
+        - podSelector:
+            matchLabels:
+              app: checkout-saga-service
       ports:
         - port: 9095
           protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: allow-saga-ingress, namespace: robomart}
+spec:
+  podSelector: {matchLabels: {app: checkout-saga-service}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {app: api-gateway}}
+        - podSelector: {matchLabels: {app: notification-service}}
+        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: monitoring}}
+      ports: [{port: 8091, protocol: TCP}]

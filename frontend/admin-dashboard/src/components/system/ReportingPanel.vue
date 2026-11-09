@@ -86,6 +86,8 @@ const lineData = computed(() => {
     DELIVERED: '#16a34a',
     PENDING: '#f59e0b',
     PAYMENT_PENDING: '#f97316',
+    CANCELLATION_PENDING: '#f97316',
+    REFUND_FAILED: '#ef4444',
     CANCELLED: '#ef4444',
   }
   return {

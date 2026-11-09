@@ -9,7 +9,7 @@ const components = {
     workflow: 'ci-backend.yml',
     workflowName: 'Backend CI',
     names: ['api-gateway', 'product-service', 'cart-service', 'order-service',
-      'inventory-service', 'payment-service', 'notification-service'],
+      'inventory-service', 'payment-service', 'notification-service', 'checkout-saga-service'],
     paths: ['backend/', 'infra/docker/', 'infra/ci/', '.github/workflows/ci-backend.yml',
       '.github/workflows/cd-deploy.yml'],
   },

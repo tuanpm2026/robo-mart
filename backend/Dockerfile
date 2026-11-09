@@ -22,6 +22,7 @@ COPY order-service/pom.xml order-service/pom.xml
 COPY inventory-service/pom.xml inventory-service/pom.xml
 COPY payment-service/pom.xml payment-service/pom.xml
 COPY notification-service/pom.xml notification-service/pom.xml
+COPY checkout-saga-service/pom.xml checkout-saga-service/pom.xml
 COPY e2e-tests/pom.xml e2e-tests/pom.xml
 RUN chmod +x mvnw
 COPY build-support/src build-support/src
@@ -39,6 +40,7 @@ COPY order-service/src order-service/src
 COPY inventory-service/src inventory-service/src
 COPY payment-service/src payment-service/src
 COPY notification-service/src notification-service/src
+COPY checkout-saga-service/src checkout-saga-service/src
 COPY e2e-tests/src e2e-tests/src
 RUN --mount=type=cache,target=/root/.m2 ./mvnw -B -ntp package -DskipTests -DskipITs -DskipE2ETests
 
@@ -174,4 +176,22 @@ RUN --network=none java -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75 -XX
 EXPOSE 8087
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD curl --fail --silent http://localhost:8087/actuator/health/liveness || exit 1
+ENTRYPOINT ["java", "-XX:+UseCompactObjectHeaders", "-XX:MaxRAMPercentage=75", "-XX:AOTCache=application.aot", "-jar", "application.jar"]
+
+FROM runtime-base AS checkout-saga-service-extracted
+COPY --from=builder /workspace/checkout-saga-service/target/checkout-saga-service-0.0.1-SNAPSHOT.jar /tmp/application.jar
+RUN java -Djarmode=tools -jar /tmp/application.jar extract --layers --application-filename application.jar --destination /tmp/extracted
+
+FROM runtime-base AS checkout-saga-service
+COPY --from=checkout-saga-service-extracted --chown=1001:1001 /tmp/extracted/dependencies/ ./
+COPY --from=checkout-saga-service-extracted --chown=1001:1001 /tmp/extracted/spring-boot-loader/ ./
+COPY --from=checkout-saga-service-extracted --chown=1001:1001 /tmp/extracted/snapshot-dependencies/ ./
+COPY --from=checkout-saga-service-extracted --chown=1001:1001 /tmp/extracted/application/ ./
+# Isolated core-context training: no application scan, auto-config, migrations or external I/O.
+RUN --network=none java -XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75 -XX:AOTCacheOutput=application.aot \
+    -Dspring.context.exit=onRefresh -Dspring.config.location=optional:classpath:/aot-training-only/ \
+    -cp application.jar com.robomart.build.AotCacheTraining
+EXPOSE 8091
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl --fail --silent http://localhost:8091/actuator/health/liveness || exit 1
 ENTRYPOINT ["java", "-XX:+UseCompactObjectHeaders", "-XX:MaxRAMPercentage=75", "-XX:AOTCache=application.aot", "-jar", "application.jar"]
