@@ -32,30 +32,31 @@ images:
 - digest: sha256:212204b89ad2e42949d1b55195b12ba730514f6dd91e00054ca63be9c9fd8d93
   name: ghcr.io/robomart/admin-dashboard
   newName: ghcr.io/tuanpm2026/robomart/admin-dashboard
-- digest: sha256:7d48682a53277f3124f0c097d2a24271be5b48ccd85f0dea3410a438027a17bf
+- digest: sha256:a8ed4d34466c31908fc1fd1a5b03133d1bcdbda4a6848b12587c62b685783c62
   name: ghcr.io/robomart/api-gateway
   newName: ghcr.io/tuanpm2026/robomart/api-gateway
-- digest: sha256:672117e07689bea703e5070b526d393ef84c189d7e1b023beb94956824ba6eeb
+- digest: sha256:46af144a56958a49be87a58d592315058a1a9b5671de067d0f90629695ed1142
   name: ghcr.io/robomart/cart-service
   newName: ghcr.io/tuanpm2026/robomart/cart-service
-- name: ghcr.io/robomart/checkout-saga-service
+- digest: sha256:fbb2b7168891d8448c6da6a2336a841f38ad5555a9f0fe8ad4dd3593faeb3356
+  name: ghcr.io/robomart/checkout-saga-service
   newName: ghcr.io/tuanpm2026/robomart/checkout-saga-service
 - digest: sha256:50120c6d86277f121bd6c5f1d5a746038acf33e9661c9a8688e69482b8bcdcec
   name: ghcr.io/robomart/customer-website
   newName: ghcr.io/tuanpm2026/robomart/customer-website
-- digest: sha256:26982a5a398d2071d1c9bf8aab8ba407ea70891371724c0fa6dad0d88a6f84fe
+- digest: sha256:96dd05f7f9cdf7ec5c7fe524d832ce87fa7b32ecd00768edd8924520589143b9
   name: ghcr.io/robomart/inventory-service
   newName: ghcr.io/tuanpm2026/robomart/inventory-service
-- digest: sha256:28d7a5f152ec1d59dbac0a8a4de4ca8717b5009c34eb40b5ec0792fc7782361d
+- digest: sha256:a879f6ca94a04c1d6d815d5e72247a52d6351529a234a006114a2a0e19df95d7
   name: ghcr.io/robomart/notification-service
   newName: ghcr.io/tuanpm2026/robomart/notification-service
-- digest: sha256:d4879228cad0ac96c98a1d9a700698c4d65f2bb7d22b62accf3e13e20e98b39a
+- digest: sha256:a3f643b555f8f95ec2cef8c7d4378348d4174dd244061511ae0f48ec4cd1f3b8
   name: ghcr.io/robomart/order-service
   newName: ghcr.io/tuanpm2026/robomart/order-service
-- digest: sha256:5d5508b37a8b097bdd8894540a614fd7037e32cbaf49919c4cc448351598ffbd
+- digest: sha256:71b2ce316def14c0d496f9c5215e1b0711ef8384fb3b94fae2ec694690a97fc8
   name: ghcr.io/robomart/payment-service
   newName: ghcr.io/tuanpm2026/robomart/payment-service
-- digest: sha256:a31d6539ad4aa09b67e22185fb349217ff1b0cab5add6680d32e0cc3ff5f1e64
+- digest: sha256:328af1eb0a588a11e4292f9f0dc8c02906718b5f38615f4abfbad38cdece35d3
   name: ghcr.io/robomart/product-service
   newName: ghcr.io/tuanpm2026/robomart/product-service
 
