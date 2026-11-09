@@ -5,6 +5,7 @@ const path = require('node:path');
 const { createRequire } = require('node:module');
 const localRequire = createRequire(process.cwd() + '/package.json');
 const WebSocket = localRequire('ws');
+const outputDir = fs.mkdtempSync(path.join(os.tmpdir(), 'robomart-assessment-output-'));
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'robomart-assessment-chrome-'));
 const chrome = cp.spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', ['--headless=new', '--no-first-run', '--no-default-browser-check', '--remote-debugging-port=0', '--user-data-dir=' + profile, 'about:blank']);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -46,7 +47,7 @@ async function run() {
  const ev=async expression=>{const r=await send('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(r.exceptionDetails)throw new Error(JSON.stringify(r.exceptionDetails));return r.result.value;};
  const go=async(url,width)=>{await send('Emulation.setDeviceMetricsOverride',{width,height:900,deviceScaleFactor:1,mobile:width<500});await send('Page.navigate',{url});for(let i=0;i<50;i++){await sleep(100);if(await ev('document.querySelector("h1")?.textContent || ""'))break;}await sleep(250);};
  const metrics=()=>ev(`(()=>{const r=s=>{const e=document.querySelector(s);if(!e)return null;const b=e.getBoundingClientRect();return {x:b.x,width:b.width,height:b.height,columns:getComputedStyle(e).gridTemplateColumns}};return {path:location.pathname,viewport:innerWidth,documentWidth:document.documentElement.scrollWidth,h1:document.querySelector('h1')?.textContent,grid:r('.home__grid'),sidebar:r('.admin-sidebar'),main:r('.admin-content'),icons:[...document.querySelectorAll('.pi')].slice(0,3).map(e=>({class:e.className,font:getComputedStyle(e,':before').fontFamily,content:getComputedStyle(e,':before').content}))}})()`);
- const shot=async name=>{const s=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync('/tmp/robomart-assessment-'+name+'.png',Buffer.from(s.data,'base64'));};
+ const shot=async name=>{const s=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});fs.writeFileSync(path.join(outputDir, 'robomart-assessment-'+name+'.png'),Buffer.from(s.data,'base64'));};
  const output={browser:await send('Browser.getVersion',{},null),fixture:'All API/identity traffic intercepted; no real backend or Keycloak accessed',checks:[]};
  await go('http://127.0.0.1:15173/',1440);output.checks.push({name:'customer-desktop',...await metrics()});
  await ev(`document.querySelector('.product-card button').focus()`);
@@ -66,7 +67,7 @@ async function run() {
  await ev(`sessionStorage.setItem('oidc.user:http://localhost:8180/realms/robomart:robo-mart-frontend',${JSON.stringify(JSON.stringify(oidc(false)))})`);
  await go('http://127.0.0.1:15173/orders/1?assessment=true#details',1440);
  output.checks.push({name:'customer-stored-session-deep-link',...await metrics()});
- output.requests=requests;fs.writeFileSync('/tmp/robomart-assessment-browser.json',JSON.stringify(output,null,2));console.log(JSON.stringify(output,null,2));
+ output.requests=requests;fs.writeFileSync(path.join(outputDir, 'robomart-assessment-browser.json'),JSON.stringify(output,null,2));console.log(JSON.stringify(output,null,2));
  ws.close();
 }
 run().catch(e=>{console.error(e);process.exitCode=1}).finally(async()=>{chrome.kill();await sleep(500);fs.rmSync(profile,{recursive:true,force:true,maxRetries:5,retryDelay:100});});

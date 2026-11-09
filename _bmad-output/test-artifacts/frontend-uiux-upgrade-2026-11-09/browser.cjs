@@ -5,6 +5,7 @@ const os = require('node:os')
 const cp = require('node:child_process')
 const path = require('node:path')
 const crypto = require('node:crypto')
+const { callPage } = require('./browser-call.cjs')
 const { createRequire } = require('node:module')
 const modules = createRequire(path.join(process.cwd(), 'package.json'))
 const WebSocket = modules('ws')
@@ -30,7 +31,7 @@ const products = Array.from({ length: 8 }, (_, i) => ({
   price: 49.99, rating: 4, brand: 'Fixture Brand', stockQuantity: i === 7 ? 0 : 30,
   categoryName: 'Electronics and accessories', categoryId: 1, primaryImageUrl: image,
 }))
-const cart = { cartId: 'fixture-cart', items: products.slice(0, 2).map(p => ({ productId: p.id, productName: p.name, price: p.price, quantity: 1, subtotal: p.price })), totalItems: 2, totalPrice: 99.98 }
+const cart = { cartId: 'fixture-cart', items: products.slice(0, 2).map(p => ({ productId: p.id, productName: p.name, price: p.price, quantity: 1, subtotal: p.price, lineId: 'fixture-line-' + p.id })), totalItems: 2, totalPrice: 99.98 }
 const order = { id: 1, userId: 'customer-' + longToken, status: 'CONFIRMED', itemCount: 2, totalAmount: 99.98, createdAt: '2026-11-09T12:00:00Z', updatedAt: '2026-11-09T12:00:00Z', shippingAddress: '123 Long Avenue, Apartment 1234, San Francisco, California 94105, United States', cancellationReason: null, items: cart.items.map(i => ({ ...i, unitPrice: i.price })), statusHistory: [{ status: 'CONFIRMED', changedAt: '2026-11-09T12:00:00Z' }] }
 const summary = { ...order, items: undefined, statusHistory: undefined }
 const now = Math.floor(Date.now() / 1000)
@@ -86,22 +87,24 @@ async function run() {
   await send('Page.enable'); await send('Runtime.enable'); await send('Fetch.enable', { patterns: [{ urlPattern: '*' }] })
   await send('Page.addScriptToEvaluateOnNewDocument', { source: `window.__uiuxDocument=Math.random();if(location.port===${JSON.stringify(new URL(admin).port)})sessionStorage.setItem('oidc.user:http://localhost:8180/realms/robomart:robo-mart-admin',${JSON.stringify(JSON.stringify(user(true)))});if(location.port===${JSON.stringify(new URL(customer).port)})sessionStorage.setItem('oidc.user:http://localhost:8180/realms/robomart:robo-mart-frontend',${JSON.stringify(JSON.stringify(user(false)))});` })
   const evaluate = async expression => { const result = await send('Runtime.evaluate', { expression, awaitPromise: true, returnByValue: true }); if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails)); return result.result.value }
+  const call = (fn, ...values) => callPage(send, fn, ...values)
+  const waitFor = async (fn, values, label) => { for (let n = 0; n < 100; n++) { if (await call(fn, ...values)) return; await pause(50) } throw new Error('Timed out: ' + label) }
   const wait = async (expression, label = expression) => { for (let n = 0; n < 100; n++) { try { if (await evaluate(expression)) return } catch {} await pause(50) } throw new Error('Timed out: ' + label) }
   const resize = (width, height = 950) => send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false })
   const go = async (url, selector) => {
     const previous = await evaluate('window.__uiuxDocument')
     await send('Page.navigate', { url })
-    await wait(`window.__uiuxDocument!==${JSON.stringify(previous)} && !!document.querySelector(${JSON.stringify(selector)})`, url + ' ' + selector)
+    await waitFor((previous, selector) => window.__uiuxDocument !== previous && !!document.querySelector(selector), [previous, selector], url + ' ' + selector)
     await evaluate('document.fonts.ready.then(()=>true)')
   }
   const click = async selector => {
-    await wait(`!!document.querySelector(${JSON.stringify(selector)})`)
-    const point = await evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});if(!e)throw Error('Missing '+${JSON.stringify(selector)});e.scrollIntoView({block:'center'});const r=e.getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()`)
-    if (!await evaluate(`document.querySelector(${JSON.stringify(selector)}).contains(document.elementFromPoint(${point.x},${point.y}))`)) {
-      const hit = await evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});return {target:e.outerHTML,hit:document.elementFromPoint(${point.x},${point.y})?.outerHTML,checked:e.checked,labelControl:e.control?.outerHTML,point:${JSON.stringify(point)}}})()`)
+    await waitFor(selector => !!document.querySelector(selector), [selector], selector)
+    const point = await call(selector => { const e = document.querySelector(selector); if (!e) throw Error('Missing ' + selector); e.scrollIntoView({block:'center'}); const r = e.getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2} }, selector)
+    if (!await call((selector, point) => document.querySelector(selector).contains(document.elementFromPoint(point.x, point.y)), selector, point)) {
+      const hit = await call((selector, point) => { const e = document.querySelector(selector); return {target:e.outerHTML,hit:document.elementFromPoint(point.x,point.y)?.outerHTML,checked:e.checked,labelControl:e.control?.outerHTML,point} }, selector, point)
       report.interactions.push({name:'pointer hit-test miss',selector,phase,...hit})
       if(phase==='after') throw Error('Pointer target obscured: '+selector+' '+JSON.stringify(hit))
-      await evaluate(`document.querySelector(${JSON.stringify(selector)}).focus()`); await key('Enter')
+      await call(selector => document.querySelector(selector).focus(), selector); await key('Enter')
       report.interactions.push({name:'baseline overflow fallback',selector,method:'native focus + Enter'})
       return
     }
@@ -111,8 +114,8 @@ async function run() {
   }
   // Baseline may need keyboard activation where its overflow hides controls. After uses real pointer clicks.
   const clickText = async text => {
-    const selector = await evaluate(`(()=>{const e=[...document.querySelectorAll('button,a')].find(e=>e.textContent.trim()===${JSON.stringify(text)});if(!e)throw Error('Missing text '+${JSON.stringify(text)});e.dataset.uiuxTarget='true';return '[data-uiux-target="true"]'})()`)
-    if(phase==='before') { await evaluate(`document.querySelector(${JSON.stringify(selector)}).focus()`); await key('Enter') } else await click(selector)
+    const selector = await call(text => { const e = [...document.querySelectorAll('button,a')].find(e => e.textContent.trim() === text); if (!e) throw Error('Missing text ' + text); e.dataset.uiuxTarget = 'true'; return '[data-uiux-target="true"]' }, text)
+    if(phase==='before') { await call(selector => document.querySelector(selector).focus(), selector); await key('Enter') } else await click(selector)
     await evaluate(`document.querySelector('[data-uiux-target]')?.removeAttribute('data-uiux-target')`)
   }
   const key = async (name, shift = false) => {
@@ -121,7 +124,7 @@ async function run() {
     await send('Input.dispatchKeyEvent', { type: 'keyDown', key: name === 'Space' ? ' ' : name, code, windowsVirtualKeyCode: keyCode, modifiers: shift ? 8 : 0, ...(text ? { text } : {}) })
     await send('Input.dispatchKeyEvent', { type: 'keyUp', key: name === 'Space' ? ' ' : name, code, windowsVirtualKeyCode: keyCode, modifiers: shift ? 8 : 0 })
   }
-  const fill = async (selector, text) => { await evaluate(`(()=>{const e=document.querySelector(${JSON.stringify(selector)});e.focus();e.select()})()`); await send('Input.insertText', { text }) }
+  const fill = async (selector, text) => { await call(selector => {const e=document.querySelector(selector);e.focus();e.select()}, selector); await send('Input.insertText', { text }) }
   const metrics = () => evaluate(`(()=>{const box=s=>{const e=document.querySelector(s);if(!e)return null;const b=e.getBoundingClientRect();return {x:b.x,y:b.y,width:b.width,height:b.height,clientWidth:e.clientWidth,scrollWidth:e.scrollWidth,columns:getComputedStyle(e).gridTemplateColumns}};return {path:location.pathname,configuredWidth:screen.width,layoutWidth:innerWidth,layoutHeight:innerHeight,clientWidth:document.documentElement.clientWidth,documentWidth:document.documentElement.scrollWidth,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,homeGrid:box('.home__grid'),searchGrid:box('.search-results__grid'),card:box('.product-card'),searchInput:box('.search-bar input'),sidebar:box('.admin-sidebar'),table:box('.p-datatable-table-container'),drawer:box('[data-pc-name="drawer"]'),form:box('.ssa__form')||box('.sp__form'),active:{tag:document.activeElement?.tagName,id:document.activeElement?.id,name:document.activeElement?.getAttribute('aria-label')},icons:[...document.querySelectorAll('.pi')].slice(0,3).map(e=>({class:e.className,content:getComputedStyle(e,':before').content,font:getComputedStyle(e,':before').fontFamily})),offenders:[...document.querySelectorAll('main *')].filter(e=>e.getBoundingClientRect().right>document.documentElement.clientWidth+1&&e.getBoundingClientRect().width>0).slice(0,8).map(e=>({tag:e.tagName,class:e.className,width:e.getBoundingClientRect().width,right:e.getBoundingClientRect().right}))}})()`)
   const screenshot = async name => { await evaluate('scrollTo(0,0)'); const result = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: false }); const file = `${outputPrefix}-${name}.png`; fs.writeFileSync(path.join(outputDir, file), Buffer.from(result.data, 'base64')); return file }
   const axe = async () => { await evaluate(fs.readFileSync(modules.resolve('axe-core/axe.min.js'), 'utf8')); return evaluate(`axe.run(document,{runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21aa','wcag22aa']}}).then(r=>({violations:r.violations.map(v=>({id:v.id,impact:v.impact,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary})),helpUrl:v.helpUrl})),incomplete:r.incomplete.map(v=>({id:v.id,nodes:v.nodes.length}))}))`) }
@@ -177,7 +180,7 @@ async function run() {
         if (!pass) throw Error(name + ': ' + JSON.stringify(actual) + ' expected ' + JSON.stringify(expected))
       }
       const active = () => evaluate(`({tag:document.activeElement?.tagName,id:document.activeElement?.id,label:document.activeElement?.getAttribute('aria-label'),class:document.activeElement?.className})`)
-      const focus = selector => evaluate(`document.querySelector(${JSON.stringify(selector)}).focus()`)
+      const focus = selector => call(selector => document.querySelector(selector).focus(), selector)
       await resize(390); await go(customer + '/', '.product-card'); await settle()
       await focus('.product-card__link'); await key('Tab')
       assert('card Tab reaches separate cart button', (await active()).class.includes('product-card__add-btn'), true)
@@ -201,9 +204,9 @@ async function run() {
       assert('link Enter navigates without adding', cartPosts() - count, 1)
       await go(customer + '/search?keyword=wireless', '.product-card')
       const toggle = '.filter-sidebar button[aria-expanded]'
-      assert('mobile filters start closed', await evaluate(`document.querySelector('${toggle}').getAttribute('aria-expanded')`), 'false')
+      assert('mobile filters start closed', await call(selector => document.querySelector(selector).getAttribute('aria-expanded'), toggle), 'false')
       await focus(toggle); await key('Space')
-      assert('filter Space opens disclosure', await evaluate(`document.querySelector('${toggle}').getAttribute('aria-expanded')`), 'true')
+      assert('filter Space opens disclosure', await call(selector => document.querySelector(selector).getAttribute('aria-expanded'), toggle), 'true')
       await focus('[aria-label="Minimum price"]'); await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'ArrowRight', code: 'ArrowRight', windowsVirtualKeyCode: 39 }); await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'ArrowRight', code: 'ArrowRight', windowsVirtualKeyCode: 39 })
       await wait(`document.querySelector('[aria-label="Minimum price"]').getAttribute('aria-valuenow')==='10'`)
       await wait(`!!document.querySelector('.filter-sidebar .p-checkbox-box')`); await click('.filter-sidebar__label')
@@ -212,7 +215,7 @@ async function run() {
       await capture('customer-search-open-filters', 390)
       await focus(toggle); await key('Enter')
       const tagLabels = await evaluate(`[...document.querySelectorAll('.search-results__remove-filter')].map(e=>e.getAttribute('aria-label'))`)
-      for (const label of tagLabels) { await click(`button[aria-label=${JSON.stringify(label)}]`); await wait(`!document.querySelector('button[aria-label='+${JSON.stringify(JSON.stringify(label))}+']')`) }
+      for (const label of tagLabels) { await click(`button[aria-label=${JSON.stringify(label)}]`); await waitFor(label => ![...document.querySelectorAll('button[aria-label]')].some(button => button.getAttribute('aria-label') === label), [label], 'removed filter tag') }
       await focus(toggle); await key('Space'); await wait(`!!document.querySelector('.filter-sidebar__label')`); await click('.filter-sidebar__label')
       await wait(`document.querySelectorAll('.search-results__remove-filter').length===1`)
       const searchRequests = requests.filter(r=>r.method==='GET'&&r.path.endsWith('/products/search'))
@@ -281,7 +284,7 @@ async function run() {
       await capture('checkout-payment-rejected',390)
       await clickText('Continue to Confirm →'); await wait(`document.querySelector('.sco__place-order').getBoundingClientRect().height>0`)
       await click('.sco__place-order'); await wait(`!!document.querySelector('[role=dialog]')`); await settle()
-      state.orderStatus='PAYMENT_PENDING' 
+      state.orderStatus='PAYMENT_PENDING'
       for(const pending of held.splice(0)) await fulfill(pending.requestId,{data:{...summary,status:'PAYMENT_PENDING'},traceId:'uiux-fixture'},200,pending.sessionId)
       state.holdOrder=false
       await wait(`location.pathname.startsWith('/order-confirmation/')&&!!document.querySelector('.ocv__payment-pending')`); await settle()
