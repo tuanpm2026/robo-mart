@@ -1,17 +1,17 @@
 {
-  "source_sha": "c19afb7a51d223e568a9191c387dea18766a387c",
+  "source_sha": "7ed952a28e17f6e5ab2a5305848af8225f035cd4",
   "images": [
     {
       "name": "customer-website",
-      "sha": "c19afb7a51d223e568a9191c387dea18766a387c",
+      "sha": "7ed952a28e17f6e5ab2a5305848af8225f035cd4",
       "image": "ghcr.io/tuanpm2026/robomart/customer-website",
-      "digest": "sha256:bc2e447177f0d2c7a5cfa29b6f859fd1c8bc6c62d844bd3e2e14c1705cd26fcd"
+      "digest": "sha256:50120c6d86277f121bd6c5f1d5a746038acf33e9661c9a8688e69482b8bcdcec"
     },
     {
       "name": "admin-dashboard",
-      "sha": "c19afb7a51d223e568a9191c387dea18766a387c",
+      "sha": "7ed952a28e17f6e5ab2a5305848af8225f035cd4",
       "image": "ghcr.io/tuanpm2026/robomart/admin-dashboard",
-      "digest": "sha256:c7b421717a6dac614cfe4181998210d014544786aae2cfd3cf7045ef00145eef"
+      "digest": "sha256:212204b89ad2e42949d1b55195b12ba730514f6dd91e00054ca63be9c9fd8d93"
     }
   ]
 }
