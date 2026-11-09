@@ -178,10 +178,7 @@ class SagaStoreIT {
     @Test
     void failureAfterWorkflowInsertRollsBackAdmissionAndRedeliverySucceeds() {
         var start = event("START", 1);
-        jdbc.execute(
-                "ALTER TABLE saga_inbox ADD CONSTRAINT test_inbox_failure CHECK (request_id <> '"
-                        + id
-                        + ":START')");
+        jdbc.execute("ALTER TABLE saga_inbox ADD CONSTRAINT test_inbox_failure CHECK (false)");
         try {
             assertThatThrownBy(() -> store.accept(start))
                     .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
@@ -197,6 +194,57 @@ class SagaStoreIT {
                 .isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM saga_inbox", Integer.class))
                 .isEqualTo(1);
+    }
+
+    @Test
+    void statelessApiRejectsAmbientCredentialsAndRetainsCsrfElsewhere() {
+        var client =
+                org.springframework.web.client.RestClient.builder()
+                        .baseUrl("http://localhost:" + port)
+                        .defaultStatusHandler(status -> status.isError(), (request, response) -> {})
+                        .build();
+        for (var headers :
+                List.of(
+                        java.util.Map.<String, String>of(),
+                        java.util.Map.of(
+                                "Cookie",
+                                "access_token="
+                                        + com.robomart.test.security.TestJwt.ADMIN_TOKEN
+                                        + "; JSESSIONID=ignored"),
+                        java.util.Map.of("Authorization", "Basic YWRtaW46cGFzc3dvcmQ="))) {
+            assertThat(
+                            client.post()
+                                    .uri("/api/v1/admin/sagas/" + id + "/resume")
+                                    .headers(h -> headers.forEach(h::set))
+                                    .contentType(
+                                            org.springframework.http.MediaType.APPLICATION_JSON)
+                                    .body(java.util.Map.of("reason", "test"))
+                                    .retrieve()
+                                    .toBodilessEntity()
+                                    .getStatusCode()
+                                    .value())
+                    .isEqualTo(401);
+        }
+        assertThat(
+                        client.get()
+                                .uri("/actuator/health")
+                                .retrieve()
+                                .toBodilessEntity()
+                                .getStatusCode()
+                                .value())
+                .isIn(200, 503);
+        assertThat(
+                        client.post()
+                                .uri("/actuator/health")
+                                .header(
+                                        "Cookie",
+                                        "access_token="
+                                                + com.robomart.test.security.TestJwt.ADMIN_TOKEN)
+                                .retrieve()
+                                .toBodilessEntity()
+                                .getStatusCode()
+                                .value())
+                .isIn(401, 403);
     }
 
     @Test

@@ -37,7 +37,9 @@ public class ResourceServerSecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(csrf -> csrf.disable())
+        // The stateless, Authorization-header API is exempt; ambient browser requests elsewhere
+        // retain CSRF protection. Cookies and Basic authentication do not grant API access.
+        http.csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/**"))
                 .sessionManagement(
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(

@@ -22,6 +22,27 @@ class PaymentOperationsRbacIT {
     @LocalServerPort private int port;
 
     @Test
+    void statelessApiRejectsAmbientCredentialsAndRetainsCsrfElsewhere() {
+        var client = RestClient.builder().baseUrl("http://localhost:" + port)
+                .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { }).build();
+        for (var headers : java.util.List.of(
+                java.util.Map.<String, String>of(),
+                java.util.Map.of("Cookie", "access_token=" + TestJwt.ADMIN_TOKEN + "; JSESSIONID=ignored"),
+                java.util.Map.of("Authorization", "Basic YWRtaW46cGFzc3dvcmQ="))) {
+            assertThat(client.post().uri("/api/v1/admin/payments/reconciliation-summary")
+                    .headers(h -> headers.forEach(h::set))
+                    .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                    .body("{}").retrieve().toBodilessEntity().getStatusCode())
+                    .isEqualTo(HttpStatus.UNAUTHORIZED);
+        }
+        assertThat(client.get().uri("/actuator/health").retrieve().toBodilessEntity().getStatusCode())
+                .isIn(HttpStatus.OK, HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(client.post().uri("/actuator/health").header("Cookie", "access_token=" + TestJwt.ADMIN_TOKEN)
+                .retrieve().toBodilessEntity().getStatusCode())
+                .isIn(HttpStatus.UNAUTHORIZED, HttpStatus.FORBIDDEN);
+    }
+
+    @Test
     void notificationCanReadReconciliationAndAuditButCannotReadPaymentDetailsOrWrite() {
         var client = RestClient.builder().baseUrl("http://localhost:" + port)
                 .defaultHeader("Authorization", "Bearer " + TestJwt.NOTIFICATION_TOKEN)

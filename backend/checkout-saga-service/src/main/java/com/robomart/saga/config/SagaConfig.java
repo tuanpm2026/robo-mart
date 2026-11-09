@@ -47,7 +47,9 @@ public class SagaConfig {
             throws Exception {
         var converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(roles);
-        return http.csrf(c -> c.disable())
+        // The operator API uses explicit Bearer headers and no ambient browser authentication.
+        // Ambient browser requests outside this API boundary retain CSRF protection.
+        return http.csrf(c -> c.ignoringRequestMatchers("/api/v1/**"))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(
                         a ->
