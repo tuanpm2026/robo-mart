@@ -1,0 +1,115 @@
+Use case: infographic-diagram.
+Create ONE polished developer learning poster for the existing Robo-Mart system. This is a NEW image, distinct from the previous nontechnical overview. Audience: a software developer learning the real runtime architecture and failure semantics. Vietnamese explanatory labels, exact English code/protocol identifiers. A large high-resolution landscape 3:2 canvas, ideally 3072 x 2048 or higher native resolution, with crisp readable text and enough space to zoom. Style: disciplined engineering documentation, white/off-white background, navy text, blue #2563EB wordmark, restrained protocol colors, thin grid, rounded panels, exact arrow direction, small official tech logos. No people illustrations or decorative mascots. Prioritize diagram accuracy and legibility over ornament. Do not use microtext. Keep all listed text short and accurate.
+
+HEADER:
+Blue wordmark "RoboMart", title "KIẾN TRÚC DÀNH CHO DEV".
+Small subtitle "Runtime • Checkout Saga • Dữ liệu & sự kiện".
+Compact legend: blue solid "HTTP / REST"; orange solid "gRPC"; teal dashed "Kafka / Avro"; purple "STOMP".
+Three numbered content panels with distinct teaching objectives. Panel 01 spans the upper HALF of the poster. Panel 02 bottom-left and panel 03 bottom-right share the next area. A narrow operations footer finishes the poster. Use hierarchy and breathing room so this remains a readable architecture study image rather than a wall of prose.
+
+PANEL 01 — "01  RUNTIME & DATA OWNERSHIP".
+At top two small app cards:
+"Customer Website" and "Admin Dashboard"; shared small "Vue • Pinia • Axios" with Vue logo.
+Separate side card "Keycloak" with key logo and "OIDC • JWT • realm: robomart".
+Both apps authenticate with Keycloak via light OIDC connectors; both send blue HTTP arrows to "API Gateway :8080".
+Gateway subtitle "JWT • RBAC • Rate limit • Routing".
+One short trust-boundary note "X-User-Id lấy từ JWT sub". Gateway routes HTTP, never translates to gRPC.
+The gateway points to a container labelled "Spring Boot services" with Spring logo, representing all six services.
+
+SIX service cards in a 3-column by 2-row grid, arranged:
+row 1 Product / Order / Cart,
+row 2 Inventory / Payment / Notification.
+Each service contains or is directly attached to its OWN database glyph. Keep names and short storage notes clearly separated, preserving ownership; never collapse the five PostgreSQL databases into a single shared cylinder.
+Exact card text:
+"Product :8081"
+"Catalog • REST / GraphQL"
+Database label "product_db"; small storage chips "Redis cache", "Elasticsearch", "S3 images".
+"Order :8083"
+"OrderSagaOrchestrator"
+Database label "order_db"; small note "Orders • Saga audit • Outbox".
+"Cart :8082"
+"Guest cart • Merge"
+Redis logo with "Redis cart • TTL 24h"; no PostgreSQL for Cart.
+"Inventory :8084"
+"Reservation • Atomic SQL"
+Database label "inventory_db"; small note "Stock • Reservation • Outbox".
+"Payment :8086"
+"Idempotency • Charge / Refund"
+Database label "payment_db"; small note "Payment • Intent • Keys"; visible small badge "Mock provider".
+"Notification :8087"
+"Notification • DLQ • Admin feed"
+Database label "notification_db"; small note "Logs • Dedup".
+
+Exactly TWO orange direct arrows from Order:
+Order → Inventory labelled "gRPC :9094 | reserve / release".
+Order → Payment labelled "gRPC :9095 | charge / refund".
+Do not draw a third gRPC arrow or direct gRPC path from Gateway. Leave sufficient gutters for both arrow labels.
+Avoid crossing HTTP lookup arrows; instead add one slim textual route annotation inside the panel: "HTTP lookup: Cart, Order → Product".
+A separate slim bus under the service grid: Kafka logo and "Kafka + Schema Registry • Avro". Dashed connection to the service container shows asynchronous messaging; detailed topic routes are in panel 03. Never route checkout RPC calls through the Kafka bus.
+A short purple path annotation: "Notification → Gateway /ws → Admin | STOMP + JWT".
+Small implementation note "gRPC nội bộ hiện chưa bật TLS".
+Ensure the bus and the annotation do not overlap database labels.
+
+PANEL 02 — "02  CHECKOUT SAGA".
+Use an ordered vertical flow or compact annotated sequence, with arrows and numbered steps. Order is clearly the orchestrator. Render these exact short steps, with monospaced endpoints/state names:
+"1  POST /api/v1/orders + JWT"
+"2  Order → Product: lấy giá từ server"
+"3  TX: PENDING + items snapshot"
+"4  gRPC reserve → Inventory"
+"5  gRPC processPayment → Payment"
+"6  TX: CONFIRMED + history + outbox"
+A small success marker "201 Created".
+Then THREE compact orange/red failure branches, visually separated from the success path:
+"Declined → release → CANCELLED"
+"Timeout / chưa rõ → PAYMENT_PENDING"
+"Refund lỗi → REFUND_FAILED"
+Under timeout, exact short note "Retry cùng key, giữ reservation".
+Under failure branches, note "CANCELLED sau khi bù thành công".
+Small response note "202: PAYMENT_PENDING / INVENTORY_RELEASING".
+A clearly readable amber implementation gap callout "FE chưa gửi Idempotency-Key".
+Make clear that server order creation supports this header, not that idempotency is absent everywhere. Do not depict timeout as automatic cancellation or stock release. No global transaction.
+
+PANEL 03 — "03  OUTBOX & EVENTUAL CONSISTENCY".
+Three short mini-diagrams with exact labels, each on its own clean row:
+A. "Transactional Outbox":
+local transaction box "State + Outbox" → "COMMIT" → "Claim + token" → "Kafka ACK" → "Published".
+Under it: "Crash trước Published → replay; consumer cần idempotent".
+The state and outbox writes are in ONE owning database transaction; publishing is outside that transaction. Fencing token prevents stale ACK updates.
+
+B. "Đồng bộ tồn kho":
+"Inventory" → topic chip "inventory.stock.updated" → "Product stock projection".
+Then continue on the next aligned row:
+"Product outbox" → topic chip "product.product.updated" → "ES / Redis / Cart".
+Short note spanning this mini-diagram "Chỉ nhận inventoryVersion mới hơn • Snapshot tuyệt đối".
+Visually connect the two rows at Product: applying the snapshot and writing Product outbox share a local transaction. Inventory owns the authoritative stock. Product holds an eventually consistent projection. Catalog stock never authorizes checkout.
+A small secondary line "product.product.created → Inventory: khởi tạo stock = 0".
+
+C. "Order lifecycle":
+topic chip "order.order.status-changed" branches to "Inventory commit / release" and "Notification".
+Small delivery note "At-least-once • Dedup / version fence • Retry + DLQ".
+Do not claim that every consumer deduplicates in the same way or that Outbox guarantees exactly once.
+
+BOTTOM OPERATIONS STRIP:
+Heading "DEPLOY & OBSERVE".
+A small pipeline "GitHub Actions → GHCR digest → Kustomize → Argo CD → Kubernetes".
+Alongside, "Metrics / Logs / Traces → Prometheus / Loki / Tempo / Grafana".
+Tiny source-code anchors may be integrated as panel footnotes only if readable:
+panel 01 "RouteConfig.java",
+panel 02 "OrderSagaOrchestrator.java",
+panel 03 "InventoryStockConsumer.java • OutboxDispatcher.java".
+
+CRITICAL ACCURACY AND LAYOUT:
+Exactly six business services plus Gateway, two frontend apps, Keycloak separate. Five PostgreSQL databases plus Redis-backed Cart. Show direct Order orchestration, protocol distinction, authoritative Inventory and version-fenced Product projection, local transaction boundaries, payment mock and current frontend idempotency integration gap. No AI service, Config Server, service discovery registry, real payment processor, service mesh, mTLS badge, shared cross-service DB, event sourcing claim, or Kafka-based Saga orchestration.
+Use the exact topic names, code names, port numbers and short labels given. Do not invent API endpoints. Vue and Spring logos and a small number of data/platform logos are welcome, but no logo wall. Avoid spaghetti arrows, icons covering text, missing Vietnamese accents, duplicated services, cropped edges, unreadably tiny text, excessive color, and watermarks. Make the page feel like a useful engineering map, not a marketing slide.
+
+Refinement using the built-in ImageGen tool:
+Use case: precise-object-edit.
+Edit this exact developer architecture poster with ONLY the following connection corrections. Lock the full layout, all text, typography, wordmark, panels 02 and 03, footer, all six cards and database names.
+
+1. REMOVE the teal dashed vertical bidirectional connector directly underneath the Payment card (approximately x=1080, between the Payment card and the Kafka bus). Payment has no active direct Kafka integration in the current system. Do not replace it with another connector through Payment. Keep the Inventory-to-Kafka and Notification-to-Kafka dashed links. Add a small but readable note in the empty RIGHT part of the Kafka bus: "Events: Product • Cart • Order • Inventory • Notification". If needed use two short lines within the bus, without overlapping its current title. Payment must not be listed.
+
+2. REMOVE the extraneous gray dashed vertical connector BETWEEN the Customer Website and Admin Dashboard cards at the far-left x=60 position. These two independent browser apps do not call each other. Keep the legitimate dashed OIDC paths from the apps to Keycloak and both blue HTTP arrows into Gateway.
+
+3. REMOVE the LONG purple STOMP line that currently leaves the right side of Gateway, bends down across the lower runtime panel, then runs through the Kafka bus and points into Notification. Remove ALL arrowheads and line segments of this long purple path, including the little purple vertical arrow directly below Notification. It visually implies STOMP goes through Kafka and reverses its direction. Instead retain ONLY a compact purple textual route pill beneath the bus: "Notification → Gateway /ws → Admin | STOMP + JWT". Do not draw a physical path for STOMP in the runtime map. Keep the purple STOMP legend sample in the header unchanged.
+
+All orange gRPC arrows MUST remain exactly as they are: Order to Inventory and Order to Payment. All blue routing arrows and OIDC paths MUST remain. Do not add services, change numbers, alter any database, modify checkout outcomes, modify topic names, or change the size/crop. Maintain crisp text and full resolution.

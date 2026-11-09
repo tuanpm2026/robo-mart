@@ -1,0 +1,45 @@
+Use case: infographic-diagram.
+Create ONE finished high-resolution landscape architecture infographic for the real Robo-Mart e-commerce project. Audience: Vietnamese nontechnical readers. It must be visually delightful, immediately understandable, technically faithful at high level, and legible when shared as a single image. Aim for a large 16:10 landscape canvas with crisp Vietnamese typography, generous whitespace, a strong reading hierarchy, rounded white cards, subtle shadows, flat vector-style illustrations, blue (#2563EB) accents and restrained teal/purple secondary colors on an off-white background. This is an illustrated overview, not a dense engineering wiring diagram.
+
+BRANDING: Prominent text wordmark "RoboMart" in bold blue sans-serif, matching the project's actual text-only logo. Do not invent a robot mascot or copy the Vue logo as the store logo. Title "KIẾN TRÚC TỔNG THỂ". Subtitle "Hệ thống thương mại điện tử". Use recognisable, accurately drawn small official technology logos next to their technology names (Vue, Spring, Keycloak, Kafka, PostgreSQL, Redis, Elasticsearch, Amazon S3, Docker, Kubernetes, GitHub Actions, Argo CD, Grafana). Use friendly large functional icons for business functions. The logos are secondary to the Vietnamese business descriptions. No logo cloud or gratuitous branding.
+
+LAYOUT: Carefully aligned horizontal bands with plenty of breathing room; read top to bottom. Each band has a short Vietnamese heading. Keep all literal text short and render Vietnamese accents accurately. No code, ports, versions, URLs, API paths or database table names. No long paragraphs.
+
+TOP BAND, heading "NGƯỜI SỬ DỤNG": two browser/window cards with human icons: "Khách hàng" with subtitle "Mua sắm • Theo dõi đơn", and "Quản trị viên" with subtitle "Quản lý • Theo dõi cửa hàng". A small Vue logo and "Vue" may be a shared label for these web apps.
+
+SECOND BAND: Both website cards send solid blue arrows into a clearly dominant central gateway card, label "Cổng tiếp nhận", small English name "API Gateway", subtitle "Chuyển yêu cầu đến đúng bộ phận". An adjacent connected security card has a key/shield icon, Keycloak logo, exact labels "Đăng nhập & phân quyền" and "Keycloak". Security protects access to the apps/gateway, not an extra sequential step after payment.
+
+MIDDLE BAND, heading "CÁC BỘ PHẬN XỬ LÝ", small Spring logo: a clear container with exactly SIX equal-sized business cards in a 3 columns x 2 rows grid. Arrange row 1 as Product / Order / Cart and row 2 as Inventory / Payment / Notification so the Order connections stay short.
+1. "Sản phẩm", small "Product", subtitle "Danh mục • Giá • Tìm kiếm", box/package icon.
+2. "Đơn hàng", small "Order", subtitle "Điều phối việc mua hàng", clipboard icon; gently emphasize this central coordinating card.
+3. "Giỏ hàng", small "Cart", subtitle "Lưu các món đã chọn", shopping cart icon.
+4. "Kho hàng", small "Inventory", subtitle "Giữ hàng • Cập nhật tồn", warehouse icon.
+5. "Thanh toán", small "Payment", subtitle "Thu tiền • Hoàn tiền", smaller note "Hiện dùng mô phỏng", payment-card icon; do not show Stripe, PayPal, bank or real payment-provider logos.
+6. "Thông báo", small "Notification", subtitle "Kết quả đơn • Cảnh báo", notification bell/envelope icon.
+One clean solid arrow goes from the gateway into the processing container; it represents routing to these services, not only Order. Within the container, two direct solid arrows go from Order to Inventory and from Order to Payment; use short labels "Giữ hàng" and "Thanh toán" if space allows. They must be visibly direct, NOT routed through Kafka. Do not connect all six as a sequential chain. Notification can have a fine dashed return path along the OUTSIDE of the layout to the administrator card, labelled "Cập nhật quản trị", only if it remains clean and readable.
+
+NEXT BAND: slim purple/teal event bus with Kafka logo. Exact large label "Kênh sự kiện nền", small "Kafka", subtitle "Đồng bộ dữ liệu • Chuyển thông báo". A small number of dashed bidirectional arrows connect this bus to the processing container, indicating background messaging across Product, Cart, Order, Inventory and Notification. Inventory ownership and background synchronization of catalog stock are part of this system. Do NOT depict Kafka as the orchestrator between Order and Payment or Order and Inventory.
+
+DATA BAND, heading "NƠI LƯU DỮ LIỆU": four compact cards with readable icons/technology logos:
+- "Dữ liệu nghiệp vụ" / "PostgreSQL" / "Mỗi bộ phận có dữ liệu riêng"
+- "Giỏ hàng & bộ nhớ nhanh" / "Redis"
+- "Tìm kiếm nhanh" / "Elasticsearch"
+- "Ảnh sản phẩm" / "S3"
+Connect the processing container to the storage band with one light neutral connector; the event bus must be visually separate from this storage connector, not an obligatory step before database access. This band is a summary of storage roles, not a claim that every service uses every database.
+
+BOTTOM FOUNDATION, heading "TRIỂN KHAI & VẬN HÀNH": one quiet foundation strip with three grouped concepts: "Đóng gói & chạy hệ thống" with Docker and Kubernetes logos; "Tự động triển khai" with GitHub Actions and Argo CD logos; "Giám sát hoạt động" with Grafana logo. This supports the whole platform, not a customer-facing step.
+
+A small clear legend uses just two arrow examples: solid blue "Xử lý trực tiếp"; dashed teal "Cập nhật nền". Keep it away from the cards and make it legible.
+
+ACCURACY CONSTRAINTS: precisely two frontend apps, exactly six business-service cards plus API Gateway, Keycloak separate for identity, database ownership shown, Kafka background events, direct Order coordination of Inventory and Payment, four distinct storage roles, deployment/monitoring as foundation. No AI engine, robots delivering products, shipping service, recommendation service, external payment processor, mobile app, cloud vendor deployment claim, or invented subsystem. Never use random filler text. Preserve all short Vietnamese labels exactly. Avoid spaghetti arrows, tiny labels, dark backgrounds, gradients that hurt contrast, dense badges, duplicate cards, clipping and watermarks.
+
+Refinement using the built-in ImageGen tool:
+Use case: precise-object-edit. Edit the supplied RoboMart architecture infographic with ONLY these three small readability/connector corrections, keeping the complete composition, exact layout, palette, technology logos, illustrations, all six business cards and every other label unchanged.
+
+1. In the upper customer user card (the card to the LEFT of "Quản trị viên"), repair the corrupted heading. Replace it with the exact clear Vietnamese text "Khách hàng" in the same bold dark-blue font and at the same heading position. Remove any tiny shopping illustration, orange mark, overlapping letter or decorative mark interfering with that heading. Keep the customer illustration, Vue logo and subtitle "Mua sắm • Theo dõi đơn" intact. The heading must be fully readable with correct Vietnamese accents, no overlap.
+
+2. Simplify the solid arrows from the "Đơn hàng" card: retain exactly ONE diagonal arrow from Order to the "Kho hàng" card, labelled "Giữ hàng"; retain exactly ONE vertical arrow from Order to the "Thanh toán" card, labelled "Thanh toán" beside that vertical arrow without overlapping the card border. REMOVE the extra downward-right diagonal blue arrow and its duplicated payment label. There should be precisely two arrows exiting Order toward these two cards, not three.
+
+3. On the exterior dashed teal notification return path between the "Thông báo" card and the upper administrator card, keep ONLY the arrowhead at the administrator end. The path must start at Notification with no arrowhead there, then end at "Quản trị viên". Preserve the label "Cập nhật quản trị" and its clean exterior routing.
+
+All other content is locked. Keep the wordmark "RoboMart", the title "KIẾN TRÚC TỔNG THỂ", storage cards, event bus, footer and clear white background unchanged. Do not add any content, logos, text or extra connectors. Maintain crisp text and full canvas dimensions.
