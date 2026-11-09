@@ -1,0 +1,26 @@
+
+> customer-website@0.0.0 test:unit
+> vitest --run
+
+
+ RUN  v4.1.9 /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/customer-website
+
+
+ Test Files  32 passed (32)
+      Tests  286 passed (286)
+   Start at  20:54:34
+   Duration  3.52s (transform 3.42s, setup 0ms, import 9.80s, tests 5.83s, environment 16.97s)
+
+
+> admin-dashboard@0.0.0 test:unit
+> vitest --run
+
+
+ RUN  v4.1.9 /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/admin-dashboard
+
+
+ Test Files  20 passed (20)
+      Tests  94 passed (94)
+   Start at  20:54:37
+   Duration  2.10s (transform 2.36s, setup 0ms, import 5.66s, tests 3.59s, environment 9.58s)
+

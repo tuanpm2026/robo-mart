@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import DataTable from 'primevue/datatable'
@@ -23,6 +23,7 @@ const confirm = useConfirm()
 
 const products = ref<AdminProductListItem[]>([])
 const isLoading = ref(true)
+const loadError = ref(false)
 const selectedRows = ref<AdminProductListItem[]>([])
 const filters = ref({ name: { value: null, matchMode: 'contains' } })
 const showForm = ref(false)
@@ -38,9 +39,12 @@ const isDeleting = ref(false)
 
 async function fetchProducts() {
   isLoading.value = true
+  loadError.value = false
   try {
     const response = await listProducts(0, 100)
     products.value = response.data
+  } catch {
+    loadError.value = true
   } finally {
     isLoading.value = false
   }
@@ -62,14 +66,22 @@ async function onFormSaved() {
   await fetchProducts()
 }
 
-function startCellEdit(row: AdminProductListItem, field: 'price') {
+async function startCellEdit(row: AdminProductListItem, field: 'price') {
   editingCell.value = { id: row.id, field, value: row[field] }
+  await nextTick()
+  document.getElementById(`product-price-${row.id}`)?.focus()
+}
+
+async function returnToPriceAction(id: number) {
+  await nextTick()
+  document.getElementById(`edit-price-${id}`)?.focus()
 }
 
 async function saveCellEdit(row: AdminProductListItem) {
   if (!editingCell.value) return
   const cell = editingCell.value
   editingCell.value = null
+  returnToPriceAction(row.id)
 
   const payload: UpdateProductPayload = {
     name: row.name,
@@ -97,7 +109,9 @@ async function saveCellEdit(row: AdminProductListItem) {
 }
 
 function cancelCellEdit() {
+  const id = editingCell.value?.id
   editingCell.value = null
+  if (id !== undefined) returnToPriceAction(id)
 }
 
 function confirmDelete(row: AdminProductListItem) {
@@ -168,9 +182,13 @@ async function executeBulkDelete(toDelete: typeof selectedRows.value) {
 <template>
   <div class="products-page">
     <!-- Page Header -->
-    <div class="flex items-center justify-between mb-4">
+    <div class="page-heading flex items-center justify-between mb-4">
       <h1 class="text-xl font-semibold text-gray-900">Products</h1>
       <Button label="Add Product" icon="pi pi-plus" @click="openCreate" />
+    </div>
+
+    <div v-if="loadError" role="alert" class="mb-4 p-3 bg-red-50 text-red-700 rounded">
+      Could not load products. <Button label="Retry" text @click="fetchProducts" />
     </div>
 
     <!-- Bulk Action Toolbar -->
@@ -192,6 +210,10 @@ async function executeBulkDelete(toDelete: typeof selectedRows.value) {
 
     <!-- Products DataTable -->
     <DataTable
+      :table-style="{ minWidth: '64rem' }"
+      :pt="{
+        tableContainer: { tabindex: 0, role: 'region', 'aria-label': 'Scrollable products table' },
+      }"
       :value="products"
       :loading="isLoading"
       v-model:selection="selectedRows"
@@ -236,13 +258,14 @@ async function executeBulkDelete(toDelete: typeof selectedRows.value) {
             v-model="filterModel.value"
             type="text"
             placeholder="Search name"
+            aria-label="Filter products by name"
             class="p-inputtext p-component w-full text-sm"
             @input="filterCallback()"
           />
         </template>
         <template #body="{ data }">
           <span class="font-medium text-gray-900">{{ data.name }}</span>
-          <div class="text-xs text-gray-400">{{ data.sku }}</div>
+          <div class="text-xs text-gray-600">{{ data.sku }}</div>
         </template>
       </Column>
 
@@ -254,17 +277,22 @@ async function executeBulkDelete(toDelete: typeof selectedRows.value) {
 
       <Column field="price" header="Price" sortable style="width: 140px">
         <template #body="{ data }">
-          <span
+          <button
+            type="button"
             v-if="!editingCell || editingCell.id !== data.id || editingCell.field !== 'price'"
             class="cursor-pointer hover:text-primary-700 font-mono"
-            title="Click to edit price"
+            title="Edit price"
+            :id="`edit-price-${data.id}`"
+            :aria-label="`Edit price for ${data.name}`"
             @click="startCellEdit(data, 'price')"
           >
             ${{ Number(data.price).toFixed(2) }}
-          </span>
+          </button>
           <InputNumber
             v-else
             :model-value="editingCell.value"
+            :inputId="`product-price-${data.id}`"
+            :aria-label="`Price for ${data.name}`"
             mode="currency"
             currency="USD"
             :min="0.01"
@@ -290,7 +318,14 @@ async function executeBulkDelete(toDelete: typeof selectedRows.value) {
         </template>
       </Column>
 
-      <Column header="Actions" style="width: 120px">
+      <Column
+        header="Actions"
+        frozen
+        align-frozen="right"
+        header-class="row-actions"
+        body-class="row-actions"
+        style="width: 120px"
+      >
         <template #body="{ data }">
           <div class="flex gap-1">
             <Button
@@ -299,6 +334,7 @@ async function executeBulkDelete(toDelete: typeof selectedRows.value) {
               rounded
               size="small"
               title="Edit"
+              :aria-label="`Edit ${data.name}`"
               @click="openEdit(data)"
             />
             <Button
@@ -308,6 +344,7 @@ async function executeBulkDelete(toDelete: typeof selectedRows.value) {
               size="small"
               severity="danger"
               title="Delete"
+              :aria-label="`Delete ${data.name}`"
               @click="confirmDelete(data)"
             />
           </div>
@@ -327,5 +364,32 @@ async function executeBulkDelete(toDelete: typeof selectedRows.value) {
 <style scoped>
 .products-page {
   padding: 0;
+}
+
+.page-heading {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.page-heading :deep(.p-multiselect) {
+  max-width: 100%;
+}
+:deep(.p-datatable) {
+  max-width: 100%;
+  min-width: 0;
+}
+:deep(.p-datatable-table-container) {
+  overflow-x: auto;
+  max-width: 100%;
+}
+:deep(td) {
+  overflow-wrap: anywhere;
+}
+
+:deep(.row-actions) {
+  position: sticky;
+  right: 0;
+  background: var(--color-gray-50);
+  z-index: 1;
+  box-shadow: -2px 0 4px rgb(0 0 0 / 8%);
 }
 </style>

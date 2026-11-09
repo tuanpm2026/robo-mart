@@ -1,0 +1,6 @@
+after: captured width 360
+after: captured width 390
+after: captured width 768
+after: captured width 1024
+after: captured width 1440
+after: 77 screen/width observations, 51 interaction observations

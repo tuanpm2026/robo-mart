@@ -57,7 +57,7 @@ const store = useWebSocketStore()
 }
 
 .ws-status-label--error {
-  color: #ef4444;
+  color: #b91c1c;
 }
 
 @keyframes pulse {

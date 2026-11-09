@@ -1,0 +1,14 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "test:unit",
+    "--workspace=customer-website",
+    "--",
+    "--run",
+    "src/components/product/__tests__/FilterSidebar.spec.ts"
+  ],
+  "cwd": "frontend",
+  "exit_code": 1,
+  "timestamp_utc": "2026-11-09T13:51:12.667133+00:00"
+}

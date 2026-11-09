@@ -1,0 +1,6 @@
+before: captured width 360
+before: captured width 390
+before: captured width 768
+before: captured width 1024
+before: captured width 1440
+before: 61 screen/width observations, 2 interaction observations

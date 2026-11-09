@@ -1,0 +1,104 @@
+
+> customer-website@0.0.0 test:unit
+> vitest --run src/views/__tests__/SearchResultsView.filters.spec.ts
+
+
+ RUN  v4.1.9 /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/customer-website
+
+ ❯ src/views/__tests__/SearchResultsView.filters.spec.ts (8 tests | 4 failed) 663ms
+     × does not revive 'brand' after its tag is removed and another control changes 93ms
+     × does not revive 'minPrice' after its tag is removed and another control changes 67ms
+     × does not revive 'maxPrice' after its tag is removed and another control changes 75ms
+     × does not revive 'minRating' after its tag is removed and another control changes 60ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/views/__tests__/SearchResultsView.filters.spec.ts > SearchResultsView complete filter snapshots > does not revive 'brand' after its tag is removed and another control changes
+AssertionError: expected { brand: 'Logitech', …(6) } to not have property "brand"
+
+- Expected:
+undefined
+
++ Received:
+"Logitech"
+
+ ❯ src/views/__tests__/SearchResultsView.filters.spec.ts:170:31
+    168|     else sidebar.findComponent(Rating).vm.$emit('update:modelValue', 3)
+    169|     await flushPromises()
+    170|     expect(lastRequest()).not.toHaveProperty(key)
+       |                               ^
+    171|     expect(lastRequest()?.keyword).toBe('mouse')
+    172|     if (key !== 'brand') expect(lastRequest()?.brand).toBe('Logitech')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/views/__tests__/SearchResultsView.filters.spec.ts > SearchResultsView complete filter snapshots > does not revive 'minPrice' after its tag is removed and another control changes
+AssertionError: expected { brand: 'Logitech', …(6) } to not have property "minPrice"
+
+- Expected:
+undefined
+
++ Received:
+10
+
+ ❯ src/views/__tests__/SearchResultsView.filters.spec.ts:170:31
+    168|     else sidebar.findComponent(Rating).vm.$emit('update:modelValue', 3)
+    169|     await flushPromises()
+    170|     expect(lastRequest()).not.toHaveProperty(key)
+       |                               ^
+    171|     expect(lastRequest()?.keyword).toBe('mouse')
+    172|     if (key !== 'brand') expect(lastRequest()?.brand).toBe('Logitech')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/views/__tests__/SearchResultsView.filters.spec.ts > SearchResultsView complete filter snapshots > does not revive 'maxPrice' after its tag is removed and another control changes
+AssertionError: expected { brand: 'Logitech', …(6) } to not have property "maxPrice"
+
+- Expected:
+undefined
+
++ Received:
+200
+
+ ❯ src/views/__tests__/SearchResultsView.filters.spec.ts:170:31
+    168|     else sidebar.findComponent(Rating).vm.$emit('update:modelValue', 3)
+    169|     await flushPromises()
+    170|     expect(lastRequest()).not.toHaveProperty(key)
+       |                               ^
+    171|     expect(lastRequest()?.keyword).toBe('mouse')
+    172|     if (key !== 'brand') expect(lastRequest()?.brand).toBe('Logitech')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/views/__tests__/SearchResultsView.filters.spec.ts > SearchResultsView complete filter snapshots > does not revive 'minRating' after its tag is removed and another control changes
+AssertionError: expected { brand: 'Logitech', …(6) } to not have property "minRating"
+
+- Expected:
+undefined
+
++ Received:
+4
+
+ ❯ src/views/__tests__/SearchResultsView.filters.spec.ts:170:31
+    168|     else sidebar.findComponent(Rating).vm.$emit('update:modelValue', 3)
+    169|     await flushPromises()
+    170|     expect(lastRequest()).not.toHaveProperty(key)
+       |                               ^
+    171|     expect(lastRequest()?.keyword).toBe('mouse')
+    172|     if (key !== 'brand') expect(lastRequest()?.brand).toBe('Logitech')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 4 passed (8)
+   Start at  16:35:10
+   Duration  1.62s (transform 232ms, setup 0ms, import 419ms, tests 663ms, environment 473ms)
+
+npm error Lifecycle script `test:unit` failed with error:
+npm error code 1
+npm error path /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/customer-website
+npm error workspace customer-website@0.0.0
+npm error location /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/customer-website
+npm error command failed
+npm error command sh -c vitest --run src/views/__tests__/SearchResultsView.filters.spec.ts

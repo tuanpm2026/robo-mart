@@ -1,0 +1,70 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import { flushPromises, shallowMount } from '@vue/test-utils'
+import SearchResultsView from '@/views/SearchResultsView.vue'
+import { useCartStore } from '../useCartStore'
+import { useProductStore } from '../useProductStore'
+import { addToCart } from '@/api/cartApi'
+import { searchProducts } from '@/api/productApi'
+import type { PagedResponse, ProductListItem } from '@/types/product'
+
+vi.mock('vue-router', () => ({ useRoute: () => ({ query: { keyword: 'fixture' } }), useRouter: () => ({ push: vi.fn() }) }))
+vi.mock('@/api/cartApi', () => ({ getCart: vi.fn(), addToCart: vi.fn(), updateQuantity: vi.fn(), removeItem: vi.fn(), mergeCart: vi.fn() }))
+vi.mock('@/api/client', () => ({ clearAnonymousIdCache: vi.fn() }))
+vi.mock('@/api/productApi', () => ({ getProducts: vi.fn(), getProduct: vi.fn(), searchProducts: vi.fn() }))
+
+function result(id: number): PagedResponse<ProductListItem> {
+  return {
+    data: [{ id, sku: String(id), name: String(id), price: 10, rating: 4, brand: 'Fixture', stockQuantity: 10, categoryName: 'Fixture', primaryImageUrl: '/fixture.png' }],
+    pagination: { page: 0, size: 20, totalElements: 1, totalPages: 1 }, traceId: 'self-review',
+  }
+}
+
+describe('Independent assessment regression probes — expected to fail on baseline', () => {
+  beforeEach(() => { setActivePinia(createPinia()); vi.resetAllMocks() })
+
+  it('F08: rejected add of an existing cart item restores the prior quantity and subtotal', async () => {
+    const cart = useCartStore()
+    cart.items = [{ productId: 1, productName: 'Fixture', price: 10, quantity: 1, subtotal: 10 }]
+    vi.mocked(addToCart).mockRejectedValueOnce(new Error('Rejected by API'))
+    await expect(cart.addItem({ productId: 1, productName: 'Fixture', price: 10, quantity: 1 })).rejects.toThrow('Rejected by API')
+    expect({ quantity: cart.items[0]!.quantity, subtotal: cart.items[0]!.subtotal }).toEqual({ quantity: 1, subtotal: 10 })
+  })
+
+  it('F11: a late result from an older search cannot overwrite the latest search', async () => {
+    const store = useProductStore()
+    let finishOlder!: (value: PagedResponse<ProductListItem>) => void
+    let finishLatest!: (value: PagedResponse<ProductListItem>) => void
+    vi.mocked(searchProducts)
+      .mockReturnValueOnce(new Promise((resolve) => { finishOlder = resolve }))
+      .mockReturnValueOnce(new Promise((resolve) => { finishLatest = resolve }))
+    const older = store.fetchSearchResults({ keyword: 'older' })
+    const latest = store.fetchSearchResults({ keyword: 'latest' })
+    finishLatest(result(2))
+    await latest
+    expect(store.searchResults[0]!.id).toBe(2)
+    finishOlder(result(1))
+    await older
+    expect(store.filters.keyword).toBe('latest')
+    expect(store.searchResults[0]!.id).toBe(2)
+  })
+
+  it('F11: unchecking the last brand removes it from the next search request', async () => {
+    vi.mocked(searchProducts).mockResolvedValue(result(1))
+    const wrapper = shallowMount(SearchResultsView, { global: { plugins: [createPinia()] } })
+    try {
+      await flushPromises()
+      const sidebar = wrapper.findComponent({ name: 'FilterSidebar' })
+      expect(sidebar.exists()).toBe(true)
+      sidebar.vm.$emit('filter', { brand: 'Fixture' })
+      await flushPromises()
+      expect(vi.mocked(searchProducts).mock.lastCall?.[0].brand).toBe('Fixture')
+      sidebar.vm.$emit('filter', {})
+      await flushPromises()
+      expect(vi.mocked(searchProducts).mock.lastCall?.[0].brand).toBeUndefined()
+    } finally {
+      wrapper.unmount()
+    }
+  })
+
+})

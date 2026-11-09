@@ -1,0 +1,16 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "test:unit",
+    "--workspace=customer-website",
+    "--",
+    "--run",
+    "src/views/__tests__/SearchResultsView.filters.spec.ts",
+    "src/components/product/__tests__/FilterSidebar.spec.ts",
+    "src/stores/__tests__/useProductStore.search.spec.ts"
+  ],
+  "cwd": "frontend",
+  "exit_code": 0,
+  "timestamp_utc": "2026-11-09T13:54:33.644380+00:00"
+}

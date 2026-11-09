@@ -1,0 +1,15 @@
+{
+  "command": [
+    "../node_modules/.bin/eslint",
+    "src/stores/useCartStore.ts",
+    "src/stores/useProductStore.ts",
+    "src/views/SearchResultsView.vue",
+    "src/components/product/FilterSidebar.vue",
+    "src/stores/__tests__/useCartStore.spec.ts",
+    "src/stores/__tests__/useProductStore.search.spec.ts",
+    "src/views/__tests__/SearchResultsView.filters.spec.ts"
+  ],
+  "cwd": "frontend/customer-website",
+  "exit_code": 0,
+  "timestamp_utc": "2026-11-09T09:36:07.806509+00:00"
+}

@@ -119,3 +119,9 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Keep the focus ring visible when PrimeVue's button reset overrides the base outline. */
+button.p-button:focus-visible {
+  outline: 2px solid var(--color-primary-700);
+  outline-offset: 3px;
+}

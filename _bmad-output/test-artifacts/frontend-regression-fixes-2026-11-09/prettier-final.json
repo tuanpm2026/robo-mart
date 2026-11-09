@@ -1,0 +1,16 @@
+{
+  "command": [
+    "../node_modules/.bin/prettier",
+    "--check",
+    "src/stores/useCartStore.ts",
+    "src/stores/useProductStore.ts",
+    "src/views/SearchResultsView.vue",
+    "src/components/product/FilterSidebar.vue",
+    "src/stores/__tests__/useCartStore.spec.ts",
+    "src/stores/__tests__/useProductStore.search.spec.ts",
+    "src/views/__tests__/SearchResultsView.filters.spec.ts"
+  ],
+  "cwd": "frontend/customer-website",
+  "exit_code": 1,
+  "timestamp_utc": "2026-11-09T09:38:30.779733+00:00"
+}

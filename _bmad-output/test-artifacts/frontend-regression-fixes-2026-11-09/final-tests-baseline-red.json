@@ -1,0 +1,29 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "test:unit",
+    "--workspace=customer-website",
+    "--",
+    "--run",
+    "src/stores/__tests__/useCartStore.spec.ts",
+    "src/stores/__tests__/useProductStore.search.spec.ts",
+    "src/views/__tests__/SearchResultsView.filters.spec.ts"
+  ],
+  "cwd": "isolated temporary frontend copy",
+  "exit_code": 1,
+  "baseline_commit": "4ec50bbaa04933c43a37066f88c293e056c24012",
+  "baseline_source_files": [
+    "src/stores/useCartStore.ts",
+    "src/stores/useProductStore.ts",
+    "src/views/SearchResultsView.vue",
+    "src/components/product/FilterSidebar.vue"
+  ],
+  "test_sha256": {
+    "src/stores/__tests__/useCartStore.spec.ts": "22aee7bbfc22a4e46668d019cfe0beaddfb325a29ede074c239326c26bb8a98c",
+    "src/stores/__tests__/useProductStore.search.spec.ts": "149c259b27fafa55a717f816aaa84064a670775c8bef069c0b9a499d314610f3",
+    "src/views/__tests__/SearchResultsView.filters.spec.ts": "057b2b61ba2f731df374ee06bcd76f2ede7d4cc500f5b338f270780bbea0a2ee"
+  },
+  "method": "Final tests/config copied; four production files read from frozen Git commit; installed locked dependencies reused; no source swaps in either checkout",
+  "timestamp_utc": "2026-11-09T09:39:07.660170+00:00"
+}

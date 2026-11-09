@@ -1,0 +1,44 @@
+
+> admin-dashboard@0.0.0 test:unit
+> vitest --run src/__tests__/AdminLayout.test.ts src/__tests__/NavigationAccessibility.test.ts src/__tests__/SlideOverPanel.test.ts src/__tests__/OrdersPage.test.ts src/__tests__/ProductsPage.test.ts src/__tests__/ProductFormSlideOver.test.ts
+
+
+ RUN  v4.1.9 /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/admin-dashboard
+
+ ❯ src/__tests__/NavigationAccessibility.test.ts (3 tests | 1 failed) 135ms
+     × restores a detail drawer trigger after close without focusing a removed element 9ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/__tests__/NavigationAccessibility.test.ts > Administration navigation access > restores a detail drawer trigger after close without focusing a removed element
+AssertionError: expected undefined to be 'Order #42' // Object.is equality
+
+- Expected:
+"Order #42"
+
++ Received:
+undefined
+
+ ❯ src/__tests__/NavigationAccessibility.test.ts:68:45
+     66|     await wrapper.setProps({ visible: true })
+     67|     const drawer = wrapper.findComponent(Drawer)
+     68|     expect(drawer.attributes('aria-label')).toBe('Order #42')
+       |                                             ^
+     69|     document.body.focus()
+     70|     await wrapper.setProps({ visible: false })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 5 passed (6)
+      Tests  1 failed | 29 passed (30)
+   Start at  20:32:03
+   Duration  1.05s (transform 1.37s, setup 0ms, import 2.43s, tests 1.14s, environment 1.67s)
+
+npm error Lifecycle script `test:unit` failed with error:
+npm error code 1
+npm error path /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/admin-dashboard
+npm error workspace admin-dashboard@0.0.0
+npm error location /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/admin-dashboard
+npm error command failed
+npm error command sh -c vitest --run src/__tests__/AdminLayout.test.ts src/__tests__/NavigationAccessibility.test.ts src/__tests__/SlideOverPanel.test.ts src/__tests__/OrdersPage.test.ts src/__tests__/ProductsPage.test.ts src/__tests__/ProductFormSlideOver.test.ts

@@ -1,0 +1,905 @@
+{
+  "authoritative_receipts": [
+    "filter-focus-targeted-green.json",
+    "targeted-detail-final.json",
+    "targeted-admin-price-retry.json",
+    "final-unit-verified.json",
+    "final-type-verified.json",
+    "final-build-verified.json",
+    "eslint-verified.json",
+    "oxlint-verified.json",
+    "format-verified.json",
+    "final-shared-eslint.json",
+    "before-browser-settled.json",
+    "browser-completion-verified.json",
+    "interaction-verified-run.json",
+    "contrast-verified-run.json",
+    "contrast-baseline-settled-run.json"
+  ],
+  "expected_red": [
+    "filter-resize-red.json",
+    "filter-request-focus-red.json"
+  ],
+  "all_receipts": {
+    "full-unit-final.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspaces",
+        "--if-present",
+        "--",
+        "--run"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:49:31.895126+00:00"
+    },
+    "final-type-verified.json": {
+      "command": [
+        "npm",
+        "run",
+        "type-check",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:54:39.768830+00:00"
+    },
+    "final-unit-verified.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspaces",
+        "--if-present",
+        "--",
+        "--run"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:54:39.977933+00:00"
+    },
+    "before-browser-attempt2.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "before"
+      ],
+      "cwd": "frontend",
+      "exit_code": 1,
+      "timestamp_utc": "2026-11-09T13:27:02.076682+00:00"
+    },
+    "ui-build-fifth.json": {
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 1,
+      "timestamp_utc": "2026-11-09T13:41:14.727565+00:00"
+    },
+    "eslint-final.json": {
+      "command": [
+        "python3",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/check-changed.py",
+        "eslint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:45:25.132137+00:00"
+    },
+    "format-verified.json": {
+      "command": [
+        "python3",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/check-changed.py",
+        "prettier"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:55:29.433756+00:00"
+    },
+    "targeted-detail-final.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspace=customer-website",
+        "--",
+        "--run",
+        "src/views/__tests__/ProductDetailView.spec.ts",
+        "src/components/checkout/ProcessingAccessibility.spec.ts"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:49:24.166401+00:00"
+    },
+    "after-browser-final.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:50:19.127933+00:00"
+    },
+    "contrast-after-settled-run.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:54:57.216218+00:00"
+    },
+    "filter-focus-targeted-green.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspace=customer-website",
+        "--",
+        "--run",
+        "src/views/__tests__/SearchResultsView.filters.spec.ts",
+        "src/components/product/__tests__/FilterSidebar.spec.ts",
+        "src/stores/__tests__/useProductStore.search.spec.ts"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:54:33.644380+00:00"
+    },
+    "after-browser-seventh.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": 1,
+      "timestamp_utc": "2026-11-09T13:46:16.048042+00:00"
+    },
+    "targeted-ui-final-admin.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspace=admin-dashboard",
+        "--",
+        "--run",
+        "src/__tests__/NavigationAccessibility.test.ts",
+        "src/__tests__/ProductsPage.test.ts",
+        "src/__tests__/OrdersPage.test.ts",
+        "src/__tests__/ProductFormSlideOver.test.ts",
+        "src/__tests__/SlideOverPanel.test.ts",
+        "src/__tests__/AdminLayout.test.ts"
+      ],
+      "cwd": "frontend",
+      "exit_code": 1,
+      "timestamp_utc": "2026-11-09T13:40:36.271581+00:00"
+    },
+    "after-browser-fifth.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": 1,
+      "timestamp_utc": "2026-11-09T13:43:41.631366+00:00"
+    },
+    "contrast-before-run.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:50:57.897530+00:00"
+    },
+    "final-oxlint.json": {
+      "command": [
+        "python3",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/check-changed.py",
+        "oxlint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:53:25.004913+00:00"
+    },
+    "interaction-verified-run.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:56:14.097582+00:00"
+    },
+    "oxlint-after-review.json": {
+      "command": [
+        "python3",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/check-changed.py",
+        "oxlint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:49:46.090958+00:00"
+    },
+    "targeted-ui-final-customer.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspace=customer-website",
+        "--",
+        "--run",
+        "src/components/product/__tests__/ProductCard.spec.ts",
+        "src/components/product/__tests__/FilterSidebar.spec.ts",
+        "src/views/__tests__/SearchResultsView.filters.spec.ts",
+        "src/components/checkout/CheckoutAccessibility.spec.ts",
+        "src/views/__tests__/CheckoutStepper.spec.ts",
+        "src/views/__tests__/OrderConfirmationView.spec.ts"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:40:35.950466+00:00"
+    },
+    "contrast-after-run.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:52:34.644644+00:00"
+    },
+    "after-browser-sixth.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": 1,
+      "timestamp_utc": "2026-11-09T13:45:34.993282+00:00"
+    },
+    "filter-resize-green.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspace=customer-website",
+        "--",
+        "--run",
+        "src/components/product/__tests__/FilterSidebar.spec.ts"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:52:08.945965+00:00"
+    },
+    "filter-resize-red.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspace=customer-website",
+        "--",
+        "--run",
+        "src/components/product/__tests__/FilterSidebar.spec.ts"
+      ],
+      "cwd": "frontend",
+      "exit_code": 1,
+      "timestamp_utc": "2026-11-09T13:51:12.667133+00:00"
+    },
+    "final-build-verified.json": {
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:54:44.114231+00:00"
+    },
+    "ui-type-initial-correct-cwd.json": {
+      "command": [
+        "npm",
+        "run",
+        "type-check",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:30:27.546979+00:00"
+    },
+    "ui-build-seventh.json": {
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:45:00.268262+00:00"
+    },
+    "ui-build-sixth.json": {
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:42:44.848683+00:00"
+    },
+    "ui-type-initial.json": {
+      "command": [
+        "npm",
+        "run",
+        "type-check",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": ".",
+      "exit_code": 254,
+      "timestamp_utc": "2026-11-09T13:30:20.151001+00:00"
+    },
+    "ui-build-second.json": {
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:32:38.839818+00:00"
+    },
+    "oxlint-first.json": {
+      "command": [
+        "python3",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/check-changed.py",
+        "oxlint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:42:09.775194+00:00"
+    },
+    "targeted-admin-second.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspace=admin-dashboard",
+        "--",
+        "--run",
+        "src/__tests__/NavigationAccessibility.test.ts",
+        "src/__tests__/AdminLayout.test.ts",
+        "src/__tests__/SlideOverPanel.test.ts",
+        "src/__tests__/ProductFormSlideOver.test.ts",
+        "src/__tests__/OrdersPage.test.ts",
+        "src/__tests__/ProductsPage.test.ts"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:32:42.553255+00:00"
+    },
+    "build-completion-corrected.json": {
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:52:56.534068+00:00"
+    },
+    "before-browser-settled.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "before"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:39:41.643443+00:00"
+    },
+    "after-browser-eighth.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:47:04.134197+00:00"
+    },
+    "full-type-final.json": {
+      "command": [
+        "npm",
+        "run",
+        "type-check",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:45:26.414417+00:00"
+    },
+    "after-browser-fourth.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": 1,
+      "timestamp_utc": "2026-11-09T13:41:51.744058+00:00"
+    },
+    "prettier-final.json": {
+      "command": [
+        "python3",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/check-changed.py",
+        "prettier"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:45:25.161762+00:00"
+    },
+    "unit-completion.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspaces",
+        "--if-present",
+        "--",
+        "--run"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:52:15.312834+00:00"
+    },
+    "reconstruct-baseline.json": {
+      "command": [
+        "python3",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/reconstruct-baseline.py"
+      ],
+      "cwd": "frontend",
+      "exit_code": 2,
+      "timestamp_utc": "2026-11-09T13:36:40.934813+00:00"
+    },
+    "after-browser-second.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": 1,
+      "timestamp_utc": "2026-11-09T13:37:09.246772+00:00"
+    },
+    "targeted-admin-price-retry.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspace=admin-dashboard",
+        "--",
+        "--run",
+        "src/__tests__/ProductsPage.test.ts"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:41:12.749103+00:00"
+    },
+    "ui-build-initial.json": {
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 1,
+      "timestamp_utc": "2026-11-09T13:32:08.526591+00:00"
+    },
+    "eslint-shared.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/eslint-shared.mjs"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:42:55.345773+00:00"
+    },
+    "oxlint-verified.json": {
+      "command": [
+        "python3",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/check-changed.py",
+        "oxlint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:55:29.618378+00:00"
+    },
+    "filter-request-focus-red.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspace=customer-website",
+        "--",
+        "--run",
+        "src/views/__tests__/SearchResultsView.filters.spec.ts"
+      ],
+      "cwd": "frontend",
+      "exit_code": 1,
+      "timestamp_utc": "2026-11-09T13:54:15.088526+00:00"
+    },
+    "targeted-customer-initial.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspace=customer-website",
+        "--",
+        "--run",
+        "src/components/product/__tests__/ProductCard.spec.ts",
+        "src/components/product/__tests__/FilterSidebar.spec.ts",
+        "src/views/__tests__/SearchResultsView.filters.spec.ts",
+        "src/components/checkout/CheckoutAccessibility.spec.ts"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:31:59.361101+00:00"
+    },
+    "targeted-admin-initial.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspace=admin-dashboard",
+        "--",
+        "--run",
+        "src/__tests__/AdminLayout.test.ts",
+        "src/__tests__/NavigationAccessibility.test.ts",
+        "src/__tests__/SlideOverPanel.test.ts",
+        "src/__tests__/OrdersPage.test.ts",
+        "src/__tests__/ProductsPage.test.ts",
+        "src/__tests__/ProductFormSlideOver.test.ts"
+      ],
+      "cwd": "frontend",
+      "exit_code": 1,
+      "timestamp_utc": "2026-11-09T13:32:04.503270+00:00"
+    },
+    "contrast-verified-run.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:55:27.545554+00:00"
+    },
+    "before-browser-attempt6.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "before"
+      ],
+      "cwd": "frontend",
+      "exit_code": 1,
+      "timestamp_utc": "2026-11-09T13:30:14.953902+00:00"
+    },
+    "ui-build-fourth.json": {
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:38:18.147792+00:00"
+    },
+    "prettier-after-review.json": {
+      "command": [
+        "python3",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/check-changed.py",
+        "prettier"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:49:45.895626+00:00"
+    },
+    "before-browser-attempt7.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "before"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:30:57.853057+00:00"
+    },
+    "full-type-after-review.json": {
+      "command": [
+        "npm",
+        "run",
+        "type-check",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:49:43.258078+00:00"
+    },
+    "build-completion.json": {
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 1,
+      "timestamp_utc": "2026-11-09T13:52:15.982066+00:00"
+    },
+    "contrast-before-keyboard-run.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:51:40.712058+00:00"
+    },
+    "eslint-verified.json": {
+      "command": [
+        "python3",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/check-changed.py",
+        "eslint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:55:28.600292+00:00"
+    },
+    "final-format.json": {
+      "command": [
+        "python3",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/check-changed.py",
+        "prettier"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:53:24.801790+00:00"
+    },
+    "full-build-final.json": {
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:49:32.386161+00:00"
+    },
+    "type-completion.json": {
+      "command": [
+        "npm",
+        "run",
+        "type-check",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:52:52.112788+00:00"
+    },
+    "oxlint-final.json": {
+      "command": [
+        "python3",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/check-changed.py",
+        "oxlint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:46:16.314401+00:00"
+    },
+    "browser-completion.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": 1,
+      "timestamp_utc": "2026-11-09T13:53:03.346256+00:00"
+    },
+    "eslint-first.json": {
+      "command": [
+        "python3",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/check-changed.py",
+        "eslint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 1,
+      "timestamp_utc": "2026-11-09T13:42:10.243729+00:00"
+    },
+    "reconstruct-baseline-second.json": {
+      "command": [
+        "python3",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/reconstruct-baseline.py"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:36:55.573456+00:00"
+    },
+    "browser-completion-verified.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:55:37.581922+00:00"
+    },
+    "full-unit-first.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspaces",
+        "--if-present",
+        "--",
+        "--run"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:44:59.208292+00:00"
+    },
+    "after-browser-third.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": -15,
+      "timestamp_utc": "2026-11-09T13:40:06.146349+00:00"
+    },
+    "contrast-baseline-settled-run.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "before"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:57:43.849695+00:00"
+    },
+    "eslint-after-review.json": {
+      "command": [
+        "python3",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/check-changed.py",
+        "eslint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:49:45.023954+00:00"
+    },
+    "targeted-customer-second.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspace=customer-website",
+        "--",
+        "--run",
+        "src/components/product/__tests__/ProductCard.spec.ts",
+        "src/components/product/__tests__/FilterSidebar.spec.ts",
+        "src/views/__tests__/SearchResultsView.filters.spec.ts",
+        "src/components/checkout/CheckoutAccessibility.spec.ts",
+        "src/views/__tests__/OrderConfirmationView.spec.ts"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:35:58.247742+00:00"
+    },
+    "final-lint.json": {
+      "command": [
+        "python3",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/check-changed.py",
+        "eslint"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:53:23.966002+00:00"
+    },
+    "after-browser-first.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+        "after"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:32:56.755047+00:00"
+    },
+    "targeted-stepper.json": {
+      "command": [
+        "npm",
+        "run",
+        "test:unit",
+        "--workspace=customer-website",
+        "--",
+        "--run",
+        "src/views/__tests__/CheckoutStepper.spec.ts"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:36:25.461707+00:00"
+    },
+    "ui-build-third.json": {
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:35:59.576017+00:00"
+    },
+    "before-build.json": {
+      "command": [
+        "npm",
+        "run",
+        "build",
+        "--workspaces",
+        "--if-present"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:22:25.418330+00:00"
+    },
+    "final-shared-eslint.json": {
+      "command": [
+        "node",
+        "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/eslint-shared.mjs"
+      ],
+      "cwd": "frontend",
+      "exit_code": 0,
+      "timestamp_utc": "2026-11-09T13:53:25.465292+00:00"
+    }
+  }
+}

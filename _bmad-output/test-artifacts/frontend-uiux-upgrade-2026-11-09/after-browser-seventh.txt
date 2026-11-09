@@ -1,0 +1,15 @@
+/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs:280
+    report.finalDiagnostics = await evaluate('({url:location.href,text:document.body.innerText.slice(-3000),active:document.activeElement?.outerHTML,shipping:[...document.querySelectorAll('.ssa input')].map(e=>({id:e.id,value:e.value,invalid:e.getAttribute('aria-invalid')}))})').catch(e=>e.message)
+                                                                                                                                                                                              ^^^
+
+SyntaxError: missing ) after argument list
+    at wrapSafe (node:internal/modules/cjs/loader:1861:18)
+    at Module._compile (node:internal/modules/cjs/loader:1903:20)
+    at Object..js (node:internal/modules/cjs/loader:2060:10)
+    at Module.load (node:internal/modules/cjs/loader:1651:32)
+    at Module._load (node:internal/modules/cjs/loader:1443:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47
+
+Node.js v24.21.0

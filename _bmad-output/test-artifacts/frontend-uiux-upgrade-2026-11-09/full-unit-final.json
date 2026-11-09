@@ -1,0 +1,14 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "test:unit",
+    "--workspaces",
+    "--if-present",
+    "--",
+    "--run"
+  ],
+  "cwd": "frontend",
+  "exit_code": 0,
+  "timestamp_utc": "2026-11-09T13:49:31.895126+00:00"
+}

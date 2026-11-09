@@ -1,0 +1,1 @@
+{"foreground":"rgb(14, 165, 233)","background":"rgb(255, 255, 255)","focusOutline":"rgb(14, 165, 233)","focusOutlineWidth":"1px","focusOutlineOffset":"2px","focusVisible":true,"boxShadow":"none","border":"rgba(0, 0, 0, 0)","borderWidth":"1px","buttonLabel":null,"iconRatio":2.771412229141218,"focusRatio":2.771412229141218}

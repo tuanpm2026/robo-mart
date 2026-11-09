@@ -1,0 +1,9 @@
+{
+  "command": [
+    "python3",
+    "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/reconstruct-baseline.py"
+  ],
+  "cwd": "frontend",
+  "exit_code": 0,
+  "timestamp_utc": "2026-11-09T13:36:55.573456+00:00"
+}

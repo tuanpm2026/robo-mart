@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useForm, useField } from 'vee-validate'
 import { object, string } from 'yup'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
+import FormErrorSummary from './FormErrorSummary.vue'
 import { useCheckoutStore } from '@/stores/useCheckoutStore'
 import type { PaymentFormData } from '@/types/checkout'
 
@@ -36,7 +37,9 @@ const schema = object({
     .matches(/^\d{3,4}$/, 'Enter a valid CVV'),
 })
 
-const { handleSubmit } = useForm<PaymentFormData>({
+const submitted = ref(false)
+const errorSummary = ref<InstanceType<typeof FormErrorSummary> | null>(null)
+const { handleSubmit, errors } = useForm<PaymentFormData>({
   validationSchema: schema,
   validateOnMount: false,
   initialValues: checkoutStore.paymentData ?? {
@@ -79,13 +82,21 @@ function onExpiryInput(event: Event) {
   expiry.value = val
 }
 
-const onSubmit = handleSubmit((values) => {
-  checkoutStore.setPaymentData(values)
-  emit('continue')
-})
+const onSubmit = handleSubmit(
+  (values) => {
+    checkoutStore.setPaymentData(values)
+    emit('continue')
+  },
+  () => {
+    submitted.value = true
+    errorSummary.value?.focus()
+  },
+)
 
 const paymentError = computed(() =>
-  checkoutStore.error?.type === 'PAYMENT_FAILED' ? checkoutStore.error.message : null,
+  checkoutStore.error?.type === 'PAYMENT_FAILED'
+    ? "Payment couldn't be processed. Check your orders for the latest status before retrying."
+    : null,
 )
 </script>
 
@@ -99,24 +110,34 @@ const paymentError = computed(() =>
 
     <p class="sp__notice">This is a demo checkout. No real payment is processed.</p>
 
+    <FormErrorSummary ref="errorSummary" :errors="submitted ? errors : {}" />
     <form class="sp__form" novalidate @submit.prevent="onSubmit">
       <div class="sp__field">
         <label for="cardholderName" class="sp__label">Cardholder Name</label>
         <InputText
           id="cardholderName"
+          autocomplete="cc-name"
+          :aria-invalid="!!cardholderNameError"
+          :aria-describedby="cardholderNameError ? 'cardholderName-error' : undefined"
           v-model="cardholderName"
           placeholder="Jane Doe"
           :class="{ 'p-invalid': cardholderNameError }"
           class="sp__input"
           @blur="blurCardholderName"
         />
-        <small v-if="cardholderNameError" class="p-error">{{ cardholderNameError }}</small>
+        <small v-if="cardholderNameError" id="cardholderName-error" class="field-error">{{
+          cardholderNameError
+        }}</small>
       </div>
 
       <div class="sp__field">
         <label for="cardNumber" class="sp__label">Card Number</label>
         <InputText
           id="cardNumber"
+          autocomplete="cc-number"
+          :aria-invalid="!!cardNumberError"
+          :aria-describedby="cardNumberError ? 'cardNumber-error' : undefined"
+          inputmode="numeric"
           :value="formattedCardNumber"
           placeholder="1234 5678 9012 3456"
           maxlength="19"
@@ -124,7 +145,9 @@ const paymentError = computed(() =>
           class="sp__input sp__card-number"
           @input="onCardNumberInput"
         />
-        <small v-if="cardNumberError" class="p-error">{{ cardNumberError }}</small>
+        <small v-if="cardNumberError" id="cardNumber-error" class="field-error">{{
+          cardNumberError
+        }}</small>
         <small class="sp__hint">Use 4242 4242 4242 4242 for a successful demo payment</small>
       </div>
 
@@ -133,6 +156,10 @@ const paymentError = computed(() =>
           <label for="expiry" class="sp__label">Expiry Date</label>
           <InputText
             id="expiry"
+            autocomplete="cc-exp"
+            :aria-invalid="!!expiryError"
+            :aria-describedby="expiryError ? 'expiry-error' : undefined"
+            inputmode="numeric"
             :value="expiry"
             placeholder="MM/YY"
             maxlength="5"
@@ -140,13 +167,17 @@ const paymentError = computed(() =>
             class="sp__input"
             @input="onExpiryInput"
           />
-          <small v-if="expiryError" class="p-error">{{ expiryError }}</small>
+          <small v-if="expiryError" id="expiry-error" class="field-error">{{ expiryError }}</small>
         </div>
 
         <div class="sp__field">
           <label for="cvv" class="sp__label">CVV</label>
           <InputText
             id="cvv"
+            autocomplete="cc-csc"
+            :aria-invalid="!!cvvError"
+            :aria-describedby="cvvError ? 'cvv-error' : undefined"
+            inputmode="numeric"
             v-model="cvv"
             placeholder="123"
             maxlength="4"
@@ -154,7 +185,7 @@ const paymentError = computed(() =>
             :class="{ 'p-invalid': cvvError }"
             class="sp__input"
           />
-          <small v-if="cvvError" class="p-error">{{ cvvError }}</small>
+          <small v-if="cvvError" id="cvv-error" class="field-error">{{ cvvError }}</small>
         </div>
       </div>
 
@@ -216,12 +247,33 @@ const paymentError = computed(() =>
 }
 .sp__hint {
   font-size: 11px;
-  color: var(--color-gray-400, #9ca3af);
+  color: var(--color-gray-600, #4b5563);
 }
 .sp__actions {
   display: flex;
   justify-content: space-between;
   padding-top: 8px;
   gap: 12px;
+}
+.field-error {
+  color: #b91c1c;
+  font-size: 14px;
+}
+.sp__field {
+  min-width: 0;
+}
+.sp__actions {
+  flex-wrap: wrap;
+}
+@media (max-width: 480px) {
+  .sp__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sp__actions > * {
+    width: 100%;
+  }
+  .sp__input {
+    font-size: 16px;
+  }
 }
 </style>

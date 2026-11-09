@@ -181,4 +181,60 @@ describe('ProductsPage', () => {
     const vm = wrapper.vm as any
     expect(vm.isLoading).toBe(true)
   })
+  it('names actual row actions and focuses inline price editing then returns on Escape', async () => {
+    vi.mocked(listProducts).mockResolvedValue({
+      data: mockProducts,
+      pagination: { page: 0, size: 100, totalElements: 3, totalPages: 1 },
+      traceId: 'test',
+    })
+    const config = createGlobalConfig()
+    const wrapper = mount(ProductsPage, {
+      attachTo: document.body,
+      global: {
+        ...config,
+        stubs: {
+          ...config.stubs,
+          DataTable: false,
+          Column: false,
+          Button: false,
+          InputNumber: false,
+          Tag: false,
+          Select: true,
+        },
+      },
+    })
+    await flushPromises()
+    expect(wrapper.find('button[aria-label="Edit Product A"]').exists()).toBe(true)
+    expect(wrapper.find('button[aria-label="Delete Product A"]').exists()).toBe(true)
+    const action = wrapper.get('button[aria-label="Edit price for Product A"]')
+    await action.trigger('click')
+    await flushPromises()
+    const input = wrapper.get('input[aria-label="Price for Product A"]')
+    expect(document.activeElement).toBe(input.element)
+    await input.trigger('keydown', { key: 'Escape' })
+    await flushPromises()
+    expect(document.activeElement).toBe(wrapper.get('#edit-price-1').element)
+    wrapper.unmount()
+  })
+
+  it('announces product loading failure and retries through a real button', async () => {
+    vi.mocked(listProducts)
+      .mockRejectedValueOnce(new Error('fixture unavailable'))
+      .mockResolvedValueOnce({
+        data: mockProducts,
+        pagination: { page: 0, size: 100, totalElements: 3, totalPages: 1 },
+        traceId: 'test',
+      })
+    const config = createGlobalConfig()
+    const wrapper = mount(ProductsPage, {
+      global: { ...config, stubs: { ...config.stubs, Button: false } },
+    })
+    await flushPromises()
+    expect(wrapper.get('[role="alert"]').text()).toContain('Could not load products')
+    await wrapper.get('button[aria-label="Retry"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+    expect(listProducts).toHaveBeenCalledTimes(2)
+    wrapper.unmount()
+  })
 })

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "test:unit",
+    "--workspace=customer-website",
+    "--",
+    "--run",
+    "src/views/__tests__/CheckoutStepper.spec.ts"
+  ],
+  "cwd": "frontend",
+  "exit_code": 0,
+  "timestamp_utc": "2026-11-09T13:36:25.461707+00:00"
+}

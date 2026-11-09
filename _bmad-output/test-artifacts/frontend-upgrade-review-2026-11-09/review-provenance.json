@@ -1,0 +1,17 @@
+{
+  "reviewedAt": "2026-11-09T16:05:17.820850+07:00",
+  "baseline": "4ec50bbaa04933c43a37066f88c293e056c24012",
+  "originalBranch": "codex/extract-checkout-saga",
+  "originalHead": "4ec50bbaa04933c43a37066f88c293e056c24012",
+  "originalFilesSha256": {
+    "frontend/customer-website/src/stores/useCartStore.ts": "f8ea228c4444508fa4e8a61d90e09f08c259e65e64cb9c8ac4fbd417807debba",
+    "frontend/customer-website/src/stores/useProductStore.ts": "a5dccbf26ba2ab752db6c2dfbb133963532425aeb404addc274aea3aaeb83584",
+    "frontend/customer-website/src/views/SearchResultsView.vue": "7e760dc26993844de0075d8569ed852dee0a1dcec126af50c9cdcedf5dcf914b",
+    "frontend/customer-website/src/main.ts": "b04268a681032caac6d132698437629a74ddbdafdd3aa8e895ef4dcb2a9a6be5",
+    "frontend/customer-website/src/router/index.ts": "2bb030f613ba26e84b12bb38736fc39ae9e9c69d39df4c44da3b33fb72396bb6",
+    "frontend/admin-dashboard/src/views/ProductsPage.vue": "86d124f434a102e04ca502469a2aa8eede9ac71e6a10da895ae8e800be775911",
+    "frontend/admin-dashboard/src/views/OrdersPage.vue": "7282d4c86df2cbf6ef28b3c35e1b0ce58c93bb568d9aa3ec355f2337b28b81d5",
+    "frontend/package-lock.json": "f1b9e540f62d50b7df618a2cb9af45fa19214e508442b18cf55b397b5826d81f"
+  },
+  "note": "Original checkout inspected read-only; hashes identify observed content, not a verified integrated release."
+}

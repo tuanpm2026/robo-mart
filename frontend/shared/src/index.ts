@@ -11,3 +11,5 @@ export { adminTheme } from './themes/admin-theme'
 // Components
 export { default as EmptyState } from './components/EmptyState.vue'
 export { default as OrderStateMachine } from './components/OrderStateMachine.vue'
+
+export { useMediaQuery } from './useMediaQuery'

@@ -1,0 +1,5 @@
+Checking formatting...
+[warn] src/components/product/FilterSidebar.vue
+[warn] src/stores/__tests__/useProductStore.search.spec.ts
+[warn] src/views/__tests__/SearchResultsView.filters.spec.ts
+[warn] Code style issues found in 3 files. Run Prettier with --write to fix.

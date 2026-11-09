@@ -226,4 +226,20 @@ describe('ProductDetailView', () => {
     // Component should not throw — error is caught and shown as toast
     expect(wrapper.find('.product-detail__add-btn').exists()).toBe(true)
   })
+  it('provides a named native Home link instead of a placeholder breadcrumb anchor', async () => {
+    const router = createTestRouter()
+    await router.push('/products/1')
+    await router.isReady()
+    const wrapper = mount(ProductDetailView, {
+      global: { plugins: [router, createPinia(), PrimeVue, ToastService] },
+    })
+    await flushPromises()
+    const link = wrapper.get('.product-detail__breadcrumb a')
+    expect(link.text()).toBe('Home')
+    expect(link.attributes('href')).toBe('/')
+    await link.trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/')
+    wrapper.unmount()
+  })
 })

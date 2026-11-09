@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, computed, watch, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, RouterLink } from 'vue-router'
 import Galleria from 'primevue/galleria'
 import Rating from 'primevue/rating'
 import Tag from 'primevue/tag'
@@ -38,10 +38,13 @@ const stockLabel = computed(() => {
 
 const breadcrumbItems = computed(() => {
   if (!product.value) return []
-  return [{ label: product.value.category.name }, { label: product.value.name }]
+  return [
+    { label: product.value.category.name },
+    { label: product.value.name, class: 'product-detail__current-crumb' },
+  ]
 })
 
-const breadcrumbHome = { icon: 'pi pi-home', to: '/' }
+const breadcrumbHome = { label: 'Home', icon: 'pi pi-home', to: '/' }
 
 const galleriaImages = computed(() => {
   if (!product.value) return []
@@ -135,7 +138,14 @@ async function addToCart() {
         :model="breadcrumbItems"
         :home="breadcrumbHome"
         class="product-detail__breadcrumb"
-      />
+      >
+        <template #item="{ item }">
+          <RouterLink v-if="item.to" :to="item.to" class="product-detail__breadcrumb-link">
+            <i v-if="item.icon" :class="item.icon" aria-hidden="true" /> {{ item.label }}
+          </RouterLink>
+          <span v-else>{{ item.label }}</span>
+        </template>
+      </Breadcrumb>
 
       <div class="product-detail__content">
         <div class="product-detail__gallery">
@@ -331,5 +341,44 @@ async function addToCart() {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.product-detail__info {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 767px) {
+  .product-detail__content,
+  .product-detail__skeleton {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .product-detail__gallery {
+    position: static;
+  }
+  .product-detail__title {
+    font-size: 24px;
+  }
+  .product-detail__breadcrumb {
+    flex-wrap: wrap;
+  }
+}
+.product-detail__breadcrumb :deep(.p-breadcrumb-list) {
+  flex-wrap: wrap;
+}
+.product-detail__breadcrumb-link {
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.product-detail__breadcrumb-link:hover {
+  text-decoration: underline;
+}
+@media (max-width: 767px) {
+  /* The full current product name remains the page h1 below the gallery. */
+  .product-detail__breadcrumb :deep(.product-detail__current-crumb),
+  .product-detail__breadcrumb :deep(.p-breadcrumb-list > li:nth-last-child(2)) {
+    display: none;
+  }
 }
 </style>

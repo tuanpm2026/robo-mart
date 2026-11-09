@@ -1,0 +1,5421 @@
+{
+  "phase": "after",
+  "timestamp": "2026-11-09T13:38:34.702Z",
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/156.0.8078.80",
+    "revision": "@fb096c0011f9d50f0a264a9376420cdea9c421e3",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+    "jsVersion": "15.6.75.27"
+  },
+  "harnessSha256": "bda9f7e833505c67c7a4335bb71a9d8de023542bede42c12f9ff26793ff1e5f5",
+  "fixture": "Synthetic API/OIDC; all non-preview requests intercepted; no real backend/identity writes",
+  "screens": [
+    {
+      "screen": "customer-home",
+      "width": 360,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": {
+        "x": 16,
+        "y": 286.984375,
+        "width": 328,
+        "height": 4352.171875,
+        "clientWidth": 328,
+        "scrollWidth": 328,
+        "columns": "328px"
+      },
+      "searchGrid": null,
+      "card": {
+        "x": 16,
+        "y": 286.984375,
+        "width": 328,
+        "height": 557.5625,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 328,
+        "height": 47.59375,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-search",
+      "width": 360,
+      "path": "/search",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 16,
+        "y": 384.375,
+        "width": 328,
+        "height": 4352.171875,
+        "clientWidth": 328,
+        "scrollWidth": 328,
+        "columns": "328px"
+      },
+      "card": {
+        "x": 16,
+        "y": 384.375,
+        "width": 328,
+        "height": 557.5625,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 328,
+        "height": 47.59375,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-down",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-detail",
+      "width": 360,
+      "path": "/products/1",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 328,
+        "height": 47.59375,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-breadcrumb-item-icon pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon p-button-icon-left pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-cart",
+      "width": 360,
+      "path": "/cart",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 328,
+        "height": 47.59375,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-review",
+      "width": 360,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 328,
+        "height": 47.59375,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping",
+      "width": 360,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 328,
+        "height": 47.59375,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 16,
+        "y": 83.96875,
+        "width": 328,
+        "height": 623.09375,
+        "clientWidth": 328,
+        "scrollWidth": 328,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping-errors",
+      "width": 360,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 328,
+        "height": 47.59375,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 16,
+        "y": 271.53125,
+        "width": 328,
+        "height": 755.046875,
+        "clientWidth": 328,
+        "scrollWidth": 328,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "DIV",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-payment",
+      "width": 360,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 328,
+        "height": 47.59375,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "admin-orders",
+      "width": 360,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 157.59375,
+        "width": 328,
+        "height": 258.1875,
+        "clientWidth": 328,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 260.484375,
+          "right": 376.484375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column p-datatable-column-sorted",
+          "width": 180,
+          "right": 556.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 148,
+          "right": 540.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 31.234375,
+          "right": 423.71875
+        },
+        {
+          "tag": "SPAN",
+          "class": "",
+          "width": 14,
+          "right": 445.71875
+        }
+      ]
+    },
+    {
+      "screen": "admin-order-detail",
+      "width": 360,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 157.59375,
+        "width": 328,
+        "height": 258.1875,
+        "clientWidth": 328,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 0,
+        "y": 0,
+        "width": 360,
+        "height": 950,
+        "clientWidth": 359,
+        "scrollWidth": 359,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 260.484375,
+          "right": 376.484375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column p-datatable-column-sorted",
+          "width": 180,
+          "right": 556.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 148,
+          "right": 540.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 31.234375,
+          "right": 423.71875
+        },
+        {
+          "tag": "SPAN",
+          "class": "",
+          "width": 14,
+          "right": 445.71875
+        }
+      ]
+    },
+    {
+      "screen": "admin-products",
+      "width": 360,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 124,
+        "width": 328,
+        "height": 657.9375,
+        "clientWidth": 328,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 354.84375,
+          "right": 502.84375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 322.84375,
+          "right": 486.84375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 184.59375,
+          "right": 687.4375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 152.59375,
+          "right": 671.4375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 62.734375,
+          "right": 581.578125
+        }
+      ]
+    },
+    {
+      "screen": "admin-product-drawer",
+      "width": 360,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 124,
+        "width": 328,
+        "height": 678.78125,
+        "clientWidth": 328,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 0,
+        "y": 0,
+        "width": 360,
+        "height": 950,
+        "clientWidth": 359,
+        "scrollWidth": 359,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 354.84375,
+          "right": 502.84375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 322.84375,
+          "right": 486.84375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 184.59375,
+          "right": 687.4375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 152.59375,
+          "right": 671.4375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 62.734375,
+          "right": 581.578125
+        }
+      ]
+    },
+    {
+      "screen": "customer-home",
+      "width": 390,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": {
+        "x": 16,
+        "y": 286.984375,
+        "width": 358,
+        "height": 1650.25,
+        "clientWidth": 358,
+        "scrollWidth": 358,
+        "columns": "171px 171px"
+      },
+      "searchGrid": null,
+      "card": {
+        "x": 16,
+        "y": 286.984375,
+        "width": 171,
+        "height": 400.5625,
+        "clientWidth": 169,
+        "scrollWidth": 169,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-home-390.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "nested-interactive",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "article:nth-child(1) > .product-card__body > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(2) > .product-card__body > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(3) > .product-card__body > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(4) > .product-card__body > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(5) > .product-card__body > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(6) > .product-card__body > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(7) > .product-card__body > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  ".product-card--out-of-stock > .product-card__body > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/nested-interactive?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 8
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 10
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-search",
+      "width": 390,
+      "path": "/search",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 16,
+        "y": 384.375,
+        "width": 358,
+        "height": 1650.25,
+        "clientWidth": 358,
+        "scrollWidth": 358,
+        "columns": "171px 171px"
+      },
+      "card": {
+        "x": 16,
+        "y": 384.375,
+        "width": 171,
+        "height": 400.5625,
+        "clientWidth": 169,
+        "scrollWidth": 169,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-down",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-search-390.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "nested-interactive",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "article:nth-child(1) > .product-card__body[data-v-f57a40e2=\"\"] > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(2) > .product-card__body[data-v-f57a40e2=\"\"] > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(3) > .product-card__body[data-v-f57a40e2=\"\"] > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(4) > .product-card__body[data-v-f57a40e2=\"\"] > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(5) > .product-card__body[data-v-f57a40e2=\"\"] > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(6) > .product-card__body[data-v-f57a40e2=\"\"] > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(7) > .product-card__body[data-v-f57a40e2=\"\"] > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  ".product-card--out-of-stock > .product-card__body[data-v-f57a40e2=\"\"] > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/nested-interactive?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 8
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 10
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-detail",
+      "width": 390,
+      "path": "/products/1",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-breadcrumb-item-icon pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon p-button-icon-left pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-detail-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-cart",
+      "width": 390,
+      "path": "/cart",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-cart-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "checkout-review",
+      "width": 390,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-checkout-review-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "checkout-shipping",
+      "width": 390,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 16,
+        "y": 109.96875,
+        "width": 358,
+        "height": 623.09375,
+        "clientWidth": 358,
+        "scrollWidth": 358,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-checkout-shipping-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "checkout-shipping-errors",
+      "width": 390,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 16,
+        "y": 568.53125,
+        "width": 358,
+        "height": 755.046875,
+        "clientWidth": 358,
+        "scrollWidth": 358,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "DIV",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-checkout-shipping-errors-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "checkout-payment",
+      "width": 390,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-checkout-payment-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-orders",
+      "width": 390,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 157.59375,
+        "width": 358,
+        "height": 258.1875,
+        "clientWidth": 358,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column p-datatable-column-sorted",
+          "width": 180,
+          "right": 556.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 148,
+          "right": 540.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 31.234375,
+          "right": 423.71875
+        },
+        {
+          "tag": "SPAN",
+          "class": "",
+          "width": 14,
+          "right": 445.71875
+        },
+        {
+          "tag": "svg",
+          "class": {},
+          "width": 14,
+          "right": 445.71875
+        }
+      ],
+      "screenshot": "after-admin-orders-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-order-detail",
+      "width": 390,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 157.59375,
+        "width": 358,
+        "height": 258.1875,
+        "clientWidth": 358,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 950,
+        "clientWidth": 389,
+        "scrollWidth": 389,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column p-datatable-column-sorted",
+          "width": 180,
+          "right": 556.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 148,
+          "right": 540.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 31.234375,
+          "right": 423.71875
+        },
+        {
+          "tag": "SPAN",
+          "class": "",
+          "width": 14,
+          "right": 445.71875
+        },
+        {
+          "tag": "svg",
+          "class": {},
+          "width": 14,
+          "right": 445.71875
+        }
+      ],
+      "screenshot": "after-admin-order-detail-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-hidden-focus",
+            "nodes": 2
+          },
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 3
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-products",
+      "width": 390,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 124,
+        "width": 358,
+        "height": 657.9375,
+        "clientWidth": 358,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 354.84375,
+          "right": 502.84375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 322.84375,
+          "right": 486.84375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 184.59375,
+          "right": 687.4375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 152.59375,
+          "right": 671.4375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 62.734375,
+          "right": 581.578125
+        }
+      ],
+      "screenshot": "after-admin-products-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-product-drawer",
+      "width": 390,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 124,
+        "width": 358,
+        "height": 678.78125,
+        "clientWidth": 358,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 950,
+        "clientWidth": 389,
+        "scrollWidth": 389,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 354.84375,
+          "right": 502.84375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 322.84375,
+          "right": 486.84375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 184.59375,
+          "right": 687.4375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 152.59375,
+          "right": 671.4375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 62.734375,
+          "right": 581.578125
+        }
+      ],
+      "screenshot": "after-admin-product-drawer-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-hidden-focus",
+            "nodes": 2
+          },
+          {
+            "id": "aria-input-field-name",
+            "nodes": 1
+          },
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-home",
+      "width": 768,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 720,
+        "height": 1472.328125,
+        "clientWidth": 720,
+        "scrollWidth": 720,
+        "columns": "229.328px 229.328px 229.328px"
+      },
+      "searchGrid": null,
+      "card": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 229.328125,
+        "height": 480.109375,
+        "clientWidth": 227,
+        "scrollWidth": 227,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 436.25,
+        "height": 44.390625,
+        "clientWidth": 434,
+        "scrollWidth": 434,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-search",
+      "width": 768,
+      "path": "/search",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 416,
+        "height": 1851.125,
+        "clientWidth": 416,
+        "scrollWidth": 416,
+        "columns": "200px 200px"
+      },
+      "card": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 200,
+        "height": 450.78125,
+        "clientWidth": 198,
+        "scrollWidth": 198,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 436.25,
+        "height": 44.390625,
+        "clientWidth": 434,
+        "scrollWidth": 434,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-up",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-detail",
+      "width": 768,
+      "path": "/products/1",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 436.25,
+        "height": 44.390625,
+        "clientWidth": 434,
+        "scrollWidth": 434,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-breadcrumb-item-icon pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon p-button-icon-left pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-cart",
+      "width": 768,
+      "path": "/cart",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 436.25,
+        "height": 44.390625,
+        "clientWidth": 434,
+        "scrollWidth": 434,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-review",
+      "width": 768,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 436.25,
+        "height": 44.390625,
+        "clientWidth": 434,
+        "scrollWidth": 434,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping",
+      "width": 768,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 436.25,
+        "height": 44.390625,
+        "clientWidth": 434,
+        "scrollWidth": 434,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 32,
+        "y": 254.96875,
+        "width": 704,
+        "height": 395.53125,
+        "clientWidth": 704,
+        "scrollWidth": 704,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping-errors",
+      "width": 768,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 436.25,
+        "height": 44.390625,
+        "clientWidth": 434,
+        "scrollWidth": 434,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 32,
+        "y": 442.53125,
+        "width": 704,
+        "height": 501.09375,
+        "clientWidth": 704,
+        "scrollWidth": 704,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "DIV",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-payment",
+      "width": 768,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 436.25,
+        "height": 44.390625,
+        "clientWidth": 434,
+        "scrollWidth": 434,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "admin-orders",
+      "width": 768,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 480,
+        "height": 258.1875,
+        "clientWidth": 480,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column p-datatable-column-sorted",
+          "width": 180,
+          "right": 804.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 148,
+          "right": 788.484375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell",
+          "width": 80,
+          "right": 884.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 48,
+          "right": 868.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 37.46875,
+          "right": 857.953125
+        }
+      ]
+    },
+    {
+      "screen": "admin-order-detail",
+      "width": 768,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 480,
+        "height": 258.1875,
+        "clientWidth": 480,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 128,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column p-datatable-column-sorted",
+          "width": 180,
+          "right": 804.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 148,
+          "right": 788.484375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell",
+          "width": 80,
+          "right": 884.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 48,
+          "right": 868.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 37.46875,
+          "right": 857.953125
+        }
+      ]
+    },
+    {
+      "screen": "admin-products",
+      "width": 768,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 480,
+        "height": 657.9375,
+        "clientWidth": 480,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 184.59375,
+          "right": 935.4375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 152.59375,
+          "right": 919.4375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 62.734375,
+          "right": 829.578125
+        },
+        {
+          "tag": "SPAN",
+          "class": "",
+          "width": 14,
+          "right": 851.578125
+        },
+        {
+          "tag": "svg",
+          "class": {},
+          "width": 14,
+          "right": 851.578125
+        }
+      ]
+    },
+    {
+      "screen": "admin-product-drawer",
+      "width": 768,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 480,
+        "height": 678.78125,
+        "clientWidth": 480,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 128,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 184.59375,
+          "right": 935.4375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 152.59375,
+          "right": 919.4375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 62.734375,
+          "right": 829.578125
+        },
+        {
+          "tag": "SPAN",
+          "class": "",
+          "width": 14,
+          "right": 851.578125
+        },
+        {
+          "tag": "svg",
+          "class": {},
+          "width": 14,
+          "right": 851.578125
+        }
+      ]
+    },
+    {
+      "screen": "customer-home",
+      "width": 1024,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 976,
+        "height": 977.5625,
+        "clientWidth": 976,
+        "scrollWidth": 976,
+        "columns": "226px 226px 226px 226px"
+      },
+      "searchGrid": null,
+      "card": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 226,
+        "height": 476.78125,
+        "clientWidth": 224,
+        "scrollWidth": 224,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-search",
+      "width": 1024,
+      "path": "/search",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 672,
+        "height": 2363.125,
+        "clientWidth": 672,
+        "scrollWidth": 672,
+        "columns": "328px 328px"
+      },
+      "card": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 328,
+        "height": 578.78125,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-up",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-detail",
+      "width": 1024,
+      "path": "/products/1",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-breadcrumb-item-icon pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon p-button-icon-left pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-cart",
+      "width": 1024,
+      "path": "/cart",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-review",
+      "width": 1024,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping",
+      "width": 1024,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 32,
+        "y": 378.96875,
+        "width": 628,
+        "height": 395.53125,
+        "clientWidth": 628,
+        "scrollWidth": 628,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping-errors",
+      "width": 1024,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 32,
+        "y": 566.53125,
+        "width": 628,
+        "height": 501.09375,
+        "clientWidth": 628,
+        "scrollWidth": 628,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "DIV",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-payment",
+      "width": 1024,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "admin-orders",
+      "width": 1024,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 736,
+        "height": 258.1875,
+        "clientWidth": 736,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell",
+          "width": 200,
+          "right": 1204.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 168,
+          "right": 1188.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 43.375,
+          "right": 1063.859375
+        },
+        {
+          "tag": "TBODY",
+          "class": "p-datatable-tbody",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "p-row-even",
+          "width": 1024,
+          "right": 1288
+        }
+      ]
+    },
+    {
+      "screen": "admin-order-detail",
+      "width": 1024,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 736,
+        "height": 258.1875,
+        "clientWidth": 736,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 384,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell",
+          "width": 200,
+          "right": 1204.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 168,
+          "right": 1188.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 43.375,
+          "right": 1063.859375
+        },
+        {
+          "tag": "TBODY",
+          "class": "p-datatable-tbody",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "p-row-even",
+          "width": 1024,
+          "right": 1288
+        }
+      ]
+    },
+    {
+      "screen": "admin-products",
+      "width": 1024,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 736,
+        "height": 657.9375,
+        "clientWidth": 736,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 140,
+          "right": 1075.4375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 108,
+          "right": 1059.4375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 92.5625,
+          "right": 1168
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 60.5625,
+          "right": 1152
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 38.5625,
+          "right": 1130
+        }
+      ]
+    },
+    {
+      "screen": "admin-product-drawer",
+      "width": 1024,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 736,
+        "height": 678.78125,
+        "clientWidth": 736,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 384,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 140,
+          "right": 1075.4375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 108,
+          "right": 1059.4375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 92.5625,
+          "right": 1168
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 60.5625,
+          "right": 1152
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 38.5625,
+          "right": 1130
+        }
+      ]
+    },
+    {
+      "screen": "customer-home",
+      "width": 1440,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": {
+        "x": 104,
+        "y": 231.78125,
+        "width": 1232,
+        "height": 1105.5625,
+        "clientWidth": 1232,
+        "scrollWidth": 1232,
+        "columns": "290px 290px 290px 290px"
+      },
+      "searchGrid": null,
+      "card": {
+        "x": 104,
+        "y": 231.78125,
+        "width": 290,
+        "height": 540.78125,
+        "clientWidth": 288,
+        "scrollWidth": 288,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-home-1440.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "nested-interactive",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "article:nth-child(1) > .product-card__body > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(2) > .product-card__body > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(3) > .product-card__body > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(4) > .product-card__body > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(5) > .product-card__body > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(6) > .product-card__body > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(7) > .product-card__body > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  ".product-card--out-of-stock > .product-card__body > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/nested-interactive?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 8
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 7
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-search",
+      "width": 1440,
+      "path": "/search",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 408,
+        "y": 231.171875,
+        "width": 928,
+        "height": 1680.359375,
+        "clientWidth": 928,
+        "scrollWidth": 928,
+        "columns": "293.328px 293.328px 293.344px"
+      },
+      "card": {
+        "x": 408,
+        "y": 231.171875,
+        "width": 293.328125,
+        "height": 544.125,
+        "clientWidth": 291,
+        "scrollWidth": 291,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-up",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-search-1440.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "nested-interactive",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "article:nth-child(1) > .product-card__body[data-v-f57a40e2=\"\"] > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(2) > .product-card__body[data-v-f57a40e2=\"\"] > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(3) > .product-card__body[data-v-f57a40e2=\"\"] > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(4) > .product-card__body[data-v-f57a40e2=\"\"] > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(5) > .product-card__body[data-v-f57a40e2=\"\"] > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(6) > .product-card__body[data-v-f57a40e2=\"\"] > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  "article:nth-child(7) > .product-card__body[data-v-f57a40e2=\"\"] > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              },
+              {
+                "target": [
+                  ".product-card--out-of-stock > .product-card__body[data-v-f57a40e2=\"\"] > .product-card__rating[role=\"img\"][aria-label=\"4 out of 5 stars\"]"
+                ],
+                "summary": "Fix any of the following:\n  Using a negative tabindex on an element inside an interactive control does not prevent assistive technologies from focusing the element (even with aria-hidden=\"true\")"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/nested-interactive?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 8
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 7
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-detail",
+      "width": 1440,
+      "path": "/products/1",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-breadcrumb-item-icon pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon p-button-icon-left pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-detail-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-cart",
+      "width": 1440,
+      "path": "/cart",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-cart-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      }
+    },
+    {
+      "screen": "checkout-review",
+      "width": 1440,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-checkout-review-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      }
+    },
+    {
+      "screen": "checkout-shipping",
+      "width": 1440,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 112,
+        "y": 378.96875,
+        "width": 884,
+        "height": 395.53125,
+        "clientWidth": 884,
+        "scrollWidth": 884,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-checkout-shipping-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      }
+    },
+    {
+      "screen": "checkout-shipping-errors",
+      "width": 1440,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 112,
+        "y": 566.53125,
+        "width": 884,
+        "height": 501.09375,
+        "clientWidth": 884,
+        "scrollWidth": 884,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "DIV",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-checkout-shipping-errors-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      }
+    },
+    {
+      "screen": "checkout-payment",
+      "width": 1440,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-checkout-payment-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      }
+    },
+    {
+      "screen": "admin-orders",
+      "width": 1440,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 1152,
+        "height": 218.1875,
+        "clientWidth": 1152,
+        "scrollWidth": 1152,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-admin-orders-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-order-detail",
+      "width": 1440,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 1152,
+        "height": 218.1875,
+        "clientWidth": 1152,
+        "scrollWidth": 1152,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 800,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-admin-order-detail-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-hidden-focus",
+            "nodes": 2
+          },
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-products",
+      "width": 1440,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 1152,
+        "height": 657.9375,
+        "clientWidth": 1152,
+        "scrollWidth": 1152,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-admin-products-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-product-drawer",
+      "width": 1440,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 1152,
+        "height": 678.78125,
+        "clientWidth": 1152,
+        "scrollWidth": 1152,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 800,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-admin-product-drawer-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-hidden-focus",
+            "nodes": 2
+          },
+          {
+            "id": "aria-input-field-name",
+            "nodes": 1
+          },
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-error",
+      "width": 390,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-error-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    }
+  ],
+  "interactions": [
+    {
+      "name": "orders initial action visible 360",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "products initial edit visible 360",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "orders initial action visible 390",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "products initial edit visible 390",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "orders initial action visible 768",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "products initial edit visible 768",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "orders initial action visible 1024",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "products initial edit visible 1024",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "orders initial action visible 1440",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "products initial edit visible 1440",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "card-focused-cta",
+      "opacity": "1"
+    },
+    {
+      "name": "card-native-enter",
+      "path": "/",
+      "cartPosts": 1
+    },
+    {
+      "name": "card Tab reaches separate cart button",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "name": "cart Enter submits once",
+      "actual": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "name": "cart Enter keeps route",
+      "actual": "/",
+      "expected": "/",
+      "pass": true
+    },
+    {
+      "name": "cart Space submits once",
+      "actual": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "name": "cart Space keeps route",
+      "actual": "/",
+      "expected": "/",
+      "pass": true
+    },
+    {
+      "name": "touch cart action submits once",
+      "actual": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "name": "touch action keeps route",
+      "actual": "/",
+      "expected": "/",
+      "pass": true
+    },
+    {
+      "name": "link Enter navigates without adding",
+      "actual": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "name": "mobile filters start closed",
+      "actual": "false",
+      "expected": "false",
+      "pass": true
+    },
+    {
+      "name": "filter Space opens disclosure",
+      "actual": "true",
+      "expected": "true",
+      "pass": true
+    }
+  ],
+  "errors": [],
+  "finalDiagnostics": {
+    "url": "http://127.0.0.1:16573/search?keyword=wireless",
+    "text": "Skip to main content\nRoboMart\nNo results found\nFixture\nAll\nElectronics\nHome & Garden\nSports & Outdoors\nHealth & Beauty\nToys & Games\n8 results for \"wireless\"\nMin: $10\n×\n4+ stars\n×\nClear all\nFilters\nBrand\nFixture Brand\nPrice: $10 – $1000\nMinimum Rating\nClear Filters\nWireless noise cancelling headphones with extended battery and travel case\n\n$49.99\n\nIn Stock\nAdd to Cart\nEveryday home and travel accessory 2\n\n$49.99\n\nIn Stock\nAdd to Cart\nEveryday home and travel accessory 3\n\n$49.99\n\nIn Stock\nAdd to Cart\nEveryday home and travel accessory 4\n\n$49.99\n\nIn Stock\nAdd to Cart\nEveryday home and travel accessory 5\n\n$49.99\n\nIn Stock\nAdd to Cart\nEveryday home and travel accessory 6\n\n$49.99\n\nIn Stock\nAdd to Cart\nEveryday home and travel accessory 7\n\n$49.99\n\nIn Stock\nAdd to Cart\nEveryday home and travel accessory 8\n\n$49.99\n\nOut of Stock\n\n© 2026 RoboMart. All rights reserved.",
+    "active": "<input type=\"radio\" name=\"pc8_name\" aria-label=\"4 stars\" data-pc-section=\"hiddenoptioninput\" value=\"4\" checked=\"\">"
+  },
+  "requests": [
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?minPrice=10&keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?minPrice=10&keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?minPrice=10&minRating=4&keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?minPrice=10&minRating=4&keyword=wireless&page=0&size=20"
+    }
+  ]
+}

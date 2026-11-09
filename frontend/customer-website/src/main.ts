@@ -1,3 +1,4 @@
+import 'primeicons/primeicons.css'
 import './assets/app.css'
 
 import { createApp } from 'vue'

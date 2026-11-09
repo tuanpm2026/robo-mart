@@ -1,0 +1,1 @@
+{"foreground":"rgb(29, 78, 216)","background":"rgb(249, 250, 251)","focusOutline":"rgb(29, 78, 216)","focusOutlineWidth":"2px","focusOutlineOffset":"3px","focusVisible":true,"boxShadow":"none","border":"rgba(0, 0, 0, 0)","borderWidth":"1px","buttonLabel":"View order 1 details","iconRatio":6.4128734861003664,"focusRatio":6.4128734861003664}

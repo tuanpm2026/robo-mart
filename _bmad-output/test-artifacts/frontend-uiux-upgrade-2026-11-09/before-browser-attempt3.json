@@ -1,0 +1,398 @@
+{
+  "phase": "before",
+  "timestamp": "2026-11-09T13:27:39.366Z",
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/156.0.8078.80",
+    "revision": "@fb096c0011f9d50f0a264a9376420cdea9c421e3",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+    "jsVersion": "15.6.75.27"
+  },
+  "harnessSha256": "cd2ba75a504cc4c7b36433bf7ed432125586476a31a4dcd119405e7174523b5b",
+  "fixture": "Synthetic API/OIDC; all non-preview requests intercepted; no real backend/identity writes",
+  "screens": [
+    {
+      "screen": "customer-home",
+      "width": 360,
+      "path": "/",
+      "configuredWidth": 360,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 312,
+        "height": 963.125,
+        "clientWidth": 312,
+        "scrollWidth": 312,
+        "columns": "88px 88px 88px"
+      },
+      "searchGrid": null,
+      "card": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 88,
+        "height": 297.578125,
+        "clientWidth": 86,
+        "scrollWidth": 112,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 38.25,
+        "height": 44.390625,
+        "clientWidth": 36,
+        "scrollWidth": 36,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "path",
+          "class": {},
+          "width": 16.000030517578125,
+          "right": 361.00006103515625
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 16.000030517578125,
+          "right": 361.00006103515625
+        }
+      ]
+    },
+    {
+      "screen": "customer-search",
+      "width": 360,
+      "path": "/search",
+      "configuredWidth": 360,
+      "layoutWidth": 382,
+      "clientWidth": 360,
+      "documentWidth": 382,
+      "overflow": 22,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 8,
+        "height": 705.125,
+        "clientWidth": 8,
+        "scrollWidth": 54,
+        "columns": "2px 2px 2px"
+      },
+      "card": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 2,
+        "height": 211.578125,
+        "clientWidth": 0,
+        "scrollWidth": 112,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 38.25,
+        "height": 44.390625,
+        "clientWidth": 36,
+        "scrollWidth": 36,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-up",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "p-rating p-readonly",
+          "width": 96,
+          "right": 441
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 16,
+          "right": 361.0000305175781
+        },
+        {
+          "tag": "DIV",
+          "class": "p-rating-option p-rating-option-active",
+          "width": 16,
+          "right": 381
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-hidden-accessible",
+          "width": 1,
+          "right": 365
+        },
+        {
+          "tag": "INPUT",
+          "class": "",
+          "width": 13,
+          "right": 377
+        },
+        {
+          "tag": "svg",
+          "class": {},
+          "width": 16,
+          "right": 381
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 16,
+          "right": 381.0000305175781
+        },
+        {
+          "tag": "DIV",
+          "class": "p-rating-option p-rating-option-active",
+          "width": 16,
+          "right": 401
+        }
+      ]
+    },
+    {
+      "screen": "customer-detail",
+      "width": 360,
+      "path": "/products/1",
+      "configuredWidth": 360,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 38.25,
+        "height": 44.390625,
+        "clientWidth": 36,
+        "scrollWidth": 36,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-breadcrumb-item-icon pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-button-icon p-button-icon-left pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-cart",
+      "width": 360,
+      "path": "/cart",
+      "configuredWidth": 360,
+      "layoutWidth": 1440,
+      "clientWidth": 360,
+      "documentWidth": 1458,
+      "overflow": 1098,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 38.25,
+        "height": 44.390625,
+        "clientWidth": 36,
+        "scrollWidth": 36,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "cart__items",
+          "width": 1042.046875,
+          "right": 1066.046875
+        },
+        {
+          "tag": "ARTICLE",
+          "class": "cart-item",
+          "width": 1042.046875,
+          "right": 1066.046875
+        },
+        {
+          "tag": "DIV",
+          "class": "cart-item__details",
+          "width": 592.171875,
+          "right": 729.171875
+        },
+        {
+          "tag": "H3",
+          "class": "cart-item__name",
+          "width": 592.171875,
+          "right": 729.171875
+        },
+        {
+          "tag": "P",
+          "class": "cart-item__price",
+          "width": 592.171875,
+          "right": 729.171875
+        },
+        {
+          "tag": "DIV",
+          "class": "cart-item__quantity",
+          "width": 151.875,
+          "right": 897.046875
+        },
+        {
+          "tag": "LABEL",
+          "class": "cart-item__quantity-label",
+          "width": 23.875,
+          "right": 769.046875
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-inputnumber p-component p-inputwrapper p-inputwrapper-filled p-inputnumber-horizontal cart-item__quantity-input",
+          "width": 120,
+          "right": 897.046875
+        }
+      ]
+    }
+  ],
+  "interactions": [],
+  "errors": [],
+  "finalDiagnostics": {
+    "url": "http://127.0.0.1:16573/cart",
+    "text": "Skip to main content\nRoboMart\nNo results found\n2\nFixture\nAll\nElectronics\nHome & Garden\nSports & Outdoors\nHealth & Beauty\nToys & Games\nShopping Cart\nWireless noise cancelling headphones with extended battery and travel case\n\n$49.99\n\nQty\n\n$49.99\n\nEveryday home and travel accessory 2\n\n$49.99\n\nQty\n\n$49.99\n\nOrder Summary\nItems (2)\n$99.98\nTotal\n$99.98\nProceed to Checkout\nContinue Shopping\n\n© 2026 RoboMart. All rights reserved.",
+    "active": "<body>\n    <div id=\"app\" data-v-app=\"\"><a href=\"#main-content\" class=\"skip-to-main\">Skip to main content</a><div data-v-406356f8=\"\" class=\"layout\"><header data-v-406356f8=\"\" class=\"header\"><div data-v-406356f8=\"\" class=\"header__inner\"><div data-v-406356f8=\"\" class=\"header__logo\"><a data-v-406356f8=\"\" href=\"/\" class=\"\" aria-label=\"RoboMart Home\"><span data-v-406356f8=\"\" class=\"header__logo-text\">RoboMart</span></a></div><div data-v-ddc97f13=\"\" data-v-406356f8=\"\" class=\"search-bar\"><div data-v-ddc97f13=\"\" class=\"p-autocomplete p-component p-inputwrapper search-bar__input\" data-p=\"\" data-pc-name=\"autocomplete\" pc1=\"\" data-pc-section=\"root\" style=\"position: relative;\"><input type=\"text\" class=\"p-inputtext p-component p-autocomplete-input search-bar__field\" data-p=\"\" id=\"pv_id_2\" placeholder=\"Search products...\" tabindex=\"0\" autocomplete=\"off\" role=\"combobox\" aria-label=\"Search products\" aria-haspopup=\"listbox\" aria-autocomplete=\"list\" aria-expanded=\"false\" data-p-has-dropdown=\"false\" data-pc-name=\"pcinputtext\" data-pc-extend=\"inputtext\" pc2=\"\" data-pc-section=\"root\"><!----><!----><!----><!----><span role=\"status\" aria-live=\"polite\" class=\"p-hidden-accessible\" data-pc-section=\"hiddensearchresult\" data-p-hidden-accessible=\"true\">No results found</span></div></div><div data-v-406356f8=\"\" class=\"header__actions\"><a data-v-406356f8=\"\" href=\"/cart\" class=\"router-link-active router-link-exact-active header__cart-btn\" aria-label=\"Shopping cart, 2 items\" aria-current=\"page\"><svg data-v-406356f8=\"\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path data-v-406356f8=\"\" d=\"M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path><path data-v-406356f8=\"\" d=\"M3 6H21\" stroke=\"currentColor\" stroke-width=\"2\"></path><path data-v-406356f8=\"\" d=\"M16 10C16 11.0609 15.5786 12.0783 14.8284 12.8284C14.0783 13.5786 13.0609 14 12 14C10.9391 14 9.92172 13.5786 9.17157 12.8284C8.42143 12.0783 8 11.0609 8 10\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg><span data-v-406356f8=\"\" class=\"p-badge p-component p-badge-circle header__cart-badge\" data-p=\"circle\" aria-live=\"polite\" data-pc-name=\"badge\" pc20=\"\" data-pc-section=\"root\">2</span></a><button data-v-406356f8=\"\" class=\"header__user-btn\" type=\"button\" aria-label=\"User menu\"><span data-v-406356f8=\"\" class=\"header__user-name\">Fixture</span><i data-v-406356f8=\"\" class=\"pi pi-chevron-down header__user-chevron\"></i></button></div></div></header><nav data-v-406356f8=\"\" class=\"category-nav\" aria-label=\"Product categories\"><div data-v-406356f8=\"\" class=\"category-nav__inner\"><a data-v-406356f8=\"\" href=\"/\" class=\"category-nav__link category-nav__link--active\"> All </a><a data-v-406356f8=\"\" href=\"/?categoryId=1\" class=\"category-nav__link\">Electronics</a><a data-v-406356f8=\"\" href=\"/?categoryId=2\" class=\"category-nav__link\">Home &amp; Garden</a><a data-v-406356f8=\"\" href=\"/?categoryId=3\" class=\"category-nav__link\">Sports &amp; Outdoors</a><a data-v-406356f8=\"\" href=\"/?categoryId=4\" class=\"category-nav__link\">Health &amp; Beauty</a><a data-v-406356f8=\"\" href=\"/?categoryId=5\" class=\"category-nav__link\">Toys &amp; Games</a></div></nav><!----><!----><main data-v-406356f8=\"\" id=\"main-content\" class=\"main-content\"><div data-v-1f597b82=\"\" data-v-406356f8=\"\" class=\"cart\"><h1 data-v-1f597b82=\"\" class=\"cart__title\">Shopping Cart</h1><div data-v-1f597b82=\"\" class=\"cart__content\"><div data-v-1f597b82=\"\" class=\"cart__items\"><article data-v-75a90f73=\"\" data-v-1f597b82=\"\" class=\"cart-item\" aria-label=\"Wireless noise cancelling headphones with extended battery and travel case, quantity 1\"><div class=\"cart-item__image-wrapper\" data-v-75a90f73=\"\"><div class=\"cart-item__image-placeholder\" aria-hidden=\"true\" data-v-75a90f73=\"\"><svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" data-v-75a90f73=\"\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.5\" data-v-75a90f73=\"\"></rect><circle cx=\"8.5\" cy=\"8.5\" r=\"1.5\" fill=\"currentColor\" data-v-75a90f73=\"\"></circle><path d=\"M21 15L16 10L5 21\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" data-v-75a90f73=\"\"></path></svg></div></div><div data-v-75a90f73=\"\" class=\"cart-item__details\"><h3 data-v-75a90f73=\"\" class=\"cart-item__name\">Wireless noise cancelling headphones with extended battery and travel case</h3><p data-v-75a90f73=\"\" class=\"cart-item__price\">$49.99</p></div><div data-v-75a90f73=\"\" class=\"cart-item__quantity\"><label data-v-75a90f73=\"\" for=\"qty-1\" class=\"cart-item__quantity-label\">Qty</label><span data-v-75a90f73=\"\" class=\"p-inputnumber p-component p-inputwrapper p-inputwrapper-filled p-inputnumber-horizontal cart-item__quantity-input\" id=\"qty-1\" data-pc-name=\"inputnumber\" pc21=\"\" data-pc-section=\"root\" data-p=\"horizontal\"><input type=\"text\" class=\"p-inputtext p-component p-filled p-inputnumber-input\" data-p=\"horizontal\" id=\"pv_id_22\" role=\"spinbutton\" aria-valuemin=\"1\" aria-valuemax=\"999\" aria-valuenow=\"1\" inputmode=\"numeric\" data-pc-name=\"pcinputtext\" data-pc-extend=\"inputtext\" pc22=\"\" data-pc-section=\"root\" value=\"1\"><!----><!----><button class=\"p-inputnumber-button p-inputnumber-increment-button\" tabindex=\"-1\" aria-hidden=\"true\" type=\"button\" data-pc-section=\"incrementbutton\" data-p=\"horizontal\"><span class=\"pi pi-plus\" data-pc-section=\"incrementicon\"></span></button><button class=\"p-inputnumber-button p-inputnumber-decrement-button p-disabled\" tabindex=\"-1\" aria-hidden=\"true\" type=\"button\" data-pc-section=\"decrementbutton\" data-p=\"horizontal\"><span class=\"pi pi-minus\" data-pc-section=\"decrementicon\"></span></button></span></div><p data-v-75a90f73=\"\" class=\"cart-item__subtotal\">$49.99</p><button data-v-75a90f73=\"\" class=\"p-button p-component p-button-icon-only p-button-danger p-button-rounded p-button-text cart-item__remove\" data-p=\"icon-only rounded text\" type=\"button\" aria-label=\"Remove Wireless noise cancelling headphones with extended battery and travel case from cart\" data-pc-name=\"button\" data-p-disabled=\"false\" data-p-severity=\"danger\" pc23=\"\" data-pc-section=\"root\"><span class=\"p-button-icon pi pi-times\" data-p=\"left\" data-pc-section=\"icon\"></span><!----><!----></button></article><article data-v-75a90f73=\"\" data-v-1f597b82=\"\" class=\"cart-item\" aria-label=\"Everyday home and travel accessory 2, quantity 1\"><div class=\"cart-item__image-wrapper\" data-v-75a90f73=\"\"><div class=\"cart-item__image-placeholder\" aria-hidden=\"true\" data-v-75a90f73=\"\"><svg width=\"32\" height=\"32\" viewBox=\"0 0 24 24\" fill=\"none\" data-v-75a90f73=\"\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\" stroke=\"currentColor\" stroke-width=\"1.5\" data-v-75a90f73=\"\"></rect><circle cx=\"8.5\" cy=\"8.5\" r=\"1.5\" fill=\"currentColor\" data-v-75a90f73=\"\"></circle><path d=\"M21 15L16 10L5 21\" stroke=\"currentColor\" stroke-width=\"1.5\" stroke-linecap=\"round\" data-v-75a90f73=\"\"></path></svg></div></div><div data-v-75a90f73=\"\" class=\"cart-item__details\"><h3 data-v-75a90f73=\"\" class=\"cart-item__name\">Everyday home and travel accessory 2</h3><p data-v-75a90f73=\"\" class=\"cart-item__price\">$49.99</p></div><div data-v-75a90f73=\"\" class=\"cart-item__quantity\"><label data-v-75a90f73=\"\" for=\"qty-2\" class=\"cart-item__quantity-label\">Qty</label><span data-v-75a90f73=\"\" class=\"p-inputnumber p-component p-inputwrapper p-inputwrapper-filled p-inputnumber-horizontal cart-item__quantity-input\" id=\"qty-2\" data-pc-name=\"inputnumber\" pc24=\"\" data-pc-section=\"root\" data-p=\"horizontal\"><input type=\"text\" class=\"p-inputtext p-component p-filled p-inputnumber-input\" data-p=\"horizontal\" id=\"pv_id_25\" role=\"spinbutton\" aria-valuemin=\"1\" aria-valuemax=\"999\" aria-valuenow=\"1\" inputmode=\"numeric\" data-pc-name=\"pcinputtext\" data-pc-extend=\"inputtext\" pc25=\"\" data-pc-section=\"root\" value=\"1\"><!----><!----><button class=\"p-inputnumber-button p-inputnumber-increment-button\" tabindex=\"-1\" aria-hidden=\"true\" type=\"button\" data-pc-section=\"incrementbutton\" data-p=\"horizontal\"><span class=\"pi pi-plus\" data-pc-section=\"incrementicon\"></span></button><button class=\"p-inputnumber-button p-inputnumber-decrement-button p-disabled\" tabindex=\"-1\" aria-hidden=\"true\" type=\"button\" data-pc-section=\"decrementbutton\" data-p=\"horizontal\"><span class=\"pi pi-minus\" data-pc-section=\"decrementicon\"></span></button></span></div><p data-v-75a90f73=\"\" class=\"cart-item__subtotal\">$49.99</p><button data-v-75a90f73=\"\" class=\"p-button p-component p-button-icon-only p-button-danger p-button-rounded p-button-text cart-item__remove\" data-p=\"icon-only rounded text\" type=\"button\" aria-label=\"Remove Everyday home and travel accessory 2 from cart\" data-pc-name=\"button\" data-p-disabled=\"false\" data-p-severity=\"danger\" pc26=\"\" data-pc-section=\"root\"><span class=\"p-button-icon pi pi-times\" data-p=\"left\" data-pc-section=\"icon\"></span><!----><!----></button></article></div><aside data-v-15bec0ca=\"\" data-v-1f597b82=\"\" class=\"cart-summary\" aria-label=\"Cart summary\"><h2 data-v-15bec0ca=\"\" class=\"cart-summary__title\">Order Summary</h2><div data-v-15bec0ca=\"\" class=\"cart-summary__row\"><span data-v-15bec0ca=\"\">Items (2)</span><span data-v-15bec0ca=\"\" class=\"cart-summary__price\">$99.98</span></div><div data-v-15bec0ca=\"\" class=\"cart-summary__divider\"></div><div data-v-15bec0ca=\"\" class=\"cart-summary__row cart-summary__row--total\"><span data-v-15bec0ca=\"\">Total</span><span data-v-15bec0ca=\"\" class=\"cart-summary__total\">$99.98</span></div><div data-v-15bec0ca=\"\" class=\"cart-summary__actions\"><button data-v-15bec0ca=\"\" class=\"p-button p-component p-button-primary cart-summary__checkout-btn\" data-p=\"\" type=\"button\" aria-label=\"Proceed to Checkout\" data-pc-name=\"button\" data-p-disabled=\"false\" data-p-severity=\"primary\" pc27=\"\" data-pc-section=\"root\"><!----><span class=\"p-button-label\" data-pc-section=\"label\" data-p=\"\">Proceed to Checkout</span><!----></button><button data-v-15bec0ca=\"\" class=\"p-button p-component p-button-secondary p-button-outlined cart-summary__continue-btn\" data-p=\"outlined\" type=\"button\" aria-label=\"Continue Shopping\" data-pc-name=\"button\" data-p-disabled=\"false\" data-p-severity=\"secondary\" pc28=\"\" data-pc-section=\"root\"><!----><span class=\"p-button-label\" data-pc-section=\"label\" data-p=\"\">Continue Shopping</span><!----></button></div></aside></div></div></main><footer data-v-406356f8=\"\" class=\"footer\"><div data-v-406356f8=\"\" class=\"footer__inner\"><p data-v-406356f8=\"\">© 2026 RoboMart. All rights reserved.</p></div></footer></div></div>\n  \n\n<div class=\"p-toast p-component p-toast-bottom-right\" data-p=\"bottom-right\" max=\"3\" data-pc-name=\"toast\" pc0=\"\" data-pc-section=\"root\" style=\"position: fixed; right: 20px; bottom: 20px;\"><div></div></div><!----><!----></body>"
+  },
+  "requests": [
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    }
+  ]
+}

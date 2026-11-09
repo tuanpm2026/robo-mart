@@ -1,0 +1,134 @@
+
+> customer-website@0.0.0 build
+> run-p type-check "build-only {@}" --
+
+
+> customer-website@0.0.0 type-check
+> vue-tsc --build
+
+
+> customer-website@0.0.0 build-only
+> vite build
+
+vite v8.1.0 building client environment for production...
+[2K
+transforming...✓ 521 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                      0.77 kB │ gzip:   0.38 kB
+dist/assets/inter-latin-400-normal-C38fXH4l.woff2   23.66 kB
+dist/assets/inter-latin-500-normal-Cerq10X2.woff2   24.27 kB
+dist/assets/inter-latin-700-normal-Yt3aPRUw.woff2   24.35 kB
+dist/assets/inter-latin-600-normal-LgqL8muc.woff2   24.45 kB
+dist/assets/inter-latin-400-normal-CyCys3Eg.woff    30.69 kB
+dist/assets/inter-latin-600-normal-CiBQ2DWP.woff    31.26 kB
+dist/assets/inter-latin-500-normal-BL9OpVg8.woff    31.28 kB
+dist/assets/inter-latin-700-normal-BLAVimhd.woff    31.32 kB
+dist/assets/primeicons-C6QP2o4f.woff2               35.14 kB
+dist/assets/primeicons-MpK4pl85.ttf                 84.98 kB
+dist/assets/primeicons-WjwUDZjB.woff                85.05 kB
+dist/assets/primeicons-DMOk5skT.eot                 85.15 kB
+dist/assets/primeicons-Dr5RGzOO.svg                342.52 kB │ gzip: 108.35 kB
+dist/assets/AuthCallbackView-IYLBR7Uy.css            0.40 kB │ gzip:   0.22 kB
+dist/assets/NotFoundView-CohtohPx.css                0.76 kB │ gzip:   0.37 kB
+dist/assets/CartView-D34wj5N3.css                    1.72 kB │ gzip:   0.55 kB
+dist/assets/CartItem-CimtFJyU.css                    1.74 kB │ gzip:   0.57 kB
+dist/assets/OrdersView-MT9npYZF.css                  1.79 kB │ gzip:   0.60 kB
+dist/assets/ProductDetailView-BeCFSlJ-.css           2.37 kB │ gzip:   0.66 kB
+dist/assets/SearchResultsView--9uvlohN.css           2.50 kB │ gzip:   0.67 kB
+dist/assets/OrderConfirmationView-CdC5TUOo.css       2.56 kB │ gzip:   0.74 kB
+dist/assets/OrderDetailView-CAbTZdF9.css             3.00 kB │ gzip:   0.72 kB
+dist/assets/CheckoutView-9tpAwJNQ.css                7.28 kB │ gzip:   1.65 kB
+dist/assets/index-iWBxpyIc.css                      38.16 kB │ gzip:   8.66 kB
+dist/assets/orderApi-B58H3bIk.js                     0.37 kB │ gzip:   0.19 kB
+dist/assets/NotFoundView-DciyLNDZ.js                 0.53 kB │ gzip:   0.37 kB
+dist/assets/AuthCallbackView-DIb1obUV.js             0.82 kB │ gzip:   0.51 kB
+dist/assets/useOrderStore-Bpg_I3RQ.js                1.00 kB │ gzip:   0.45 kB
+dist/assets/useCheckoutStore-C5EmZAYz.js             1.69 kB │ gzip:   0.91 kB
+dist/assets/CartItem-Co3RZIvv.js                     2.19 kB │ gzip:   1.05 kB
+dist/assets/baseeditableholder-BY9KBK7f.js           2.63 kB │ gzip:   0.81 kB
+dist/assets/CartView-DmkTpyON.js                     3.11 kB │ gzip:   1.37 kB
+dist/assets/OrderConfirmationView-Fe3iwF5_.js        3.65 kB │ gzip:   1.50 kB
+dist/assets/OrderDetailView-DQGMMv6a.js             11.87 kB │ gzip:   3.79 kB
+dist/assets/SearchResultsView-DrO1A26m.js           30.68 kB │ gzip:   7.80 kB
+dist/assets/inputnumber-BVHzm8Ay.js                 35.84 kB │ gzip:   8.89 kB
+dist/assets/client-BqdGM32-.js                      53.40 kB │ gzip:  20.47 kB
+dist/assets/ProductDetailView-BPgjLkBy.js           65.24 kB │ gzip:  13.88 kB
+dist/assets/spinner-Djbd2C1_.js                     72.88 kB │ gzip:  19.36 kB
+dist/assets/OrdersView-BlHixSIe.js                  80.43 kB │ gzip:  19.67 kB
+dist/assets/vue-router-D9sWeG9N.js                  86.97 kB │ gzip:  33.72 kB
+dist/assets/CheckoutView-Cqerbohb.js               108.46 kB │ gzip:  32.57 kB
+dist/assets/index-BPku5ahA.js                      457.88 kB │ gzip: 101.26 kB
+
+✓ built in 294ms
+
+> admin-dashboard@0.0.0 build
+> run-p type-check "build-only {@}" --
+
+
+> admin-dashboard@0.0.0 type-check
+> vue-tsc --build
+
+
+> admin-dashboard@0.0.0 build-only
+> vite build
+
+vite v8.1.0 building client environment for production...
+[2K
+transforming...✓ 613 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                      0.60 kB │ gzip:   0.34 kB
+dist/assets/inter-latin-400-normal-C38fXH4l.woff2   23.66 kB
+dist/assets/inter-latin-500-normal-Cerq10X2.woff2   24.27 kB
+dist/assets/inter-latin-700-normal-Yt3aPRUw.woff2   24.35 kB
+dist/assets/inter-latin-600-normal-LgqL8muc.woff2   24.45 kB
+dist/assets/inter-latin-400-normal-CyCys3Eg.woff    30.69 kB
+dist/assets/inter-latin-600-normal-CiBQ2DWP.woff    31.26 kB
+dist/assets/inter-latin-500-normal-BL9OpVg8.woff    31.28 kB
+dist/assets/inter-latin-700-normal-BLAVimhd.woff    31.32 kB
+dist/assets/primeicons-C6QP2o4f.woff2               35.14 kB
+dist/assets/primeicons-MpK4pl85.ttf                 84.98 kB
+dist/assets/primeicons-WjwUDZjB.woff                85.05 kB
+dist/assets/primeicons-DMOk5skT.eot                 85.15 kB
+dist/assets/primeicons-Dr5RGzOO.svg                342.52 kB │ gzip: 108.35 kB
+dist/assets/InventoryPage-QfXMAjvm.css               0.11 kB │ gzip:   0.11 kB
+dist/assets/OrdersPage-ZoWaASdv.css                  0.47 kB │ gzip:   0.22 kB
+dist/assets/SlideOverPanel-B3d9DXDd.css              0.48 kB │ gzip:   0.26 kB
+dist/assets/NotFoundView-Bdd80Dbn.css                0.78 kB │ gzip:   0.35 kB
+dist/assets/SystemEventsPage-C9MQWS80.css            0.84 kB │ gzip:   0.35 kB
+dist/assets/UnauthorizedView-C8D4vsLL.css            0.93 kB │ gzip:   0.38 kB
+dist/assets/ReportsPage-DzPiUw31.css                 0.97 kB │ gzip:   0.37 kB
+dist/assets/SystemHealthPanel-DKY0VFeh.css           2.55 kB │ gzip:   0.83 kB
+dist/assets/ProductsPage-DBJ3gg0K.css                2.65 kB │ gzip:   0.88 kB
+dist/assets/DashboardPage-zV0H4fKn.css               4.12 kB │ gzip:   1.12 kB
+dist/assets/index-CU65VWjq.css                      32.37 kB │ gzip:   7.80 kB
+dist/assets/SystemHealthPage-BiZcX0ug.js             0.30 kB │ gzip:   0.24 kB
+dist/assets/AuthCallbackView-BAWoiyeL.js             0.41 kB │ gzip:   0.29 kB
+dist/assets/NotFoundView-_uJ-kRMb.js                 0.62 kB │ gzip:   0.41 kB
+dist/assets/UnauthorizedView-BIfm1sFv.js             0.65 kB │ gzip:   0.41 kB
+dist/assets/productAdminApi-Bxuq4IfO.js              1.01 kB │ gzip:   0.40 kB
+dist/assets/SlideOverPanel-C1R7mqNv.js               1.04 kB │ gzip:   0.65 kB
+dist/assets/useOrderAdminStore-DijqPkzk.js           1.35 kB │ gzip:   0.68 kB
+dist/assets/useInventoryStore-7x-qroxJ.js            1.55 kB │ gzip:   0.78 kB
+dist/assets/chevronleft-DRjiBeeE.js                  1.77 kB │ gzip:   1.05 kB
+dist/assets/chevronright-CpIBACRV.js                 1.77 kB │ gzip:   1.05 kB
+dist/assets/skeleton-Zy-JIPX9.js                     3.05 kB │ gzip:   1.21 kB
+dist/assets/chart-Bf8BcMUw.js                        3.24 kB │ gzip:   1.40 kB
+dist/assets/tag-PdqZsxoU.js                          3.36 kB │ gzip:   1.25 kB
+dist/assets/SystemEventsPage-rTe6qTGH.js             4.31 kB │ gzip:   1.90 kB
+dist/assets/progressbar-9WsWhr5R.js                  4.93 kB │ gzip:   1.25 kB
+dist/assets/SystemHealthPanel-30-RmR_Z.js            5.45 kB │ gzip:   2.33 kB
+dist/assets/InventoryPage-BDc2qlQt.js                6.65 kB │ gzip:   2.63 kB
+dist/assets/adminClient-CdmWEEPk.js                 45.79 kB │ gzip:  17.42 kB
+dist/assets/ProductsPage-DgJonIl7.js                60.01 kB │ gzip:  15.56 kB
+dist/assets/OrdersPage-CidTM63c.js                  63.06 kB │ gzip:  15.05 kB
+dist/assets/runtime-core.esm-bundler-kbKUxqwd.js    64.58 kB │ gzip:  25.38 kB
+dist/assets/DashboardPage-BJkErN-B.js               96.85 kB │ gzip:  29.14 kB
+dist/assets/ReportsPage-PSCAnXLH.js                116.39 kB │ gzip:  24.44 kB
+dist/assets/button-C-sk4v3v.js                     119.66 kB │ gzip:  29.42 kB
+dist/assets/auto-DnuEdD6h.js                       203.08 kB │ gzip:  69.61 kB
+dist/assets/column-CZPeXx3i.js                     351.50 kB │ gzip:  73.93 kB
+dist/assets/index-DfldewEX.js                      414.28 kB │ gzip:  93.93 kB
+
+✓ built in 280ms

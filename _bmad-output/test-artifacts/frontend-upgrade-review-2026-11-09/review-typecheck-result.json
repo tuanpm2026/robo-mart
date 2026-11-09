@@ -1,0 +1,10 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "type-check",
+    "--workspaces",
+    "--if-present"
+  ],
+  "exitCode": 0
+}

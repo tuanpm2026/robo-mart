@@ -1,0 +1,13 @@
+
+> customer-website@0.0.0 test:unit
+> vitest --run src/components/product/__tests__/ProductCard.spec.ts src/components/product/__tests__/FilterSidebar.spec.ts src/views/__tests__/SearchResultsView.filters.spec.ts src/components/checkout/CheckoutAccessibility.spec.ts
+
+
+ RUN  v4.1.9 /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/customer-website
+
+
+ Test Files  4 passed (4)
+      Tests  41 passed (41)
+   Start at  20:31:57
+   Duration  1.50s (transform 425ms, setup 0ms, import 1.25s, tests 1.15s, environment 1.77s)
+

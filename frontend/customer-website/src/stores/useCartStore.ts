@@ -33,7 +33,7 @@ export const useCartStore = defineStore('cart', () => {
   }
 
   async function addItem(request: AddToCartRequest) {
-    const previousItems = [...items.value]
+    const previousItems = items.value.map((item) => ({ ...item }))
     const existing = items.value.find((i) => i.productId === request.productId)
     if (existing) {
       existing.quantity += request.quantity

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "test:unit",
+    "--workspace=customer-website",
+    "--",
+    "--run",
+    "src/components/product/__tests__/ProductCard.spec.ts",
+    "src/components/product/__tests__/FilterSidebar.spec.ts",
+    "src/views/__tests__/SearchResultsView.filters.spec.ts",
+    "src/components/checkout/CheckoutAccessibility.spec.ts"
+  ],
+  "cwd": "frontend",
+  "exit_code": 0,
+  "timestamp_utc": "2026-11-09T13:31:59.361101+00:00"
+}

@@ -138,7 +138,7 @@ onUnmounted(() => {
 <template>
   <div class="image-upload-section">
     <label class="field-label"
-      >Product Images <span class="text-gray-400 text-xs">(optional)</span></label
+      >Product Images <span class="text-gray-600 text-xs">(optional)</span></label
     >
 
     <!-- Existing images grid -->
@@ -164,6 +164,7 @@ onUnmounted(() => {
           size="small"
           text
           class="image-delete-btn"
+          :aria-label="`Remove product image ${index + 1}`"
           :disabled="isUploading || isReordering"
           @click="removeImage(image)"
         />
@@ -199,7 +200,7 @@ onUnmounted(() => {
               class="pi pi-spinner pi-spin"
               style="font-size: 2rem; color: var(--color-primary-500)"
             />
-            <i v-else class="pi pi-image" style="font-size: 2rem; color: var(--color-gray-400)" />
+            <i v-else class="pi pi-image" style="font-size: 2rem; color: var(--color-gray-600)" />
             <p v-if="isUploading">Uploading…</p>
             <p v-else-if="atImageLimit" class="text-warning">10 image limit reached</p>
             <p v-else>Drag and drop images here, or click Select Images</p>
@@ -311,7 +312,7 @@ onUnmounted(() => {
 
 .upload-hint {
   font-size: 11px;
-  color: var(--color-gray-400);
+  color: var(--color-gray-600);
 }
 
 .text-warning {

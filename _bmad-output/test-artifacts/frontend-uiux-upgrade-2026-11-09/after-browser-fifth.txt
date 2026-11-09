@@ -1,0 +1,8 @@
+after: captured width 360
+after: captured width 390
+after: captured width 768
+after: captured width 1024
+after: captured width 1440
+Error: payment rejection focuses visible alert: "sp__heading" expected "sp__error-banner"
+    at assert (/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs:151:26)
+    at run (/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs:248:7)

@@ -1,0 +1,162 @@
+{
+  "phase": "after",
+  "timestamp": "2026-11-09T13:55:26.157Z",
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/156.0.8078.80",
+    "revision": "@fb096c0011f9d50f0a264a9376420cdea9c421e3",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+    "jsVersion": "15.6.75.27"
+  },
+  "harnessSha256": "fc16946f4c7c6c9d6ae730d8acfb705d1401f97d1d5c89438b1c496b16346ce7",
+  "fixture": "Synthetic API/OIDC; all non-preview requests intercepted; no real backend/identity writes",
+  "screens": [
+    {
+      "screen": "order-action-contrast",
+      "width": 390,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "layoutHeight": 950,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 157.59375,
+        "width": 358,
+        "height": 258.1875,
+        "clientWidth": 358,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "View order 1 details"
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column p-datatable-column-sorted",
+          "width": 180,
+          "right": 556.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 148,
+          "right": 540.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 31.234375,
+          "right": 423.71875
+        },
+        {
+          "tag": "SPAN",
+          "class": "",
+          "width": 14,
+          "right": 445.71875
+        },
+        {
+          "tag": "svg",
+          "class": {},
+          "width": 14,
+          "right": 445.71875
+        }
+      ],
+      "screenshot": "contrast-verified-order-action-contrast-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          }
+        ]
+      }
+    }
+  ],
+  "interactions": [],
+  "errors": [],
+  "contrast": {
+    "foreground": "rgb(29, 78, 216)",
+    "background": "rgb(249, 250, 251)",
+    "focusOutline": "rgb(29, 78, 216)",
+    "focusOutlineWidth": "2px",
+    "focusOutlineOffset": "3px",
+    "focusVisible": true,
+    "boxShadow": "none",
+    "border": "rgba(0, 0, 0, 0)",
+    "borderWidth": "1px",
+    "buttonLabel": "View order 1 details",
+    "iconRatio": 6.4128734861003664,
+    "focusRatio": 6.4128734861003664
+  },
+  "finalDiagnostics": {
+    "url": "http://127.0.0.1:16574/admin/orders",
+    "text": "Skip to main content\nOrders\nDisconnected\nOrders\nFilter by status\nOrder #\n\t\nCustomer\n\t\nDate\n\t\nItems\n\t\nTotal\n\t\nStatus\n\t\nActions\n\n#1\tcustomer-RM123456789012345678901234567890123456789012345678901234567890\tNov 9, 2026, 7:00 PM\t2\t$99.98\t\nConfirmed\n\t\n\n#2\tcustomer-RM123456789012345678901234567890123456789012345678901234567890\tNov 9, 2026, 7:00 PM\t2\t$99.98\t\nPAYMENT_PENDING\n\t\n1\n25",
+    "active": "<button data-v-bee75327=\"\" class=\"p-button p-component p-button-icon-only p-button-primary p-button-text p-button-sm\" data-p=\"small icon-only text\" type=\"button\" aria-label=\"View order 1 details\" data-pc-name=\"button\" data-p-disabled=\"false\" data-p-severity=\"primary\" title=\"View order details\" pc62=\"\" data-pc-section=\"root\"><span class=\"p-button-icon pi pi-eye\" data-p=\"left small\" data-pc-section=\"icon\"></span><!----><!----></button>",
+    "shipping": []
+  },
+  "requests": [
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    }
+  ]
+}

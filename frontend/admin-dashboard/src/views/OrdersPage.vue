@@ -136,7 +136,7 @@ function formatCurrency(amount: number): string {
 <template>
   <div class="orders-page">
     <!-- Page Header -->
-    <div class="flex items-center justify-between mb-4">
+    <div class="page-heading flex items-center justify-between mb-4">
       <h1 class="text-xl font-semibold text-gray-900">Orders</h1>
       <MultiSelect
         v-model="orderStore.statusFilter"
@@ -144,6 +144,7 @@ function formatCurrency(amount: number): string {
         option-label="label"
         option-value="value"
         placeholder="Filter by status"
+        aria-label="Filter orders by status"
         :max-selected-labels="2"
         class="w-72"
         display="chip"
@@ -153,6 +154,7 @@ function formatCurrency(amount: number): string {
     <!-- Error State -->
     <div
       v-if="orderStore.error"
+      role="alert"
       class="mb-4 p-3 bg-red-50 text-red-700 rounded border border-red-200 text-sm"
     >
       {{ orderStore.error }}
@@ -161,6 +163,10 @@ function formatCurrency(amount: number): string {
 
     <!-- Orders DataTable -->
     <DataTable
+      :table-style="{ minWidth: '64rem' }"
+      :pt="{
+        tableContainer: { tabindex: 0, role: 'region', 'aria-label': 'Scrollable orders table' },
+      }"
       :value="orderStore.orders"
       :loading="orderStore.isLoading"
       :paginator="true"
@@ -224,6 +230,7 @@ function formatCurrency(amount: number): string {
           <Select
             v-if="adminTransitions[data.status]"
             :model-value="data.status"
+            :aria-label="`Status for order ${data.id}`"
             :options="[
               { label: statusLabels[data.status], value: data.status },
               ...(adminTransitions[data.status] ?? []),
@@ -243,14 +250,22 @@ function formatCurrency(amount: number): string {
         </template>
       </Column>
 
-      <Column header="Actions" style="width: 80px">
+      <Column
+        header="Actions"
+        frozen
+        align-frozen="right"
+        header-class="row-actions"
+        body-class="row-actions"
+        style="width: 80px"
+      >
         <template #body="{ data }">
           <Button
             icon="pi pi-eye"
             text
             size="small"
-            severity="info"
+            severity="primary"
             title="View order details"
+            :aria-label="`View order ${data.id} details`"
             @click="openDetail(data)"
           />
         </template>
@@ -322,30 +337,34 @@ function formatCurrency(amount: number): string {
         <!-- Order Items -->
         <div>
           <h3 class="text-sm font-semibold text-gray-900 mb-2">Order Items</h3>
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="text-left text-gray-500 border-b">
-                <th class="pb-2">Product</th>
-                <th class="pb-2 text-right">Qty</th>
-                <th class="pb-2 text-right">Unit Price</th>
-                <th class="pb-2 text-right">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="item in orderStore.selectedOrder.items"
-                :key="item.productId"
-                class="border-b border-gray-100"
-              >
-                <td class="py-2 text-gray-700">{{ item.productName }}</td>
-                <td class="py-2 text-right text-gray-600">{{ item.quantity }}</td>
-                <td class="py-2 text-right text-gray-600">{{ formatCurrency(item.unitPrice) }}</td>
-                <td class="py-2 text-right font-medium text-gray-900">
-                  {{ formatCurrency(item.subtotal) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="order-items-scroll" role="region" aria-label="Order items table" tabindex="0">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-left text-gray-500 border-b">
+                  <th class="pb-2">Product</th>
+                  <th class="pb-2 text-right">Qty</th>
+                  <th class="pb-2 text-right">Unit Price</th>
+                  <th class="pb-2 text-right">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="item in orderStore.selectedOrder.items"
+                  :key="item.productId"
+                  class="border-b border-gray-100"
+                >
+                  <td class="py-2 text-gray-700">{{ item.productName }}</td>
+                  <td class="py-2 text-right text-gray-600">{{ item.quantity }}</td>
+                  <td class="py-2 text-right text-gray-600">
+                    {{ formatCurrency(item.unitPrice) }}
+                  </td>
+                  <td class="py-2 text-right font-medium text-gray-900">
+                    {{ formatCurrency(item.subtotal) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Order Timeline -->
@@ -374,5 +393,36 @@ function formatCurrency(amount: number): string {
 
 .order-timeline :deep(.p-timeline-event-opposite) {
   display: none;
+}
+
+.page-heading {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.page-heading :deep(.p-multiselect) {
+  max-width: 100%;
+}
+:deep(.p-datatable) {
+  max-width: 100%;
+  min-width: 0;
+}
+:deep(.p-datatable-table-container) {
+  overflow-x: auto;
+  max-width: 100%;
+}
+:deep(td) {
+  overflow-wrap: anywhere;
+}
+
+.order-items-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+:deep(.row-actions) {
+  position: sticky;
+  right: 0;
+  background: var(--color-gray-50);
+  z-index: 1;
+  box-shadow: -2px 0 4px rgb(0 0 0 / 8%);
 }
 </style>

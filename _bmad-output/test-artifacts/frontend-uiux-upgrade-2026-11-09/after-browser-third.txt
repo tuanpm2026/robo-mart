@@ -1,0 +1,8 @@
+after: captured width 360
+after: captured width 390
+after: captured width 768
+after: captured width 1024
+after: captured width 1440
+Error: Timed out: document.querySelectorAll('.search-results__remove-filter').length===3
+    at wait (/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs:88:172)
+    at async run (/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs:184:7)
