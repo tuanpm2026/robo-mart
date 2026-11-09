@@ -298,6 +298,30 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres-saga:
+    image: postgres:17
+    container_name: robomart-postgres-saga
+    profiles: ["core"]
+    environment:
+      POSTGRES_DB: saga_db
+      POSTGRES_USER: ${SAGA_DB_USER:-saga}
+      POSTGRES_PASSWORD: ${SAGA_DB_PASSWORD:-robomart}
+    ports:
+      - "${SAGA_DB_PORT:-5438}:5432"
+    volumes:
+      - saga-data:/var/lib/postgresql/data
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SAGA_DB_USER:-saga}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   postgres-notification:
     image: postgres:17-alpine
     container_name: robomart-postgres-notification
@@ -464,6 +488,7 @@ services:
       KEYCLOAK_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8180}/realms/robomart
       KEYCLOAK_AUDIENCE: robomart-api
       KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
+      ROBOMART_ORDER_EXTERNAL_SAGA_ENABLED: ${EXTERNAL_SAGA_ENABLED:-false}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-order:5432/order_db
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-robomart}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-robomart}
@@ -505,6 +530,7 @@ services:
       KEYCLOAK_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8180}/realms/robomart
       KEYCLOAK_AUDIENCE: robomart-api
       KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
+      SAGA_SERVICE_URL: http://checkout-saga-service:8091
       ORDER_SERVICE_URL: http://order-service:8083
       INVENTORY_SERVICE_CLIENT_SECRET: ${INVENTORY_SERVICE_CLIENT_SECRET:-}
       INVENTORY_SERVICE_TOKEN_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/token
@@ -558,6 +584,45 @@ services:
       retries: 5
       start_period: 60s
 
+  checkout-saga-service:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile.prebuilt
+      target: checkout-saga-service
+    image: robomart/checkout-saga-service:local
+    container_name: robomart-checkout-saga-service
+    profiles: ["app"]
+    depends_on:
+      postgres-saga:
+        condition: service_healthy
+    environment:
+      KEYCLOAK_ISSUER_URI: ${KEYCLOAK_PUBLIC_URL:-http://localhost:8180}/realms/robomart
+      KEYCLOAK_AUDIENCE: robomart-api
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-saga:5432/saga_db
+      SPRING_DATASOURCE_USERNAME: ${SAGA_DB_USER:-saga}
+      SPRING_DATASOURCE_PASSWORD: ${SAGA_DB_PASSWORD:-robomart}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
+      SAGA_WORKER_ENABLED: "true"
+      SAGA_CLIENT_SECRET: ${SAGA_CLIENT_SECRET:-REPLACE_ME}
+      SAGA_TOKEN_URL: http://keycloak:8180/realms/robomart/protocol/openid-connect/token
+      GRPC_CLIENT_ORDER_SERVICE_ADDRESS: static://order-service:9093
+      GRPC_CLIENT_INVENTORY_SERVICE_ADDRESS: static://inventory-service:9094
+      GRPC_CLIENT_PAYMENT_SERVICE_ADDRESS: static://payment-service:9095
+    networks:
+      - robomart-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8091/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
   notification-service:
     build:
       context: ../../backend
@@ -589,6 +654,7 @@ services:
       SPRING_KAFKA_PROPERTIES_SCHEMA_REGISTRY_URL: http://schema-registry:8085
       KEYCLOAK_JWK_SET_URI: http://keycloak:8180/realms/robomart/protocol/openid-connect/certs
       API_GATEWAY_URL: http://api-gateway:8090
+      SAGA_SERVICE_URL: http://checkout-saga-service:8091
       ORDER_SERVICE_URL: http://order-service:8083
       PRODUCT_SERVICE_URL: http://product-service:8081
       CART_SERVICE_URL: http://cart-service:8082
@@ -641,6 +707,7 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       GATEWAY_SERVICES_PRODUCT_SERVICE: http://product-service:8081
       GATEWAY_SERVICES_CART_SERVICE: http://cart-service:8082
+      GATEWAY_SERVICES_CHECKOUT_SAGA_SERVICE: http://checkout-saga-service:8091
       GATEWAY_SERVICES_ORDER_SERVICE: http://order-service:8083
       GATEWAY_SERVICES_INVENTORY_SERVICE: http://inventory-service:8084
       GATEWAY_SERVICES_NOTIFICATION_SERVICE: http://notification-service:8087
@@ -694,6 +761,7 @@ services:
           memory: 128M
 
 volumes:
+  saga-data:
   minio-data:
   product-images:
   postgres-data:

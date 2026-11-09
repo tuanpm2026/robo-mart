@@ -152,6 +152,28 @@ describe('useOrderStore', () => {
     })
   })
 
+  it('fences a polling response started before cancellation was admitted', async () => {
+    const { getOrder } = await import('@/api/orderApi')
+    const response = await getOrder(1)
+    let finish!: (value: typeof response) => void
+    vi.mocked(getOrder).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        }),
+    )
+    const store = useOrderStore()
+    const stale = store.fetchOrder(1, true)
+    vi.mocked(getOrder).mockResolvedValueOnce({
+      ...response,
+      data: { ...response.data, status: 'CANCELLATION_PENDING' },
+    })
+    await store.cancelOrder(1)
+    finish(response)
+    await stale
+    expect(store.currentOrder?.status).toBe('CANCELLATION_PENDING')
+  })
+
   // --- $reset ---
 
   describe('$reset', () => {

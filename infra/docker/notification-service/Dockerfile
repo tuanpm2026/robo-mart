@@ -23,6 +23,7 @@ COPY backend/order-service/pom.xml order-service/pom.xml
 COPY backend/inventory-service/pom.xml inventory-service/pom.xml
 COPY backend/payment-service/pom.xml payment-service/pom.xml
 COPY backend/notification-service/pom.xml notification-service/pom.xml
+COPY backend/checkout-saga-service/pom.xml checkout-saga-service/pom.xml
 COPY backend/e2e-tests/pom.xml e2e-tests/pom.xml
 RUN chmod +x mvnw
 COPY backend/build-support/src build-support/src

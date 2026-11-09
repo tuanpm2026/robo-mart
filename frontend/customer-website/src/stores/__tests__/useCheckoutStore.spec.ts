@@ -348,8 +348,8 @@ describe('checkout retry and cleanup recovery', () => {
     expect(sessionStorage.getItem('robomart-checkout:customer-a')).toBeNull()
   })
 
-  it.each(['CANCELLED', 'INVENTORY_RELEASING'] as const)(
-    'preserves the cart for %s orders',
+  it.each(['PENDING', 'PAYMENT_PENDING', 'CANCELLATION_PENDING', 'INVENTORY_RELEASING'] as const)(
+    'retains the cart snapshot and retry identity while %s',
     async (status) => {
       const store = prepareCheckout()
       vi.mocked(mockPlaceOrder).mockResolvedValueOnce({
@@ -358,9 +358,22 @@ describe('checkout retry and cleanup recovery', () => {
       })
       await store.placeOrder()
       expect(mockCompleteCheckout).not.toHaveBeenCalled()
-      expect(sessionStorage.getItem('robomart-checkout:customer-a')).toBeNull()
+      expect(JSON.parse(sessionStorage.getItem('robomart-checkout:customer-a')!).orderId).toBe(42)
+      await store.reconcileCart(confirmed.data)
+      expect(mockCompleteCheckout).toHaveBeenCalledTimes(1)
     },
   )
+
+  it.each(['CANCELLED'] as const)('preserves the cart for %s orders', async (status) => {
+    const store = prepareCheckout()
+    vi.mocked(mockPlaceOrder).mockResolvedValueOnce({
+      ...confirmed,
+      data: { ...confirmed.data, status },
+    })
+    await store.placeOrder()
+    expect(mockCompleteCheckout).not.toHaveBeenCalled()
+    expect(sessionStorage.getItem('robomart-checkout:customer-a')).toBeNull()
+  })
 
   it('isolates saved checkouts by authenticated user and ignores unrelated confirmation URLs', async () => {
     const store = prepareCheckout()

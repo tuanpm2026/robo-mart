@@ -1,0 +1,133 @@
+spring:
+  application:
+    name: checkout-saga-service
+  datasource:
+    url: ${SAGA_DB_URL:jdbc:postgresql://localhost:5438/saga_db}
+    username: ${SAGA_DB_USER:saga}
+    password: ${SAGA_DB_PASSWORD:robomart}
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:2}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:3000}
+  threads:
+    virtual:
+      enabled: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8180/realms/robomart}
+          audiences: ${KEYCLOAK_AUDIENCE:robomart-api}
+          jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8180/realms/robomart/protocol/openid-connect/certs}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
+    properties:
+      schema.registry.url: ${SCHEMA_REGISTRY_URL:http://localhost:8085}
+      http.connect.timeout.ms: 1000
+      http.read.timeout.ms: 5000
+      max.retries: 0
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+      properties:
+        auto.register.schemas: true
+        max.block.ms: 1000
+        request.timeout.ms: 10000
+        delivery.timeout.ms: 30000
+    consumer:
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      max-poll-records: 10
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: io.confluent.kafka.serializers.KafkaAvroDeserializer
+        specific.avro.reader: true
+        group.protocol: ${KAFKA_GROUP_PROTOCOL:classic}
+        max.poll.interval.ms: 600000
+    admin:
+      operation-timeout: 5s
+      auto-create: ${spring.kafka.listener.auto-startup:true}
+    template:
+      observation-enabled: true
+    listener:
+      ack-mode: record
+      observation-enabled: true
+  grpc:
+    client:
+      channel:
+        order-service:
+          target: '${GRPC_CLIENT_ORDER_SERVICE_ADDRESS:static://localhost:9093}'
+          ssl:
+            enabled: false
+        inventory-service:
+          target: '${GRPC_CLIENT_INVENTORY_SERVICE_ADDRESS:static://localhost:9094}'
+          ssl:
+            enabled: false
+        payment-service:
+          target: '${GRPC_CLIENT_PAYMENT_SERVICE_ADDRESS:static://localhost:9095}'
+          ssl:
+            enabled: false
+  lifecycle:
+    timeout-per-shutdown-phase: 25s
+
+logging:
+  structured:
+    format:
+      console: ${LOGGING_STRUCTURED_FORMAT_CONSOLE:ecs}
+
+server:
+  port: 8091
+  shutdown: graceful
+
+management:
+  tracing:
+    baggage:
+      remote-fields: correlationId,X-Correlation-Id
+      correlation:
+        fields: correlationId,X-Correlation-Id
+    sampling:
+      probability: ${TRACING_SAMPLE_RATE:1.0}
+  opentelemetry:
+    tracing:
+      export:
+        otlp:
+          endpoint: ${MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  health:
+    probes:
+      enabled: true
+  endpoint:
+    health:
+      show-details: when-authorized
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,db,kafka
+  metrics:
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+      percentiles:
+        "[http.server.requests]": 0.5,0.95,0.99
+
+saga:
+  identity:
+    token-url: ${SAGA_TOKEN_URL:http://localhost:8180/realms/robomart/protocol/openid-connect/token}
+    client-secret: ${SAGA_CLIENT_SECRET}
+  worker:
+    enabled: ${SAGA_WORKER_ENABLED:false}
+    interval-ms: 500
+    max-attempts: 120
+    refund-max-attempts: 12
+    max-age: 1h
+    retry-delay: 5s

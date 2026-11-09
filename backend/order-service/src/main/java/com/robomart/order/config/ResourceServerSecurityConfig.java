@@ -1,5 +1,7 @@
 package com.robomart.order.config;
 
+import com.robomart.security.converter.KeycloakRealmRoleConverter;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,8 +14,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
-
-import com.robomart.security.converter.KeycloakRealmRoleConverter;
 
 /**
  * Defense-in-depth resource-server security (Wave 2). Validates the Keycloak JWT at the service
@@ -35,25 +35,52 @@ public class ResourceServerSecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/admin/orders/{orderId:[0-9]+}")
-                    .hasAnyRole("ADMIN", "NOTIFICATION_SERVICE")
-                .requestMatchers(HttpMethod.GET, "/api/v1/admin/orders/reconciliation-summary", "/api/v1/admin/orders/audit-logs")
-                    .hasAnyRole("ADMIN", "NOTIFICATION_SERVICE")
-                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.GET, "/api/v1/internal/inventory/orders/{orderId:[0-9]+}/status")
-                    .hasRole("INVENTORY_SERVICE")
-                .requestMatchers("/api/v1/internal/**").denyAll()
-                .anyRequest().access(AuthorizationManagers.allOf(
-                        AuthenticatedAuthorizationManager.authenticated(),
-                        AuthorizationManagers.not(AuthorityAuthorizationManager.hasRole("NOTIFICATION_SERVICE")),
-                        AuthorizationManagers.not(AuthorityAuthorizationManager.hasRole("INVENTORY_SERVICE")))))
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
-                jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
+        http.csrf(csrf -> csrf.disable())
+                .sessionManagement(
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(
+                        auth ->
+                                auth.requestMatchers("/actuator/**")
+                                        .permitAll()
+                                        .requestMatchers(
+                                                HttpMethod.GET,
+                                                "/api/v1/admin/orders/{orderId:[0-9]+}")
+                                        .hasAnyRole("ADMIN", "NOTIFICATION_SERVICE")
+                                        .requestMatchers(
+                                                HttpMethod.GET,
+                                                "/api/v1/admin/orders/reconciliation-summary",
+                                                "/api/v1/admin/orders/audit-logs")
+                                        .hasAnyRole("ADMIN", "NOTIFICATION_SERVICE")
+                                        .requestMatchers("/api/v1/admin/**")
+                                        .hasRole("ADMIN")
+                                        .requestMatchers(
+                                                HttpMethod.GET,
+                                                "/api/v1/internal/inventory/orders/{orderId:[0-9]+}/status")
+                                        .hasRole("INVENTORY_SERVICE")
+                                        .requestMatchers("/api/v1/internal/**")
+                                        .denyAll()
+                                        .anyRequest()
+                                        .access(
+                                                AuthorizationManagers.allOf(
+                                                        AuthenticatedAuthorizationManager
+                                                                .authenticated(),
+                                                        AuthorizationManagers.not(
+                                                                AuthorityAuthorizationManager
+                                                                        .hasRole("SAGA_SERVICE")),
+                                                        AuthorizationManagers.not(
+                                                                AuthorityAuthorizationManager
+                                                                        .hasRole(
+                                                                                "NOTIFICATION_SERVICE")),
+                                                        AuthorizationManagers.not(
+                                                                AuthorityAuthorizationManager
+                                                                        .hasRole(
+                                                                                "INVENTORY_SERVICE")))))
+                .oauth2ResourceServer(
+                        oauth2 ->
+                                oauth2.jwt(
+                                        jwt ->
+                                                jwt.jwtAuthenticationConverter(
+                                                        jwtAuthenticationConverter())));
         return http.build();
     }
 

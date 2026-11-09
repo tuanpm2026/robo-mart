@@ -1,0 +1,109 @@
+syntax = "proto3";
+package com.robomart.proto.saga;
+
+option java_multiple_files = true;
+option java_outer_classname = "SagaParticipantProto";
+option java_package = "com.robomart.proto.saga";
+
+// Internal, service-authenticated commands. Public order APIs never accept these messages.
+service OrderSagaParticipantService {
+  rpc GetWorkflowOrder(GetWorkflowOrderRequest) returns (GetWorkflowOrderResponse);
+  rpc ExecuteCommand(ExecuteCommandRequest) returns (ExecuteCommandResponse);
+}
+service PaymentSagaParticipantService {
+  rpc GetChargeOutcome(GetChargeOutcomeRequest) returns (GetChargeOutcomeResponse);
+  rpc CloseCharge(CloseChargeRequest) returns (CloseChargeResponse);
+  rpc RefundRemaining(RefundRemainingRequest) returns (RefundRemainingResponse);
+  rpc GetRefundOutcome(GetRefundOutcomeRequest) returns (GetRefundOutcomeResponse);
+}
+// RPC envelopes have distinct names; the immutable operation/receipt payloads are shared.
+message GetWorkflowOrderRequest {
+  WorkflowOrderRequest operation = 1;
+}
+message GetWorkflowOrderResponse {
+  WorkflowOrderResponse result = 1;
+}
+message ExecuteCommandRequest {
+  OrderWorkflowCommand command = 1;
+}
+message ExecuteCommandResponse {
+  OrderWorkflowResult result = 1;
+}
+message GetChargeOutcomeRequest {
+  ChargeOperation operation = 1;
+}
+message GetChargeOutcomeResponse {
+  ChargeOutcome result = 1;
+}
+message CloseChargeRequest {
+  ChargeOperation operation = 1;
+}
+message CloseChargeResponse {
+  ChargeOutcome result = 1;
+}
+message RefundRemainingRequest {
+  RefundOperation operation = 1;
+}
+message RefundRemainingResponse {
+  RefundOutcome result = 1;
+}
+message GetRefundOutcomeRequest {
+  RefundOperation operation = 1;
+}
+message GetRefundOutcomeResponse {
+  RefundOutcome result = 1;
+}
+message WorkflowOrderRequest {
+  string order_id = 1;
+  string saga_id = 2;
+  int64 owner_epoch = 3;
+}
+message WorkflowOrderResponse {
+  string status = 1;
+  string snapshot_json = 2;
+  string reservation_id = 3;
+  string payment_id = 4;
+  string cancellation_reason = 5;
+}
+message OrderWorkflowCommand {
+  string order_id = 1;
+  string saga_id = 2;
+  int64 owner_epoch = 3;
+  string command_id = 4;
+  string action = 5;
+  string reservation_id = 6;
+  string payment_id = 7;
+  string reason = 8;
+  string charge_resolution = 9;
+  bool inventory_closed = 10;
+}
+message OrderWorkflowResult {
+  bool applied = 1;
+  string status = 2;
+  string message = 3;
+}
+message ChargeOperation {
+  string order_id = 1;
+  string idempotency_key = 2;
+  string user_id = 3;
+  string amount = 4;
+  string currency = 5;
+}
+message ChargeOutcome {
+  // SUCCEEDED, DECLINED_FINAL, NO_CHARGE_FINAL, IN_PROGRESS, UNKNOWN
+  string state = 1;
+  string payment_id = 2;
+  string amount = 3;
+  string currency = 4;
+  string refunded_amount = 5;
+}
+message RefundOperation {
+  string order_id = 1;
+  string payment_id = 2;
+  string idempotency_key = 3;
+}
+message RefundOutcome {
+  // SUCCEEDED, IN_PROGRESS, UNKNOWN. A rejection remains recoverable.
+  string state = 1;
+  string amount = 2;
+}

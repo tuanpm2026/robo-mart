@@ -12,7 +12,7 @@ test('retries a committed checkout after response loss with the same key, includ
     if (route.request().method() !== 'POST') return route.continue()
     keys.push(route.request().headers()['idempotency-key'] ?? '')
     const response = await route.fetch()
-    expect(response.status()).toBe(201)
+    expect([200, 202]).toContain(response.status())
     const id = (await response.json()).data.id as number
     if (!committedOrder) {
       committedOrder = id
@@ -55,7 +55,7 @@ test('consumes the server cart once and retains units added from another tab', a
   await page.route(`${API}/api/v1/orders`, async (route) => {
     if (route.request().method() !== 'POST') return route.continue()
     const response = await route.fetch()
-    expect(response.status()).toBe(201)
+    expect([200, 202]).toContain(response.status())
     // Add after the submitted snapshot is frozen but before cart acknowledgement.
     await secondTab.getByRole('button', { name: 'Add to Cart', exact: true }).click()
     await expect
@@ -167,6 +167,7 @@ test('recovers a lost cart acknowledgement after Redis committed without blockin
   })
   await page.getByRole('button', { name: 'Place Order', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Order Confirmed!' })).toBeVisible()
+  await page.reload()
   await expect.poll(() => acknowledgements).toBe(2)
   const orderId = Number(new URL(page.url()).pathname.split('/').pop())
   await shop.assertSingleOrder(orderId)

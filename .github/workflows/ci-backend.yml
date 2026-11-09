@@ -123,6 +123,7 @@ jobs:
           - cart-service         # Redis
           - order-service        # Postgres + Kafka + gRPC (also runs its Pact provider IT)
           - inventory-service    # Postgres + Redis
+          - checkout-saga-service # Postgres, durable worker and participant contracts
           - payment-service      # Postgres
           - notification-service # Postgres + Kafka
           - events               # Kafka + Schema Registry

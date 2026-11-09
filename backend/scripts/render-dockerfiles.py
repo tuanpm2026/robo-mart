@@ -10,6 +10,7 @@ SERVICES = {
     'api-gateway': '8080 8090', 'product-service': '8081', 'cart-service': '8082',
     'order-service': '8083 9093', 'inventory-service': '8084 9094',
     'payment-service': '8086 9095', 'notification-service': '8087',
+    'checkout-saga-service': '8091',
 }
 MODULES = ['build-support', 'outbox-lib', 'common-core', 'common-web-starter', 'common-lib', 'security-lib', 'proto', 'events', 'test-support', *SERVICES, 'e2e-tests']
 FLAGS = '-XX:+UseCompactObjectHeaders -XX:MaxRAMPercentage=75'
@@ -85,10 +86,11 @@ def main():
             if not path.exists() or path.read_text() != content.rstrip() + "\n":
                 drift.append(str(path.relative_to(ROOT)))
         else:
+            path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(content.rstrip() + "\n")
     if drift:
         parser.exit(1, 'Dockerfile drift: ' + ', '.join(drift) + '\n')
-    print('Dockerfiles match the shared renderer.' if args.check else 'Rendered 9 Dockerfiles.')
+    print('Dockerfiles match the shared renderer.' if args.check else f'Rendered {len(SERVICES) + 2} Dockerfiles.')
 
 
 if __name__ == '__main__':

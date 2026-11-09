@@ -1,18 +1,18 @@
 package com.robomart.notification.unit.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.robomart.notification.service.HealthAggregatorService;
+import com.robomart.notification.web.ServiceHealthData;
+import com.robomart.notification.web.SystemHealthResponse;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import com.robomart.notification.service.HealthAggregatorService;
-import com.robomart.notification.web.ServiceHealthData;
-import com.robomart.notification.web.SystemHealthResponse;
-
 import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @ExtendWith(MockitoExtension.class)
 class HealthAggregatorServiceTest {
@@ -30,27 +30,43 @@ class HealthAggregatorServiceTest {
         ReflectionTestUtils.setField(service, "paymentUrl", "http://localhost:8086");
         ReflectionTestUtils.setField(service, "notifUrl", "http://localhost:8087");
         ReflectionTestUtils.setField(service, "gatewayUrl", "http://localhost:8080");
+        ReflectionTestUtils.setField(service, "sagaUrl", "http://localhost:8091");
         service.init();
         java.util.Map<String, org.springframework.web.client.RestClient> clients = new java.util.HashMap<>();
-        for (String name : List.of("product-service", "cart-service", "order-service", "inventory-service",
-                "payment-service", "notification-service", "api-gateway")) {
+        for (String name :
+                List.of(
+                        "product-service",
+                        "cart-service",
+                        "order-service",
+                        "inventory-service",
+                        "payment-service",
+                        "notification-service",
+                        "checkout-saga-service",
+                        "api-gateway")) {
             var client = org.mockito.Mockito.mock(org.springframework.web.client.RestClient.class,
                     org.mockito.Mockito.RETURNS_DEEP_STUBS);
-            org.mockito.Mockito.when(client.get().uri("/actuator/health").retrieve()
-                    .body(com.robomart.notification.web.ActuatorHealthResponse.class))
-                    .thenThrow(new org.springframework.web.client.ResourceAccessException("unreachable"));
+            org.mockito.Mockito.when(
+                            client.get()
+                                    .uri("/actuator/health")
+                                    .retrieve()
+                                    .body(
+                                            com.robomart.notification.web.ActuatorHealthResponse
+                                                    .class))
+                    .thenThrow(
+                            new org.springframework.web.client.ResourceAccessException(
+                                    "unreachable"));
             clients.put(name, client);
         }
         ReflectionTestUtils.setField(service, "clients", clients);
     }
 
     @Test
-    void aggregateHealth_returns7ServiceEntries() {
-        // Stubbed transport failures still produce all seven service entries.
+    void aggregateHealth_returns8ServiceEntries() {
+        // Stubbed transport failures still produce all eight service entries.
         SystemHealthResponse response = service.aggregateHealth();
 
         assertThat(response).isNotNull();
-        assertThat(response.services()).hasSize(7);
+        assertThat(response.services()).hasSize(8);
         assertThat(response.checkedAt()).isNotNull();
     }
 
@@ -93,15 +109,16 @@ class HealthAggregatorServiceTest {
                 .map(ServiceHealthData::service)
                 .toList();
 
-        assertThat(serviceNames).containsExactlyInAnyOrder(
-                "product-service",
-                "cart-service",
-                "order-service",
-                "inventory-service",
-                "payment-service",
-                "notification-service",
-                "api-gateway"
-        );
+        assertThat(serviceNames)
+                .containsExactlyInAnyOrder(
+                        "product-service",
+                        "cart-service",
+                        "order-service",
+                        "inventory-service",
+                        "payment-service",
+                        "notification-service",
+                        "checkout-saga-service",
+                        "api-gateway");
     }
 
     @Test

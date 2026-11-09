@@ -1,9 +1,7 @@
 package com.robomart.order.entity;
 
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import com.robomart.common.entity.BaseEntity;
+import com.robomart.order.enums.OrderStatus;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -15,8 +13,10 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
-import com.robomart.common.entity.BaseEntity;
-import com.robomart.order.enums.OrderStatus;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -53,10 +53,80 @@ public class Order extends BaseEntity {
     @Column(name = "idempotency_key", length = 255)
     private String idempotencyKey;
 
+    @Column(name = "orchestrator_owner", nullable = false)
+    private String orchestratorOwner = "EMBEDDED";
+
+    @Column(name = "orchestrator_epoch", nullable = false)
+    private long orchestratorEpoch;
+
+    @Column(name = "saga_id")
+    private java.util.UUID sagaId;
+
+    @Column(name = "request_sequence", nullable = false)
+    private long requestSequence;
+
+    @Column(name = "request_fingerprint")
+    private String requestFingerprint;
+
+    @Column(name = "checkout_snapshot")
+    private String checkoutSnapshot;
+
+    public String getOrchestratorOwner() {
+        return orchestratorOwner;
+    }
+
+    public void setOrchestratorOwner(String v) {
+        orchestratorOwner = v;
+    }
+
+    public long getOrchestratorEpoch() {
+        return orchestratorEpoch;
+    }
+
+    public void setOrchestratorEpoch(long v) {
+        orchestratorEpoch = v;
+    }
+
+    public java.util.UUID getSagaId() {
+        return sagaId;
+    }
+
+    public void setSagaId(java.util.UUID v) {
+        sagaId = v;
+    }
+
+    public long getRequestSequence() {
+        return requestSequence;
+    }
+
+    public void setRequestSequence(long v) {
+        requestSequence = v;
+    }
+
+    public String getRequestFingerprint() {
+        return requestFingerprint;
+    }
+
+    public void setRequestFingerprint(String v) {
+        requestFingerprint = v;
+    }
+
+    public String getCheckoutSnapshot() {
+        return checkoutSnapshot;
+    }
+
+    public void setCheckoutSnapshot(String v) {
+        checkoutSnapshot = v;
+    }
+
     @Version
     private Integer version;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(
+            mappedBy = "order",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
     private List<OrderItem> items = new ArrayList<>();
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

@@ -1,11 +1,5 @@
 package com.robomart.order.grpc;
 
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.grpc.server.service.GrpcService;
-
 import com.robomart.common.exception.ExternalServiceException;
 import com.robomart.common.exception.ResourceNotFoundException;
 import com.robomart.common.exception.ValidationException;
@@ -28,6 +22,12 @@ import com.robomart.proto.order.OrderServiceGrpc;
 
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.grpc.server.service.GrpcService;
+
+import java.util.List;
 
 @GrpcService
 public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
@@ -72,7 +72,8 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
             responseObserver.onError(Status.UNAVAILABLE.withDescription(e.getMessage()).asRuntimeException());
         } catch (Exception e) {
             log.error("Unexpected error in createOrder: {}", e.getMessage(), e);
-            responseObserver.onError(Status.INTERNAL.withDescription("Internal error").asRuntimeException());
+            responseObserver.onError(
+                    Status.INTERNAL.withDescription("Internal error").asRuntimeException());
         }
     }
 
@@ -114,10 +115,14 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
         } catch (ResourceNotFoundException e) {
             responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
         } catch (NumberFormatException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid orderId format").asRuntimeException());
+            responseObserver.onError(
+                    Status.INVALID_ARGUMENT
+                            .withDescription("Invalid orderId format")
+                            .asRuntimeException());
         } catch (Exception e) {
             log.error("Unexpected error in getOrder: {}", e.getMessage(), e);
-            responseObserver.onError(Status.INTERNAL.withDescription("Internal error").asRuntimeException());
+            responseObserver.onError(
+                    Status.INTERNAL.withDescription("Internal error").asRuntimeException());
         }
     }
 
@@ -125,22 +130,31 @@ public class OrderGrpcService extends OrderServiceGrpc.OrderServiceImplBase {
     public void cancelOrder(CancelOrderRequest request, StreamObserver<CancelOrderResponse> responseObserver) {
         try {
             Long orderId = Long.parseLong(request.getOrderId());
-            orderService.cancelOrder(orderId, request.getReason(), request.getCancelledBy());
-            responseObserver.onNext(CancelOrderResponse.newBuilder()
-                    .setSuccess(true)
-                    .setMessage("Order cancelled successfully")
-                    .setStatus("CANCELLED")
-                    .build());
+            Order order =
+                    orderService.cancelOrder(
+                            orderId, request.getReason(), request.getCancelledBy());
+            responseObserver.onNext(
+                    CancelOrderResponse.newBuilder()
+                            .setSuccess(true)
+                            .setMessage("Order cancelled successfully")
+                            .setStatus(order.getStatus().name())
+                            .build());
             responseObserver.onCompleted();
         } catch (OrderNotCancellableException e) {
             responseObserver.onError(Status.FAILED_PRECONDITION.withDescription(e.getMessage()).asRuntimeException());
         } catch (ResourceNotFoundException e) {
             responseObserver.onError(Status.NOT_FOUND.withDescription(e.getMessage()).asRuntimeException());
         } catch (NumberFormatException e) {
-            responseObserver.onError(Status.INVALID_ARGUMENT.withDescription("Invalid orderId format").asRuntimeException());
+            responseObserver.onError(
+                    Status.INVALID_ARGUMENT
+                            .withDescription("Invalid orderId format")
+                            .asRuntimeException());
         } catch (Exception e) {
             log.error("Unexpected error in cancelOrder: orderId={}", request.getOrderId(), e);
-            responseObserver.onError(Status.INTERNAL.withDescription("Internal error during order cancellation").asRuntimeException());
+            responseObserver.onError(
+                    Status.INTERNAL
+                            .withDescription("Internal error during order cancellation")
+                            .asRuntimeException());
         }
     }
 

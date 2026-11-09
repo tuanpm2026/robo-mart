@@ -38,8 +38,11 @@ describe('OrderConfirmationView', () => {
   })
 
   it.each<[OrderStatus, string]>([
+    ['CANCELLATION_PENDING', 'Order Cancellation in Progress'],
     ['INVENTORY_RELEASING', 'Order Cancellation in Progress'],
     ['CANCELLED', 'Order Cancelled'],
+    ['PENDING', 'Order Received!'],
+    ['PAYMENT_PENDING', 'Order Received!'],
   ])('shows %s without promising confirmation or delivery', async (status, heading) => {
     orderStore.currentOrder!.status = status
     const wrapper = mount(OrderConfirmationView, {
@@ -51,6 +54,7 @@ describe('OrderConfirmationView', () => {
     expect(wrapper.text()).not.toContain('Order Confirmed!')
     expect(wrapper.text()).not.toContain('Estimated delivery')
     expect(orderStore.fetchOrder).toHaveBeenCalledWith(42)
+    wrapper.unmount()
   })
 
   it('continues to show confirmation and delivery for confirmed orders', async () => {

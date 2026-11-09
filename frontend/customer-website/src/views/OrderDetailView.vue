@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue'
+import { watch, computed, ref } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import Skeleton from 'primevue/skeleton'
 import Tag from 'primevue/tag'
@@ -9,6 +9,8 @@ import { useConfirm } from 'primevue/useconfirm'
 import { useToast } from 'primevue/usetoast'
 import { OrderStateMachine } from '@robo-mart/shared'
 import { useOrderStore } from '@/stores/useOrderStore'
+import { useOrderPolling } from '@/composables/useOrderPolling'
+import { useCheckoutStore } from '@/stores/useCheckoutStore'
 import type { OrderStatus } from '@/types/order'
 
 const route = useRoute()
@@ -20,6 +22,7 @@ const toast = useToast()
 const isCancelling = ref(false)
 
 const orderId = computed(() => Number(route.params.id))
+useOrderPolling(() => orderId.value)
 
 const STATUS_LABEL: Record<OrderStatus, string> = {
   PENDING: 'Order received',
@@ -31,6 +34,8 @@ const STATUS_LABEL: Record<OrderStatus, string> = {
   DELIVERED: 'Delivered',
   PAYMENT_REFUNDING: 'Cancelling',
   INVENTORY_RELEASING: 'Cancelling',
+  CANCELLATION_PENDING: 'Cancellation in progress',
+  REFUND_FAILED: 'Refund needs review',
   CANCELLED: 'Cancelled',
 }
 
@@ -44,6 +49,8 @@ const STATUS_SEVERITY: Record<OrderStatus, 'success' | 'warn' | 'danger' | 'info
   DELIVERED: 'info',
   PAYMENT_REFUNDING: 'warn',
   INVENTORY_RELEASING: 'warn',
+  CANCELLATION_PENDING: 'warn',
+  REFUND_FAILED: 'danger',
   CANCELLED: 'danger',
 }
 
@@ -54,7 +61,11 @@ const isCancellable = computed(() => {
   return status === 'PENDING' || status === 'CONFIRMED'
 })
 
-const isPendingPayment = computed(() => orderStore.currentOrder?.status === 'PAYMENT_PROCESSING')
+const isPendingPayment = computed(() =>
+  ['PENDING', 'PAYMENT_PENDING', 'PAYMENT_PROCESSING'].includes(
+    orderStore.currentOrder?.status ?? '',
+  ),
+)
 
 function formatDate(isoString: string): string {
   const date = new Date(isoString)
@@ -85,8 +96,14 @@ function onCancelOrder() {
         await orderStore.cancelOrder(orderId.value)
         toast.add({
           severity: 'success',
-          summary: 'Order cancelled',
-          detail: 'Your order has been cancelled successfully.',
+          summary:
+            orderStore.currentOrder?.status === 'CANCELLED'
+              ? 'Order cancelled'
+              : 'Cancellation requested',
+          detail:
+            orderStore.currentOrder?.status === 'CANCELLED'
+              ? 'Your order has been cancelled successfully.'
+              : 'We are completing your cancellation. Check this page for updates.',
           life: 4000,
         })
       } catch {
@@ -103,16 +120,21 @@ function onCancelOrder() {
   })
 }
 
-onMounted(async () => {
-  if (isNaN(orderId.value)) {
-    router.push('/orders')
-    return
-  }
-  await orderStore.fetchOrder(orderId.value)
-  if (orderStore.error) {
-    router.push('/orders')
-  }
-})
+watch(
+  () => route.params.id,
+  async () => {
+    if (isNaN(orderId.value)) {
+      router.push('/orders')
+      return
+    }
+    await orderStore.fetchOrder(orderId.value)
+    if (orderStore.currentOrder) await useCheckoutStore().reconcileCart(orderStore.currentOrder)
+    if (orderStore.error) {
+      router.push('/orders')
+    }
+  },
+  { immediate: true },
+)
 </script>
 
 <template>

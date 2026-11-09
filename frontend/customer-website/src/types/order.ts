@@ -8,6 +8,8 @@ export type OrderStatus =
   | 'DELIVERED'
   | 'PAYMENT_REFUNDING'
   | 'INVENTORY_RELEASING'
+  | 'CANCELLATION_PENDING'
+  | 'REFUND_FAILED'
   | 'CANCELLED'
 
 export interface OrderStatusHistoryEntry {

@@ -44,6 +44,8 @@ function orderStatusSeverity(status: string): string {
     DELIVERED: 'success',
     PENDING: 'warn',
     PAYMENT_PENDING: 'warn',
+    CANCELLATION_PENDING: 'warn',
+    REFUND_FAILED: 'danger',
     CANCELLED: 'danger',
   }
   return map[status] ?? 'secondary'

@@ -11,7 +11,7 @@ import type { OrderStatus } from '@/types/order'
 import { formatShippingAddress } from '@/types/checkout'
 
 const SAGA_MESSAGES = ['Creating your order...', 'Reserving items...', 'Processing payment...']
-const ACCEPTED = new Set<OrderStatus>(['CONFIRMED', 'PAYMENT_PENDING', 'SHIPPED', 'DELIVERED'])
+const ACCEPTED = new Set<OrderStatus>(['CONFIRMED', 'SHIPPED', 'DELIVERED'])
 
 interface ApiErrorBody {
   error?: { code?: string; message?: string }
@@ -71,7 +71,7 @@ export const useCheckoutStore = defineStore('checkout', () => {
     // Only the matching saved checkout can acknowledge its own cart snapshot.
     const saved = readAttempt(userId)
     if (!saved || saved.orderId !== order.id) return
-    if (order.status === 'CANCELLED' || order.status === 'INVENTORY_RELEASING') {
+    if (order.status === 'CANCELLED') {
       forgetAttempt(userId)
       return
     }

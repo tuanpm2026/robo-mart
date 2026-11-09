@@ -1,6 +1,6 @@
 # Robo-Mart — Luồng development và hoạt động hệ thống
 
-> Cập nhật các luồng chính theo mã nguồn ngày 05/11/2026, gồm các wave 6–9 và sửa checkout/retry/deep link. Kết quả chạy và phạm vi môi trường được ghi trong từng báo cáo kiểm chứng.
+> Cập nhật các luồng chính theo mã nguồn ngày 09/11/2026, gồm Saga Service riêng, các wave 6–9 và sửa checkout/retry/deep link. Kết quả chạy và phạm vi môi trường được ghi trong từng báo cáo kiểm chứng.
 > Đây là mô tả hiện trạng checkout, không phải xác nhận hệ thống đang chạy thành công trên local hoặc production. Những bước đề xuất và phần chưa hoàn thiện được ghi riêng.
 
 ## Mục lục
@@ -55,7 +55,12 @@ flowchart TB
     G --> I[Inventory Service]
     G --> PA[Payment Service]
     G --> N[Notification Service]
-    O -->|gRPC reserve / release| I
+    O -->|gRPC, chỉ owner EMBEDDED| I
+    Q -->|START / CANCEL| S[Checkout Saga Service]
+    S -->|RPC có JWT service| O
+    S -->|reserve / release| I
+    S -->|charge / close / refund| PA
+    S --> SD[(Saga PostgreSQL)]
     O -->|gRPC charge / refund| PA
     P --> PD[(Product PostgreSQL)]
     O --> OD[(Order PostgreSQL)]
@@ -80,8 +85,8 @@ flowchart TB
 Ba kiểu giao tiếp cần phân biệt:
 
 - **HTTP đồng bộ:** browser → gateway → service; notification còn gọi HTTP nội bộ để lấy thông tin đơn hàng, sản phẩm và health.
-- **gRPC đồng bộ:** Order điều phối Inventory và Payment. Kafka không phải phương tiện điều phối hai bước checkout này.
-- **Kafka bất đồng bộ:** đồng bộ chỉ mục tìm kiếm, vô hiệu cache, cập nhật thông tin giỏ hàng, notification và admin feed. Phần này có độ trễ so với transaction gốc.
+- **gRPC đồng bộ:** Saga Service gọi Inventory/Payment và gửi command đến Order cho owner `EXTERNAL`; embedded engine tiếp tục xử lý Order cũ hoặc Order được tạo khi admission EXTERNAL tắt. Mỗi RPC có deadline và idempotency riêng.
+- **Kafka bất đồng bộ:** Order outbox chuyển START/CANCEL đến Saga qua `order.checkout.requests.v1`, key là order ID. Các topic nghiệp vụ còn lại tiếp tục đồng bộ catalog, giỏ hàng, notification và admin feed.
 
 Mỗi service sở hữu dữ liệu của mình. Không có transaction ACID bao trùm các database; checkout dùng Saga và thao tác bù để xử lý lỗi giữa các service.
 
@@ -101,7 +106,8 @@ backend/
   api-gateway/            Routes, JWT/RBAC, CORS, identity headers, rate limit
   product-service/         Catalog, search, cache, ảnh, product outbox
   cart-service/            Redis cart, merge, expiry warning
-  order-service/           Orders, Saga, history/audit, report queries
+  order-service/           Orders, workflow participant, embedded compatibility, history/audit
+  checkout-saga-service/   Workflow kỹ thuật, inbox, lease, retry, compensation và manual review
   inventory-service/       Tồn kho, reservation, lock, stock movement
   payment-service/         Payment/refund, idempotency, mock gateway
   notification-service/    Notification logs, DLQ, WebSocket, health, đối soát
@@ -253,7 +259,7 @@ flowchart LR
 ```
 
 1. **Làm rõ hành vi:** tác nhân nào thực hiện, quyền gì, dữ liệu nào đổi, thành công và lỗi hiển thị ra sao. Đọc story/architecture để hiểu ý định rồi xác nhận code hiện tại.
-2. **Xác định service sở hữu:** catalog ở Product, stock ở Inventory, order/Saga ở Order, charge/refund ở Payment. Tránh viết chéo DB giữa các service.
+2. **Xác định service sở hữu:** catalog ở Product, stock ở Inventory, Order/history/outbox ở Order, tiến trình Saga EXTERNAL ở Saga Service, charge/refund ở Payment. Tránh viết chéo DB giữa các service.
 3. **Chốt contracts:** REST request/response và error code; `.proto` nếu thay gRPC; Avro nếu thay Kafka. Giữ tương thích khi producer và consumer deploy khác thời điểm. Để plugin sinh code, không chỉnh generated classes.
 4. **Đổi dữ liệu:** thêm Flyway migration có version mới; không sửa migration đã áp dụng. Thiết kế migration cho giai đoạn service cũ và mới có thể cùng chạy.
 5. **Implement backend:** validation → application/service logic → repository hoặc client; bổ sung authorization, idempotency, outbox, compensation/audit phù hợp thao tác.
@@ -398,7 +404,7 @@ Nguồn: [`product/service/`](../backend/product-service/src/main/java/com/robom
 5. Khi login, merge cộng số lượng sản phẩm trùng (giới hạn 9.999), lưu cart của user, xóa cart anonymous. Tự merge vào chính nó là no-op.
 6. Scheduler cảnh báo hết hạn chạy mỗi 30 phút, kiểm tra giỏ có user, có item và TTL còn tối đa 2 giờ rồi publish `cart.cart.expiry-warning`; Notification nhận để tạo cảnh báo theo điều kiện của consumer.
 
-Cart là ý định mua, chưa giữ tồn kho. Tồn kho được reserve ở checkout. Sau khi order được chấp nhận (`CONFIRMED`, `PAYMENT_PENDING`, `SHIPPED`, `DELIVERED`), frontend gọi `POST /api/v1/cart/checkout` với order ID và bản chụp các dòng đã mua. Redis Lua trừ đúng quantity một lần cho mỗi order; `lineId` giữ các dòng đã xóa/thêm lại hoặc sửa quantity từ tab khác. Hàng thêm cùng dòng sau lúc gửi order được giữ lại ở phần quantity dư. API này chỉ sửa giỏ của JWT subject, không tạo hoặc charge order. Cart rỗng vẫn giữ receipt theo TTL để retry không xóa hàng mới thêm.
+Cart là ý định mua, chưa giữ tồn kho. Tồn kho được reserve ở checkout. Sau khi order được chấp nhận (`CONFIRMED`, `SHIPPED`, `DELIVERED`), frontend gọi `POST /api/v1/cart/checkout` với order ID và bản chụp các dòng đã mua. Redis Lua trừ đúng quantity một lần cho mỗi order; `lineId` giữ các dòng đã xóa/thêm lại hoặc sửa quantity từ tab khác. Hàng thêm cùng dòng sau lúc gửi order được giữ lại ở phần quantity dư. API này chỉ sửa giỏ của JWT subject, không tạo hoặc charge order. Cart rỗng vẫn giữ receipt theo TTL để retry không xóa hàng mới thêm.
 
 Lỗi dọn giỏ không đổi kết quả đặt hàng thành thất bại. Bản ghi checkout được giữ để trang xác nhận tự thử lại sau reload hoặc qua nút Refresh Cart. Order bị hủy/đang giải phóng tồn kho không dọn giỏ. Client mới cần Cart Service mới; giữ chiến lược Recreate hiện có khi thay Cart writers.
 
@@ -406,36 +412,40 @@ Nguồn: [`CartRestController.java`](../backend/cart-service/src/main/java/com/r
 
 ## 9. Luồng checkout, inventory và payment
 
-### 9.1 Happy path từ UI đến database
+### 9.1 Checkout EXTERNAL và chế độ tương thích
 
-UI có bốn bước: xem lại giỏ → địa chỉ giao hàng → thông tin payment → xác nhận. Sau submit, các dòng “Creating / Reserving / Processing” đổi bằng timer 1,5 giây; đây là animation chờ, không phải stream tiến độ từng bước từ backend.
+`ROBOMART_ORDER_EXTERNAL_SAGA_ENABLED` quyết định owner khi **tạo** Order; owner/epoch được lưu cùng snapshot giá và START outbox trong một transaction. Mặc định phát triển/production giữ `false` để triển khai participant, DB, identity và worker trước; fixture E2E bật `true`. Đổi cờ chỉ tác động Order mới. Order EXTERNAL đang xử lý vẫn do service riêng tiếp tục điều phối.
 
 ```mermaid
 sequenceDiagram
     participant F as Customer
-    participant G as Gateway
-    participant O as Order + Saga
-    participant I as Inventory gRPC
-    participant P as Payment gRPC
-    participant Q as Kafka
-    F->>G: POST /api/v1/orders
-    G->>O: Items + shippingAddress + user identity
-    O->>O: Transaction tạo PENDING, items, history
-    O->>O: INVENTORY_RESERVING
-    O->>I: ReserveInventory(orderId, items)
-    I->>I: Lock + DB transaction + reservation
-    I-->>O: reservationId
-    O->>O: PAYMENT_PROCESSING
-    O->>P: ProcessPayment(orderId, amount, idempotencyKey)
-    P->>P: Idempotency + mock gateway + lưu payment
-    P-->>O: paymentId
-    O->>O: CONFIRMED, history và outbox status event
-    O-->>F: 201 + order summary
-    F->>F: Điều hướng confirmation và reset cart state
-    O->>Q: Poll outbox và publish status event
+    participant O as Order
+    participant K as Kafka
+    participant S as Checkout Saga
+    participant I as Inventory
+    participant P as Payment
+    F->>O: POST /orders + Idempotency-Key
+    O->>O: TX: PENDING + priced snapshot + START outbox
+    O-->>F: 202 PENDING
+    O->>K: START keyed by orderId
+    K->>S: Persist inbox + workflow before ACK
+    S->>I: Reserve(orderId, immutable lines)
+    I-->>S: reservationId
+    S->>P: GetChargeOutcome / ProcessPayment(original key)
+    P-->>S: Durable successful receipt
+    S->>O: CONFIRM(stable commandId, owner epoch)
+    O->>O: TX: status + history + outbox + receipt
+    O-->>S: Original command result on replay
+    F->>O: GET /orders/id
+    O-->>F: CONFIRMED
+    F->>F: Acknowledge purchased cart snapshot once
 ```
 
-Saga chạy đồng bộ trong đường thực thi `createOrder`; forward step chạy trên caller thread với gRPC deadline và retry có giới hạn. Không có background step tiếp tục sửa order sau khi API đã trả về. Payment tách committed intent, provider call và receipt/result; pending recovery giữ row claim trong lúc gọi RPC có deadline.
+Saga lưu intent trước RPC, nhận việc bằng lease 30 giây và CAS theo claim token; không giữ transaction/kết nối DB trong lúc gọi participant. Workflow đã xác nhận chuyển sang `CHECKOUT_CONFIRMED`, vẫn được giữ để nhận cancellation sau đó. Lease, attempt/age budget và manual review không phải bằng chứng cho phép trả kho.
+
+Customer hiển thị PENDING đúng trạng thái, poll trong cửa sổ tối đa khoảng hai phút, backoff từ 2 đến 30 giây khi đọc lỗi và dừng khi unmount/kết thúc. Key/payload/giỏ được giữ qua reload. Chỉ `CONFIRMED`, `SHIPPED`, `DELIVERED` cho phép consume giỏ; PENDING hoặc PAYMENT_PENDING không đủ.
+
+Order `EMBEDDED` vẫn chạy engine cũ đồng bộ và thường trả 201 khi xác nhận thành công; pending/recovery cũ được giữ cho tương thích. Các scan và write của embedded engine đều kiểm tra owner. Không xóa engine khi vẫn còn Order cũ cần hủy/phục hồi.
 
 **Payload hiện tại:** frontend gửi `productId`, `productName`, `quantity`, `unitPrice`, `shippingAddress`. Order bỏ qua tên/giá do client gửi và lấy giá hiện tại từ Product trước transaction tạo đơn. API hỗ trợ `Idempotency-Key` theo user để replay cùng order. `paymentData` của form không được đưa vào request tạo đơn; Payment vẫn dùng mock provider với currency `USD`.
 
@@ -451,22 +461,32 @@ Payment Service lưu intent, payment, refund receipts và mock provider ledger t
 
 POST tạo order có idempotency khi caller gửi lại cùng `Idempotency-Key` cho cùng user. Customer lưu key và payload gốc vào sessionStorage theo user trước request đầu tiên; retry HTTP/token refresh và reload gửi lại đúng key/payload đó. Bản ghi không lưu số thẻ/CVV. Lỗi chưa rõ kết quả giữ nguyên lần checkout; lỗi nghiệp vụ xác định hoặc validation trước tạo order cho phép bắt đầu lần mới. Khi order được chấp nhận, chỉ bỏ bản ghi sau khi dọn giỏ được xác nhận hoặc biết order đã hủy. sessionStorage có phạm vi từng tab và bị mất khi đóng/xóa phiên; đây không phải cơ chế chống hai lần mua độc lập trên nhiều thiết bị.
 
-### 9.4 Các nhánh lỗi chính
+### 9.4 Các nhánh lỗi EXTERNAL chính
 
-| Tình huống | Hành vi hiện có |
+| Tình huống | Hành vi |
 | --- | --- |
-| Không đủ stock | Cancel đơn với lý do `Insufficient stock`; không tiếp tục charge. |
-| Inventory circuit open | Lỗi tạm thời; Saga đi nhánh cancellation/compensation theo step, API trả lỗi inventory. |
-| Payment bị decline | Release inventory qua compensation, chuyển `CANCELLED`, API trả lỗi payment. |
-| Payment circuit open | Giữ inventory, chuyển `PAYMENT_PENDING`, trả HTTP 202. |
-| Forward step quá timeout | RPC deadline chặn thời gian chờ; payment outcome chưa rõ giữ stock để recovery/đối soát, không coi timeout là bằng chứng chưa charge. |
-| Lỗi release khi bù | Giữ trạng thái có thể phục hồi, chưa finalize `CANCELLED` trước khi nhận xác nhận release. |
+| Saga/Kafka chưa sẵn sàng | Order/outbox vẫn commit, trả 202 PENDING; cùng key replay cùng Order. |
+| Không đủ stock | Claim cancellation, đóng charge, tạo release tombstone và finalize CANCELLED; không charge. |
+| Payment decline cuối cùng | Chuyển sang compensation, xác nhận kết quả charge cuối cùng trước release. |
+| Charge/close/refund timeout hoặc chưa rõ | Giữ stock và trạng thái chưa kết thúc; retry cùng key, không suy luận timeout là chưa charge/đã refund. |
+| Mất reply sau participant commit | Đối chiếu receipt bền vững và replay intent/command cũ; không tạo khóa thanh toán mới. |
+| Release lỗi/mất ACK | Replay cùng order; Inventory trả kho đúng một lần, Order chưa finalize trước ACK. |
+| Hết ngân sách recovery | Manual review trong Saga DB; giữ tiền/kho chưa rõ, resume có ADMIN và audit reason. |
+
 
 Nguồn: [`useCheckoutStore.ts`](../frontend/customer-website/src/stores/useCheckoutStore.ts), [`OrderService.java`](../backend/order-service/src/main/java/com/robomart/order/service/OrderService.java), [`OrderSagaOrchestrator.java`](../backend/order-service/src/main/java/com/robomart/order/saga/OrderSagaOrchestrator.java), [`inventory/service/`](../backend/inventory-service/src/main/java/com/robomart/inventory/service/), [`payment/service/`](../backend/payment-service/src/main/java/com/robomart/payment/service/).
 
 ## 10. Luồng hủy đơn và phục hồi Saga
 
-### Trạng thái đơn
+### Hủy và phục hồi EXTERNAL
+
+Order nhận cancel bằng transaction khóa row, chuyển `CANCELLATION_PENDING`, ghi CANCEL outbox rồi trả 202. CONFIRM và shipping cạnh tranh qua business state/version; shipping thắng thì hủy bị từ chối trước refund. Saga chạy `BEGIN_CANCEL → CLOSE_CHARGE → REFUND nếu đã charge → RELEASE → FINALIZE_CANCEL`. Payment đóng tại provider lock để worker charge đến muộn cũng bị chặn. Chỉ no-charge/decline cuối cùng hoặc refund đã xác nhận và release đã ACK mới chuyển CANCELLED.
+
+RPC mới tại Order/Payment yêu cầu JWT đã ký với issuer/audience hợp lệ, `azp=checkout-saga-service` và role `SAGA_SERVICE`. Saga có DB riêng; không đọc/ghi trực tiếp DB của participant. ADMIN đọc `/api/v1/admin/sagas` và resume `/{sagaId}/resume` với reason. Các bước dở dang hoặc tiền chưa rõ phải xử lý bằng receipt; không sửa tay thành CANCELLED để bỏ qua compensation.
+
+Có thể chuyển giao Order EMBEDDED đã CONFIRMED qua `POST /api/v1/admin/orders/{id}/workflow/adopt` với reason. Endpoint khóa row, tăng epoch, giữ refs/snapshot và ghi audit/START; Saga đối chiếu receipt rồi giữ checkout đã hoàn tất, không reserve/charge lại. Order legacy đang xử lý phải phục hồi xong trước khi chuyển giao. Rollback admission chỉ đổi owner của Order tạo sau đó, vẫn giữ external worker tương thích cho Order đã nhận.
+
+### Trạng thái đơn EMBEDDED được giữ tương thích
 
 ```mermaid
 stateDiagram-v2

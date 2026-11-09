@@ -151,6 +151,12 @@ export const test = base.extend<{ shop: Shop }>({
           await expect(page.getByRole('button', { name: 'Place Order', exact: true })).toBeVisible()
         },
         async assertSingleOrder(orderId) {
+          await expect
+            .poll(
+              async () => (await (await api!.get(`/api/v1/orders/${orderId}`)).json()).data.status,
+              { timeout: 30000 },
+            )
+            .toBe('CONFIRMED')
           const response = await api!.get('/api/v1/orders')
           expect(response.ok()).toBeTruthy()
           const orders = await response.json()
@@ -185,6 +191,13 @@ export const test = base.extend<{ shop: Shop }>({
                 ).ok(),
               ).toBeTruthy()
             }
+            await expect
+              .poll(
+                async () =>
+                  (await (await api!.get(`/api/v1/orders/${order.id}`)).json()).data.status,
+                { timeout: 30000 },
+              )
+              .toBe('CANCELLED')
           }
         }
         if (productId) {
