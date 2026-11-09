@@ -1,0 +1,78 @@
+
+> customer-website@0.0.0 test:unit
+> vitest --run src/components/product/__tests__/FilterSidebar.spec.ts
+
+
+ RUN  v4.1.9 /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/customer-website
+
+ ❯ src/components/product/__tests__/FilterSidebar.spec.ts (11 tests | 1 failed) 165ms
+     × returns focus to the disclosure when a resize hides the focused filter control 12ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/product/__tests__/FilterSidebar.spec.ts > Filter disclosure > returns focus to the disclosure when a resize hides the focused filter control
+AssertionError: expected <span …(11)></span> to be <button data-v-9540e8e2 …(10)>…(1)</button> // Object.is equality
+
+- Expected
++ Received
+
+- <button
+-   aria-controls="v-0"
+-   aria-expanded="false"
+-   aria-label="Expand filters"
+-   class="p-button p-component p-button-icon-only p-button-text p-button-sm"
+-   data-p="small icon-only text"
+-   data-p-disabled="false"
+-   data-pc-name="button"
+-   data-pc-section="root"
+-   data-v-9540e8e2=""
+-   pc1=""
+-   type="button"
+- >
+-   
+-   
+  <span
+-     class="p-button-icon pi pi-chevron-down"
+-     data-p="left small"
+-     data-pc-section="icon"
++   aria-label="Minimum price"
++   aria-orientation="horizontal"
++   aria-valuemax="1000"
++   aria-valuemin="0"
++   aria-valuenow="0"
++   class="p-slider-handle"
++   data-p="horizontal"
++   data-pc-section="starthandler"
++   role="slider"
++   style="position: absolute; inset-inline-start: 0%;"
++   tabindex="0"
+  />
+-   
+-   <!---->
+-   <!---->
+-   
+- </button>
+
+ ❯ src/components/product/__tests__/FilterSidebar.spec.ts:116:38
+    114|       media.matches = true; listener?.()
+    115|       await wrapper.vm.$nextTick(); await wrapper.vm.$nextTick()
+    116|       expect(document.activeElement).toBe(wrapper.get('button[aria-exp…
+       |                                      ^
+    117|       expect(wrapper.get('[aria-expanded]').attributes('aria-expanded'…
+    118|     } finally { wrapper.unmount(); vi.unstubAllGlobals() }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  20:51:11
+   Duration  731ms (transform 207ms, setup 0ms, import 280ms, tests 165ms, environment 225ms)
+
+npm error Lifecycle script `test:unit` failed with error:
+npm error code 1
+npm error path /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/customer-website
+npm error workspace customer-website@0.0.0
+npm error location /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/customer-website
+npm error command failed
+npm error command sh -c vitest --run src/components/product/__tests__/FilterSidebar.spec.ts

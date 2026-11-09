@@ -17,6 +17,7 @@ export const useProductStore = defineStore('product', () => {
   const filters = ref<ProductSearchParams>({})
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  let searchRequestId = 0
 
   const hasMoreProducts = computed(
     () => pagination.value !== null && pagination.value.page < pagination.value.totalPages - 1,
@@ -47,12 +48,18 @@ export const useProductStore = defineStore('product', () => {
   }
 
   async function fetchSearchResults(params: ProductSearchParams, page = 0) {
+    const requestId = ++searchRequestId
+    const snapshot = { ...params }
+    filters.value = snapshot
+    if (page === 0) {
+      searchResults.value = []
+      searchPagination.value = null
+    }
     isLoading.value = true
     error.value = null
     try {
-      const searchParams = { ...params, page, size: 20 }
-      filters.value = params
-      const response = await searchProducts(searchParams)
+      const response = await searchProducts({ ...snapshot, page, size: 20 })
+      if (requestId !== searchRequestId) return
       if (page === 0) {
         searchResults.value = response.data
       } else {
@@ -60,9 +67,11 @@ export const useProductStore = defineStore('product', () => {
       }
       searchPagination.value = response.pagination
     } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to search products'
+      if (requestId === searchRequestId) {
+        error.value = err instanceof Error ? err.message : 'Failed to search products'
+      }
     } finally {
-      isLoading.value = false
+      if (requestId === searchRequestId) isLoading.value = false
     }
   }
 
@@ -86,15 +95,22 @@ export const useProductStore = defineStore('product', () => {
   }
 
   async function loadMoreSearchResults() {
-    if (!hasMoreSearchResults.value || !searchPagination.value) return
+    if (isLoading.value || !hasMoreSearchResults.value || !searchPagination.value) return
     await fetchSearchResults(filters.value, searchPagination.value.page + 1)
   }
 
   function clearFilters() {
+    // Clearing/resetting a search retires every pending response, including appended pages.
+    searchRequestId++
     filters.value = {}
+    searchResults.value = []
+    searchPagination.value = null
+    isLoading.value = false
+    error.value = null
   }
 
   function $reset() {
+    searchRequestId++
     products.value = []
     searchResults.value = []
     selectedProduct.value = null

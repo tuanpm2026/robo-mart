@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import Rating from 'primevue/rating'
+import { RouterLink } from 'vue-router'
 import Tag from 'primevue/tag'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
@@ -12,7 +11,6 @@ const props = defineProps<{
   product: ProductListItem
 }>()
 
-const router = useRouter()
 const toast = useToast()
 const cartStore = useCartStore()
 const isAddingToCart = ref(false)
@@ -30,10 +28,6 @@ const stockLabel = computed(() => {
 })
 
 const isOutOfStock = computed(() => props.product.stockQuantity === 0)
-
-function navigateToProduct() {
-  router.push(`/products/${props.product.id}`)
-}
 
 async function addToCart(event: Event) {
   event.stopPropagation()
@@ -69,25 +63,29 @@ async function addToCart(event: Event) {
   <article
     class="product-card"
     :class="{ 'product-card--out-of-stock': isOutOfStock }"
-    @click="navigateToProduct"
-    role="link"
-    tabindex="0"
     :aria-label="`${product.name}, $${product.price}`"
-    @keydown.enter="navigateToProduct"
   >
-    <div class="product-card__image-wrapper">
-      <img
-        :src="product.primaryImageUrl"
-        :alt="product.name"
-        class="product-card__image"
-        loading="lazy"
-      />
-    </div>
-    <div class="product-card__body">
+    <RouterLink
+      :to="`/products/${product.id}`"
+      class="product-card__link"
+      :aria-label="`View ${product.name}`"
+    >
+      <div class="product-card__image-wrapper">
+        <img
+          :src="product.primaryImageUrl"
+          :alt="product.name"
+          class="product-card__image"
+          loading="lazy"
+        />
+      </div>
       <h3 class="product-card__title">{{ product.name }}</h3>
+    </RouterLink>
+    <div class="product-card__body">
       <p class="product-card__price">${{ product.price.toFixed(2) }}</p>
-      <div class="product-card__rating">
-        <Rating :modelValue="product.rating" :cancel="false" readonly />
+      <div class="product-card__rating" role="img" :aria-label="`${product.rating} out of 5 stars`">
+        <span v-for="star in 5" :key="star" aria-hidden="true" class="product-card__star">{{
+          star <= Math.round(product.rating) ? '★' : '☆'
+        }}</span>
       </div>
       <Tag
         :value="stockLabel"
@@ -98,11 +96,13 @@ async function addToCart(event: Event) {
     <div v-if="!isOutOfStock" class="product-card__overlay">
       <Button
         label="Add to Cart"
-        severity="secondary"
-        text
+        severity="primary"
+        outlined
         class="product-card__add-btn"
         @click="addToCart"
-        aria-label="Add to cart"
+        :aria-label="`Add ${product.name} to cart`"
+        :loading="isAddingToCart"
+        :disabled="isAddingToCart"
       />
     </div>
   </article>
@@ -117,7 +117,7 @@ async function addToCart(event: Event) {
   border-radius: 8px;
   background: #ffffff;
   overflow: hidden;
-  cursor: pointer;
+
   transition: box-shadow 200ms;
 }
 
@@ -174,13 +174,10 @@ async function addToCart(event: Event) {
 }
 
 .product-card__overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  margin-top: auto;
   padding: 12px 16px;
   background: linear-gradient(transparent, rgba(255, 255, 255, 0.95));
-  opacity: 0;
+  opacity: 1;
   transition: opacity 200ms;
 }
 
@@ -197,5 +194,37 @@ async function addToCart(event: Event) {
   .product-card__overlay {
     transition: none;
   }
+}
+
+.product-card {
+  min-width: 0;
+}
+.product-card__link {
+  color: inherit;
+  text-decoration: none;
+}
+.product-card__link .product-card__title {
+  padding: 12px 16px 0;
+  overflow-wrap: anywhere;
+}
+.product-card__body {
+  padding-top: 8px;
+}
+@media (max-width: 600px) {
+  .product-card__title {
+    font-size: 16px;
+  }
+  .product-card__body,
+  .product-card__overlay {
+    padding: 10px;
+  }
+  .product-card__link .product-card__title {
+    padding: 10px 10px 0;
+  }
+}
+.product-card__star {
+  color: var(--color-primary-600);
+  font-size: 22px;
+  line-height: 1;
 }
 </style>

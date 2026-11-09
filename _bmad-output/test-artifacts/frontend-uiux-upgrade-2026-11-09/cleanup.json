@@ -1,0 +1,41 @@
+{
+  "timestamp_utc": "2026-11-09T14:00:22.949623+00:00",
+  "terminated_owned_previews": [
+    {
+      "pid": 90581,
+      "port": 16573,
+      "cwd": "/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/customer-website",
+      "command": "node /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/node_modules/.bin/vite preview --host 127.0.0.1 --port 16573 --strictPort",
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 90648,
+      "port": 16574,
+      "cwd": "/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/admin-dashboard",
+      "command": "node /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/node_modules/.bin/vite preview --host 127.0.0.1 --port 16574 --strictPort",
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 14377,
+      "port": 16575,
+      "cwd": "/private/var/folders/jd/920yhcsd3fg2hq9t7jwycsp40000gn/T/robomart-uiux-baseline-r3cevut1/frontend/customer-website",
+      "command": "node /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 16575 --strictPort",
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 14427,
+      "port": 16576,
+      "cwd": "/private/var/folders/jd/920yhcsd3fg2hq9t7jwycsp40000gn/T/robomart-uiux-baseline-r3cevut1/frontend/admin-dashboard",
+      "command": "node /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 16576 --strictPort",
+      "signal": "SIGTERM"
+    }
+  ],
+  "temporary_baseline_removed": "/private/var/folders/jd/920yhcsd3fg2hq9t7jwycsp40000gn/T/robomart-uiux-baseline-r3cevut1",
+  "owned_chrome_processes_remaining": [],
+  "preview_listeners_remaining": {
+    "16573": "",
+    "16574": "",
+    "16575": "",
+    "16576": ""
+  }
+}

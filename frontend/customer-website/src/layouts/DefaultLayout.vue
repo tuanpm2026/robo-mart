@@ -176,7 +176,7 @@ async function handleLogout() {
 
     <DegradationBanner />
 
-    <main id="main-content" class="main-content">
+    <main id="main-content" class="main-content" tabindex="-1">
       <RouterView />
     </main>
 
@@ -363,6 +363,34 @@ async function handleLogout() {
 
   .header__cart-badge {
     animation: none;
+  }
+}
+
+.header__inner > .search-bar {
+  min-width: 0;
+}
+@media (max-width: 767px) {
+  .header__inner {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 16px;
+  }
+  .header__inner > .search-bar {
+    order: 3;
+    flex: 1 0 100%;
+    max-width: none;
+  }
+  .main-content,
+  .category-nav__inner {
+    padding: 16px;
+  }
+  .header__user-name {
+    max-width: 100px;
+  }
+  .header__cart-btn,
+  .header__user-btn {
+    min-width: 44px;
+    height: 44px;
   }
 }
 </style>

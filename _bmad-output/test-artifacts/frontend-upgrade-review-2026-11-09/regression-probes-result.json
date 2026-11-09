@@ -1,0 +1,16 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "test:unit",
+    "--workspace=customer-website",
+    "--",
+    "--run",
+    "src/stores/__tests__/frontendAssessmentReview.spec.ts"
+  ],
+  "cwd": "/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend",
+  "baseline": "4ec50bbaa04933c43a37066f88c293e056c24012",
+  "exitCode": 1,
+  "interpretation": "Three failing behavioral assertions reproduce F08 and F11; this is defect evidence, not a passing product test suite.",
+  "probeSha256": "2d83992c8a3501eac63f1435a42a53d608d753f494b7397f8958c40cd194756b"
+}

@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { useRoute, RouterLink, RouterView } from 'vue-router'
+import { ref, computed, watch, nextTick } from 'vue'
+import Drawer from 'primevue/drawer'
+import { useMediaQuery } from '@robo-mart/shared'
+import AdminNavigation from '@/components/AdminNavigation.vue'
+import { useRoute, RouterView } from 'vue-router'
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
 import Menu from 'primevue/menu'
@@ -13,12 +16,40 @@ const route = useRoute()
 const adminAuthStore = useAdminAuthStore()
 
 const isSidebarCollapsed = ref(false)
+const isMobile = useMediaQuery('(max-width: 767px)')
+const mobileNavigationOpen = ref(false)
+const navigationToggle = ref<HTMLButtonElement | null>(null)
+let navigationDestination = false
+watch(isMobile, () => {
+  mobileNavigationOpen.value = false
+})
+watch(
+  () => route.fullPath,
+  () => {
+    mobileNavigationOpen.value = false
+  },
+)
+function navigate() {
+  navigationDestination = true
+  mobileNavigationOpen.value = false
+}
+async function afterNavigationClose() {
+  await nextTick()
+  if (navigationDestination || !isMobile.value)
+    document.getElementById('admin-main-content')?.focus()
+  else navigationToggle.value?.focus()
+  navigationDestination = false
+}
 const userMenuRef = ref()
 const commandPaletteRef = ref()
 const notificationCount = ref(0)
 
-const mainMarginLeft = computed(() => (isSidebarCollapsed.value ? '56px' : '240px'))
-const topbarLeft = computed(() => (isSidebarCollapsed.value ? '56px' : '240px'))
+const mainMarginLeft = computed(() =>
+  isMobile.value ? '0px' : isSidebarCollapsed.value ? '56px' : '240px',
+)
+const topbarLeft = computed(() =>
+  isMobile.value ? '0px' : isSidebarCollapsed.value ? '56px' : '240px',
+)
 
 const breadcrumbLabel = computed(() => {
   const name = route.name as string | undefined
@@ -47,55 +78,35 @@ const userMenuItems = [
 
 <template>
   <div class="admin-shell">
+    <a href="#admin-main-content" class="skip-to-main">Skip to main content</a>
+    <Drawer
+      block-scroll
+      v-model:visible="mobileNavigationOpen"
+      id="admin-mobile-navigation"
+      header="RoboMart Admin"
+      aria-label="Administration navigation"
+      position="left"
+      :style="{ width: 'min(300px, calc(100vw - 32px))' }"
+      @after-hide="afterNavigationClose"
+    >
+      <AdminNavigation @navigate="navigate" />
+    </Drawer>
     <!-- Sidebar -->
-    <aside class="admin-sidebar" :class="{ 'admin-sidebar--collapsed': isSidebarCollapsed }">
+    <aside
+      v-if="!isMobile"
+      class="admin-sidebar"
+      :class="{ 'admin-sidebar--collapsed': isSidebarCollapsed }"
+    >
       <div class="admin-sidebar__logo">
         <span v-if="!isSidebarCollapsed">RoboMart Admin</span>
         <span v-else>RM</span>
       </div>
 
-      <nav class="admin-sidebar__nav">
-        <!-- Operations group -->
-        <div class="admin-sidebar__section">
-          <span v-if="!isSidebarCollapsed" class="admin-sidebar__section-label">Operations</span>
-          <RouterLink to="/admin/dashboard" class="admin-nav-item">
-            <i class="pi pi-home" />
-            <span v-if="!isSidebarCollapsed">Dashboard</span>
-          </RouterLink>
-          <RouterLink to="/admin/orders" class="admin-nav-item">
-            <i class="pi pi-shopping-cart" />
-            <span v-if="!isSidebarCollapsed">Orders</span>
-          </RouterLink>
-          <RouterLink to="/admin/products" class="admin-nav-item">
-            <i class="pi pi-box" />
-            <span v-if="!isSidebarCollapsed">Products</span>
-          </RouterLink>
-          <RouterLink to="/admin/inventory" class="admin-nav-item">
-            <i class="pi pi-warehouse" />
-            <span v-if="!isSidebarCollapsed">Inventory</span>
-          </RouterLink>
-        </div>
-
-        <!-- System group -->
-        <div class="admin-sidebar__section">
-          <span v-if="!isSidebarCollapsed" class="admin-sidebar__section-label">System</span>
-          <RouterLink to="/admin/system/health" class="admin-nav-item">
-            <i class="pi pi-heart" />
-            <span v-if="!isSidebarCollapsed">Health</span>
-          </RouterLink>
-          <RouterLink to="/admin/system/events" class="admin-nav-item">
-            <i class="pi pi-exclamation-triangle" />
-            <span v-if="!isSidebarCollapsed">Unprocessed Events</span>
-          </RouterLink>
-          <RouterLink to="/admin/reports" class="admin-nav-item">
-            <i class="pi pi-chart-bar" />
-            <span v-if="!isSidebarCollapsed">Reports</span>
-          </RouterLink>
-        </div>
-      </nav>
+      <AdminNavigation :collapsed="isSidebarCollapsed" />
 
       <button
         class="admin-sidebar__toggle"
+        :aria-expanded="!isSidebarCollapsed"
         :aria-label="isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
         @click="isSidebarCollapsed = !isSidebarCollapsed"
       >
@@ -108,21 +119,42 @@ const userMenuItems = [
       <!-- Top Header -->
       <header class="admin-topbar" :style="{ left: topbarLeft }">
         <div class="admin-topbar__breadcrumb">
-          <span class="admin-breadcrumb-text">{{ breadcrumbLabel }}</span>
+          <button
+            v-if="isMobile"
+            ref="navigationToggle"
+            type="button"
+            class="admin-mobile-toggle"
+            aria-label="Open navigation"
+            aria-haspopup="dialog"
+            :aria-controls="mobileNavigationOpen ? 'admin-mobile-navigation' : undefined"
+            :aria-expanded="mobileNavigationOpen"
+            @click="mobileNavigationOpen = true"
+          >
+            <i class="pi pi-bars" aria-hidden="true" />
+          </button>
+          <span class="admin-breadcrumb-text" :title="breadcrumbLabel">{{ breadcrumbLabel }}</span>
         </div>
         <div class="admin-topbar__actions">
           <ConnectionStatus />
-          <button class="admin-cmd-btn" @click="commandPaletteRef?.open()">
+          <button
+            class="admin-cmd-btn"
+            aria-label="Search administration commands"
+            @click="commandPaletteRef?.open()"
+          >
             <i class="pi pi-search" />
             <span>⌘K</span>
           </button>
-          <div class="admin-notification-btn">
+          <div class="admin-notification-btn" role="img" aria-label="No new notifications">
             <Badge :value="notificationCount > 0 ? notificationCount : undefined" severity="danger">
               <i class="pi pi-bell" style="font-size: 1.1rem" />
             </Badge>
           </div>
-          <button class="admin-user-btn" @click="(e) => userMenuRef?.toggle(e)">
-            <i class="pi pi-user-circle" />
+          <button
+            class="admin-user-btn"
+            aria-label="Administrator account menu"
+            @click="(e) => userMenuRef?.toggle(e)"
+          >
+            <i class="pi pi-user" />
             <span v-if="adminAuthStore.user">{{ adminAuthStore.user.username }}</span>
             <span v-else>Admin</span>
           </button>
@@ -131,7 +163,7 @@ const userMenuItems = [
       </header>
 
       <!-- Page Content -->
-      <main id="admin-main-content" class="admin-content">
+      <main id="admin-main-content" class="admin-content" tabindex="-1">
         <RouterView />
       </main>
     </div>
@@ -178,54 +210,6 @@ const userMenuItems = [
   border-bottom: 1px solid var(--color-gray-100);
   white-space: nowrap;
   overflow: hidden;
-}
-
-.admin-sidebar__nav {
-  flex: 1;
-  padding: 8px;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.admin-sidebar__section {
-  margin-bottom: 8px;
-}
-
-.admin-sidebar__section-label {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-gray-400);
-  padding: 8px 12px 4px;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.admin-nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 4px;
-  color: var(--color-gray-700);
-  text-decoration: none;
-  font-size: 14px;
-  transition: background 150ms ease;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.admin-nav-item:hover {
-  background: var(--color-primary-50);
-  color: var(--color-primary-700);
-}
-
-.admin-nav-item.router-link-active {
-  background: var(--color-primary-50);
-  color: var(--color-primary-700);
-  border-left: 3px solid var(--color-primary-700);
 }
 
 .admin-sidebar__toggle {
@@ -329,5 +313,70 @@ const userMenuItems = [
   margin-top: 48px;
   padding: 24px;
   min-height: calc(100vh - 48px);
+}
+
+.admin-main-wrapper {
+  min-width: 0;
+}
+.admin-sidebar {
+  height: 100dvh;
+  min-height: 0;
+}
+.admin-topbar__breadcrumb {
+  min-width: 0;
+  gap: 8px;
+}
+.admin-user-btn span {
+  max-width: 130px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.admin-mobile-toggle {
+  background: transparent;
+  border: 1px solid var(--color-gray-200);
+  border-radius: 4px;
+  width: 44px;
+  height: 44px;
+  color: var(--color-gray-800);
+}
+@media (max-width: 767px) {
+  .admin-topbar {
+    height: 64px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .admin-content {
+    margin-top: 64px;
+    padding: 16px;
+  }
+  .admin-user-btn {
+    min-height: 44px;
+  }
+  .admin-user-btn span {
+    display: none;
+  }
+  .admin-topbar__actions {
+    gap: 4px;
+  }
+  .admin-cmd-btn {
+    min-height: 44px;
+  }
+  .admin-cmd-btn span,
+  .admin-notification-btn {
+    display: none;
+  }
+}
+.admin-topbar__breadcrumb {
+  flex: 1;
+}
+.admin-breadcrumb-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-mobile-toggle,
+.admin-topbar__actions {
+  flex-shrink: 0;
 }
 </style>

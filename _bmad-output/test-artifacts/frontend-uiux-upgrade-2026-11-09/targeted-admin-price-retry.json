@@ -1,0 +1,14 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "test:unit",
+    "--workspace=admin-dashboard",
+    "--",
+    "--run",
+    "src/__tests__/ProductsPage.test.ts"
+  ],
+  "cwd": "frontend",
+  "exit_code": 0,
+  "timestamp_utc": "2026-11-09T13:41:12.749103+00:00"
+}

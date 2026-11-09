@@ -130,4 +130,17 @@ const maskedCard = computed(() => {
 .sco__place-order {
   min-width: 160px;
 }
+.sco__item-name,
+.sco__detail {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.sco__actions {
+  flex-wrap: wrap;
+}
+@media (max-width: 480px) {
+  .sco__actions > * {
+    width: 100%;
+  }
+}
 </style>

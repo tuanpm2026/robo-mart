@@ -1,0 +1,19 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "test:unit",
+    "--workspace=admin-dashboard",
+    "--",
+    "--run",
+    "src/__tests__/NavigationAccessibility.test.ts",
+    "src/__tests__/AdminLayout.test.ts",
+    "src/__tests__/SlideOverPanel.test.ts",
+    "src/__tests__/ProductFormSlideOver.test.ts",
+    "src/__tests__/OrdersPage.test.ts",
+    "src/__tests__/ProductsPage.test.ts"
+  ],
+  "cwd": "frontend",
+  "exit_code": 0,
+  "timestamp_utc": "2026-11-09T13:32:42.553255+00:00"
+}

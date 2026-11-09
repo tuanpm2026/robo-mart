@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import InputText from 'primevue/inputtext'
 import Textarea from 'primevue/textarea'
@@ -130,7 +130,16 @@ function validateAll(): boolean {
 }
 
 async function handleSubmit() {
-  if (!validateAll()) return
+  if (!validateAll()) {
+    await nextTick()
+    const field = errors.value.name
+      ? 'name'
+      : errors.value.category
+        ? 'selectedCategoryId'
+        : 'price'
+    document.getElementById(`admin-product-${field}`)?.focus()
+    return
+  }
 
   isSaving.value = true
   try {
@@ -181,71 +190,126 @@ async function handleSubmit() {
       <div class="form-grid">
         <!-- Name (full width) -->
         <div class="field col-span-2">
-          <label class="field-label">Name <span class="text-error-500">*</span></label>
+          <label for="admin-product-name" class="field-label"
+            >Name <span class="text-error-500">*</span></label
+          >
           <InputText
             v-model="name"
+            id="admin-product-name"
             class="w-full"
             placeholder="Product name"
             :class="{ 'p-invalid': errors.name }"
+            :invalid="!!errors.name"
+            :aria-describedby="errors.name ? 'admin-product-name-error' : undefined"
             @blur="validateField('name')"
           />
-          <small v-if="errors.name" class="field-error">{{ errors.name }}</small>
+          <small v-if="errors.name" id="admin-product-name-error" class="field-error">{{
+            errors.name
+          }}</small>
         </div>
 
         <!-- Category (left) -->
         <div class="field">
-          <label class="field-label">Category <span class="text-error-500">*</span></label>
+          <label
+            for="admin-product-selectedCategoryId"
+            id="admin-product-category-label"
+            class="field-label"
+            >Category <span class="text-error-500">*</span></label
+          >
           <Select
             v-model="selectedCategoryId"
+            inputId="admin-product-selectedCategoryId"
+            aria-labelledby="admin-product-category-label"
+            :pt="{
+              label: {
+                'aria-describedby': errors.category
+                  ? 'admin-product-selectedCategoryId-error'
+                  : undefined,
+              },
+            }"
             :options="categories"
             option-label="name"
             option-value="id"
             placeholder="Select category"
             class="w-full"
             :class="{ 'p-invalid': errors.category }"
+            :invalid="!!errors.category"
+            :aria-describedby="
+              errors.category ? 'admin-product-selectedCategoryId-error' : undefined
+            "
             @blur="validateField('category')"
           />
-          <small v-if="errors.category" class="field-error">{{ errors.category }}</small>
+          <small
+            v-if="errors.category"
+            id="admin-product-selectedCategoryId-error"
+            class="field-error"
+            >{{ errors.category }}</small
+          >
         </div>
 
         <!-- Price (right) -->
         <div class="field">
-          <label class="field-label">Price <span class="text-error-500">*</span></label>
+          <label for="admin-product-price" class="field-label"
+            >Price <span class="text-error-500">*</span></label
+          >
           <InputNumber
             v-model="price"
+            inputId="admin-product-price"
+            :pt="{
+              pcInputText: {
+                root: {
+                  'aria-describedby': errors.price ? 'admin-product-price-error' : undefined,
+                },
+              },
+            }"
             mode="currency"
             currency="USD"
             :min="0.01"
             class="w-full"
             :class="{ 'p-invalid': errors.price }"
+            :invalid="!!errors.price"
+            :aria-describedby="errors.price ? 'admin-product-price-error' : undefined"
             @blur="validateField('price')"
           />
-          <small v-if="errors.price" class="field-error">{{ errors.price }}</small>
+          <small v-if="errors.price" id="admin-product-price-error" class="field-error">{{
+            errors.price
+          }}</small>
         </div>
 
         <!-- Brand (left) -->
         <div class="field">
-          <label class="field-label"
-            >Brand <span class="text-gray-400 text-xs">(optional)</span></label
+          <label for="admin-product-brand" class="field-label"
+            >Brand <span class="text-gray-600 text-xs">(optional)</span></label
           >
-          <InputText v-model="brand" class="w-full" placeholder="Brand name" />
+          <InputText
+            v-model="brand"
+            id="admin-product-brand"
+            class="w-full"
+            placeholder="Brand name"
+          />
         </div>
 
         <!-- SKU (right, create mode only) -->
         <div v-if="!product" class="field">
-          <label class="field-label"
-            >SKU <span class="text-gray-400 text-xs">(optional)</span></label
+          <label for="admin-product-sku" class="field-label"
+            >SKU <span class="text-gray-600 text-xs">(optional)</span></label
           >
-          <InputText v-model="sku" class="w-full" placeholder="Auto-generated if empty" />
+          <InputText
+            v-model="sku"
+            id="admin-product-sku"
+            class="w-full"
+            placeholder="Auto-generated if empty"
+          />
         </div>
 
         <!-- Description (full width) -->
         <div class="field col-span-2">
-          <label class="field-label"
-            >Description <span class="text-gray-400 text-xs">(optional)</span></label
+          <label for="admin-product-description" class="field-label"
+            >Description <span class="text-gray-600 text-xs">(optional)</span></label
           >
           <Textarea
             v-model="description"
+            id="admin-product-description"
             :rows="3"
             class="w-full"
             placeholder="Product description"
@@ -318,7 +382,7 @@ async function handleSubmit() {
 }
 
 .field-error {
-  color: var(--color-error-500);
+  color: var(--color-error-700);
   font-size: 12px;
 }
 
@@ -328,5 +392,22 @@ async function handleSubmit() {
   padding-top: 20px;
   margin-top: 16px;
   border-top: 1px solid var(--color-gray-200);
+}
+.field {
+  min-width: 0;
+}
+.form-actions {
+  flex-wrap: wrap;
+}
+@media (max-width: 480px) {
+  .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .col-span-2 {
+    grid-column: auto;
+  }
+  .form-actions > * {
+    flex: 1;
+  }
 }
 </style>

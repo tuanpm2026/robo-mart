@@ -38,6 +38,11 @@ describe('OrderConfirmationView', () => {
   })
 
   it.each<[OrderStatus, string]>([
+    ['PENDING', 'Order Received!'],
+    ['PAYMENT_PENDING', 'Order Received!'],
+    ['INVENTORY_RESERVING', 'Order Received!'],
+    ['PAYMENT_PROCESSING', 'Order Received!'],
+    ['PAYMENT_REFUNDING', 'Order Cancellation in Progress'],
     ['INVENTORY_RELEASING', 'Order Cancellation in Progress'],
     ['CANCELLED', 'Order Cancelled'],
   ])('shows %s without promising confirmation or delivery', async (status, heading) => {

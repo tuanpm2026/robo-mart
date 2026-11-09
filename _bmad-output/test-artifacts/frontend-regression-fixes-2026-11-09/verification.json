@@ -1,0 +1,42 @@
+{
+  "timestamp_utc": "2026-11-09T09:41:42.193082+00:00",
+  "baseline_head": "4ec50bbaa04933c43a37066f88c293e056c24012",
+  "baseline_evidence_files_checked": 17,
+  "baseline_evidence_mismatches": [],
+  "broken_local_markdown_targets": [],
+  "ignored_txt_logs": [],
+  "files_sha256": {
+    "frontend/customer-website/src/components/product/FilterSidebar.vue": "30084ca396abd501b8cab63c353b09f292049dc8863cf14fb8ce63cf508244ac",
+    "frontend/customer-website/src/stores/__tests__/useCartStore.spec.ts": "22aee7bbfc22a4e46668d019cfe0beaddfb325a29ede074c239326c26bb8a98c",
+    "frontend/customer-website/src/stores/useCartStore.ts": "c5723e49b5bce613221bddfddf7d1e8dbc02e02146bd0eae1c4aebf1aa173dbe",
+    "frontend/customer-website/src/stores/useProductStore.ts": "e5fa2060c6347c3524c1bfb169596f9e2ec7c6d2b22bddf6d41535927f0bf1b8",
+    "frontend/customer-website/src/views/SearchResultsView.vue": "db7396e72c22458eee78a40c5672093ec73b1297f0c44644bbeb7eee9c524fa6",
+    "frontend/customer-website/src/stores/__tests__/useProductStore.search.spec.ts": "149c259b27fafa55a717f816aaa84064a670775c8bef069c0b9a499d314610f3",
+    "frontend/customer-website/src/views/__tests__/SearchResultsView.filters.spec.ts": "057b2b61ba2f731df374ee06bcd76f2ede7d4cc500f5b338f270780bbea0a2ee",
+    "docs/frontend-upgrade-assessment-2026-11-09.md": "b7f0e25bd1b83c8800b61cee84758aa3c9fa5ecd5970f505070daf00b4c4a7c4"
+  },
+  "validation_exit_codes": {
+    "eslint-final": 0,
+    "unit-workspaces": 0,
+    "oxlint-changed": 1,
+    "prettier-changed": 1,
+    "final-oxlint": 0,
+    "self-review-red": 1,
+    "targeted-final": 0,
+    "final-eslint": 0,
+    "green-targeted-final": 0,
+    "targeted-dom-green": 1,
+    "final-prettier": 0,
+    "final-typecheck-workspaces": 0,
+    "prettier-final": 1,
+    "self-review-dom-red": 1,
+    "final-tests-baseline-red": 1,
+    "final-build-workspaces": 0,
+    "red-targeted": 1,
+    "eslint-changed": 0,
+    "typecheck-workspaces": 0,
+    "final-unit-workspaces": 0,
+    "oxlint-final": 0,
+    "green-targeted": 0
+  }
+}

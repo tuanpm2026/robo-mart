@@ -1,0 +1,40 @@
+
+> admin-dashboard@0.0.0 test:unit
+> vitest --run src/__tests__/NavigationAccessibility.test.ts src/__tests__/ProductsPage.test.ts src/__tests__/OrdersPage.test.ts src/__tests__/ProductFormSlideOver.test.ts src/__tests__/SlideOverPanel.test.ts src/__tests__/AdminLayout.test.ts
+
+
+ RUN  v4.1.9 /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/admin-dashboard
+
+ ❯ src/__tests__/ProductsPage.test.ts (8 tests | 1 failed) 469ms
+     × names actual row actions and focuses inline price editing then returns on Escape 104ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/__tests__/ProductsPage.test.ts > ProductsPage > names actual row actions and focuses inline price editing then returns on Escape
+TypeError: matchMedia is not a function
+ ❯ matchMedia ../node_modules/src/select/Select.vue:843:30
+ ❯ bindMatchMediaOrientationListener ../node_modules/src/select/Select.vue:258:13
+ ❯ ../node_modules/@vue/runtime-core/dist/runtime-core.cjs.js:3116:40
+ ❯ callWithErrorHandling ../node_modules/@vue/runtime-core/dist/runtime-core.cjs.js:200:19
+ ❯ callWithAsyncErrorHandling ../node_modules/@vue/runtime-core/dist/runtime-core.cjs.js:207:17
+ ❯ hook.__weh.hook.__weh ../node_modules/@vue/runtime-core/dist/runtime-core.cjs.js:3096:19
+ ❯ flushPostFlushCbs ../node_modules/@vue/runtime-core/dist/runtime-core.cjs.js:382:28
+ ❯ render ../node_modules/@vue/runtime-core/dist/runtime-core.cjs.js:6823:7
+ ❯ mount ../node_modules/@vue/runtime-core/dist/runtime-core.cjs.js:4263:13
+ ❯ Object.app.mount ../node_modules/@vue/runtime-dom/dist/runtime-dom.cjs.js:1853:19
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 5 passed (6)
+      Tests  1 failed | 31 passed (32)
+   Start at  20:40:34
+   Duration  1.85s (transform 2.05s, setup 0ms, import 3.55s, tests 1.50s, environment 3.89s)
+
+npm error Lifecycle script `test:unit` failed with error:
+npm error code 1
+npm error path /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/admin-dashboard
+npm error workspace admin-dashboard@0.0.0
+npm error location /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/admin-dashboard
+npm error command failed
+npm error command sh -c vitest --run src/__tests__/NavigationAccessibility.test.ts src/__tests__/ProductsPage.test.ts src/__tests__/OrdersPage.test.ts src/__tests__/ProductFormSlideOver.test.ts src/__tests__/SlideOverPanel.test.ts src/__tests__/AdminLayout.test.ts

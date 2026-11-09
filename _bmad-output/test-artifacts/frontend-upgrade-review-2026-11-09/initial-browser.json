@@ -1,0 +1,245 @@
+{
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/156.0.8078.80",
+    "revision": "@fb096c0011f9d50f0a264a9376420cdea9c421e3",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+    "jsVersion": "15.6.75.27"
+  },
+  "fixture": "All API/identity traffic intercepted; no real backend or Keycloak accessed",
+  "checks": [
+    {
+      "name": "customer-desktop",
+      "path": "/",
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "h1": "Discover Products",
+      "grid": {
+        "x": 104,
+        "width": 1232,
+        "height": 1395.5625,
+        "columns": "290px 290px 290px 290px"
+      },
+      "sidebar": null,
+      "main": null,
+      "icons": []
+    },
+    {
+      "name": "focused-cart-button",
+      "active": "Add to Cart",
+      "opacity": "0"
+    },
+    {
+      "name": "cart-button-enter-bubble",
+      "path": "/products/1"
+    },
+    {
+      "name": "customer-mobile",
+      "path": "/",
+      "viewport": 390,
+      "documentWidth": 390,
+      "h1": "Discover Products",
+      "grid": {
+        "x": 24,
+        "width": 342,
+        "height": 1302.3125,
+        "columns": "98px 98px 98px"
+      },
+      "sidebar": null,
+      "main": null,
+      "icons": []
+    },
+    {
+      "name": "customer-mobile-axe",
+      "violations": []
+    },
+    {
+      "name": "admin-desktop",
+      "path": "/admin/orders",
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "h1": "Orders",
+      "grid": null,
+      "sidebar": {
+        "x": 0,
+        "width": 240,
+        "height": 900,
+        "columns": "none"
+      },
+      "main": {
+        "x": 240,
+        "width": 1200,
+        "height": 852,
+        "columns": "none"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif",
+          "content": "none"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif",
+          "content": "none"
+        },
+        {
+          "class": "pi pi-box",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif",
+          "content": "none"
+        }
+      ]
+    },
+    {
+      "name": "admin-desktop-axe",
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": 3,
+          "example": [
+            ".admin-sidebar__section:nth-child(1) > .admin-sidebar__section-label"
+          ]
+        },
+        {
+          "id": "html-has-lang",
+          "impact": "serious",
+          "nodes": 1,
+          "example": [
+            "html"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "admin-mobile",
+      "path": "/admin/orders",
+      "viewport": 1012,
+      "documentWidth": 1012,
+      "h1": "Orders",
+      "grid": null,
+      "sidebar": {
+        "x": 0,
+        "width": 240,
+        "height": 900,
+        "columns": "none"
+      },
+      "main": {
+        "x": 240,
+        "width": 770.5625,
+        "height": 852,
+        "columns": "none"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif",
+          "content": "none"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif",
+          "content": "none"
+        },
+        {
+          "class": "pi pi-box",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif",
+          "content": "none"
+        }
+      ]
+    },
+    {
+      "name": "admin-collapsed-links",
+      "links": [
+        {
+          "text": "",
+          "ariaLabel": null
+        },
+        {
+          "text": "",
+          "ariaLabel": null
+        },
+        {
+          "text": "",
+          "ariaLabel": null
+        },
+        {
+          "text": "",
+          "ariaLabel": null
+        },
+        {
+          "text": "",
+          "ariaLabel": null
+        },
+        {
+          "text": "",
+          "ariaLabel": null
+        },
+        {
+          "text": "",
+          "ariaLabel": null
+        }
+      ]
+    },
+    {
+      "name": "customer-stored-session-deep-link",
+      "path": "/",
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "grid": null,
+      "sidebar": null,
+      "main": null,
+      "icons": []
+    }
+  ],
+  "requests": [
+    {
+      "method": "OPTIONS",
+      "url": "http://localhost:8080/api/v1/products?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8080/api/v1/products?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "url": "http://localhost:8080/api/v1/products/1"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8080/api/v1/products/1"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8080/api/v1/products?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "url": "http://localhost:8080/api/v1/admin/orders?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8080/api/v1/admin/orders?page=0&size=25"
+    },
+    {
+      "method": "OPTIONS",
+      "url": "http://localhost:8080/api/v1/admin/orders?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8080/api/v1/admin/orders?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "url": "http://localhost:8080/api/v1/products?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "url": "http://localhost:8080/api/v1/cart/merge"
+    },
+    {
+      "method": "POST",
+      "url": "http://localhost:8080/api/v1/cart/merge"
+    }
+  ]
+}

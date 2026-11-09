@@ -1,0 +1,13 @@
+
+> customer-website@0.0.0 test:unit
+> vitest --run src/views/__tests__/CheckoutStepper.spec.ts
+
+
+ RUN  v4.1.9 /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/customer-website
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  20:36:24
+   Duration  1.13s (transform 272ms, setup 0ms, import 439ms, tests 199ms, environment 420ms)
+

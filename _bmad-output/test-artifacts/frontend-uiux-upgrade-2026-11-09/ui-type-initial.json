@@ -1,0 +1,12 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "type-check",
+    "--workspaces",
+    "--if-present"
+  ],
+  "cwd": ".",
+  "exit_code": 254,
+  "timestamp_utc": "2026-11-09T13:30:20.151001+00:00"
+}

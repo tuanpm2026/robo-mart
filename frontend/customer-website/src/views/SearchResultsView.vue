@@ -26,16 +26,23 @@ const activeFilterTags = computed(() => {
   return tags
 })
 
-const brands = computed(() => {
-  const unique = new Set(productStore.searchResults.map((p) => p.brand).filter(Boolean))
-  return Array.from(unique).sort()
-})
+// Keep known choices mounted during a request so a focused checkbox survives.
+// These are inferred choices for the current keyword, not server-wide facets.
+const brands = ref<string[]>([])
+watch(
+  () => productStore.searchResults,
+  (results) => {
+    const found = results.map((product) => product.brand).filter(Boolean)
+    if (found.length) brands.value = Array.from(new Set([...brands.value, ...found])).sort()
+  },
+  { immediate: true },
+)
 
-function performSearch(extraParams: ProductSearchParams = {}) {
+function performSearch(filterSnapshot: ProductSearchParams = productStore.filters) {
   const params: ProductSearchParams = {
+    // Sidebar events are complete snapshots: omitted fields have been cleared.
+    ...filterSnapshot,
     keyword: keyword.value || undefined,
-    ...productStore.filters,
-    ...extraParams,
   }
   productStore.fetchSearchResults(params)
 }
@@ -47,8 +54,8 @@ onMounted(() => {
 watch(
   () => route.query.keyword,
   () => {
-    productStore.clearFilters()
-    performSearch()
+    brands.value = []
+    clearAllFilters()
   },
 )
 
@@ -57,10 +64,7 @@ function onFilterChange(params: ProductSearchParams) {
 }
 
 function removeFilter(key: string) {
-  const updated = { ...productStore.filters }
-  delete (updated as Record<string, unknown>)[key]
-  productStore.filters = updated
-  performSearch(updated)
+  filterSidebarRef.value?.clearFilter(key)
 }
 
 function clearAllFilters() {
@@ -83,20 +87,28 @@ function loadMore() {
       <h1 class="search-results__title" v-else>All Products</h1>
 
       <div v-if="activeFilterTags.length > 0" class="search-results__filters">
-        <Tag
-          v-for="tag in activeFilterTags"
-          :key="tag.key"
-          :value="tag.label"
-          severity="info"
-          removable
-          @remove="removeFilter(tag.key)"
-        />
+        <Tag v-for="tag in activeFilterTags" :key="tag.key" :value="tag.label" severity="info">
+          <span>{{ tag.label }}</span>
+          <button
+            type="button"
+            class="search-results__remove-filter"
+            :aria-label="`Remove ${tag.label} filter`"
+            @click="removeFilter(tag.key)"
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+        </Tag>
         <Button label="Clear all" text size="small" @click="clearAllFilters" />
       </div>
     </div>
 
     <div class="search-results__content">
-      <FilterSidebar ref="filterSidebarRef" :brands="brands" @filter="onFilterChange" />
+      <FilterSidebar
+        ref="filterSidebarRef"
+        :brands="brands"
+        :initial-filters="productStore.filters"
+        @filter="onFilterChange"
+      />
 
       <div class="search-results__main">
         <div
@@ -165,6 +177,19 @@ function loadMore() {
   align-items: flex-start;
 }
 
+.search-results__remove-filter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
 .search-results__main {
   flex: 1;
   min-width: 0;
@@ -180,5 +205,32 @@ function loadMore() {
   display: flex;
   justify-content: center;
   margin-top: 32px;
+}
+
+.search-results__grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.search-results__remove-filter {
+  width: 32px;
+  height: 32px;
+}
+@media (max-width: 1100px) {
+  .search-results__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+@media (max-width: 767px) {
+  .search-results__content {
+    flex-direction: column;
+  }
+  .search-results__main {
+    width: 100%;
+  }
+}
+@media (max-width: 380px) {
+  .search-results__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 </style>

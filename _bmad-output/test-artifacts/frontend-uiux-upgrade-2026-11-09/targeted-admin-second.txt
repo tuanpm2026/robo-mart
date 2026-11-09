@@ -1,0 +1,13 @@
+
+> admin-dashboard@0.0.0 test:unit
+> vitest --run src/__tests__/NavigationAccessibility.test.ts src/__tests__/AdminLayout.test.ts src/__tests__/SlideOverPanel.test.ts src/__tests__/ProductFormSlideOver.test.ts src/__tests__/OrdersPage.test.ts src/__tests__/ProductsPage.test.ts
+
+
+ RUN  v4.1.9 /Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/frontend/admin-dashboard
+
+
+ Test Files  6 passed (6)
+      Tests  30 passed (30)
+   Start at  20:32:41
+   Duration  988ms (transform 1.19s, setup 0ms, import 2.17s, tests 1.09s, environment 1.67s)
+

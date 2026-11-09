@@ -1,0 +1,9 @@
+after: captured width 360
+after: captured width 390
+after: captured width 768
+after: captured width 1024
+after: captured width 1440
+Error: {"exceptionId":1,"text":"Uncaught","lineNumber":0,"columnNumber":78,"scriptId":"215","stackTrace":{"callFrames":[{"functionName":"","scriptId":"215","url":"","lineNumber":0,"columnNumber":84},{"functionName":"","scriptId":"215","url":"","lineNumber":0,"columnNumber":248}]},"exception":{"type":"object","subtype":"error","className":"Error","description":"Error: Missing .filter-sidebar .p-checkbox-box\n    at <anonymous>:1:85\n    at <anonymous>:1:249","objectId":"-8277793825219440294.40.2"}}
+    at evaluate (/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs:86:181)
+    at async click (/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs:96:19)
+    at async run (/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs:179:7)

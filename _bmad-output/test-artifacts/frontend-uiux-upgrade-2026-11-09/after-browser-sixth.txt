@@ -1,0 +1,7 @@
+after: captured width 360
+after: captured width 390
+after: captured width 768
+Error: Timed out: !!document.querySelector('#cardNumber') && document.querySelector('#cardNumber').getBoundingClientRect().height>0
+    at wait (/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs:88:172)
+    at async checkout (/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs:130:928)
+    at async run (/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs:138:7)

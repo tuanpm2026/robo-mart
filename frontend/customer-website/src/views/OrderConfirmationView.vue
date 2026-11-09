@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, nextTick, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import Skeleton from 'primevue/skeleton'
@@ -10,6 +10,7 @@ const route = useRoute()
 const router = useRouter()
 const orderStore = useOrderStore()
 const checkoutStore = useCheckoutStore()
+const page = ref<HTMLElement | null>(null)
 
 onMounted(async () => {
   const rawParam = Array.isArray(route.params.orderId)
@@ -23,11 +24,13 @@ onMounted(async () => {
   }
   checkoutStore.$reset()
   await orderStore.fetchOrder(orderId)
+  await nextTick()
+  page.value?.querySelector<HTMLElement>('h1')?.focus()
 })
 </script>
 
 <template>
-  <div class="ocv">
+  <div ref="page" class="ocv">
     <!-- Loading -->
     <div v-if="orderStore.isLoading" class="ocv__skeleton">
       <Skeleton width="64px" height="64px" border-radius="50%" />
@@ -44,23 +47,31 @@ onMounted(async () => {
 
     <!-- Success -->
     <div v-else-if="orderStore.currentOrder" class="ocv__content">
-      <div class="ocv__hero">
-        <template v-if="orderStore.currentOrder.status === 'PAYMENT_PENDING'">
+      <div class="ocv__hero" role="status" aria-live="polite">
+        <template
+          v-if="
+            ['PENDING', 'PAYMENT_PENDING', 'INVENTORY_RESERVING', 'PAYMENT_PROCESSING'].includes(
+              orderStore.currentOrder.status,
+            )
+          "
+        >
           <div class="ocv__icon ocv__icon--pending" aria-hidden="true">⏳</div>
-          <h1 class="ocv__heading">Order Received!</h1>
+          <h1 class="ocv__heading" tabindex="-1">Order Received!</h1>
           <p class="ocv__order-number">Order #{{ orderStore.currentOrder.id }}</p>
           <p class="ocv__payment-pending">
-            Order received. Payment is being processed — we'll notify you when confirmed.
+            Order received. Processing is still in progress; confirmation is pending. Track your
+            order for the latest status.
           </p>
         </template>
         <template
           v-else-if="
+            orderStore.currentOrder.status === 'PAYMENT_REFUNDING' ||
             orderStore.currentOrder.status === 'INVENTORY_RELEASING' ||
             orderStore.currentOrder.status === 'CANCELLED'
           "
         >
           <div class="ocv__icon ocv__icon--pending" aria-hidden="true">ⓘ</div>
-          <h1 class="ocv__heading">
+          <h1 class="ocv__heading" tabindex="-1">
             {{
               orderStore.currentOrder.status === 'CANCELLED'
                 ? 'Order Cancelled'
@@ -74,7 +85,7 @@ onMounted(async () => {
         </template>
         <template v-else>
           <div class="ocv__icon" aria-hidden="true">✓</div>
-          <h1 class="ocv__heading">Order Confirmed!</h1>
+          <h1 class="ocv__heading" tabindex="-1">Order Confirmed!</h1>
           <p class="ocv__order-number">Order #{{ orderStore.currentOrder.id }}</p>
           <p class="ocv__delivery">Estimated delivery: 3–5 business days</p>
         </template>
@@ -106,7 +117,8 @@ onMounted(async () => {
     </div>
 
     <!-- Error -->
-    <div v-else class="ocv__error">
+    <div v-else class="ocv__error" role="alert">
+      <h1 tabindex="-1">Order status unavailable</h1>
       <p>Could not load order details.</p>
       <Button label="View My Orders" severity="primary" outlined @click="router.push('/orders')" />
     </div>
@@ -164,11 +176,11 @@ onMounted(async () => {
 }
 .ocv__icon--pending {
   background: #fef9c3;
-  color: #a16207;
+  color: #854d0e;
 }
 .ocv__payment-pending {
   font-size: 14px;
-  color: #a16207;
+  color: #854d0e;
   margin: 0;
   padding: 8px 16px;
   background: #fef9c3;
@@ -260,5 +272,9 @@ onMounted(async () => {
     transform: scale(1);
     opacity: 1;
   }
+}
+.ocv__item-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 </style>

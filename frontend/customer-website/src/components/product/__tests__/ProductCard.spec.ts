@@ -127,7 +127,7 @@ describe('ProductCard', () => {
       global: { plugins: [router, pinia, PrimeVue, ToastService] },
     })
 
-    await wrapper.find('.product-card').trigger('click')
+    await wrapper.find('a.product-card__link').trigger('click')
     expect(push).toHaveBeenCalledWith('/products/1')
   })
 
@@ -167,5 +167,59 @@ describe('ProductCard', () => {
   it('should not show Add to Cart for out of stock products', async () => {
     const wrapper = await mountCard({ ...mockProduct, stockQuantity: 0 })
     expect(wrapper.find('.product-card__add-btn').exists()).toBe(false)
+  })
+})
+
+describe('ProductCard separate native controls', () => {
+  it('keeps a named navigation anchor separate from the cart button', async () => {
+    const wrapper = await mountCard()
+    const link = wrapper.get('a.product-card__link')
+    expect(link.attributes('href')).toBe('/products/1')
+    expect(link.attributes('aria-label')).toBe('View Test Product')
+    expect(link.find('button').exists()).toBe(false)
+    expect(wrapper.get('button.product-card__add-btn').attributes('aria-label')).toBe(
+      'Add Test Product to cart',
+    )
+    expect(wrapper.get('article').attributes('tabindex')).toBeUndefined()
+    expect(wrapper.get('article').attributes('role')).toBeUndefined()
+    expect(
+      wrapper.get('.product-card__rating').findAll('input, button, a, [tabindex]'),
+    ).toHaveLength(0)
+    expect(wrapper.get('.product-card__rating').attributes('aria-label')).toBe('4.5 out of 5 stars')
+    wrapper.unmount()
+  })
+
+  it('does not navigate when the cart action is clicked or its Enter key bubbles', async () => {
+    const wrapper = await mountCard()
+    const router = wrapper.vm.$router
+    const push = vi.spyOn(router, 'push')
+    const button = wrapper.get('button.product-card__add-btn')
+    await button.trigger('keydown', { key: 'Enter' })
+    await button.trigger('click')
+    await flushPromises()
+    expect(push).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('disables duplicate submissions until the first request settles, then recovers after rejection', async () => {
+    const { addToCart } = await import('@/api/cartApi')
+    vi.mocked(addToCart).mockClear()
+    let reject!: (reason: Error) => void
+    vi.mocked(addToCart).mockImplementationOnce(
+      () =>
+        new Promise((_, fail) => {
+          reject = fail
+        }),
+    )
+    const wrapper = await mountCard()
+    const button = wrapper.get('button.product-card__add-btn')
+    await button.trigger('click')
+    expect(button.attributes('disabled')).toBeDefined()
+    await button.trigger('click')
+    expect(addToCart).toHaveBeenCalledTimes(1)
+    reject(new Error('fixture failure'))
+    await flushPromises()
+    expect(button.attributes('disabled')).toBeUndefined()
+    wrapper.unmount()
   })
 })

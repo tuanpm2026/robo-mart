@@ -1,0 +1,465 @@
+
+> customer-website@0.0.0 test:unit
+> vitest --run src/stores/__tests__/useCartStore.spec.ts src/stores/__tests__/useProductStore.search.spec.ts src/views/__tests__/SearchResultsView.filters.spec.ts
+
+
+ RUN  v4.1.9 /private/var/folders/jd/920yhcsd3fg2hq9t7jwycsp40000gn/T/robomart-frontend-red-819bhq9l/frontend/customer-website
+
+ ❯ src/stores/__tests__/useCartStore.spec.ts (22 tests | 1 failed) 11ms
+     × should restore an existing item quantity and subtotal when addItem is rejected 3ms
+ ❯ src/stores/__tests__/useProductStore.search.spec.ts (16 tests | 15 failed) 12ms
+     × keeps the latest results and pagination when an older response arrives last 5ms
+     × ignores stale success while the latest request is loading 1ms
+     × ignores stale failure while the latest request is loading 0ms
+     × does not expose a late obsolete failure after the latest search succeeds 0ms
+     × retains the latest failure without reviving older data or pagination 1ms
+     × clearFilters invalidates a pending response and permits a new search 0ms
+     × $reset invalidates a pending response and permits a new search 0ms
+     × clearFilters ignores a late rejection and leaves search reset 0ms
+     × $reset ignores a late rejection and leaves search reset 0ms
+     × appends the next page once using the current filter snapshot 1ms
+     × discards an old append after filters change and restarts pagination 1ms
+     × does not append previous-query pages while a replacement query is pending 0ms
+     × copies the submitted filters rather than retaining a mutable caller snapshot 1ms
+     × clearFilters retires a pending append without allowing stale pages to be loaded again 0ms
+     × $reset retires a pending append without allowing stale pages to be loaded again 0ms
+ ❯ src/views/__tests__/SearchResultsView.filters.spec.ts (9 tests | 9 failed) 297ms
+     × removes an unchecked brand from API requests while retaining selected price and rating 90ms
+     × removes reset price bounds and rating from API requests while retaining the brand 33ms
+     × uses the current route keyword even when a filter snapshot contains an older keyword 29ms
+     × initializes sidebar controls from existing filters so tag removal preserves the other selections 22ms
+     × resets sidebar controls on a new keyword so later input cannot revive previous filters 26ms
+     × does not revive 'brand' after its tag is removed and another control changes 25ms
+     × does not revive 'minPrice' after its tag is removed and another control changes 25ms
+     × does not revive 'maxPrice' after its tag is removed and another control changes 20ms
+     × does not revive 'minRating' after its tag is removed and another control changes 26ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 25 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/views/__tests__/SearchResultsView.filters.spec.ts > SearchResultsView complete filter snapshots > removes an unchecked brand from API requests while retaining selected price and rating
+AssertionError: expected { keyword: 'mouse', …(6) } to deeply equal { Object (keyword, minPrice, ...) }
+
+- Expected
++ Received
+
+@@ -1,6 +1,7 @@
+  {
++   "brand": "Logitech",
+    "keyword": "mouse",
+    "maxPrice": 200,
+    "minPrice": 10,
+    "minRating": 4,
+    "page": 0,
+
+ ❯ src/views/__tests__/SearchResultsView.filters.spec.ts:94:27
+     92|     sidebar.findComponent(Checkbox).vm.$emit('update:modelValue', [])
+     93|     await flushPromises()
+     94|     expect(lastRequest()).toEqual({
+       |                           ^
+     95|       keyword: 'mouse',
+     96|       minPrice: 10,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/25]⎯
+
+ FAIL  src/views/__tests__/SearchResultsView.filters.spec.ts > SearchResultsView complete filter snapshots > removes reset price bounds and rating from API requests while retaining the brand
+AssertionError: expected { keyword: 'mouse', …(6) } to deeply equal { keyword: 'mouse', …(4) }
+
+- Expected
++ Received
+
+  {
+    "brand": "Logitech",
+    "keyword": "mouse",
++   "maxPrice": 200,
++   "minPrice": 10,
+    "minRating": 4,
+    "page": 0,
+    "size": 20,
+  }
+
+ ❯ src/views/__tests__/SearchResultsView.filters.spec.ts:114:27
+    112|     sidebar.findComponent(Slider).vm.$emit('update:modelValue', [0, 10…
+    113|     await flushPromises()
+    114|     expect(lastRequest()).toEqual({
+       |                           ^
+    115|       keyword: 'mouse',
+    116|       brand: 'Logitech',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/25]⎯
+
+ FAIL  src/views/__tests__/SearchResultsView.filters.spec.ts > SearchResultsView complete filter snapshots > uses the current route keyword even when a filter snapshot contains an older keyword
+AssertionError: expected 'older' to be 'mouse' // Object.is equality
+
+Expected: "mouse"
+Received: "older"
+
+ ❯ src/views/__tests__/SearchResultsView.filters.spec.ts:129:36
+    127|   it('uses the current route keyword even when a filter snapshot conta…
+    128|     const { wrapper } = await renderSearch({ keyword: 'older', brand: …
+    129|     expect(lastRequest()?.keyword).toBe('mouse')
+       |                                    ^
+    130|     wrapper.findComponent(FilterSidebar).vm.$emit('filter', { keyword:…
+    131|     await flushPromises()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/25]⎯
+
+ FAIL  src/views/__tests__/SearchResultsView.filters.spec.ts > SearchResultsView complete filter snapshots > initializes sidebar controls from existing filters so tag removal preserves the other selections
+AssertionError: expected [] to deeply equal [ 'Logitech' ]
+
+- Expected
++ Received
+
+- [
+-   "Logitech",
+- ]
++ []
+
+ ❯ src/views/__tests__/SearchResultsView.filters.spec.ts:144:65
+    142|     })
+    143|     const sidebar = wrapper.findComponent(FilterSidebar)
+    144|     expect(sidebar.findComponent(Checkbox).props('modelValue')).toEqua…
+       |                                                                 ^
+    145|     expect(sidebar.findComponent(Slider).props('modelValue')).toEqual(…
+    146|     expect(sidebar.findComponent(Rating).props('modelValue')).toBe(4)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/25]⎯
+
+ FAIL  src/views/__tests__/SearchResultsView.filters.spec.ts > SearchResultsView complete filter snapshots > resets sidebar controls on a new keyword so later input cannot revive previous filters
+AssertionError: expected [ 'Logitech' ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "Logitech",
++ ]
+
+ ❯ src/views/__tests__/SearchResultsView.filters.spec.ts:170:65
+    168|     await flushPromises()
+    169|     expect(lastRequest()).toEqual({ keyword: 'keyboard', page: 0, size…
+    170|     expect(sidebar.findComponent(Checkbox).props('modelValue')).toEqua…
+       |                                                                 ^
+    171|     expect(sidebar.findComponent(Slider).props('modelValue')).toEqual(…
+    172|     expect(sidebar.findComponent(Rating).props('modelValue')).toBe(0)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/25]⎯
+
+ FAIL  src/views/__tests__/SearchResultsView.filters.spec.ts > SearchResultsView complete filter snapshots > does not revive 'brand' after its tag is removed and another control changes
+ FAIL  src/views/__tests__/SearchResultsView.filters.spec.ts > SearchResultsView complete filter snapshots > does not revive 'minPrice' after its tag is removed and another control changes
+ FAIL  src/views/__tests__/SearchResultsView.filters.spec.ts > SearchResultsView complete filter snapshots > does not revive 'maxPrice' after its tag is removed and another control changes
+ FAIL  src/views/__tests__/SearchResultsView.filters.spec.ts > SearchResultsView complete filter snapshots > does not revive 'minRating' after its tag is removed and another control changes
+AssertionError: expected undefined to be defined
+ ❯ removalButton src/views/__tests__/SearchResultsView.filters.spec.ts:45:18
+     43|     .findAll('button')
+     44|     .find((element) => element.attributes('aria-label') === `Remove ${…
+     45|   expect(button).toBeDefined()
+       |                  ^
+     46|   return button!
+     47| }
+ ❯ src/views/__tests__/SearchResultsView.filters.spec.ts:210:13
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/25]⎯
+
+ FAIL  src/stores/__tests__/useCartStore.spec.ts > useCartStore > should restore an existing item quantity and subtotal when addItem is rejected
+AssertionError: expected [ { productId: 1, …(4) } ] to deeply equal [ { productId: 1, …(4) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "price": 10,
+      "productId": 1,
+      "productName": "Existing",
+-     "quantity": 1,
+-     "subtotal": 10,
++     "quantity": 2,
++     "subtotal": 20,
+    },
+  ]
+
+ ❯ src/stores/__tests__/useCartStore.spec.ts:161:25
+    159|     ).rejects.toThrow('Rejected by API')
+    160|
+    161|     expect(store.items).toEqual([
+       |                         ^
+    162|       { productId: 1, productName: 'Existing', price: 10, quantity: 1,…
+    163|     ])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/25]⎯
+
+ FAIL  src/stores/__tests__/useProductStore.search.spec.ts > useProductStore search request lifecycle > keeps the latest results and pagination when an older response arrives last
+AssertionError: expected [ { id: 1, sku: 'P1', …(7) } ] to deeply equal [ { id: 2, sku: 'P2', …(7) } ]
+
+- Expected
++ Received
+
+  [
+    {
+      "brand": "Fixture",
+      "categoryName": "Fixture",
+-     "id": 2,
+-     "name": "Product 2",
++     "id": 1,
++     "name": "Product 1",
+      "price": 10,
+      "primaryImageUrl": "/fixture.png",
+      "rating": 4,
+-     "sku": "P2",
++     "sku": "P1",
+      "stockQuantity": 10,
+    },
+  ]
+
+ ❯ src/stores/__tests__/useProductStore.search.spec.ts:62:33
+     60|     await first
+     61|
+     62|     expect(store.searchResults).toEqual(result(2).data)
+       |                                 ^
+     63|     expect(store.searchPagination).toEqual(result(2).pagination)
+     64|     expect(store.filters).toEqual({ keyword: 'latest' })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/25]⎯
+
+ FAIL  src/stores/__tests__/useProductStore.search.spec.ts > useProductStore search request lifecycle > ignores stale success while the latest request is loading
+ FAIL  src/stores/__tests__/useProductStore.search.spec.ts > useProductStore search request lifecycle > ignores stale failure while the latest request is loading
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/stores/__tests__/useProductStore.search.spec.ts:85:31
+     83|       await first
+     84|
+     85|       expect(store.isLoading).toBe(true)
+       |                               ^
+     86|       expect(store.error).toBeNull()
+     87|       expect(store.searchResults).toEqual([])
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/25]⎯
+
+ FAIL  src/stores/__tests__/useProductStore.search.spec.ts > useProductStore search request lifecycle > does not expose a late obsolete failure after the latest search succeeds
+AssertionError: expected 'Obsolete failure' to be null
+
+- Expected:
+null
+
++ Received:
+"Obsolete failure"
+
+ ❯ src/stores/__tests__/useProductStore.search.spec.ts:103:25
+    101|     older.reject(new Error('Obsolete failure'))
+    102|     await first
+    103|     expect(store.error).toBeNull()
+       |                         ^
+    104|     expect(store.searchResults).toEqual(result(2).data)
+    105|   })
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/25]⎯
+
+ FAIL  src/stores/__tests__/useProductStore.search.spec.ts > useProductStore search request lifecycle > retains the latest failure without reviving older data or pagination
+AssertionError: expected [ { id: 1, sku: 'P1', …(7) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "brand": "Fixture",
++     "categoryName": "Fixture",
++     "id": 1,
++     "name": "Product 1",
++     "price": 10,
++     "primaryImageUrl": "/fixture.png",
++     "rating": 4,
++     "sku": "P1",
++     "stockQuantity": 10,
++   },
++ ]
+
+ ❯ src/stores/__tests__/useProductStore.search.spec.ts:120:33
+    118|     expect(store.error).toBe('Latest failure')
+    119|     expect(store.isLoading).toBe(false)
+    120|     expect(store.searchResults).toEqual([])
+       |                                 ^
+    121|     expect(store.searchPagination).toBeNull()
+    122|     expect(store.hasMoreSearchResults).toBe(false)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/25]⎯
+
+ FAIL  src/stores/__tests__/useProductStore.search.spec.ts > useProductStore search request lifecycle > clearFilters invalidates a pending response and permits a new search
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ src/stores/__tests__/useProductStore.search.spec.ts:137:31
+    135|       store[reset]()
+    136|       expect(store.filters).toEqual({})
+    137|       expect(store.isLoading).toBe(false)
+       |                               ^
+    138|       const second = store.fetchSearchResults({ keyword: 'latest' })
+    139|       older.resolve(result(1))
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/25]⎯
+
+ FAIL  src/stores/__tests__/useProductStore.search.spec.ts > useProductStore search request lifecycle > $reset invalidates a pending response and permits a new search
+AssertionError: expected [ { id: 1, sku: 'P1', …(7) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "brand": "Fixture",
++     "categoryName": "Fixture",
++     "id": 1,
++     "name": "Product 1",
++     "price": 10,
++     "primaryImageUrl": "/fixture.png",
++     "rating": 4,
++     "sku": "P1",
++     "stockQuantity": 10,
++   },
++ ]
+
+ ❯ src/stores/__tests__/useProductStore.search.spec.ts:141:35
+    139|       older.resolve(result(1))
+    140|       await first
+    141|       expect(store.searchResults).toEqual([])
+       |                                   ^
+    142|       expect(store.searchPagination).toBeNull()
+    143|       expect(store.isLoading).toBe(true)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/25]⎯
+
+ FAIL  src/stores/__tests__/useProductStore.search.spec.ts > useProductStore search request lifecycle > clearFilters ignores a late rejection and leaves search reset
+ FAIL  src/stores/__tests__/useProductStore.search.spec.ts > useProductStore search request lifecycle > $reset ignores a late rejection and leaves search reset
+AssertionError: expected 'Obsolete failure' to be null
+
+- Expected:
+null
+
++ Received:
+"Obsolete failure"
+
+ ❯ src/stores/__tests__/useProductStore.search.spec.ts:162:27
+    160|       expect(store.searchResults).toEqual([])
+    161|       expect(store.searchPagination).toBeNull()
+    162|       expect(store.error).toBeNull()
+       |                           ^
+    163|       expect(store.isLoading).toBe(false)
+    164|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/25]⎯
+
+ FAIL  src/stores/__tests__/useProductStore.search.spec.ts > useProductStore search request lifecycle > appends the next page once using the current filter snapshot
+AssertionError: expected "vi.fn()" to be called 2 times, but got 3 times
+ ❯ src/stores/__tests__/useProductStore.search.spec.ts:174:28
+    172|     const append = store.loadMoreSearchResults()
+    173|     await store.loadMoreSearchResults()
+    174|     expect(searchProducts).toHaveBeenCalledTimes(2)
+       |                            ^
+    175|     expect(searchProducts).toHaveBeenLastCalledWith({
+    176|       keyword: 'mouse',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/25]⎯
+
+ FAIL  src/stores/__tests__/useProductStore.search.spec.ts > useProductStore search request lifecycle > discards an old append after filters change and restarts pagination
+AssertionError: expected [ { id: 3, sku: 'P3', …(7) }, …(1) ] to deeply equal [ { id: 3, sku: 'P3', …(7) } ]
+
+- Expected
++ Received
+
+@@ -8,6 +8,17 @@
+      "primaryImageUrl": "/fixture.png",
+      "rating": 4,
+      "sku": "P3",
+      "stockQuantity": 10,
+    },
++   {
++     "brand": "Fixture",
++     "categoryName": "Fixture",
++     "id": 2,
++     "name": "Product 2",
++     "price": 10,
++     "primaryImageUrl": "/fixture.png",
++     "rating": 4,
++     "sku": "P2",
++     "stockQuantity": 10,
++   },
+  ]
+
+ ❯ src/stores/__tests__/useProductStore.search.spec.ts:200:33
+    198|     next.resolve(result(2, 1))
+    199|     await append
+    200|     expect(store.searchResults).toEqual(result(3).data)
+       |                                 ^
+    201|     expect(store.searchPagination?.page).toBe(0)
+    202|     expect(store.filters.brand).toBe('New')
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/25]⎯
+
+ FAIL  src/stores/__tests__/useProductStore.search.spec.ts > useProductStore search request lifecycle > does not append previous-query pages while a replacement query is pending
+AssertionError: expected "vi.fn()" to be called 2 times, but got 3 times
+ ❯ src/stores/__tests__/useProductStore.search.spec.ts:212:28
+    210|     const replacement = store.fetchSearchResults({ keyword: 'latest' })
+    211|     await store.loadMoreSearchResults()
+    212|     expect(searchProducts).toHaveBeenCalledTimes(2)
+       |                            ^
+    213|     expect(store.searchResults).toEqual([])
+    214|     expect(store.hasMoreSearchResults).toBe(false)
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/25]⎯
+
+ FAIL  src/stores/__tests__/useProductStore.search.spec.ts > useProductStore search request lifecycle > copies the submitted filters rather than retaining a mutable caller snapshot
+AssertionError: expected 'Changed externally' to be 'Fixture' // Object.is equality
+
+Expected: "Fixture"
+Received: "Changed externally"
+
+ ❯ src/stores/__tests__/useProductStore.search.spec.ts:225:33
+    223|     await store.fetchSearchResults(snapshot)
+    224|     snapshot.brand = 'Changed externally'
+    225|     expect(store.filters.brand).toBe('Fixture')
+       |                                 ^
+    226|   })
+    227|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/25]⎯
+
+ FAIL  src/stores/__tests__/useProductStore.search.spec.ts > useProductStore search request lifecycle > clearFilters retires a pending append without allowing stale pages to be loaded again
+ FAIL  src/stores/__tests__/useProductStore.search.spec.ts > useProductStore search request lifecycle > $reset retires a pending append without allowing stale pages to be loaded again
+AssertionError: expected "vi.fn()" to be called 2 times, but got 3 times
+ ❯ src/stores/__tests__/useProductStore.search.spec.ts:259:30
+    257|       await append
+    258|       await store.loadMoreSearchResults()
+    259|       expect(searchProducts).toHaveBeenCalledTimes(2)
+       |                              ^
+    260|       expect(store.searchResults).toEqual([])
+    261|       expect(store.searchPagination).toBeNull()
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/25]⎯
+
+
+ Test Files  3 failed (3)
+      Tests  25 failed | 22 passed (47)
+   Start at  16:39:06
+   Duration  1.19s (transform 295ms, setup 0ms, import 550ms, tests 321ms, environment 1.27s)
+
+npm error Lifecycle script `test:unit` failed with error:
+npm error code 1
+npm error path /private/var/folders/jd/920yhcsd3fg2hq9t7jwycsp40000gn/T/robomart-frontend-red-819bhq9l/frontend/customer-website
+npm error workspace customer-website@0.0.0
+npm error location /private/var/folders/jd/920yhcsd3fg2hq9t7jwycsp40000gn/T/robomart-frontend-red-819bhq9l/frontend/customer-website
+npm error command failed
+npm error command sh -c vitest --run src/stores/__tests__/useCartStore.spec.ts src/stores/__tests__/useProductStore.search.spec.ts src/views/__tests__/SearchResultsView.filters.spec.ts

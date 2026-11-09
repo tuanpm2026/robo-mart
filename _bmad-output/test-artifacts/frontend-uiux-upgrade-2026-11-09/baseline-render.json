@@ -1,0 +1,9 @@
+{
+  "temporary_directory": "/var/folders/jd/920yhcsd3fg2hq9t7jwycsp40000gn/T/robomart-uiux-baseline-r3cevut1",
+  "source_snapshot_sha256": "bc58ccbbad15208a1650f7708e81aec9b39537acac0275a749c7bea089ef061f",
+  "apps": [
+    "customer-website",
+    "admin-dashboard"
+  ],
+  "purpose": "Frozen pre-UI source browser rendering; temporary Vite alias for frozen shared source, no worktree source reverted"
+}

@@ -107,3 +107,29 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Keep keyboard access visible above fixed navigation. */
+.skip-to-main {
+  position: fixed;
+  left: 12px;
+  top: -100px;
+  z-index: 9999;
+  padding: 12px 16px;
+  background: var(--color-primary-700);
+  color: white;
+  border-radius: 4px;
+}
+.skip-to-main:focus {
+  top: 8px;
+}
+@media (max-width: 767px) {
+  .p-button {
+    min-height: 44px;
+  }
+}
+
+/* Keep the focus ring visible when PrimeVue's button reset overrides the base outline. */
+button.p-button:focus-visible {
+  outline: 2px solid var(--color-primary-700);
+  outline-offset: 3px;
+}

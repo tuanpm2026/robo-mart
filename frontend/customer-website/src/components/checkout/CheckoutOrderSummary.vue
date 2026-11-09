@@ -84,4 +84,9 @@ defineProps<{
 .cos__total-price {
   color: var(--p-primary-color, #2563eb);
 }
+.cos__item-name {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
 </style>

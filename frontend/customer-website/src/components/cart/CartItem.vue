@@ -63,7 +63,7 @@ function onQuantityChange(productId: number, event: { value: number | null }) {
     <div class="cart-item__quantity">
       <label :for="`qty-${item.productId}`" class="cart-item__quantity-label">Qty</label>
       <InputNumber
-        :id="`qty-${item.productId}`"
+        :inputId="`qty-${item.productId}`"
         :modelValue="item.quantity"
         :min="1"
         :max="999"
@@ -173,5 +173,38 @@ function onQuantityChange(productId: number, event: { value: number | null }) {
 
 .cart-item__remove {
   flex-shrink: 0;
+}
+
+.cart-item__name {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.cart-item__quantity-input :deep(input) {
+  min-width: 0;
+  width: 100%;
+}
+@media (max-width: 767px) {
+  .cart-item {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) 44px;
+    gap: 12px;
+    padding: 12px;
+  }
+  .cart-item__image-wrapper {
+    width: 48px;
+    height: 48px;
+  }
+  .cart-item__remove {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .cart-item__quantity {
+    grid-column: 1 / 3;
+  }
+  .cart-item__subtotal {
+    grid-column: 3;
+    min-width: 0;
+    font-size: 14px;
+  }
 }
 </style>

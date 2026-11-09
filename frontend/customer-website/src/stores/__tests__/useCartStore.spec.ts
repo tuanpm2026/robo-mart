@@ -148,6 +148,42 @@ describe('useCartStore', () => {
     expect(store.items).toHaveLength(2)
   })
 
+  it('should restore an existing item quantity and subtotal when addItem is rejected', async () => {
+    const { addToCart } = await import('@/api/cartApi')
+    vi.mocked(addToCart).mockRejectedValueOnce(new Error('Rejected by API'))
+    const store = useCartStore()
+    store.items = [{ productId: 1, productName: 'Existing', price: 10, quantity: 1, subtotal: 10 }]
+
+    await expect(
+      store.addItem({ productId: 1, productName: 'Existing', price: 10, quantity: 1 }),
+    ).rejects.toThrow('Rejected by API')
+
+    expect(store.items).toEqual([
+      { productId: 1, productName: 'Existing', price: 10, quantity: 1, subtotal: 10 },
+    ])
+    expect(store.totalItems).toBe(1)
+    expect(store.totalPrice).toBe(10)
+    expect(store.error).toBe('Rejected by API')
+  })
+
+  it('should use server quantities and prices after adding an existing item', async () => {
+    const { addToCart } = await import('@/api/cartApi')
+    const serverItems = [
+      { productId: 1, productName: 'Existing', price: 12, quantity: 4, subtotal: 48 },
+    ]
+    vi.mocked(addToCart).mockResolvedValueOnce({
+      data: { cartId: 'cart-123', items: serverItems, totalItems: 4, totalPrice: 48 },
+      traceId: 'server-authoritative',
+    })
+    const store = useCartStore()
+    store.items = [{ productId: 1, productName: 'Existing', price: 10, quantity: 1, subtotal: 10 }]
+
+    await store.addItem({ productId: 1, productName: 'Existing', price: 10, quantity: 1 })
+
+    expect(store.items).toEqual(serverItems)
+    expect(store.totalPrice).toBe(48)
+  })
+
   it('should rollback on updateQuantity failure', async () => {
     const { updateQuantity } = await import('@/api/cartApi')
     vi.mocked(updateQuantity).mockRejectedValueOnce(new Error('Server error'))

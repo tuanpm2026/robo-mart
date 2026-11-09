@@ -1,0 +1,15 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "test:unit",
+    "--workspace=customer-website",
+    "--",
+    "--run",
+    "src/views/__tests__/ProductDetailView.spec.ts",
+    "src/components/checkout/ProcessingAccessibility.spec.ts"
+  ],
+  "cwd": "frontend",
+  "exit_code": 0,
+  "timestamp_utc": "2026-11-09T13:49:24.166401+00:00"
+}

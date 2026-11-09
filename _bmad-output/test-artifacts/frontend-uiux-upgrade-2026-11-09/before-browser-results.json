@@ -1,0 +1,6204 @@
+{
+  "phase": "before",
+  "timestamp": "2026-11-09T13:38:33.446Z",
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/156.0.8078.80",
+    "revision": "@fb096c0011f9d50f0a264a9376420cdea9c421e3",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+    "jsVersion": "15.6.75.27"
+  },
+  "harnessSha256": "bda9f7e833505c67c7a4335bb71a9d8de023542bede42c12f9ff26793ff1e5f5",
+  "fixture": "Synthetic API/OIDC; all non-preview requests intercepted; no real backend/identity writes",
+  "screens": [
+    {
+      "screen": "customer-home",
+      "width": 360,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 312,
+        "height": 963.125,
+        "clientWidth": 312,
+        "scrollWidth": 312,
+        "columns": "88px 88px 88px"
+      },
+      "searchGrid": null,
+      "card": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 88,
+        "height": 297.578125,
+        "clientWidth": 86,
+        "scrollWidth": 112,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 38.25,
+        "height": 44.390625,
+        "clientWidth": 36,
+        "scrollWidth": 36,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "path",
+          "class": {},
+          "width": 16.000030517578125,
+          "right": 361.00006103515625
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 16.000030517578125,
+          "right": 361.00006103515625
+        }
+      ]
+    },
+    {
+      "screen": "customer-search",
+      "width": 360,
+      "path": "/search",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 382,
+      "overflow": 22,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 8,
+        "height": 705.125,
+        "clientWidth": 8,
+        "scrollWidth": 54,
+        "columns": "2px 2px 2px"
+      },
+      "card": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 2,
+        "height": 211.578125,
+        "clientWidth": 0,
+        "scrollWidth": 112,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 38.25,
+        "height": 44.390625,
+        "clientWidth": 36,
+        "scrollWidth": 36,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-up",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "p-rating p-readonly",
+          "width": 96,
+          "right": 441
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 16,
+          "right": 361.0000305175781
+        },
+        {
+          "tag": "DIV",
+          "class": "p-rating-option p-rating-option-active",
+          "width": 16,
+          "right": 381
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-hidden-accessible",
+          "width": 1,
+          "right": 365
+        },
+        {
+          "tag": "INPUT",
+          "class": "",
+          "width": 13,
+          "right": 377
+        },
+        {
+          "tag": "svg",
+          "class": {},
+          "width": 16,
+          "right": 381
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 16,
+          "right": 381.0000305175781
+        },
+        {
+          "tag": "DIV",
+          "class": "p-rating-option p-rating-option-active",
+          "width": 16,
+          "right": 401
+        }
+      ]
+    },
+    {
+      "screen": "customer-detail",
+      "width": 360,
+      "path": "/products/1",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 38.25,
+        "height": 44.390625,
+        "clientWidth": 36,
+        "scrollWidth": 36,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-breadcrumb-item-icon pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-button-icon p-button-icon-left pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-cart",
+      "width": 360,
+      "path": "/cart",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 1458,
+      "overflow": 1098,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 38.25,
+        "height": 44.390625,
+        "clientWidth": 36,
+        "scrollWidth": 36,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "cart__items",
+          "width": 1042.046875,
+          "right": 1066.046875
+        },
+        {
+          "tag": "ARTICLE",
+          "class": "cart-item",
+          "width": 1042.046875,
+          "right": 1066.046875
+        },
+        {
+          "tag": "DIV",
+          "class": "cart-item__details",
+          "width": 592.171875,
+          "right": 729.171875
+        },
+        {
+          "tag": "H3",
+          "class": "cart-item__name",
+          "width": 592.171875,
+          "right": 729.171875
+        },
+        {
+          "tag": "P",
+          "class": "cart-item__price",
+          "width": 592.171875,
+          "right": 729.171875
+        },
+        {
+          "tag": "DIV",
+          "class": "cart-item__quantity",
+          "width": 151.875,
+          "right": 897.046875
+        },
+        {
+          "tag": "LABEL",
+          "class": "cart-item__quantity-label",
+          "width": 23.875,
+          "right": 769.046875
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-inputnumber p-component p-inputwrapper p-inputwrapper-filled p-inputnumber-horizontal cart-item__quantity-input",
+          "width": 120,
+          "right": 897.046875
+        }
+      ]
+    },
+    {
+      "screen": "checkout-review",
+      "width": 360,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 1082,
+      "overflow": 722,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": -562.640625,
+        "y": 12,
+        "width": 38.25,
+        "height": 44.390625,
+        "clientWidth": 36,
+        "scrollWidth": 36,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping",
+      "width": 360,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 617,
+      "overflow": 257,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": -97.640625,
+        "y": 12,
+        "width": 38.25,
+        "height": 44.390625,
+        "clientWidth": 36,
+        "scrollWidth": 36,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": -225,
+        "y": 277.578125,
+        "width": 577.375,
+        "height": 395.53125,
+        "clientWidth": 577,
+        "scrollWidth": 577,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping-errors",
+      "width": 360,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 617,
+      "overflow": 257,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": -97.640625,
+        "y": 12,
+        "width": 38.25,
+        "height": 44.390625,
+        "clientWidth": 36,
+        "scrollWidth": 36,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": -225,
+        "y": 277.578125,
+        "width": 577.375,
+        "height": 493.40625,
+        "clientWidth": 577,
+        "scrollWidth": 577,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Continue to Payment →"
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-payment",
+      "width": 360,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 617,
+      "overflow": 257,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": -89.640625,
+        "y": 12,
+        "width": 38.25,
+        "height": 44.390625,
+        "clientWidth": 36,
+        "scrollWidth": 36,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "checkout__stepper",
+          "width": 593.375,
+          "right": 368.375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-stepper p-component p-readonly",
+          "width": 593.375,
+          "right": 368.375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-steplist",
+          "width": 593.375,
+          "right": 368.375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-step p-disabled",
+          "width": 117.78125,
+          "right": 368.375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-steppanels",
+          "width": 593.375,
+          "right": 368.375
+        },
+        {
+          "tag": "DIV",
+          "class": "checkout__sidebar",
+          "width": 593.375,
+          "right": 368.375
+        },
+        {
+          "tag": "ASIDE",
+          "class": "cos",
+          "width": 593.375,
+          "right": 368.375
+        }
+      ]
+    },
+    {
+      "screen": "admin-orders",
+      "width": 360,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 1433,
+      "overflow": 1073,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 1144.71875,
+        "height": 218.1875,
+        "clientWidth": 1145,
+        "scrollWidth": 1145,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "orders-page",
+          "width": 1144.71875,
+          "right": 1408.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "flex items-center justify-between mb-4",
+          "width": 1144.71875,
+          "right": 1408.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect p-component p-inputwrapper p-multiselect-display-chip w-72",
+          "width": 288,
+          "right": 1408.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-hidden-accessible",
+          "width": 1,
+          "right": 1121.71875
+        },
+        {
+          "tag": "INPUT",
+          "class": "",
+          "width": 166,
+          "right": 1286.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect-label-container",
+          "width": 246,
+          "right": 1367.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect-label p-placeholder",
+          "width": 246,
+          "right": 1367.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect-dropdown",
+          "width": 40,
+          "right": 1407.71875
+        }
+      ]
+    },
+    {
+      "screen": "admin-order-detail",
+      "width": 360,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 1433,
+      "overflow": 1073,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": -745,
+        "y": 109.59375,
+        "width": 1144.71875,
+        "height": 218.1875,
+        "clientWidth": 1145,
+        "scrollWidth": 1145,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 0,
+        "y": 0,
+        "width": 360,
+        "height": 950,
+        "clientWidth": 359,
+        "scrollWidth": 359,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "orders-page",
+          "width": 1144.71875,
+          "right": 399.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "flex items-center justify-between mb-4",
+          "width": 1144.71875,
+          "right": 399.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect p-component p-inputwrapper p-multiselect-display-chip w-72",
+          "width": 288,
+          "right": 399.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect-dropdown",
+          "width": 40,
+          "right": 398.71875
+        },
+        {
+          "tag": "svg",
+          "class": {},
+          "width": 16,
+          "right": 386.71875
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 13.714324951171875,
+          "right": 385.575927734375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable p-component",
+          "width": 1144.71875,
+          "right": 399.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-table-container",
+          "width": 1144.71875,
+          "right": 399.71875
+        }
+      ]
+    },
+    {
+      "screen": "admin-products",
+      "width": 360,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 1281,
+      "overflow": 921,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 992.5,
+        "height": 759.84375,
+        "clientWidth": 993,
+        "scrollWidth": 993,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "products-page",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "DIV",
+          "class": "flex items-center justify-between mb-4",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "BUTTON",
+          "class": "p-button p-component",
+          "width": 129.28125,
+          "right": 1256.5
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-button-label",
+          "width": 95.28125,
+          "right": 1243.5
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable p-component p-datatable-hoverable",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-table-container",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 992.5,
+          "right": 1256.5
+        }
+      ]
+    },
+    {
+      "screen": "admin-product-drawer",
+      "width": 360,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "clientWidth": 360,
+      "documentWidth": 1281,
+      "overflow": 921,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": -657,
+        "y": 112.390625,
+        "width": 992.5,
+        "height": 780.6875,
+        "clientWidth": 993,
+        "scrollWidth": 993,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": -95.03125,
+        "y": 0,
+        "width": 455.03125,
+        "height": 950,
+        "clientWidth": 454,
+        "scrollWidth": 454,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-home",
+      "width": 390,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 342,
+        "height": 970.734375,
+        "clientWidth": 342,
+        "scrollWidth": 342,
+        "columns": "98px 98px 98px"
+      },
+      "searchGrid": null,
+      "card": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 98,
+        "height": 307.578125,
+        "clientWidth": 96,
+        "scrollWidth": 112,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 68.25,
+        "height": 44.390625,
+        "clientWidth": 66,
+        "scrollWidth": 66,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-customer-home-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-search",
+      "width": 390,
+      "path": "/search",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 38,
+        "height": 705.125,
+        "clientWidth": 38,
+        "scrollWidth": 54,
+        "columns": "2px 2px 2px"
+      },
+      "card": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 2,
+        "height": 211.578125,
+        "clientWidth": 0,
+        "scrollWidth": 112,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 68.25,
+        "height": 44.390625,
+        "clientWidth": 66,
+        "scrollWidth": 66,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-up",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "p-rating p-readonly",
+          "width": 96,
+          "right": 441
+        },
+        {
+          "tag": "DIV",
+          "class": "p-rating-option p-rating-option-active",
+          "width": 16,
+          "right": 401
+        },
+        {
+          "tag": "INPUT",
+          "class": "",
+          "width": 13,
+          "right": 397
+        },
+        {
+          "tag": "svg",
+          "class": {},
+          "width": 16,
+          "right": 401
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 16,
+          "right": 401.0000305175781
+        },
+        {
+          "tag": "DIV",
+          "class": "p-rating-option p-rating-option-active",
+          "width": 16,
+          "right": 421
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-hidden-accessible",
+          "width": 1,
+          "right": 405
+        },
+        {
+          "tag": "INPUT",
+          "class": "",
+          "width": 13,
+          "right": 417
+        }
+      ],
+      "screenshot": "before-customer-search-390.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "aria-input-field-name",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "span[data-pc-section=\"starthandler\"]"
+                ],
+                "summary": "Fix any of the following:\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute"
+              },
+              {
+                "target": [
+                  "span[data-pc-section=\"endhandler\"]"
+                ],
+                "summary": "Fix any of the following:\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/aria-input-field-name?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-detail",
+      "width": 390,
+      "path": "/products/1",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 68.25,
+        "height": 44.390625,
+        "clientWidth": 66,
+        "scrollWidth": 66,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-breadcrumb-item-icon pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-button-icon p-button-icon-left pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-customer-detail-390.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "link-name",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".p-breadcrumb-home-item > .p-breadcrumb-item-link[href=\"#\"][data-pc-section=\"itemlink\"]"
+                ],
+                "summary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/link-name?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-cart",
+      "width": 390,
+      "path": "/cart",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 1458,
+      "overflow": 1068,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 68.25,
+        "height": 44.390625,
+        "clientWidth": 66,
+        "scrollWidth": 66,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "cart__items",
+          "width": 1042.046875,
+          "right": 1066.046875
+        },
+        {
+          "tag": "ARTICLE",
+          "class": "cart-item",
+          "width": 1042.046875,
+          "right": 1066.046875
+        },
+        {
+          "tag": "DIV",
+          "class": "cart-item__details",
+          "width": 592.171875,
+          "right": 729.171875
+        },
+        {
+          "tag": "H3",
+          "class": "cart-item__name",
+          "width": 592.171875,
+          "right": 729.171875
+        },
+        {
+          "tag": "P",
+          "class": "cart-item__price",
+          "width": 592.171875,
+          "right": 729.171875
+        },
+        {
+          "tag": "DIV",
+          "class": "cart-item__quantity",
+          "width": 151.875,
+          "right": 897.046875
+        },
+        {
+          "tag": "LABEL",
+          "class": "cart-item__quantity-label",
+          "width": 23.875,
+          "right": 769.046875
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-inputnumber p-component p-inputwrapper p-inputwrapper-filled p-inputnumber-horizontal cart-item__quantity-input",
+          "width": 120,
+          "right": 897.046875
+        }
+      ],
+      "screenshot": "before-customer-cart-390.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "label",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  "#pv_id_22"
+                ],
+                "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+              },
+              {
+                "target": [
+                  "#pv_id_25"
+                ],
+                "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/label?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 5
+          }
+        ]
+      }
+    },
+    {
+      "screen": "checkout-review",
+      "width": 390,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 1082,
+      "overflow": 692,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": -532.640625,
+        "y": 12,
+        "width": 68.25,
+        "height": 44.390625,
+        "clientWidth": 66,
+        "scrollWidth": 66,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-checkout-review-390.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "aria-required-children",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  ".p-stepper"
+                ],
+                "summary": "Fix any of the following:\n  Element has children which are not allowed: [role=presentation], [role=tabpanel]"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/aria-required-children?application=axeAPI"
+          },
+          {
+            "id": "label",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  "#pv_id_38"
+                ],
+                "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+              },
+              {
+                "target": [
+                  "#pv_id_41"
+                ],
+                "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/label?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 5
+          }
+        ]
+      }
+    },
+    {
+      "screen": "checkout-shipping",
+      "width": 390,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 617,
+      "overflow": 227,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": -67.640625,
+        "y": 12,
+        "width": 68.25,
+        "height": 44.390625,
+        "clientWidth": 66,
+        "scrollWidth": 66,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": -195,
+        "y": 277.578125,
+        "width": 577.375,
+        "height": 395.53125,
+        "clientWidth": 577,
+        "scrollWidth": 577,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-checkout-shipping-390.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "aria-required-children",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  ".p-stepper"
+                ],
+                "summary": "Fix any of the following:\n  Element has children which are not allowed: [role=presentation], [role=tabpanel]"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/aria-required-children?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "checkout-shipping-errors",
+      "width": 390,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 617,
+      "overflow": 227,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": -67.640625,
+        "y": 12,
+        "width": 68.25,
+        "height": 44.390625,
+        "clientWidth": 66,
+        "scrollWidth": 66,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": -195,
+        "y": 351.578125,
+        "width": 577.375,
+        "height": 493.40625,
+        "clientWidth": 577,
+        "scrollWidth": 577,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Continue to Payment →"
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-checkout-shipping-errors-390.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "aria-required-children",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  ".p-stepper"
+                ],
+                "summary": "Fix any of the following:\n  Element has children which are not allowed: [role=presentation], [role=tabpanel]"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/aria-required-children?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "checkout-payment",
+      "width": 390,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 617,
+      "overflow": 227,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": -59.640625,
+        "y": 12,
+        "width": 68.25,
+        "height": 44.390625,
+        "clientWidth": 66,
+        "scrollWidth": 66,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "checkout__stepper",
+          "width": 593.375,
+          "right": 398.375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-stepper p-component p-readonly",
+          "width": 593.375,
+          "right": 398.375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-steplist",
+          "width": 593.375,
+          "right": 398.375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-step p-disabled",
+          "width": 117.78125,
+          "right": 398.375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-steppanels",
+          "width": 593.375,
+          "right": 398.375
+        },
+        {
+          "tag": "DIV",
+          "class": "checkout__sidebar",
+          "width": 593.375,
+          "right": 398.375
+        },
+        {
+          "tag": "ASIDE",
+          "class": "cos",
+          "width": 593.375,
+          "right": 398.375
+        }
+      ],
+      "screenshot": "before-checkout-payment-390.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "aria-required-children",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  ".p-stepper"
+                ],
+                "summary": "Fix any of the following:\n  Element has children which are not allowed: [role=presentation], [role=tabpanel]"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/aria-required-children?application=axeAPI"
+          },
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "small"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-orders",
+      "width": 390,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 1433,
+      "overflow": 1043,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 1144.71875,
+        "height": 218.1875,
+        "clientWidth": 1145,
+        "scrollWidth": 1145,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "orders-page",
+          "width": 1144.71875,
+          "right": 1408.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "flex items-center justify-between mb-4",
+          "width": 1144.71875,
+          "right": 1408.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect p-component p-inputwrapper p-multiselect-display-chip w-72",
+          "width": 288,
+          "right": 1408.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-hidden-accessible",
+          "width": 1,
+          "right": 1121.71875
+        },
+        {
+          "tag": "INPUT",
+          "class": "",
+          "width": 166,
+          "right": 1286.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect-label-container",
+          "width": 246,
+          "right": 1367.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect-label p-placeholder",
+          "width": 246,
+          "right": 1367.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect-dropdown",
+          "width": 40,
+          "right": 1407.71875
+        }
+      ],
+      "screenshot": "before-admin-orders-390.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".admin-sidebar__section:nth-child(1) > .admin-sidebar__section-label"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".admin-sidebar__section:nth-child(2) > .admin-sidebar__section-label"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI"
+          },
+          {
+            "id": "html-has-lang",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "html"
+                ],
+                "summary": "Fix any of the following:\n  The <html> element does not have a lang attribute"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/html-has-lang?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-order-detail",
+      "width": 390,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 1433,
+      "overflow": 1043,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": -715,
+        "y": 109.59375,
+        "width": 1144.71875,
+        "height": 218.1875,
+        "clientWidth": 1145,
+        "scrollWidth": 1145,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 950,
+        "clientWidth": 389,
+        "scrollWidth": 389,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "orders-page",
+          "width": 1144.71875,
+          "right": 429.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "flex items-center justify-between mb-4",
+          "width": 1144.71875,
+          "right": 429.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect p-component p-inputwrapper p-multiselect-display-chip w-72",
+          "width": 288,
+          "right": 429.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect-dropdown",
+          "width": 40,
+          "right": 428.71875
+        },
+        {
+          "tag": "svg",
+          "class": {},
+          "width": 16,
+          "right": 416.71875
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 13.714324951171875,
+          "right": 415.575927734375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable p-component",
+          "width": 1144.71875,
+          "right": 429.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-table-container",
+          "width": 1144.71875,
+          "right": 429.71875
+        }
+      ],
+      "screenshot": "before-admin-order-detail-390.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".admin-sidebar__section[data-v-58206eed=\"\"]:nth-child(1) > .admin-sidebar__section-label[data-v-58206eed=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".admin-sidebar__section[data-v-58206eed=\"\"]:nth-child(2) > .admin-sidebar__section-label[data-v-58206eed=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI"
+          },
+          {
+            "id": "html-has-lang",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "html"
+                ],
+                "summary": "Fix any of the following:\n  The <html> element does not have a lang attribute"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/html-has-lang?application=axeAPI"
+          },
+          {
+            "id": "scrollable-region-focusable",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".p-drawer-content"
+                ],
+                "summary": "Fix any of the following:\n  Element should have focusable content\n  Element should be focusable"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/scrollable-region-focusable?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "aria-hidden-focus",
+            "nodes": 2
+          },
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-products",
+      "width": 390,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 1281,
+      "overflow": 891,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 992.5,
+        "height": 759.84375,
+        "clientWidth": 993,
+        "scrollWidth": 993,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "products-page",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "DIV",
+          "class": "flex items-center justify-between mb-4",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "BUTTON",
+          "class": "p-button p-component",
+          "width": 129.28125,
+          "right": 1256.5
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-button-label",
+          "width": 95.28125,
+          "right": 1243.5
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable p-component p-datatable-hoverable",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-table-container",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 992.5,
+          "right": 1256.5
+        }
+      ],
+      "screenshot": "before-admin-products-390.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".admin-sidebar__section[data-v-58206eed=\"\"]:nth-child(1) > .admin-sidebar__section-label[data-v-58206eed=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".admin-sidebar__section[data-v-58206eed=\"\"]:nth-child(2) > .admin-sidebar__section-label[data-v-58206eed=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc66=\"\"] > .text-xs.text-gray-400"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc80=\"\"] > .text-xs.text-gray-400"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc94=\"\"] > .text-xs.text-gray-400"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc108=\"\"] > .text-xs.text-gray-400"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc122=\"\"] > .text-xs.text-gray-400"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc136=\"\"] > .text-xs.text-gray-400"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc150=\"\"] > .text-xs.text-gray-400"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc164=\"\"] > .text-xs.text-gray-400"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI"
+          },
+          {
+            "id": "html-has-lang",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "html"
+                ],
+                "summary": "Fix any of the following:\n  The <html> element does not have a lang attribute"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/html-has-lang?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 1
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-product-drawer",
+      "width": 390,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 1281,
+      "overflow": 891,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": -627,
+        "y": 112.390625,
+        "width": 992.5,
+        "height": 780.6875,
+        "clientWidth": 993,
+        "scrollWidth": 993,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": -65.03125,
+        "y": 0,
+        "width": 455.03125,
+        "height": 950,
+        "clientWidth": 454,
+        "scrollWidth": 454,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-admin-product-drawer-390.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".admin-sidebar__section[data-v-58206eed=\"\"]:nth-child(1) > .admin-sidebar__section-label[data-v-58206eed=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".admin-sidebar__section[data-v-58206eed=\"\"]:nth-child(2) > .admin-sidebar__section-label[data-v-58206eed=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc66=\"\"] > .text-xs.text-gray-400[data-v-289e4a11=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc80=\"\"] > .text-xs.text-gray-400[data-v-289e4a11=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc94=\"\"] > .text-xs.text-gray-400[data-v-289e4a11=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc108=\"\"] > .text-xs.text-gray-400[data-v-289e4a11=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc122=\"\"] > .text-xs.text-gray-400[data-v-289e4a11=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc136=\"\"] > .text-xs.text-gray-400[data-v-289e4a11=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc150=\"\"] > .text-xs.text-gray-400[data-v-289e4a11=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc164=\"\"] > .text-xs.text-gray-400[data-v-289e4a11=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".field[data-v-ffc3e8e9=\"\"]:nth-child(4) > label > .text-gray-400.text-xs[data-v-ffc3e8e9=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".field[data-v-ffc3e8e9=\"\"]:nth-child(5) > label > .text-gray-400.text-xs[data-v-ffc3e8e9=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".col-span-2.field[data-v-ffc3e8e9=\"\"]:nth-child(6) > label > .text-gray-400.text-xs[data-v-ffc3e8e9=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".text-gray-400.text-xs[data-v-db6f7dc3=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".upload-hint"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI"
+          },
+          {
+            "id": "html-has-lang",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "html"
+                ],
+                "summary": "Fix any of the following:\n  The <html> element does not have a lang attribute"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/html-has-lang?application=axeAPI"
+          },
+          {
+            "id": "label",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  "#pv_id_179"
+                ],
+                "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/label?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "aria-hidden-focus",
+            "nodes": 2
+          },
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-home",
+      "width": 768,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 720,
+        "height": 1281.5625,
+        "clientWidth": 720,
+        "scrollWidth": 720,
+        "columns": "224px 224px 224px"
+      },
+      "searchGrid": null,
+      "card": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 224,
+        "height": 411.1875,
+        "clientWidth": 222,
+        "scrollWidth": 222,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 446.25,
+        "height": 44.390625,
+        "clientWidth": 444,
+        "scrollWidth": 444,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-search",
+      "width": 768,
+      "path": "/search",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 416,
+        "height": 999.96875,
+        "clientWidth": 416,
+        "scrollWidth": 416,
+        "columns": "122.656px 122.672px 122.656px"
+      },
+      "card": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 122.65625,
+        "height": 309.859375,
+        "clientWidth": 121,
+        "scrollWidth": 121,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 446.25,
+        "height": 44.390625,
+        "clientWidth": 444,
+        "scrollWidth": 444,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-up",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-detail",
+      "width": 768,
+      "path": "/products/1",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 446.25,
+        "height": 44.390625,
+        "clientWidth": 444,
+        "scrollWidth": 444,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-breadcrumb-item-icon pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-button-icon p-button-icon-left pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-cart",
+      "width": 768,
+      "path": "/cart",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 1458,
+      "overflow": 690,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 446.25,
+        "height": 44.390625,
+        "clientWidth": 444,
+        "scrollWidth": 444,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "cart__items",
+          "width": 1042.046875,
+          "right": 1066.046875
+        },
+        {
+          "tag": "ARTICLE",
+          "class": "cart-item",
+          "width": 1042.046875,
+          "right": 1066.046875
+        },
+        {
+          "tag": "DIV",
+          "class": "cart-item__quantity",
+          "width": 151.875,
+          "right": 897.046875
+        },
+        {
+          "tag": "LABEL",
+          "class": "cart-item__quantity-label",
+          "width": 23.875,
+          "right": 769.046875
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-inputnumber p-component p-inputwrapper p-inputwrapper-filled p-inputnumber-horizontal cart-item__quantity-input",
+          "width": 120,
+          "right": 897.046875
+        },
+        {
+          "tag": "INPUT",
+          "class": "p-inputtext p-component p-filled p-inputnumber-input",
+          "width": 213,
+          "right": 1030.046875
+        },
+        {
+          "tag": "BUTTON",
+          "class": "p-inputnumber-button p-inputnumber-increment-button",
+          "width": 40,
+          "right": 1070.046875
+        },
+        {
+          "tag": "BUTTON",
+          "class": "p-inputnumber-button p-inputnumber-decrement-button p-disabled",
+          "width": 40,
+          "right": 817.046875
+        }
+      ]
+    },
+    {
+      "screen": "checkout-review",
+      "width": 768,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 1082,
+      "overflow": 314,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": -154.640625,
+        "y": 12,
+        "width": 446.25,
+        "height": 44.390625,
+        "clientWidth": 444,
+        "scrollWidth": 444,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping",
+      "width": 768,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 446.25,
+        "height": 44.390625,
+        "clientWidth": 444,
+        "scrollWidth": 444,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 32,
+        "y": 277.578125,
+        "width": 704,
+        "height": 395.53125,
+        "clientWidth": 704,
+        "scrollWidth": 704,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping-errors",
+      "width": 768,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 446.25,
+        "height": 44.390625,
+        "clientWidth": 444,
+        "scrollWidth": 444,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 32,
+        "y": 277.578125,
+        "width": 704,
+        "height": 493.40625,
+        "clientWidth": 704,
+        "scrollWidth": 704,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Continue to Payment →"
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-payment",
+      "width": 768,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 446.25,
+        "height": 44.390625,
+        "clientWidth": 444,
+        "scrollWidth": 444,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "admin-orders",
+      "width": 768,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 1433,
+      "overflow": 665,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 1144.71875,
+        "height": 218.1875,
+        "clientWidth": 1145,
+        "scrollWidth": 1145,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "orders-page",
+          "width": 1144.71875,
+          "right": 1408.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "flex items-center justify-between mb-4",
+          "width": 1144.71875,
+          "right": 1408.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect p-component p-inputwrapper p-multiselect-display-chip w-72",
+          "width": 288,
+          "right": 1408.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-hidden-accessible",
+          "width": 1,
+          "right": 1121.71875
+        },
+        {
+          "tag": "INPUT",
+          "class": "",
+          "width": 166,
+          "right": 1286.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect-label-container",
+          "width": 246,
+          "right": 1367.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect-label p-placeholder",
+          "width": 246,
+          "right": 1367.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect-dropdown",
+          "width": 40,
+          "right": 1407.71875
+        }
+      ]
+    },
+    {
+      "screen": "admin-order-detail",
+      "width": 768,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 1433,
+      "overflow": 665,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": -337,
+        "y": 109.59375,
+        "width": 1144.71875,
+        "height": 218.1875,
+        "clientWidth": 1145,
+        "scrollWidth": 1145,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 128,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "orders-page",
+          "width": 1144.71875,
+          "right": 807.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "flex items-center justify-between mb-4",
+          "width": 1144.71875,
+          "right": 807.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect p-component p-inputwrapper p-multiselect-display-chip w-72",
+          "width": 288,
+          "right": 807.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect-dropdown",
+          "width": 40,
+          "right": 806.71875
+        },
+        {
+          "tag": "svg",
+          "class": {},
+          "width": 16,
+          "right": 794.71875
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 13.71429443359375,
+          "right": 793.575927734375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable p-component",
+          "width": 1144.71875,
+          "right": 807.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-table-container",
+          "width": 1144.71875,
+          "right": 807.71875
+        }
+      ]
+    },
+    {
+      "screen": "admin-products",
+      "width": 768,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 1281,
+      "overflow": 513,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 992.5,
+        "height": 759.84375,
+        "clientWidth": 993,
+        "scrollWidth": 993,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "products-page",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "DIV",
+          "class": "flex items-center justify-between mb-4",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "BUTTON",
+          "class": "p-button p-component",
+          "width": 129.28125,
+          "right": 1256.5
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-button-label",
+          "width": 95.28125,
+          "right": 1243.5
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable p-component p-datatable-hoverable",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-table-container",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 992.5,
+          "right": 1256.5
+        }
+      ]
+    },
+    {
+      "screen": "admin-product-drawer",
+      "width": 768,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "clientWidth": 768,
+      "documentWidth": 1281,
+      "overflow": 513,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": -249,
+        "y": 112.390625,
+        "width": 992.5,
+        "height": 780.6875,
+        "clientWidth": 993,
+        "scrollWidth": 993,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 128,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-home",
+      "width": 1024,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 976,
+        "height": 1537.578125,
+        "clientWidth": 976,
+        "scrollWidth": 976,
+        "columns": "309.328px 309.328px 309.344px"
+      },
+      "searchGrid": null,
+      "card": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 309.328125,
+        "height": 496.53125,
+        "clientWidth": 307,
+        "scrollWidth": 307,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-search",
+      "width": 1024,
+      "path": "/search",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 672,
+        "height": 1233.5625,
+        "clientWidth": 672,
+        "scrollWidth": 672,
+        "columns": "208px 208px 208px"
+      },
+      "card": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 208,
+        "height": 395.1875,
+        "clientWidth": 206,
+        "scrollWidth": 206,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-up",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-detail",
+      "width": 1024,
+      "path": "/products/1",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-breadcrumb-item-icon pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-button-icon p-button-icon-left pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-cart",
+      "width": 1024,
+      "path": "/cart",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1458,
+      "overflow": 434,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "cart__items",
+          "width": 1042.046875,
+          "right": 1066.046875
+        },
+        {
+          "tag": "ARTICLE",
+          "class": "cart-item",
+          "width": 1042.046875,
+          "right": 1066.046875
+        },
+        {
+          "tag": "INPUT",
+          "class": "p-inputtext p-component p-filled p-inputnumber-input",
+          "width": 213,
+          "right": 1030.046875
+        },
+        {
+          "tag": "BUTTON",
+          "class": "p-inputnumber-button p-inputnumber-increment-button",
+          "width": 40,
+          "right": 1070.046875
+        },
+        {
+          "tag": "BUTTON",
+          "class": "p-button p-component p-button-icon-only p-button-danger p-button-rounded p-button-text cart-item__remove",
+          "width": 40,
+          "right": 1049.046875
+        },
+        {
+          "tag": "ARTICLE",
+          "class": "cart-item",
+          "width": 1042.046875,
+          "right": 1066.046875
+        },
+        {
+          "tag": "INPUT",
+          "class": "p-inputtext p-component p-filled p-inputnumber-input",
+          "width": 213,
+          "right": 1030.046875
+        },
+        {
+          "tag": "BUTTON",
+          "class": "p-inputnumber-button p-inputnumber-increment-button",
+          "width": 40,
+          "right": 1070.046875
+        }
+      ]
+    },
+    {
+      "screen": "checkout-review",
+      "width": 1024,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1434,
+      "overflow": 410,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": -249.640625,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "checkout__sidebar",
+          "width": 320,
+          "right": 1025.046875
+        },
+        {
+          "tag": "ASIDE",
+          "class": "cos",
+          "width": 320,
+          "right": 1025.046875
+        }
+      ]
+    },
+    {
+      "screen": "checkout-shipping",
+      "width": 1024,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 32,
+        "y": 351.578125,
+        "width": 608,
+        "height": 395.53125,
+        "clientWidth": 608,
+        "scrollWidth": 608,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping-errors",
+      "width": 1024,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 32,
+        "y": 351.578125,
+        "width": 608,
+        "height": 493.40625,
+        "clientWidth": 608,
+        "scrollWidth": 608,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Continue to Payment →"
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-payment",
+      "width": 1024,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "admin-orders",
+      "width": 1024,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1433,
+      "overflow": 409,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 1144.71875,
+        "height": 218.1875,
+        "clientWidth": 1145,
+        "scrollWidth": 1145,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "orders-page",
+          "width": 1144.71875,
+          "right": 1408.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "flex items-center justify-between mb-4",
+          "width": 1144.71875,
+          "right": 1408.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect p-component p-inputwrapper p-multiselect-display-chip w-72",
+          "width": 288,
+          "right": 1408.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-hidden-accessible",
+          "width": 1,
+          "right": 1121.71875
+        },
+        {
+          "tag": "INPUT",
+          "class": "",
+          "width": 166,
+          "right": 1286.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect-label-container",
+          "width": 246,
+          "right": 1367.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect-label p-placeholder",
+          "width": 246,
+          "right": 1367.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect-dropdown",
+          "width": 40,
+          "right": 1407.71875
+        }
+      ]
+    },
+    {
+      "screen": "admin-order-detail",
+      "width": 1024,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1433,
+      "overflow": 409,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": -81,
+        "y": 109.59375,
+        "width": 1144.71875,
+        "height": 218.1875,
+        "clientWidth": 1145,
+        "scrollWidth": 1145,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 384,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "orders-page",
+          "width": 1144.71875,
+          "right": 1063.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "flex items-center justify-between mb-4",
+          "width": 1144.71875,
+          "right": 1063.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect p-component p-inputwrapper p-multiselect-display-chip w-72",
+          "width": 288,
+          "right": 1063.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-multiselect-dropdown",
+          "width": 40,
+          "right": 1062.71875
+        },
+        {
+          "tag": "svg",
+          "class": {},
+          "width": 16,
+          "right": 1050.71875
+        },
+        {
+          "tag": "path",
+          "class": {},
+          "width": 13.71435546875,
+          "right": 1049.575927734375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable p-component",
+          "width": 1144.71875,
+          "right": 1063.71875
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-table-container",
+          "width": 1144.71875,
+          "right": 1063.71875
+        }
+      ]
+    },
+    {
+      "screen": "admin-products",
+      "width": 1024,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1281,
+      "overflow": 257,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 992.5,
+        "height": 759.84375,
+        "clientWidth": 993,
+        "scrollWidth": 993,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "products-page",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "DIV",
+          "class": "flex items-center justify-between mb-4",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "BUTTON",
+          "class": "p-button p-component",
+          "width": 129.28125,
+          "right": 1256.5
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-button-label",
+          "width": 95.28125,
+          "right": 1243.5
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable p-component p-datatable-hoverable",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-table-container",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 992.5,
+          "right": 1256.5
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 992.5,
+          "right": 1256.5
+        }
+      ]
+    },
+    {
+      "screen": "admin-product-drawer",
+      "width": 1024,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "clientWidth": 1024,
+      "documentWidth": 1281,
+      "overflow": 257,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 7,
+        "y": 112.390625,
+        "width": 992.5,
+        "height": 780.6875,
+        "clientWidth": 993,
+        "scrollWidth": 993,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 384,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-home",
+      "width": 1440,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": {
+        "x": 104,
+        "y": 231.78125,
+        "width": 1232,
+        "height": 978.375,
+        "clientWidth": 1232,
+        "scrollWidth": 1232,
+        "columns": "290px 290px 290px 290px"
+      },
+      "searchGrid": null,
+      "card": {
+        "x": 104,
+        "y": 231.78125,
+        "width": 290,
+        "height": 477.1875,
+        "clientWidth": 288,
+        "scrollWidth": 288,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-customer-home-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      }
+    },
+    {
+      "screen": "customer-search",
+      "width": 1440,
+      "path": "/search",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 408,
+        "y": 231.171875,
+        "width": 928,
+        "height": 1489.578125,
+        "clientWidth": 928,
+        "scrollWidth": 928,
+        "columns": "293.328px 293.328px 293.344px"
+      },
+      "card": {
+        "x": 408,
+        "y": 231.171875,
+        "width": 293.328125,
+        "height": 480.53125,
+        "clientWidth": 291,
+        "scrollWidth": 291,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-up",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-customer-search-1440.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "aria-input-field-name",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "span[data-pc-section=\"starthandler\"]"
+                ],
+                "summary": "Fix any of the following:\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute"
+              },
+              {
+                "target": [
+                  "span[data-pc-section=\"endhandler\"]"
+                ],
+                "summary": "Fix any of the following:\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/aria-input-field-name?application=axeAPI"
+          }
+        ],
+        "incomplete": []
+      }
+    },
+    {
+      "screen": "customer-detail",
+      "width": 1440,
+      "path": "/products/1",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-breadcrumb-item-icon pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "p-button-icon p-button-icon-left pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-customer-detail-1440.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "link-name",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".p-breadcrumb-home-item > .p-breadcrumb-item-link[href=\"#\"][data-pc-section=\"itemlink\"]"
+                ],
+                "summary": "Fix all of the following:\n  Element is in tab order and does not have accessible text\n\nFix any of the following:\n  Element does not have text that is visible to screen readers\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/link-name?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-cart",
+      "width": 1440,
+      "path": "/cart",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1538,
+      "overflow": 98,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "ASIDE",
+          "class": "cart-summary",
+          "width": 360,
+          "right": 1538.046875
+        },
+        {
+          "tag": "H2",
+          "class": "cart-summary__title",
+          "width": 310,
+          "right": 1513.046875
+        },
+        {
+          "tag": "DIV",
+          "class": "cart-summary__row",
+          "width": 310,
+          "right": 1513.046875
+        },
+        {
+          "tag": "SPAN",
+          "class": "cart-summary__price",
+          "width": 48.0625,
+          "right": 1513.046875
+        },
+        {
+          "tag": "DIV",
+          "class": "cart-summary__divider",
+          "width": 310,
+          "right": 1513.046875
+        },
+        {
+          "tag": "DIV",
+          "class": "cart-summary__row cart-summary__row--total",
+          "width": 310,
+          "right": 1513.046875
+        },
+        {
+          "tag": "SPAN",
+          "class": "cart-summary__total",
+          "width": 63.828125,
+          "right": 1513.046875
+        },
+        {
+          "tag": "DIV",
+          "class": "cart-summary__actions",
+          "width": 310,
+          "right": 1513.046875
+        }
+      ],
+      "screenshot": "before-customer-cart-1440.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "label",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  "#pv_id_22"
+                ],
+                "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+              },
+              {
+                "target": [
+                  "#pv_id_25"
+                ],
+                "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/label?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 2
+          }
+        ]
+      }
+    },
+    {
+      "screen": "checkout-review",
+      "width": 1440,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1514,
+      "overflow": 74,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 166.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "DIV",
+          "class": "checkout__sidebar",
+          "width": 320,
+          "right": 1441.046875
+        },
+        {
+          "tag": "ASIDE",
+          "class": "cos",
+          "width": 320,
+          "right": 1441.046875
+        }
+      ],
+      "screenshot": "before-checkout-review-1440.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "aria-required-children",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  ".p-stepper"
+                ],
+                "summary": "Fix any of the following:\n  Element has children which are not allowed: [role=presentation], [role=tabpanel]"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/aria-required-children?application=axeAPI"
+          },
+          {
+            "id": "label",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  "#pv_id_38"
+                ],
+                "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+              },
+              {
+                "target": [
+                  "#pv_id_41"
+                ],
+                "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/label?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 2
+          }
+        ]
+      }
+    },
+    {
+      "screen": "checkout-shipping",
+      "width": 1440,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 112,
+        "y": 351.578125,
+        "width": 864,
+        "height": 395.53125,
+        "clientWidth": 864,
+        "scrollWidth": 864,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-checkout-shipping-1440.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "aria-required-children",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  ".p-stepper"
+                ],
+                "summary": "Fix any of the following:\n  Element has children which are not allowed: [role=presentation], [role=tabpanel]"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/aria-required-children?application=axeAPI"
+          }
+        ],
+        "incomplete": []
+      }
+    },
+    {
+      "screen": "checkout-shipping-errors",
+      "width": 1440,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 112,
+        "y": 351.578125,
+        "width": 864,
+        "height": 493.40625,
+        "clientWidth": 864,
+        "scrollWidth": 864,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Continue to Payment →"
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-checkout-shipping-errors-1440.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "aria-required-children",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  ".p-stepper"
+                ],
+                "summary": "Fix any of the following:\n  Element has children which are not allowed: [role=presentation], [role=tabpanel]"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/aria-required-children?application=axeAPI"
+          }
+        ],
+        "incomplete": []
+      }
+    },
+    {
+      "screen": "checkout-payment",
+      "width": 1440,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-checkout-payment-1440.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "aria-required-children",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  ".p-stepper"
+                ],
+                "summary": "Fix any of the following:\n  Element has children which are not allowed: [role=presentation], [role=tabpanel]"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/aria-required-children?application=axeAPI"
+          },
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "small"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI"
+          }
+        ],
+        "incomplete": []
+      }
+    },
+    {
+      "screen": "admin-orders",
+      "width": 1440,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 1152,
+        "height": 218.1875,
+        "clientWidth": 1152,
+        "scrollWidth": 1152,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-admin-orders-1440.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".admin-sidebar__section:nth-child(1) > .admin-sidebar__section-label"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".admin-sidebar__section:nth-child(2) > .admin-sidebar__section-label"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".ws-status-label"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.76 (foreground color: #ef4444, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI"
+          },
+          {
+            "id": "html-has-lang",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "html"
+                ],
+                "summary": "Fix any of the following:\n  The <html> element does not have a lang attribute"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/html-has-lang?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-order-detail",
+      "width": 1440,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 1152,
+        "height": 218.1875,
+        "clientWidth": 1152,
+        "scrollWidth": 1152,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 800,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-admin-order-detail-1440.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".admin-sidebar__section[data-v-58206eed=\"\"]:nth-child(1) > .admin-sidebar__section-label[data-v-58206eed=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".admin-sidebar__section[data-v-58206eed=\"\"]:nth-child(2) > .admin-sidebar__section-label[data-v-58206eed=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".ws-status-label"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.76 (foreground color: #ef4444, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI"
+          },
+          {
+            "id": "html-has-lang",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "html"
+                ],
+                "summary": "Fix any of the following:\n  The <html> element does not have a lang attribute"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/html-has-lang?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "aria-hidden-focus",
+            "nodes": 2
+          },
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 2
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-products",
+      "width": 1440,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 1152,
+        "height": 611.09375,
+        "clientWidth": 1152,
+        "scrollWidth": 1152,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-admin-products-1440.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".admin-sidebar__section[data-v-58206eed=\"\"]:nth-child(1) > .admin-sidebar__section-label[data-v-58206eed=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".admin-sidebar__section[data-v-58206eed=\"\"]:nth-child(2) > .admin-sidebar__section-label[data-v-58206eed=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".ws-status-label"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.76 (foreground color: #ef4444, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc66=\"\"] > .text-xs.text-gray-400"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc80=\"\"] > .text-xs.text-gray-400"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc94=\"\"] > .text-xs.text-gray-400"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc108=\"\"] > .text-xs.text-gray-400"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc122=\"\"] > .text-xs.text-gray-400"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc136=\"\"] > .text-xs.text-gray-400"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc150=\"\"] > .text-xs.text-gray-400"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc164=\"\"] > .text-xs.text-gray-400"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI"
+          },
+          {
+            "id": "html-has-lang",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "html"
+                ],
+                "summary": "Fix any of the following:\n  The <html> element does not have a lang attribute"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/html-has-lang?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-product-drawer",
+      "width": 1440,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 1152,
+        "height": 631.9375,
+        "clientWidth": 1152,
+        "scrollWidth": 1152,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 800,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-admin-product-drawer-1440.png",
+      "axe": {
+        "violations": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".admin-sidebar__section[data-v-58206eed=\"\"]:nth-child(1) > .admin-sidebar__section-label[data-v-58206eed=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".admin-sidebar__section[data-v-58206eed=\"\"]:nth-child(2) > .admin-sidebar__section-label[data-v-58206eed=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".ws-status-label"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 3.76 (foreground color: #ef4444, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc66=\"\"] > .text-xs.text-gray-400[data-v-289e4a11=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc80=\"\"] > .text-xs.text-gray-400[data-v-289e4a11=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc94=\"\"] > .text-xs.text-gray-400[data-v-289e4a11=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc108=\"\"] > .text-xs.text-gray-400[data-v-289e4a11=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc122=\"\"] > .text-xs.text-gray-400[data-v-289e4a11=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc136=\"\"] > .text-xs.text-gray-400[data-v-289e4a11=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc150=\"\"] > .text-xs.text-gray-400[data-v-289e4a11=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  "td[pc164=\"\"] > .text-xs.text-gray-400[data-v-289e4a11=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".field[data-v-ffc3e8e9=\"\"]:nth-child(4) > label > .text-gray-400.text-xs[data-v-ffc3e8e9=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".field[data-v-ffc3e8e9=\"\"]:nth-child(5) > label > .text-gray-400.text-xs[data-v-ffc3e8e9=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".col-span-2.field[data-v-ffc3e8e9=\"\"]:nth-child(6) > label > .text-gray-400.text-xs[data-v-ffc3e8e9=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".text-gray-400.text-xs[data-v-db6f7dc3=\"\"]"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 9.0pt (12px), font weight: normal). Expected contrast ratio of 4.5:1"
+              },
+              {
+                "target": [
+                  ".upload-hint"
+                ],
+                "summary": "Fix any of the following:\n  Element has insufficient color contrast of 2.53 (foreground color: #9ca3af, background color: #ffffff, font size: 8.3pt (11px), font weight: normal). Expected contrast ratio of 4.5:1"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/color-contrast?application=axeAPI"
+          },
+          {
+            "id": "html-has-lang",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "html"
+                ],
+                "summary": "Fix any of the following:\n  The <html> element does not have a lang attribute"
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/html-has-lang?application=axeAPI"
+          },
+          {
+            "id": "label",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  "#pv_id_179"
+                ],
+                "summary": "Fix any of the following:\n  Element does not have an implicit (wrapped) <label>\n  Element does not have an explicit <label>\n  aria-label attribute does not exist or is empty\n  aria-labelledby attribute does not exist, references elements that do not exist or references elements that are empty\n  Element has no title attribute\n  Element has no placeholder attribute\n  Element's default semantics were not overridden with role=\"none\" or role=\"presentation\""
+              }
+            ],
+            "helpUrl": "https://dequeuniversity.com/rules/axe/4.12/label?application=axeAPI"
+          }
+        ],
+        "incomplete": [
+          {
+            "id": "aria-hidden-focus",
+            "nodes": 2
+          },
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-error",
+      "width": 390,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 68.25,
+        "height": 44.390625,
+        "clientWidth": 66,
+        "scrollWidth": 66,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "none",
+          "font": "Inter, -apple-system, \"system-ui\", \"Segoe UI\", Roboto, sans-serif"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "before-customer-error-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    }
+  ],
+  "interactions": [
+    {
+      "name": "card-focused-cta",
+      "opacity": "0"
+    },
+    {
+      "name": "card-native-enter",
+      "path": "/products/1",
+      "cartPosts": 1
+    }
+  ],
+  "errors": [],
+  "finalDiagnostics": {
+    "url": "http://127.0.0.1:16575/products/1",
+    "text": "Skip to main content\nRoboMart\nNo results found\n2\nFixture\nAll\nElectronics\nHome & Garden\nSports & Outdoors\nHealth & Beauty\nToys & Games\nElectronics and accessories\nWireless noise cancelling headphones with extended battery and travel case\nWireless noise cancelling headphones with extended battery and travel case\n\n$49.99\n\nIn Stock\n4.0\n\nBrand: Fixture Brand\n\nAdd to Cart\nDescription\n\nA detailed fixture description for keyboard, reflow and long-content inspection. A detailed fixture description for keyboard, reflow and long-content inspection. A detailed fixture description for keyboard, reflow and long-content inspection. A detailed fixture description for keyboard, reflow and long-content inspection. A detailed fixture description for keyboard, reflow and long-content inspection. A detailed fixture description for keyboard, reflow and long-content inspection. A detailed fixture description for keyboard, reflow and long-content inspection. A detailed fixture description for keyboard, reflow and long-content inspection.\n\n© 2026 RoboMart. All rights reserved.\n\nAdded to cart\n\nWireless noise cancelling headphones with extended battery and travel case has been added to your cart.",
+    "active": "<button class=\"p-toast-close-button\" type=\"button\" aria-label=\"Close\" autofocus=\"\" data-p=\"success\" data-pc-section=\"closebutton\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 14 14\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"p-icon p-toast-close-icon\" aria-hidden=\"true\" data-pc-section=\"closeicon\"><path d=\"M8.01186 7.00933L12.27 2.75116C12.341 2.68501 12.398 2.60524 12.4375 2.51661C12.4769 2.42798 12.4982 2.3323 12.4999 2.23529C12.5016 2.13827 12.4838 2.0419 12.4474 1.95194C12.4111 1.86197 12.357 1.78024 12.2884 1.71163C12.2198 1.64302 12.138 1.58893 12.0481 1.55259C11.9581 1.51625 11.8617 1.4984 11.7647 1.50011C11.6677 1.50182 11.572 1.52306 11.4834 1.56255C11.3948 1.60204 11.315 1.65898 11.2488 1.72997L6.99067 5.98814L2.7325 1.72997C2.59553 1.60234 2.41437 1.53286 2.22718 1.53616C2.03999 1.53946 1.8614 1.61529 1.72901 1.74767C1.59663 1.88006 1.5208 2.05865 1.5175 2.24584C1.5142 2.43303 1.58368 2.61419 1.71131 2.75116L5.96948 7.00933L1.71131 11.2675C1.576 11.403 1.5 11.5866 1.5 11.7781C1.5 11.9696 1.576 12.1532 1.71131 12.2887C1.84679 12.424 2.03043 12.5 2.2219 12.5C2.41338 12.5 2.59702 12.424 2.7325 12.2887L6.99067 8.03052L11.2488 12.2887C11.3843 12.424 11.568 12.5 11.7594 12.5C11.9509 12.5 12.1346 12.424 12.27 12.2887C12.4053 12.1532 12.4813 11.9696 12.4813 11.7781C12.4813 11.5866 12.4053 11.403 12.27 11.2675L8.01186 7.00933Z\" fill=\"currentColor\"></path></svg></button>"
+  },
+  "requests": [
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    }
+  ]
+}

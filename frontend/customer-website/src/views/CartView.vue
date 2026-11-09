@@ -160,4 +160,17 @@ function onBrowseProducts() {
   flex-direction: column;
   gap: 8px;
 }
+
+.cart__content {
+  grid-template-columns: minmax(0, 1fr) 320px;
+}
+.cart__items {
+  min-width: 0;
+}
+@media (max-width: 1023px) {
+  .cart__content {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+}
 </style>

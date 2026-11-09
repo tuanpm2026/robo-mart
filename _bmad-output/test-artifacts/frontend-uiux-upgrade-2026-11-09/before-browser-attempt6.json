@@ -1,0 +1,10 @@
+{
+  "command": [
+    "node",
+    "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs",
+    "before"
+  ],
+  "cwd": "frontend",
+  "exit_code": 1,
+  "timestamp_utc": "2026-11-09T13:30:14.953902+00:00"
+}

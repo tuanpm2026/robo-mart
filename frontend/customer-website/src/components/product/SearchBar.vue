@@ -117,4 +117,13 @@ function onKeydownEnter() {
   font-weight: 600;
   color: var(--color-primary-600);
 }
+@media (max-width: 767px) {
+  .search-bar {
+    width: 100%;
+  }
+  .search-bar :deep(input) {
+    font-size: 16px;
+    min-width: 0;
+  }
+}
 </style>

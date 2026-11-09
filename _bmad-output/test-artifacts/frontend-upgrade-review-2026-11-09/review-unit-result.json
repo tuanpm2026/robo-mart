@@ -1,0 +1,12 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "test:unit",
+    "--workspaces",
+    "--if-present",
+    "--",
+    "--run"
+  ],
+  "exitCode": 0
+}

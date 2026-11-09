@@ -1,0 +1,3382 @@
+--- a/docs/frontend-upgrade-assessment-2026-11-09.md
++++ b/docs/frontend-upgrade-assessment-2026-11-09.md
+@@ -1,4 +1,7 @@
+ # Robo-Mart frontend upgrade assessment — 2026-11-09
++
++> **Latest local implementation status (2026-11-09):** The requested responsive/accessibility UI batch is implemented locally on top of the three earlier regression fixes. This document's original findings and baseline measurements remain historical; see [Latest local UI status](#latest-local-ui-status-2026-11-09) and the [implementation evidence](../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/README.md). No changes have been committed, integrated or deployed.
++
+ 
+ ## Executive assessment
+ 
+@@ -321,3 +324,25 @@
+ 3. **Confirm market/payment scope.** Retain English/USD/US address/demo payment for the first release, or explicitly fund Vietnamese/local address/currency and real-payment requirements as separate work.
+ 4. **Select the reviewed integration commit for checkout recovery/Saga work.** Original dirty changes must be reconciled by their owner and validated as one release; no competing implementation is proposed here.
+ 5. **Keep theme maintenance separate from a PrimeVue major decision.** Recommended: resolve the deprecated theme alias and compatible patch updates first; evaluate a newer major only with visual regression evidence and the vendor's published distribution/license model understood.
++
++
++## Latest local UI status (2026-11-09)
++
++This section supplements the assessment rather than replacing its baseline evidence. The implementation remains in `tuanpm2026/codex-frontend-upgrade-assessment` at HEAD `4ec50bbaa04933c43a37066f88c293e056c24012` plus uncommitted changes. The UI dispatch started from the earlier F08/F11 fixes and 356 passing tests; its snapshot/hashes preserve that distinction. The original checkout was not modified or imported.
++
++| Finding | Latest local disposition |
++| --- | --- |
++| F03 | Requested customer home/search/header/filter/cart/detail/checkout layouts implemented and browser-checked at 360/390/768/1024/1440 CSS pixels. Mobile filters use one persistent inline disclosure. Admin mobile navigation, viewport-bounded detail/product Drawers, contained table scrolling and initially visible sticky View/Edit actions implemented. Other admin screens and physical-device/browser coverage remain follow-up. |
++| F04 | Native product link and separate always-visible cart action implemented; static display ratings have no interactive descendants. Browser Tab/Enter/Space/touch and pending duplicate-submit tests cover the interaction. |
++| F05 | Both apps explicitly import pinned `primeicons@7.0.0`; missing icon alias corrected. Collapsed/mobile navigation names, dialog/toggle state, Escape/focus return, main skip link, admin language/title, measured contrast and visible button focus corrected. Final order View icon and focus contrast are 6.4129:1 against the measured row background. This is not a whole-app accessibility certification. |
++| F08/F11 earlier fixes | Preserved locally with their 27 regressions and original red/green evidence. General cart concurrency, API facet semantics and search error handling remain follow-up. The UI batch additionally retains current-keyword brand choices through loading so a focused checkbox stays mounted, and returns focus when responsive collapse hides an active control; both have new red/green regression evidence. Keyword resets and the existing search request fence remain intact. |
++| F12 | Customer now explicitly declares the already-consumed shared workspace, including the new media-query listener helper used by both apps. Token/theme duplication and broader shared design-system ownership remain unresolved. |
++| F15 | Shipping/payment input hints, associated invalid/error descriptions and linked error-summary focus implemented. Stepper ownership/ID relationships, processing modal focus, honest pending/rejection copy and result-heading focus implemented. English/USD/US postcode/demo payment rules retained; no card/CVV persistence or backend protocol changes. Real payment/provider and screen-reader validation remain separate work. |
++
++The only added dependency is the existing-compatible CSS icon artifact, pinned to a verified release; no framework/theme/security upgrade was bundled. Its compatibility/asset-cost tradeoff and official references are documented in the implementation report.
++
++**Executed local validation:** `npm run test:unit --workspaces --if-present -- --run` passed **380 tests** (customer **286**, admin **94**), up **24** UI tests from the 356-test pre-UI state. Both workspace type checks/builds and read-only changed-file ESLint/Oxlint/Prettier checks passed. The full isolated Chrome matrix has **77 screen/width observations**, zero document overflow, zero runtime exceptions, **40 axe state audits with zero detected violations**, and verified native keyboard/touch/pointer interactions. A separate focused rerun checks filter focus preconditions; the 720×475 viewport is a 200% reflow equivalent for a 1440×950 viewport. These are fixture/Chromium/Node 24 results, not full-stack, Node 22 CI, multi-browser, screen-reader or overall WCAG conformance claims.
++
++See the [UI implementation report](../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/README.md) for actual commands/exit receipts, baseline and final screenshots, metrics, contrast probes, failures corrected during self-review and remaining boundaries. The prior [regression-fix report](../_bmad-output/test-artifacts/frontend-regression-fixes-2026-11-09/README.md) and [independent review evidence](../_bmad-output/test-artifacts/frontend-upgrade-review-2026-11-09/README.md) are unchanged historical evidence.
++
++**Roadmap effect:** the requested visual/interaction parts of customer usability and admin navigation/work-screen phases are locally complete. The MVP remains incomplete until recovery/auth integration, server pagination/order-control correctness, dependency advisory remediation and CI/release validation are handled. Do not label all F03–F15 findings or the entire roadmap resolved. Integration still requires selecting the reviewed recovery baseline and agreeing supported browsers/devices and mobile admin scope.
+--- a/frontend/admin-dashboard/index.html
++++ b/frontend/admin-dashboard/index.html
+@@ -1,10 +1,10 @@
+-<!DOCTYPE html>
+-<html lang="">
++<!doctype html>
++<html lang="en">
+   <head>
+-    <meta charset="UTF-8">
+-    <link rel="icon" href="/favicon.ico">
+-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+-    <title>Vite App</title>
++    <meta charset="UTF-8" />
++    <link rel="icon" href="/favicon.ico" />
++    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
++    <title>RoboMart Admin</title>
+   </head>
+   <body>
+     <div id="app"></div>
+--- a/frontend/admin-dashboard/package.json
++++ b/frontend/admin-dashboard/package.json
+@@ -24,6 +24,7 @@
+     "chart.js": "^4.5.1",
+     "oidc-client-ts": "^3.5.0",
+     "pinia": "^3.0.4",
++    "primeicons": "7.0.0",
+     "primevue": "^4.5.5",
+     "sockjs-client": "^1.6.1",
+     "vue": "^3.5.39",
+--- a/frontend/admin-dashboard/src/__tests__/NavigationAccessibility.test.ts
++++ b/frontend/admin-dashboard/src/__tests__/NavigationAccessibility.test.ts
+@@ -0,0 +1,134 @@
++import { afterEach, describe, expect, it, vi } from 'vitest'
++import { mount, flushPromises } from '@vue/test-utils'
++import { createRouter, createMemoryHistory } from 'vue-router'
++import { createPinia } from 'pinia'
++import PrimeVue from 'primevue/config'
++import Drawer from 'primevue/drawer'
++import AdminLayout from '../layouts/AdminLayout.vue'
++import SlideOverPanel from '../components/SlideOverPanel.vue'
++
++const wrappers: ReturnType<typeof mount>[] = []
++afterEach(() => {
++  wrappers.splice(0).forEach((wrapper) => wrapper.unmount())
++  vi.unstubAllGlobals()
++  document.body.innerHTML = ''
++})
++async function layout(mobile = false) {
++  let listener: (() => void) | undefined
++  const media = {
++    matches: mobile,
++    addEventListener: (_: string, fn: () => void) => {
++      listener = fn
++    },
++    removeEventListener: vi.fn(),
++  }
++  vi.stubGlobal('matchMedia', () => media)
++  const router = createRouter({
++    history: createMemoryHistory(),
++    routes: ['/admin/dashboard', '/admin/orders', '/admin/products'].map((path) => ({
++      path,
++      component: { template: '<h1>Page content</h1>' },
++    })),
++  })
++  await router.push('/admin/orders')
++  await router.isReady()
++  const wrapper = mount(AdminLayout, {
++    attachTo: document.body,
++    global: {
++      plugins: [router, createPinia(), PrimeVue],
++      stubs: {
++        Toast: true,
++        ConfirmDialog: true,
++        CommandPalette: true,
++        Menu: true,
++        ConnectionStatus: true,
++      },
++    },
++  })
++  wrappers.push(wrapper)
++  return {
++    wrapper,
++    router,
++    resize: async (mobile: boolean) => {
++      media.matches = mobile
++      listener?.()
++      await flushPromises()
++    },
++  }
++}
++
++describe('Administration navigation access', () => {
++  it('retains link names and expanded state when desktop navigation collapses', async () => {
++    const { wrapper } = await layout()
++    const toggle = wrapper.get('button[aria-label="Collapse sidebar"]')
++    await toggle.trigger('click')
++    expect(toggle.attributes('aria-expanded')).toBe('false')
++    const links = wrapper.findAll('nav a')
++    expect(links.map((link) => link.attributes('aria-label'))).toEqual([
++      'Dashboard',
++      'Orders',
++      'Products',
++      'Inventory',
++      'Health',
++      'Unprocessed Events',
++      'Reports',
++    ])
++    expect(links.every((link) => !!link.text())).toBe(true)
++    expect(wrapper.get('.skip-to-main').attributes('href')).toBe('#admin-main-content')
++  })
++
++  it('opens a named mobile dialog, restores focus on close and closes on route/resize', async () => {
++    const { wrapper, router, resize } = await layout(true)
++    expect(wrapper.find('.admin-sidebar').exists()).toBe(false)
++    const toggle = wrapper.get('button[aria-label="Open navigation"]')
++    await toggle.trigger('click')
++    await flushPromises()
++    expect(toggle.attributes('aria-expanded')).toBe('true')
++    const drawer = wrapper.findComponent(Drawer)
++    expect(drawer.props('header')).toBe('RoboMart Admin')
++    expect(document.querySelector('[role=dialog]')?.getAttribute('aria-label')).toBe(
++      'Administration navigation',
++    )
++    expect(drawer.props('visible')).toBe(true)
++    drawer.vm.$emit('update:visible', false)
++    drawer.vm.$emit('after-hide')
++    await flushPromises()
++    expect(document.activeElement).toBe(toggle.element)
++    await toggle.trigger('click')
++    await router.push('/admin/products')
++    await flushPromises()
++    expect(drawer.props('visible')).toBe(false)
++    await toggle.trigger('click')
++    await resize(false)
++    expect(drawer.props('visible')).toBe(false)
++    drawer.vm.$emit('after-hide')
++    await flushPromises()
++    expect(document.activeElement).toBe(wrapper.get('main').element)
++    expect(wrapper.findAll('.admin-sidebar')).toHaveLength(1)
++    expect(wrapper.find('button[aria-label="Open navigation"]').exists()).toBe(false)
++  })
++
++  it('restores a detail drawer trigger after close without focusing a removed element', async () => {
++    const button = document.createElement('button')
++    button.textContent = 'View order details'
++    document.body.append(button)
++    const wrapper = mount(SlideOverPanel, {
++      props: { visible: false, title: 'Order #42' },
++      attachTo: document.body,
++      global: { plugins: [PrimeVue] },
++    })
++    wrappers.push(wrapper)
++    button.focus()
++    await wrapper.setProps({ visible: true })
++    const drawer = wrapper.findComponent(Drawer)
++    await flushPromises()
++    expect(document.querySelector('[role=dialog]')?.getAttribute('aria-label')).toBe('Order #42')
++    document.body.focus()
++    await wrapper.setProps({ visible: false })
++    drawer.vm.$emit('after-hide')
++    expect(document.activeElement).toBe(button)
++    button.remove()
++    drawer.vm.$emit('after-hide')
++    expect(document.activeElement).not.toBe(button)
++  })
++})
+--- a/frontend/admin-dashboard/src/__tests__/ProductsPage.test.ts
++++ b/frontend/admin-dashboard/src/__tests__/ProductsPage.test.ts
+@@ -181,4 +181,60 @@
+     const vm = wrapper.vm as any
+     expect(vm.isLoading).toBe(true)
+   })
++  it('names actual row actions and focuses inline price editing then returns on Escape', async () => {
++    vi.mocked(listProducts).mockResolvedValue({
++      data: mockProducts,
++      pagination: { page: 0, size: 100, totalElements: 3, totalPages: 1 },
++      traceId: 'test',
++    })
++    const config = createGlobalConfig()
++    const wrapper = mount(ProductsPage, {
++      attachTo: document.body,
++      global: {
++        ...config,
++        stubs: {
++          ...config.stubs,
++          DataTable: false,
++          Column: false,
++          Button: false,
++          InputNumber: false,
++          Tag: false,
++          Select: true,
++        },
++      },
++    })
++    await flushPromises()
++    expect(wrapper.find('button[aria-label="Edit Product A"]').exists()).toBe(true)
++    expect(wrapper.find('button[aria-label="Delete Product A"]').exists()).toBe(true)
++    const action = wrapper.get('button[aria-label="Edit price for Product A"]')
++    await action.trigger('click')
++    await flushPromises()
++    const input = wrapper.get('input[aria-label="Price for Product A"]')
++    expect(document.activeElement).toBe(input.element)
++    await input.trigger('keydown', { key: 'Escape' })
++    await flushPromises()
++    expect(document.activeElement).toBe(wrapper.get('#edit-price-1').element)
++    wrapper.unmount()
++  })
++
++  it('announces product loading failure and retries through a real button', async () => {
++    vi.mocked(listProducts)
++      .mockRejectedValueOnce(new Error('fixture unavailable'))
++      .mockResolvedValueOnce({
++        data: mockProducts,
++        pagination: { page: 0, size: 100, totalElements: 3, totalPages: 1 },
++        traceId: 'test',
++      })
++    const config = createGlobalConfig()
++    const wrapper = mount(ProductsPage, {
++      global: { ...config, stubs: { ...config.stubs, Button: false } },
++    })
++    await flushPromises()
++    expect(wrapper.get('[role="alert"]').text()).toContain('Could not load products')
++    await wrapper.get('button[aria-label="Retry"]').trigger('click')
++    await flushPromises()
++    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
++    expect(listProducts).toHaveBeenCalledTimes(2)
++    wrapper.unmount()
++  })
+ })
+--- a/frontend/admin-dashboard/src/assets/app.css
++++ b/frontend/admin-dashboard/src/assets/app.css
+@@ -107,3 +107,29 @@
+     scroll-behavior: auto !important;
+   }
+ }
++
++/* Keep keyboard access visible above fixed navigation. */
++.skip-to-main {
++  position: fixed;
++  left: 12px;
++  top: -100px;
++  z-index: 9999;
++  padding: 12px 16px;
++  background: var(--color-primary-700);
++  color: white;
++  border-radius: 4px;
++}
++.skip-to-main:focus {
++  top: 8px;
++}
++@media (max-width: 767px) {
++  .p-button {
++    min-height: 44px;
++  }
++}
++
++/* Keep the focus ring visible when PrimeVue's button reset overrides the base outline. */
++button.p-button:focus-visible {
++  outline: 2px solid var(--color-primary-700);
++  outline-offset: 3px;
++}
+--- a/frontend/admin-dashboard/src/components/AdminNavigation.vue
++++ b/frontend/admin-dashboard/src/components/AdminNavigation.vue
+@@ -0,0 +1,152 @@
++<script setup lang="ts">
++import { RouterLink } from 'vue-router'
++defineProps<{ collapsed?: boolean }>()
++const emit = defineEmits<{ navigate: [] }>()
++</script>
++<template>
++  <nav class="admin-sidebar__nav" aria-label="Administration">
++    <!-- Operations group -->
++    <div class="admin-sidebar__section">
++      <span v-if="!collapsed" class="admin-sidebar__section-label">Operations</span>
++      <RouterLink
++        to="/admin/dashboard"
++        class="admin-nav-item"
++        aria-label="Dashboard"
++        @click="emit('navigate')"
++      >
++        <i class="pi pi-home" aria-hidden="true" /><span :class="{ 'sr-only': collapsed }"
++          >Dashboard</span
++        >
++      </RouterLink>
++      <RouterLink
++        to="/admin/orders"
++        class="admin-nav-item"
++        aria-label="Orders"
++        @click="emit('navigate')"
++      >
++        <i class="pi pi-shopping-cart" aria-hidden="true" /><span :class="{ 'sr-only': collapsed }"
++          >Orders</span
++        >
++      </RouterLink>
++      <RouterLink
++        to="/admin/products"
++        class="admin-nav-item"
++        aria-label="Products"
++        @click="emit('navigate')"
++      >
++        <i class="pi pi-box" aria-hidden="true" /><span :class="{ 'sr-only': collapsed }"
++          >Products</span
++        >
++      </RouterLink>
++      <RouterLink
++        to="/admin/inventory"
++        class="admin-nav-item"
++        aria-label="Inventory"
++        @click="emit('navigate')"
++      >
++        <i class="pi pi-warehouse" aria-hidden="true" /><span :class="{ 'sr-only': collapsed }"
++          >Inventory</span
++        >
++      </RouterLink>
++    </div>
++
++    <!-- System group -->
++    <div class="admin-sidebar__section">
++      <span v-if="!collapsed" class="admin-sidebar__section-label">System</span>
++      <RouterLink
++        to="/admin/system/health"
++        class="admin-nav-item"
++        aria-label="Health"
++        @click="emit('navigate')"
++      >
++        <i class="pi pi-heart" aria-hidden="true" /><span :class="{ 'sr-only': collapsed }"
++          >Health</span
++        >
++      </RouterLink>
++      <RouterLink
++        to="/admin/system/events"
++        class="admin-nav-item"
++        aria-label="Unprocessed Events"
++        @click="emit('navigate')"
++      >
++        <i class="pi pi-exclamation-triangle" aria-hidden="true" /><span
++          :class="{ 'sr-only': collapsed }"
++          >Unprocessed Events</span
++        >
++      </RouterLink>
++      <RouterLink
++        to="/admin/reports"
++        class="admin-nav-item"
++        aria-label="Reports"
++        @click="emit('navigate')"
++      >
++        <i class="pi pi-chart-bar" aria-hidden="true" /><span :class="{ 'sr-only': collapsed }"
++          >Reports</span
++        >
++      </RouterLink>
++    </div>
++  </nav>
++</template>
++<style scoped>
++.admin-sidebar__nav {
++  flex: 1;
++  padding: 8px;
++  overflow-y: auto;
++  overflow-x: hidden;
++}
++
++.admin-sidebar__section {
++  margin-bottom: 8px;
++}
++
++.admin-sidebar__section-label {
++  display: block;
++  font-size: 11px;
++  font-weight: 600;
++  text-transform: uppercase;
++  letter-spacing: 0.05em;
++  color: var(--color-gray-600);
++  padding: 8px 12px 4px;
++  white-space: nowrap;
++  overflow: hidden;
++}
++
++.admin-nav-item {
++  display: flex;
++  align-items: center;
++  gap: 10px;
++  padding: 8px 12px;
++  border-radius: 4px;
++  color: var(--color-gray-700);
++  text-decoration: none;
++  font-size: 14px;
++  transition: background 150ms ease;
++  white-space: nowrap;
++  overflow: hidden;
++}
++
++.admin-nav-item:hover {
++  background: var(--color-primary-50);
++  color: var(--color-primary-700);
++}
++
++.admin-nav-item.router-link-active {
++  background: var(--color-primary-50);
++  color: var(--color-primary-700);
++  border-left: 3px solid var(--color-primary-700);
++}
++
++.admin-nav-item {
++  min-height: 44px;
++}
++.sr-only {
++  position: absolute;
++  width: 1px;
++  height: 1px;
++  padding: 0;
++  margin: -1px;
++  clip-path: inset(50%);
++  overflow: hidden;
++  white-space: nowrap;
++}
++</style>
+--- a/frontend/admin-dashboard/src/components/SlideOverPanel.vue
++++ b/frontend/admin-dashboard/src/components/SlideOverPanel.vue
+@@ -1,4 +1,5 @@
+ <script setup lang="ts">
++import { watch } from 'vue'
+ import Drawer from 'primevue/drawer'
+ 
+ defineProps<{
+@@ -6,13 +7,29 @@
+ }>()
+ 
+ const visible = defineModel<boolean>('visible', { default: false })
++let trigger: HTMLElement | null = null
++watch(
++  visible,
++  (open) => {
++    if (open)
++      trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
++  },
++  { flush: 'sync' },
++)
++function restoreFocus() {
++  if (trigger?.isConnected) trigger.focus()
++}
+ </script>
+ 
+ <template>
+   <Drawer
++    block-scroll
+     v-model:visible="visible"
+     position="right"
+-    :style="{ width: '640px' }"
++    :style="{ width: 'min(640px, 100vw)', maxWidth: '100vw' }"
++    :header="title"
++    :aria-label="title"
++    @after-hide="restoreFocus"
+     :dismissable="true"
+     :modal="true"
+   >
+@@ -21,7 +38,7 @@
+         <span class="slide-over-title">{{ title }}</span>
+       </div>
+     </template>
+-    <slot />
++    <div class="slide-over-body"><slot /></div>
+   </Drawer>
+ </template>
+ 
+@@ -38,4 +55,20 @@
+   font-weight: 600;
+   color: var(--color-gray-900);
+ }
++
++.slide-over-body {
++  min-width: 0;
++  overflow-wrap: anywhere;
++}
++.slide-over-body :deep(.grid) {
++  min-width: 0;
++}
++.slide-over-body :deep(table) {
++  min-width: 480px;
++}
++@media (max-width: 480px) {
++  .slide-over-body :deep(.grid-cols-2) {
++    grid-template-columns: minmax(0, 1fr);
++  }
++}
+ </style>
+--- a/frontend/admin-dashboard/src/components/common/ConnectionStatus.vue
++++ b/frontend/admin-dashboard/src/components/common/ConnectionStatus.vue
+@@ -57,7 +57,7 @@
+ }
+ 
+ .ws-status-label--error {
+-  color: #ef4444;
++  color: #b91c1c;
+ }
+ 
+ @keyframes pulse {
+--- a/frontend/admin-dashboard/src/components/products/ProductFormSlideOver.vue
++++ b/frontend/admin-dashboard/src/components/products/ProductFormSlideOver.vue
+@@ -1,5 +1,5 @@
+ <script setup lang="ts">
+-import { ref, watch } from 'vue'
++import { ref, watch, nextTick } from 'vue'
+ import { useToast } from 'primevue/usetoast'
+ import InputText from 'primevue/inputtext'
+ import Textarea from 'primevue/textarea'
+@@ -130,7 +130,16 @@
+ }
+ 
+ async function handleSubmit() {
+-  if (!validateAll()) return
++  if (!validateAll()) {
++    await nextTick()
++    const field = errors.value.name
++      ? 'name'
++      : errors.value.category
++        ? 'selectedCategoryId'
++        : 'price'
++    document.getElementById(`admin-product-${field}`)?.focus()
++    return
++  }
+ 
+   isSaving.value = true
+   try {
+@@ -181,71 +190,126 @@
+       <div class="form-grid">
+         <!-- Name (full width) -->
+         <div class="field col-span-2">
+-          <label class="field-label">Name <span class="text-error-500">*</span></label>
++          <label for="admin-product-name" class="field-label"
++            >Name <span class="text-error-500">*</span></label
++          >
+           <InputText
+             v-model="name"
++            id="admin-product-name"
+             class="w-full"
+             placeholder="Product name"
+             :class="{ 'p-invalid': errors.name }"
++            :invalid="!!errors.name"
++            :aria-describedby="errors.name ? 'admin-product-name-error' : undefined"
+             @blur="validateField('name')"
+           />
+-          <small v-if="errors.name" class="field-error">{{ errors.name }}</small>
++          <small v-if="errors.name" id="admin-product-name-error" class="field-error">{{
++            errors.name
++          }}</small>
+         </div>
+ 
+         <!-- Category (left) -->
+         <div class="field">
+-          <label class="field-label">Category <span class="text-error-500">*</span></label>
++          <label
++            for="admin-product-selectedCategoryId"
++            id="admin-product-category-label"
++            class="field-label"
++            >Category <span class="text-error-500">*</span></label
++          >
+           <Select
+             v-model="selectedCategoryId"
++            inputId="admin-product-selectedCategoryId"
++            aria-labelledby="admin-product-category-label"
++            :pt="{
++              label: {
++                'aria-describedby': errors.category
++                  ? 'admin-product-selectedCategoryId-error'
++                  : undefined,
++              },
++            }"
+             :options="categories"
+             option-label="name"
+             option-value="id"
+             placeholder="Select category"
+             class="w-full"
+             :class="{ 'p-invalid': errors.category }"
++            :invalid="!!errors.category"
++            :aria-describedby="
++              errors.category ? 'admin-product-selectedCategoryId-error' : undefined
++            "
+             @blur="validateField('category')"
+           />
+-          <small v-if="errors.category" class="field-error">{{ errors.category }}</small>
++          <small
++            v-if="errors.category"
++            id="admin-product-selectedCategoryId-error"
++            class="field-error"
++            >{{ errors.category }}</small
++          >
+         </div>
+ 
+         <!-- Price (right) -->
+         <div class="field">
+-          <label class="field-label">Price <span class="text-error-500">*</span></label>
++          <label for="admin-product-price" class="field-label"
++            >Price <span class="text-error-500">*</span></label
++          >
+           <InputNumber
+             v-model="price"
++            inputId="admin-product-price"
++            :pt="{
++              pcInputText: {
++                root: {
++                  'aria-describedby': errors.price ? 'admin-product-price-error' : undefined,
++                },
++              },
++            }"
+             mode="currency"
+             currency="USD"
+             :min="0.01"
+             class="w-full"
+             :class="{ 'p-invalid': errors.price }"
++            :invalid="!!errors.price"
++            :aria-describedby="errors.price ? 'admin-product-price-error' : undefined"
+             @blur="validateField('price')"
+           />
+-          <small v-if="errors.price" class="field-error">{{ errors.price }}</small>
++          <small v-if="errors.price" id="admin-product-price-error" class="field-error">{{
++            errors.price
++          }}</small>
+         </div>
+ 
+         <!-- Brand (left) -->
+         <div class="field">
+-          <label class="field-label"
+-            >Brand <span class="text-gray-400 text-xs">(optional)</span></label
+-          >
+-          <InputText v-model="brand" class="w-full" placeholder="Brand name" />
++          <label for="admin-product-brand" class="field-label"
++            >Brand <span class="text-gray-600 text-xs">(optional)</span></label
++          >
++          <InputText
++            v-model="brand"
++            id="admin-product-brand"
++            class="w-full"
++            placeholder="Brand name"
++          />
+         </div>
+ 
+         <!-- SKU (right, create mode only) -->
+         <div v-if="!product" class="field">
+-          <label class="field-label"
+-            >SKU <span class="text-gray-400 text-xs">(optional)</span></label
+-          >
+-          <InputText v-model="sku" class="w-full" placeholder="Auto-generated if empty" />
++          <label for="admin-product-sku" class="field-label"
++            >SKU <span class="text-gray-600 text-xs">(optional)</span></label
++          >
++          <InputText
++            v-model="sku"
++            id="admin-product-sku"
++            class="w-full"
++            placeholder="Auto-generated if empty"
++          />
+         </div>
+ 
+         <!-- Description (full width) -->
+         <div class="field col-span-2">
+-          <label class="field-label"
+-            >Description <span class="text-gray-400 text-xs">(optional)</span></label
++          <label for="admin-product-description" class="field-label"
++            >Description <span class="text-gray-600 text-xs">(optional)</span></label
+           >
+           <Textarea
+             v-model="description"
++            id="admin-product-description"
+             :rows="3"
+             class="w-full"
+             placeholder="Product description"
+@@ -318,7 +382,7 @@
+ }
+ 
+ .field-error {
+-  color: var(--color-error-500);
++  color: var(--color-error-700);
+   font-size: 12px;
+ }
+ 
+@@ -329,4 +393,21 @@
+   margin-top: 16px;
+   border-top: 1px solid var(--color-gray-200);
+ }
++.field {
++  min-width: 0;
++}
++.form-actions {
++  flex-wrap: wrap;
++}
++@media (max-width: 480px) {
++  .form-grid {
++    grid-template-columns: minmax(0, 1fr);
++  }
++  .col-span-2 {
++    grid-column: auto;
++  }
++  .form-actions > * {
++    flex: 1;
++  }
++}
+ </style>
+--- a/frontend/admin-dashboard/src/components/products/ProductImageUpload.vue
++++ b/frontend/admin-dashboard/src/components/products/ProductImageUpload.vue
+@@ -138,7 +138,7 @@
+ <template>
+   <div class="image-upload-section">
+     <label class="field-label"
+-      >Product Images <span class="text-gray-400 text-xs">(optional)</span></label
++      >Product Images <span class="text-gray-600 text-xs">(optional)</span></label
+     >
+ 
+     <!-- Existing images grid -->
+@@ -164,6 +164,7 @@
+           size="small"
+           text
+           class="image-delete-btn"
++          :aria-label="`Remove product image ${index + 1}`"
+           :disabled="isUploading || isReordering"
+           @click="removeImage(image)"
+         />
+@@ -199,7 +200,7 @@
+               class="pi pi-spinner pi-spin"
+               style="font-size: 2rem; color: var(--color-primary-500)"
+             />
+-            <i v-else class="pi pi-image" style="font-size: 2rem; color: var(--color-gray-400)" />
++            <i v-else class="pi pi-image" style="font-size: 2rem; color: var(--color-gray-600)" />
+             <p v-if="isUploading">Uploading…</p>
+             <p v-else-if="atImageLimit" class="text-warning">10 image limit reached</p>
+             <p v-else>Drag and drop images here, or click Select Images</p>
+@@ -311,7 +312,7 @@
+ 
+ .upload-hint {
+   font-size: 11px;
+-  color: var(--color-gray-400);
++  color: var(--color-gray-600);
+ }
+ 
+ .text-warning {
+--- a/frontend/admin-dashboard/src/layouts/AdminLayout.vue
++++ b/frontend/admin-dashboard/src/layouts/AdminLayout.vue
+@@ -1,6 +1,9 @@
+ <script setup lang="ts">
+-import { ref, computed } from 'vue'
+-import { useRoute, RouterLink, RouterView } from 'vue-router'
++import { ref, computed, watch, nextTick } from 'vue'
++import Drawer from 'primevue/drawer'
++import { useMediaQuery } from '@robo-mart/shared'
++import AdminNavigation from '@/components/AdminNavigation.vue'
++import { useRoute, RouterView } from 'vue-router'
+ import Toast from 'primevue/toast'
+ import ConfirmDialog from 'primevue/confirmdialog'
+ import Menu from 'primevue/menu'
+@@ -13,12 +16,40 @@
+ const adminAuthStore = useAdminAuthStore()
+ 
+ const isSidebarCollapsed = ref(false)
++const isMobile = useMediaQuery('(max-width: 767px)')
++const mobileNavigationOpen = ref(false)
++const navigationToggle = ref<HTMLButtonElement | null>(null)
++let navigationDestination = false
++watch(isMobile, () => {
++  mobileNavigationOpen.value = false
++})
++watch(
++  () => route.fullPath,
++  () => {
++    mobileNavigationOpen.value = false
++  },
++)
++function navigate() {
++  navigationDestination = true
++  mobileNavigationOpen.value = false
++}
++async function afterNavigationClose() {
++  await nextTick()
++  if (navigationDestination || !isMobile.value)
++    document.getElementById('admin-main-content')?.focus()
++  else navigationToggle.value?.focus()
++  navigationDestination = false
++}
+ const userMenuRef = ref()
+ const commandPaletteRef = ref()
+ const notificationCount = ref(0)
+ 
+-const mainMarginLeft = computed(() => (isSidebarCollapsed.value ? '56px' : '240px'))
+-const topbarLeft = computed(() => (isSidebarCollapsed.value ? '56px' : '240px'))
++const mainMarginLeft = computed(() =>
++  isMobile.value ? '0px' : isSidebarCollapsed.value ? '56px' : '240px',
++)
++const topbarLeft = computed(() =>
++  isMobile.value ? '0px' : isSidebarCollapsed.value ? '56px' : '240px',
++)
+ 
+ const breadcrumbLabel = computed(() => {
+   const name = route.name as string | undefined
+@@ -47,55 +78,35 @@
+ 
+ <template>
+   <div class="admin-shell">
++    <a href="#admin-main-content" class="skip-to-main">Skip to main content</a>
++    <Drawer
++      block-scroll
++      v-model:visible="mobileNavigationOpen"
++      id="admin-mobile-navigation"
++      header="RoboMart Admin"
++      aria-label="Administration navigation"
++      position="left"
++      :style="{ width: 'min(300px, calc(100vw - 32px))' }"
++      @after-hide="afterNavigationClose"
++    >
++      <AdminNavigation @navigate="navigate" />
++    </Drawer>
+     <!-- Sidebar -->
+-    <aside class="admin-sidebar" :class="{ 'admin-sidebar--collapsed': isSidebarCollapsed }">
++    <aside
++      v-if="!isMobile"
++      class="admin-sidebar"
++      :class="{ 'admin-sidebar--collapsed': isSidebarCollapsed }"
++    >
+       <div class="admin-sidebar__logo">
+         <span v-if="!isSidebarCollapsed">RoboMart Admin</span>
+         <span v-else>RM</span>
+       </div>
+ 
+-      <nav class="admin-sidebar__nav">
+-        <!-- Operations group -->
+-        <div class="admin-sidebar__section">
+-          <span v-if="!isSidebarCollapsed" class="admin-sidebar__section-label">Operations</span>
+-          <RouterLink to="/admin/dashboard" class="admin-nav-item">
+-            <i class="pi pi-home" />
+-            <span v-if="!isSidebarCollapsed">Dashboard</span>
+-          </RouterLink>
+-          <RouterLink to="/admin/orders" class="admin-nav-item">
+-            <i class="pi pi-shopping-cart" />
+-            <span v-if="!isSidebarCollapsed">Orders</span>
+-          </RouterLink>
+-          <RouterLink to="/admin/products" class="admin-nav-item">
+-            <i class="pi pi-box" />
+-            <span v-if="!isSidebarCollapsed">Products</span>
+-          </RouterLink>
+-          <RouterLink to="/admin/inventory" class="admin-nav-item">
+-            <i class="pi pi-warehouse" />
+-            <span v-if="!isSidebarCollapsed">Inventory</span>
+-          </RouterLink>
+-        </div>
+-
+-        <!-- System group -->
+-        <div class="admin-sidebar__section">
+-          <span v-if="!isSidebarCollapsed" class="admin-sidebar__section-label">System</span>
+-          <RouterLink to="/admin/system/health" class="admin-nav-item">
+-            <i class="pi pi-heart" />
+-            <span v-if="!isSidebarCollapsed">Health</span>
+-          </RouterLink>
+-          <RouterLink to="/admin/system/events" class="admin-nav-item">
+-            <i class="pi pi-exclamation-triangle" />
+-            <span v-if="!isSidebarCollapsed">Unprocessed Events</span>
+-          </RouterLink>
+-          <RouterLink to="/admin/reports" class="admin-nav-item">
+-            <i class="pi pi-chart-bar" />
+-            <span v-if="!isSidebarCollapsed">Reports</span>
+-          </RouterLink>
+-        </div>
+-      </nav>
++      <AdminNavigation :collapsed="isSidebarCollapsed" />
+ 
+       <button
+         class="admin-sidebar__toggle"
++        :aria-expanded="!isSidebarCollapsed"
+         :aria-label="isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+         @click="isSidebarCollapsed = !isSidebarCollapsed"
+       >
+@@ -108,21 +119,42 @@
+       <!-- Top Header -->
+       <header class="admin-topbar" :style="{ left: topbarLeft }">
+         <div class="admin-topbar__breadcrumb">
+-          <span class="admin-breadcrumb-text">{{ breadcrumbLabel }}</span>
++          <button
++            v-if="isMobile"
++            ref="navigationToggle"
++            type="button"
++            class="admin-mobile-toggle"
++            aria-label="Open navigation"
++            aria-haspopup="dialog"
++            :aria-controls="mobileNavigationOpen ? 'admin-mobile-navigation' : undefined"
++            :aria-expanded="mobileNavigationOpen"
++            @click="mobileNavigationOpen = true"
++          >
++            <i class="pi pi-bars" aria-hidden="true" />
++          </button>
++          <span class="admin-breadcrumb-text" :title="breadcrumbLabel">{{ breadcrumbLabel }}</span>
+         </div>
+         <div class="admin-topbar__actions">
+           <ConnectionStatus />
+-          <button class="admin-cmd-btn" @click="commandPaletteRef?.open()">
++          <button
++            class="admin-cmd-btn"
++            aria-label="Search administration commands"
++            @click="commandPaletteRef?.open()"
++          >
+             <i class="pi pi-search" />
+             <span>⌘K</span>
+           </button>
+-          <div class="admin-notification-btn">
++          <div class="admin-notification-btn" role="img" aria-label="No new notifications">
+             <Badge :value="notificationCount > 0 ? notificationCount : undefined" severity="danger">
+               <i class="pi pi-bell" style="font-size: 1.1rem" />
+             </Badge>
+           </div>
+-          <button class="admin-user-btn" @click="(e) => userMenuRef?.toggle(e)">
+-            <i class="pi pi-user-circle" />
++          <button
++            class="admin-user-btn"
++            aria-label="Administrator account menu"
++            @click="(e) => userMenuRef?.toggle(e)"
++          >
++            <i class="pi pi-user" />
+             <span v-if="adminAuthStore.user">{{ adminAuthStore.user.username }}</span>
+             <span v-else>Admin</span>
+           </button>
+@@ -131,7 +163,7 @@
+       </header>
+ 
+       <!-- Page Content -->
+-      <main id="admin-main-content" class="admin-content">
++      <main id="admin-main-content" class="admin-content" tabindex="-1">
+         <RouterView />
+       </main>
+     </div>
+@@ -180,54 +212,6 @@
+   overflow: hidden;
+ }
+ 
+-.admin-sidebar__nav {
+-  flex: 1;
+-  padding: 8px;
+-  overflow-y: auto;
+-  overflow-x: hidden;
+-}
+-
+-.admin-sidebar__section {
+-  margin-bottom: 8px;
+-}
+-
+-.admin-sidebar__section-label {
+-  display: block;
+-  font-size: 11px;
+-  font-weight: 600;
+-  text-transform: uppercase;
+-  letter-spacing: 0.05em;
+-  color: var(--color-gray-400);
+-  padding: 8px 12px 4px;
+-  white-space: nowrap;
+-  overflow: hidden;
+-}
+-
+-.admin-nav-item {
+-  display: flex;
+-  align-items: center;
+-  gap: 10px;
+-  padding: 8px 12px;
+-  border-radius: 4px;
+-  color: var(--color-gray-700);
+-  text-decoration: none;
+-  font-size: 14px;
+-  transition: background 150ms ease;
+-  white-space: nowrap;
+-  overflow: hidden;
+-}
+-
+-.admin-nav-item:hover {
+-  background: var(--color-primary-50);
+-  color: var(--color-primary-700);
+-}
+-
+-.admin-nav-item.router-link-active {
+-  background: var(--color-primary-50);
+-  color: var(--color-primary-700);
+-  border-left: 3px solid var(--color-primary-700);
+-}
+-
+ .admin-sidebar__toggle {
+   display: flex;
+   align-items: center;
+@@ -330,4 +314,69 @@
+   padding: 24px;
+   min-height: calc(100vh - 48px);
+ }
++
++.admin-main-wrapper {
++  min-width: 0;
++}
++.admin-sidebar {
++  height: 100dvh;
++  min-height: 0;
++}
++.admin-topbar__breadcrumb {
++  min-width: 0;
++  gap: 8px;
++}
++.admin-user-btn span {
++  max-width: 130px;
++  text-overflow: ellipsis;
++  overflow: hidden;
++  white-space: nowrap;
++}
++.admin-mobile-toggle {
++  background: transparent;
++  border: 1px solid var(--color-gray-200);
++  border-radius: 4px;
++  width: 44px;
++  height: 44px;
++  color: var(--color-gray-800);
++}
++@media (max-width: 767px) {
++  .admin-topbar {
++    height: 64px;
++    padding: 0 12px;
++    gap: 8px;
++  }
++  .admin-content {
++    margin-top: 64px;
++    padding: 16px;
++  }
++  .admin-user-btn {
++    min-height: 44px;
++  }
++  .admin-user-btn span {
++    display: none;
++  }
++  .admin-topbar__actions {
++    gap: 4px;
++  }
++  .admin-cmd-btn {
++    min-height: 44px;
++  }
++  .admin-cmd-btn span,
++  .admin-notification-btn {
++    display: none;
++  }
++}
++.admin-topbar__breadcrumb {
++  flex: 1;
++}
++.admin-breadcrumb-text {
++  overflow: hidden;
++  text-overflow: ellipsis;
++  white-space: nowrap;
++}
++.admin-mobile-toggle,
++.admin-topbar__actions {
++  flex-shrink: 0;
++}
+ </style>
+--- a/frontend/admin-dashboard/src/main.ts
++++ b/frontend/admin-dashboard/src/main.ts
+@@ -1,3 +1,4 @@
++import 'primeicons/primeicons.css'
+ import './assets/app.css'
+ 
+ import { createApp } from 'vue'
+--- a/frontend/admin-dashboard/src/views/OrdersPage.vue
++++ b/frontend/admin-dashboard/src/views/OrdersPage.vue
+@@ -127,7 +127,7 @@
+ <template>
+   <div class="orders-page">
+     <!-- Page Header -->
+-    <div class="flex items-center justify-between mb-4">
++    <div class="page-heading flex items-center justify-between mb-4">
+       <h1 class="text-xl font-semibold text-gray-900">Orders</h1>
+       <MultiSelect
+         v-model="orderStore.statusFilter"
+@@ -135,6 +135,7 @@
+         option-label="label"
+         option-value="value"
+         placeholder="Filter by status"
++        aria-label="Filter orders by status"
+         :max-selected-labels="2"
+         class="w-72"
+         display="chip"
+@@ -144,6 +145,7 @@
+     <!-- Error State -->
+     <div
+       v-if="orderStore.error"
++      role="alert"
+       class="mb-4 p-3 bg-red-50 text-red-700 rounded border border-red-200 text-sm"
+     >
+       {{ orderStore.error }}
+@@ -152,6 +154,10 @@
+ 
+     <!-- Orders DataTable -->
+     <DataTable
++      :table-style="{ minWidth: '64rem' }"
++      :pt="{
++        tableContainer: { tabindex: 0, role: 'region', 'aria-label': 'Scrollable orders table' },
++      }"
+       :value="orderStore.orders"
+       :loading="orderStore.isLoading"
+       :paginator="true"
+@@ -215,6 +221,7 @@
+           <Select
+             v-if="adminTransitions[data.status]"
+             :model-value="data.status"
++            :aria-label="`Status for order ${data.id}`"
+             :options="[
+               { label: statusLabels[data.status], value: data.status },
+               ...(adminTransitions[data.status] ?? []),
+@@ -234,14 +241,22 @@
+         </template>
+       </Column>
+ 
+-      <Column header="Actions" style="width: 80px">
++      <Column
++        header="Actions"
++        frozen
++        align-frozen="right"
++        header-class="row-actions"
++        body-class="row-actions"
++        style="width: 80px"
++      >
+         <template #body="{ data }">
+           <Button
+             icon="pi pi-eye"
+             text
+             size="small"
+-            severity="info"
++            severity="primary"
+             title="View order details"
++            :aria-label="`View order ${data.id} details`"
+             @click="openDetail(data)"
+           />
+         </template>
+@@ -313,30 +328,34 @@
+         <!-- Order Items -->
+         <div>
+           <h3 class="text-sm font-semibold text-gray-900 mb-2">Order Items</h3>
+-          <table class="w-full text-sm">
+-            <thead>
+-              <tr class="text-left text-gray-500 border-b">
+-                <th class="pb-2">Product</th>
+-                <th class="pb-2 text-right">Qty</th>
+-                <th class="pb-2 text-right">Unit Price</th>
+-                <th class="pb-2 text-right">Subtotal</th>
+-              </tr>
+-            </thead>
+-            <tbody>
+-              <tr
+-                v-for="item in orderStore.selectedOrder.items"
+-                :key="item.productId"
+-                class="border-b border-gray-100"
+-              >
+-                <td class="py-2 text-gray-700">{{ item.productName }}</td>
+-                <td class="py-2 text-right text-gray-600">{{ item.quantity }}</td>
+-                <td class="py-2 text-right text-gray-600">{{ formatCurrency(item.unitPrice) }}</td>
+-                <td class="py-2 text-right font-medium text-gray-900">
+-                  {{ formatCurrency(item.subtotal) }}
+-                </td>
+-              </tr>
+-            </tbody>
+-          </table>
++          <div class="order-items-scroll" role="region" aria-label="Order items table" tabindex="0">
++            <table class="w-full text-sm">
++              <thead>
++                <tr class="text-left text-gray-500 border-b">
++                  <th class="pb-2">Product</th>
++                  <th class="pb-2 text-right">Qty</th>
++                  <th class="pb-2 text-right">Unit Price</th>
++                  <th class="pb-2 text-right">Subtotal</th>
++                </tr>
++              </thead>
++              <tbody>
++                <tr
++                  v-for="item in orderStore.selectedOrder.items"
++                  :key="item.productId"
++                  class="border-b border-gray-100"
++                >
++                  <td class="py-2 text-gray-700">{{ item.productName }}</td>
++                  <td class="py-2 text-right text-gray-600">{{ item.quantity }}</td>
++                  <td class="py-2 text-right text-gray-600">
++                    {{ formatCurrency(item.unitPrice) }}
++                  </td>
++                  <td class="py-2 text-right font-medium text-gray-900">
++                    {{ formatCurrency(item.subtotal) }}
++                  </td>
++                </tr>
++              </tbody>
++            </table>
++          </div>
+         </div>
+ 
+         <!-- Order Timeline -->
+@@ -366,4 +385,35 @@
+ .order-timeline :deep(.p-timeline-event-opposite) {
+   display: none;
+ }
++
++.page-heading {
++  flex-wrap: wrap;
++  gap: 12px;
++}
++.page-heading :deep(.p-multiselect) {
++  max-width: 100%;
++}
++:deep(.p-datatable) {
++  max-width: 100%;
++  min-width: 0;
++}
++:deep(.p-datatable-table-container) {
++  overflow-x: auto;
++  max-width: 100%;
++}
++:deep(td) {
++  overflow-wrap: anywhere;
++}
++
++.order-items-scroll {
++  max-width: 100%;
++  overflow-x: auto;
++}
++:deep(.row-actions) {
++  position: sticky;
++  right: 0;
++  background: var(--color-gray-50);
++  z-index: 1;
++  box-shadow: -2px 0 4px rgb(0 0 0 / 8%);
++}
+ </style>
+--- a/frontend/admin-dashboard/src/views/ProductsPage.vue
++++ b/frontend/admin-dashboard/src/views/ProductsPage.vue
+@@ -1,5 +1,5 @@
+ <script setup lang="ts">
+-import { ref, onMounted } from 'vue'
++import { ref, onMounted, nextTick } from 'vue'
+ import { useToast } from 'primevue/usetoast'
+ import { useConfirm } from 'primevue/useconfirm'
+ import DataTable from 'primevue/datatable'
+@@ -23,6 +23,7 @@
+ 
+ const products = ref<AdminProductListItem[]>([])
+ const isLoading = ref(true)
++const loadError = ref(false)
+ const selectedRows = ref<AdminProductListItem[]>([])
+ const filters = ref({ name: { value: null, matchMode: 'contains' } })
+ const showForm = ref(false)
+@@ -38,9 +39,12 @@
+ 
+ async function fetchProducts() {
+   isLoading.value = true
++  loadError.value = false
+   try {
+     const response = await listProducts(0, 100)
+     products.value = response.data
++  } catch {
++    loadError.value = true
+   } finally {
+     isLoading.value = false
+   }
+@@ -62,14 +66,22 @@
+   await fetchProducts()
+ }
+ 
+-function startCellEdit(row: AdminProductListItem, field: 'price') {
++async function startCellEdit(row: AdminProductListItem, field: 'price') {
+   editingCell.value = { id: row.id, field, value: row[field] }
++  await nextTick()
++  document.getElementById(`product-price-${row.id}`)?.focus()
++}
++
++async function returnToPriceAction(id: number) {
++  await nextTick()
++  document.getElementById(`edit-price-${id}`)?.focus()
+ }
+ 
+ async function saveCellEdit(row: AdminProductListItem) {
+   if (!editingCell.value) return
+   const cell = editingCell.value
+   editingCell.value = null
++  returnToPriceAction(row.id)
+ 
+   const payload: UpdateProductPayload = {
+     name: row.name,
+@@ -97,7 +109,9 @@
+ }
+ 
+ function cancelCellEdit() {
++  const id = editingCell.value?.id
+   editingCell.value = null
++  if (id !== undefined) returnToPriceAction(id)
+ }
+ 
+ function confirmDelete(row: AdminProductListItem) {
+@@ -168,9 +182,13 @@
+ <template>
+   <div class="products-page">
+     <!-- Page Header -->
+-    <div class="flex items-center justify-between mb-4">
++    <div class="page-heading flex items-center justify-between mb-4">
+       <h1 class="text-xl font-semibold text-gray-900">Products</h1>
+       <Button label="Add Product" icon="pi pi-plus" @click="openCreate" />
++    </div>
++
++    <div v-if="loadError" role="alert" class="mb-4 p-3 bg-red-50 text-red-700 rounded">
++      Could not load products. <Button label="Retry" text @click="fetchProducts" />
+     </div>
+ 
+     <!-- Bulk Action Toolbar -->
+@@ -192,6 +210,10 @@
+ 
+     <!-- Products DataTable -->
+     <DataTable
++      :table-style="{ minWidth: '64rem' }"
++      :pt="{
++        tableContainer: { tabindex: 0, role: 'region', 'aria-label': 'Scrollable products table' },
++      }"
+       :value="products"
+       :loading="isLoading"
+       v-model:selection="selectedRows"
+@@ -236,13 +258,14 @@
+             v-model="filterModel.value"
+             type="text"
+             placeholder="Search name"
++            aria-label="Filter products by name"
+             class="p-inputtext p-component w-full text-sm"
+             @input="filterCallback()"
+           />
+         </template>
+         <template #body="{ data }">
+           <span class="font-medium text-gray-900">{{ data.name }}</span>
+-          <div class="text-xs text-gray-400">{{ data.sku }}</div>
++          <div class="text-xs text-gray-600">{{ data.sku }}</div>
+         </template>
+       </Column>
+ 
+@@ -254,17 +277,22 @@
+ 
+       <Column field="price" header="Price" sortable style="width: 140px">
+         <template #body="{ data }">
+-          <span
++          <button
++            type="button"
+             v-if="!editingCell || editingCell.id !== data.id || editingCell.field !== 'price'"
+             class="cursor-pointer hover:text-primary-700 font-mono"
+-            title="Click to edit price"
++            title="Edit price"
++            :id="`edit-price-${data.id}`"
++            :aria-label="`Edit price for ${data.name}`"
+             @click="startCellEdit(data, 'price')"
+           >
+             ${{ Number(data.price).toFixed(2) }}
+-          </span>
++          </button>
+           <InputNumber
+             v-else
+             :model-value="editingCell.value"
++            :inputId="`product-price-${data.id}`"
++            :aria-label="`Price for ${data.name}`"
+             mode="currency"
+             currency="USD"
+             :min="0.01"
+@@ -290,7 +318,14 @@
+         </template>
+       </Column>
+ 
+-      <Column header="Actions" style="width: 120px">
++      <Column
++        header="Actions"
++        frozen
++        align-frozen="right"
++        header-class="row-actions"
++        body-class="row-actions"
++        style="width: 120px"
++      >
+         <template #body="{ data }">
+           <div class="flex gap-1">
+             <Button
+@@ -299,6 +334,7 @@
+               rounded
+               size="small"
+               title="Edit"
++              :aria-label="`Edit ${data.name}`"
+               @click="openEdit(data)"
+             />
+             <Button
+@@ -308,6 +344,7 @@
+               size="small"
+               severity="danger"
+               title="Delete"
++              :aria-label="`Delete ${data.name}`"
+               @click="confirmDelete(data)"
+             />
+           </div>
+@@ -328,4 +365,31 @@
+ .products-page {
+   padding: 0;
+ }
++
++.page-heading {
++  flex-wrap: wrap;
++  gap: 12px;
++}
++.page-heading :deep(.p-multiselect) {
++  max-width: 100%;
++}
++:deep(.p-datatable) {
++  max-width: 100%;
++  min-width: 0;
++}
++:deep(.p-datatable-table-container) {
++  overflow-x: auto;
++  max-width: 100%;
++}
++:deep(td) {
++  overflow-wrap: anywhere;
++}
++
++:deep(.row-actions) {
++  position: sticky;
++  right: 0;
++  background: var(--color-gray-50);
++  z-index: 1;
++  box-shadow: -2px 0 4px rgb(0 0 0 / 8%);
++}
+ </style>
+--- a/frontend/customer-website/package.json
++++ b/frontend/customer-website/package.json
+@@ -18,9 +18,11 @@
+   "dependencies": {
+     "@fontsource/inter": "^5.2.8",
+     "@primevue/themes": "^4.5.4",
++    "@robo-mart/shared": "*",
+     "axios": "^1.18.1",
+     "oidc-client-ts": "^3.5.0",
+     "pinia": "^3.0.4",
++    "primeicons": "7.0.0",
+     "primevue": "^4.5.5",
+     "vee-validate": "^4.15.1",
+     "vue": "^3.5.39",
+--- a/frontend/customer-website/src/assets/app.css
++++ b/frontend/customer-website/src/assets/app.css
+@@ -119,3 +119,9 @@
+     scroll-behavior: auto !important;
+   }
+ }
++
++/* Keep the focus ring visible when PrimeVue's button reset overrides the base outline. */
++button.p-button:focus-visible {
++  outline: 2px solid var(--color-primary-700);
++  outline-offset: 3px;
++}
+--- a/frontend/customer-website/src/components/cart/CartItem.vue
++++ b/frontend/customer-website/src/components/cart/CartItem.vue
+@@ -63,7 +63,7 @@
+     <div class="cart-item__quantity">
+       <label :for="`qty-${item.productId}`" class="cart-item__quantity-label">Qty</label>
+       <InputNumber
+-        :id="`qty-${item.productId}`"
++        :inputId="`qty-${item.productId}`"
+         :modelValue="item.quantity"
+         :min="1"
+         :max="999"
+@@ -174,4 +174,37 @@
+ .cart-item__remove {
+   flex-shrink: 0;
+ }
++
++.cart-item__name {
++  white-space: normal;
++  overflow-wrap: anywhere;
++}
++.cart-item__quantity-input :deep(input) {
++  min-width: 0;
++  width: 100%;
++}
++@media (max-width: 767px) {
++  .cart-item {
++    display: grid;
++    grid-template-columns: 48px minmax(0, 1fr) 44px;
++    gap: 12px;
++    padding: 12px;
++  }
++  .cart-item__image-wrapper {
++    width: 48px;
++    height: 48px;
++  }
++  .cart-item__remove {
++    grid-column: 3;
++    grid-row: 1;
++  }
++  .cart-item__quantity {
++    grid-column: 1 / 3;
++  }
++  .cart-item__subtotal {
++    grid-column: 3;
++    min-width: 0;
++    font-size: 14px;
++  }
++}
+ </style>
+--- a/frontend/customer-website/src/components/checkout/CheckoutAccessibility.spec.ts
++++ b/frontend/customer-website/src/components/checkout/CheckoutAccessibility.spec.ts
+@@ -0,0 +1,53 @@
++import { afterEach, describe, expect, it, vi } from 'vitest'
++import { mount } from '@vue/test-utils'
++import { createPinia } from 'pinia'
++import PrimeVue from 'primevue/config'
++import StepShippingAddress from './StepShippingAddress.vue'
++import StepPayment from './StepPayment.vue'
++
++const wrappers: ReturnType<typeof mount>[] = []
++afterEach(() => {
++  wrappers.splice(0).forEach((wrapper) => wrapper.unmount())
++  document.body.innerHTML = ''
++})
++
++describe('Checkout accessible validation', () => {
++  it.each([
++    [StepShippingAddress, ['fullName', 'street', 'city', 'state', 'postalCode']],
++    [StepPayment, ['cardholderName', 'cardNumber', 'expiry', 'cvv']],
++  ] as const)(
++    'associates errors and focuses a linked summary after invalid submission',
++    async (component, fields) => {
++      const wrapper = mount(component, {
++        attachTo: document.body,
++        global: { plugins: [createPinia(), PrimeVue] },
++      })
++      wrappers.push(wrapper)
++      await wrapper.get('form').trigger('submit')
++      await vi.waitFor(() => expect(wrapper.find('.form-error-summary').exists()).toBe(true))
++      await vi.waitFor(() =>
++        expect(document.activeElement).toBe(wrapper.get('.form-error-summary').element),
++      )
++      for (const field of fields) {
++        const input = wrapper.get('input#' + field)
++        expect(wrapper.get(`label[for="${field}"]`).text()).toBeTruthy()
++        expect(input.attributes('aria-invalid')).toBe('true')
++        const error = wrapper.get('#' + input.attributes('aria-describedby'))
++        expect(error.text()).toBeTruthy()
++        expect(input.attributes('autocomplete')).toBeTruthy()
++      }
++      await wrapper.get(`.form-error-summary a[href="#${fields[0]}"]`).trigger('click')
++      expect(document.activeElement).toBe(wrapper.get('#' + fields[0]).element)
++      expect(wrapper.emitted('continue')).toBeUndefined()
++    },
++  )
++
++  it('uses numeric hints and masks the CVV in demo payment fields', () => {
++    const wrapper = mount(StepPayment, { global: { plugins: [createPinia(), PrimeVue] } })
++    wrappers.push(wrapper)
++    for (const field of ['cardNumber', 'expiry', 'cvv'])
++      expect(wrapper.get('#' + field).attributes('inputmode')).toBe('numeric')
++    expect(wrapper.get('#cvv').attributes('type')).toBe('password')
++    expect(wrapper.text()).toContain('No real payment is processed')
++  })
++})
+--- a/frontend/customer-website/src/components/checkout/CheckoutOrderSummary.vue
++++ b/frontend/customer-website/src/components/checkout/CheckoutOrderSummary.vue
+@@ -84,4 +84,9 @@
+ .cos__total-price {
+   color: var(--p-primary-color, #2563eb);
+ }
++.cos__item-name {
++  white-space: normal;
++  overflow-wrap: anywhere;
++  min-width: 0;
++}
+ </style>
+--- a/frontend/customer-website/src/components/checkout/FormErrorSummary.vue
++++ b/frontend/customer-website/src/components/checkout/FormErrorSummary.vue
+@@ -0,0 +1,49 @@
++<script setup lang="ts">
++import { nextTick, ref } from 'vue'
++defineProps<{ errors: Record<string, string | undefined> }>()
++const summary = ref<HTMLElement | null>(null)
++async function focus() {
++  await nextTick()
++  summary.value?.focus()
++}
++function focusField(id: string) {
++  document.getElementById(id)?.focus()
++}
++defineExpose({ focus })
++</script>
++<template>
++  <div
++    v-if="Object.keys(errors).length"
++    ref="summary"
++    class="form-error-summary"
++    tabindex="-1"
++    role="alert"
++  >
++    <p>Please correct the following fields:</p>
++    <ul>
++      <li v-for="(error, field) in errors" :key="field">
++        <a :href="`#${field}`" @click.prevent="focusField(String(field))">{{ error }}</a>
++      </li>
++    </ul>
++  </div>
++</template>
++<style scoped>
++.form-error-summary {
++  padding: 16px;
++  border: 1px solid #b91c1c;
++  border-radius: 6px;
++  color: #991b1b;
++  background: #fef2f2;
++}
++.form-error-summary p {
++  margin-top: 0;
++  font-weight: 600;
++}
++.form-error-summary ul {
++  margin-bottom: 0;
++  padding-left: 20px;
++}
++.form-error-summary a {
++  color: inherit;
++}
++</style>
+--- a/frontend/customer-website/src/components/checkout/ProcessingAccessibility.spec.ts
++++ b/frontend/customer-website/src/components/checkout/ProcessingAccessibility.spec.ts
+@@ -0,0 +1,53 @@
++import { expect, it, vi } from 'vitest'
++import { flushPromises, mount } from '@vue/test-utils'
++import { createPinia } from 'pinia'
++import { createMemoryHistory, createRouter } from 'vue-router'
++import PrimeVue from 'primevue/config'
++import Dialog from 'primevue/dialog'
++import SagaProgressOverlay from './SagaProgressOverlay.vue'
++import { useCheckoutStore } from '@/stores/useCheckoutStore'
++
++it('focuses processing status on open and the visible error before the earlier heading on close', async () => {
++  const pinia = createPinia()
++  const router = createRouter({
++    history: createMemoryHistory(),
++    routes: [{ path: '/', component: { template: '<div />' } }],
++  })
++  await router.push('/')
++  await router.isReady()
++  const store = useCheckoutStore(pinia)
++  const wrapper = mount(SagaProgressOverlay, {
++    attachTo: document.body,
++    global: { plugins: [pinia, router, PrimeVue] },
++  })
++  store.isPlacingOrder = true
++  await flushPromises()
++  const dialog = wrapper.findComponent(Dialog)
++  expect(dialog.props('closable')).toBe(false)
++  expect(dialog.props('closeOnEscape')).toBe(false)
++  dialog.vm.$emit('show')
++  await flushPromises()
++  const status = document.querySelector<HTMLElement>('.spo')!
++  expect(document.activeElement).toBe(status)
++  expect(status.textContent).toContain('Submitting your order')
++  expect(status.textContent).not.toContain('Reserving')
++
++  const checkout = document.createElement('div')
++  checkout.className = 'checkout'
++  checkout.innerHTML = '<h2>Payment</h2><div role="alert">Check your orders before retrying.</div>'
++  document.body.append(checkout)
++  const heading = checkout.querySelector('h2')!
++  const alert = checkout.querySelector<HTMLElement>('[role="alert"]')!
++  // jsdom has no layout. Browser evidence separately verifies real visibility,
++  // focus traps and Escape; here both result targets have rendered rectangles.
++  for (const target of [heading, alert])
++    vi.spyOn(target, 'getClientRects').mockReturnValue([
++      new DOMRect(0, 0, 100, 20),
++    ] as unknown as DOMRectList)
++  store.isPlacingOrder = false
++  await flushPromises()
++  dialog.vm.$emit('after-hide')
++  expect(document.activeElement).toBe(alert)
++  wrapper.unmount()
++  checkout.remove()
++})
+--- a/frontend/customer-website/src/components/checkout/SagaProgressOverlay.vue
++++ b/frontend/customer-website/src/components/checkout/SagaProgressOverlay.vue
+@@ -1,98 +1,54 @@
+ <script setup lang="ts">
++import { ref, nextTick } from 'vue'
++import Dialog from 'primevue/dialog'
+ import { useCheckoutStore } from '@/stores/useCheckoutStore'
+-
+ const checkoutStore = useCheckoutStore()
++const processingStatus = ref<HTMLElement | null>(null)
++async function focusProcessing() {
++  await nextTick()
++  processingStatus.value?.focus()
++}
++function focusResult() {
++  const visible = (selector: string) =>
++    [...document.querySelectorAll<HTMLElement>(selector)].find(
++      (element) => element.getClientRects().length,
++    )
++  const target = visible('.checkout [role="alert"]') ?? visible('.checkout h2, .ocv h1')
++  if (target) {
++    target.tabIndex = -1
++    target.focus()
++  }
++}
+ </script>
+-
+ <template>
+-  <Transition name="fade">
+-    <div
+-      v-if="checkoutStore.isPlacingOrder"
+-      class="spo"
+-      role="status"
+-      aria-live="polite"
+-      aria-label="Processing your order"
+-    >
+-      <div class="spo__content">
+-        <div class="spo__spinner" aria-hidden="true">
+-          <svg viewBox="0 0 50 50" class="spo__svg">
+-            <circle class="spo__circle" cx="25" cy="25" r="20" fill="none" stroke-width="4" />
+-          </svg>
+-        </div>
+-        <Transition name="msg" mode="out-in">
+-          <p :key="checkoutStore.sagaMessage" class="spo__message">
+-            {{ checkoutStore.sagaMessage }}
+-          </p>
+-        </Transition>
+-      </div>
++  <Dialog
++    block-scroll
++    :visible="checkoutStore.isPlacingOrder"
++    modal
++    :closable="false"
++    :close-on-escape="false"
++    header="Processing your order"
++    @after-hide="focusResult"
++    @show="focusProcessing"
++    :style="{ width: 'min(420px, calc(100vw - 32px))' }"
++  >
++    <div ref="processingStatus" class="spo" role="status" aria-live="polite" tabindex="0">
++      <i class="pi pi-spin pi-spinner" aria-hidden="true" />
++      <p>Submitting your order. Please wait for the result before trying again.</p>
+     </div>
+-  </Transition>
++  </Dialog>
+ </template>
+-
+ <style scoped>
+ .spo {
+-  position: fixed;
+-  inset: 0;
+-  background: rgba(255, 255, 255, 0.92);
+-  backdrop-filter: blur(4px);
+-  z-index: 1000;
+-  display: flex;
+-  align-items: center;
+-  justify-content: center;
++  text-align: center;
++  color: var(--color-gray-800);
+ }
+-.spo__content {
+-  display: flex;
+-  flex-direction: column;
+-  align-items: center;
+-  gap: 20px;
++.spo .pi {
++  font-size: 32px;
+ }
+-.spo__spinner {
+-  width: 52px;
+-  height: 52px;
+-}
+-.spo__svg {
+-  width: 100%;
+-  height: 100%;
+-  animation: spo-rotate 1.2s linear infinite;
+-}
+-.spo__circle {
+-  stroke: var(--p-primary-color, #2563eb);
+-  stroke-dasharray: 100;
+-  stroke-dashoffset: 25;
+-  stroke-linecap: round;
+-}
+-.spo__message {
+-  font-size: 18px;
+-  font-weight: 500;
+-  color: var(--color-gray-800, #1f2937);
+-  margin: 0;
+-  text-align: center;
+-}
+-@keyframes spo-rotate {
+-  to {
+-    transform: rotate(360deg);
++@media (prefers-reduced-motion: reduce) {
++  .pi-spin {
++    animation: none;
+   }
+ }
+-.fade-enter-active,
+-.fade-leave-active {
+-  transition: opacity 0.2s;
+-}
+-.fade-enter-from,
+-.fade-leave-to {
+-  opacity: 0;
+-}
+-.msg-enter-active,
+-.msg-leave-active {
+-  transition:
+-    opacity 0.25s,
+-    transform 0.25s;
+-}
+-.msg-enter-from {
+-  opacity: 0;
+-  transform: translateY(6px);
+-}
+-.msg-leave-to {
+-  opacity: 0;
+-  transform: translateY(-6px);
+-}
+ </style>
+--- a/frontend/customer-website/src/components/checkout/StepConfirm.vue
++++ b/frontend/customer-website/src/components/checkout/StepConfirm.vue
+@@ -130,4 +130,17 @@
+ .sco__place-order {
+   min-width: 160px;
+ }
++.sco__item-name,
++.sco__detail {
++  min-width: 0;
++  overflow-wrap: anywhere;
++}
++.sco__actions {
++  flex-wrap: wrap;
++}
++@media (max-width: 480px) {
++  .sco__actions > * {
++    width: 100%;
++  }
++}
+ </style>
+--- a/frontend/customer-website/src/components/checkout/StepPayment.vue
++++ b/frontend/customer-website/src/components/checkout/StepPayment.vue
+@@ -1,9 +1,10 @@
+ <script setup lang="ts">
+-import { computed } from 'vue'
++import { computed, ref } from 'vue'
+ import { useForm, useField } from 'vee-validate'
+ import { object, string } from 'yup'
+ import InputText from 'primevue/inputtext'
+ import Button from 'primevue/button'
++import FormErrorSummary from './FormErrorSummary.vue'
+ import { useCheckoutStore } from '@/stores/useCheckoutStore'
+ import type { PaymentFormData } from '@/types/checkout'
+ 
+@@ -36,7 +37,9 @@
+     .matches(/^\d{3,4}$/, 'Enter a valid CVV'),
+ })
+ 
+-const { handleSubmit } = useForm<PaymentFormData>({
++const submitted = ref(false)
++const errorSummary = ref<InstanceType<typeof FormErrorSummary> | null>(null)
++const { handleSubmit, errors } = useForm<PaymentFormData>({
+   validationSchema: schema,
+   validateOnMount: false,
+   initialValues: checkoutStore.paymentData ?? {
+@@ -79,13 +82,21 @@
+   expiry.value = val
+ }
+ 
+-const onSubmit = handleSubmit((values) => {
+-  checkoutStore.setPaymentData(values)
+-  emit('continue')
+-})
++const onSubmit = handleSubmit(
++  (values) => {
++    checkoutStore.setPaymentData(values)
++    emit('continue')
++  },
++  () => {
++    submitted.value = true
++    errorSummary.value?.focus()
++  },
++)
+ 
+ const paymentError = computed(() =>
+-  checkoutStore.error?.type === 'PAYMENT_FAILED' ? checkoutStore.error.message : null,
++  checkoutStore.error?.type === 'PAYMENT_FAILED'
++    ? "Payment couldn't be processed. Check your orders for the latest status before retrying."
++    : null,
+ )
+ </script>
+ 
+@@ -99,24 +110,34 @@
+ 
+     <p class="sp__notice">This is a demo checkout. No real payment is processed.</p>
+ 
++    <FormErrorSummary ref="errorSummary" :errors="submitted ? errors : {}" />
+     <form class="sp__form" novalidate @submit.prevent="onSubmit">
+       <div class="sp__field">
+         <label for="cardholderName" class="sp__label">Cardholder Name</label>
+         <InputText
+           id="cardholderName"
++          autocomplete="cc-name"
++          :aria-invalid="!!cardholderNameError"
++          :aria-describedby="cardholderNameError ? 'cardholderName-error' : undefined"
+           v-model="cardholderName"
+           placeholder="Jane Doe"
+           :class="{ 'p-invalid': cardholderNameError }"
+           class="sp__input"
+           @blur="blurCardholderName"
+         />
+-        <small v-if="cardholderNameError" class="p-error">{{ cardholderNameError }}</small>
++        <small v-if="cardholderNameError" id="cardholderName-error" class="field-error">{{
++          cardholderNameError
++        }}</small>
+       </div>
+ 
+       <div class="sp__field">
+         <label for="cardNumber" class="sp__label">Card Number</label>
+         <InputText
+           id="cardNumber"
++          autocomplete="cc-number"
++          :aria-invalid="!!cardNumberError"
++          :aria-describedby="cardNumberError ? 'cardNumber-error' : undefined"
++          inputmode="numeric"
+           :value="formattedCardNumber"
+           placeholder="1234 5678 9012 3456"
+           maxlength="19"
+@@ -124,7 +145,9 @@
+           class="sp__input sp__card-number"
+           @input="onCardNumberInput"
+         />
+-        <small v-if="cardNumberError" class="p-error">{{ cardNumberError }}</small>
++        <small v-if="cardNumberError" id="cardNumber-error" class="field-error">{{
++          cardNumberError
++        }}</small>
+         <small class="sp__hint">Use 4242 4242 4242 4242 for a successful demo payment</small>
+       </div>
+ 
+@@ -133,6 +156,10 @@
+           <label for="expiry" class="sp__label">Expiry Date</label>
+           <InputText
+             id="expiry"
++            autocomplete="cc-exp"
++            :aria-invalid="!!expiryError"
++            :aria-describedby="expiryError ? 'expiry-error' : undefined"
++            inputmode="numeric"
+             :value="expiry"
+             placeholder="MM/YY"
+             maxlength="5"
+@@ -140,13 +167,17 @@
+             class="sp__input"
+             @input="onExpiryInput"
+           />
+-          <small v-if="expiryError" class="p-error">{{ expiryError }}</small>
++          <small v-if="expiryError" id="expiry-error" class="field-error">{{ expiryError }}</small>
+         </div>
+ 
+         <div class="sp__field">
+           <label for="cvv" class="sp__label">CVV</label>
+           <InputText
+             id="cvv"
++            autocomplete="cc-csc"
++            :aria-invalid="!!cvvError"
++            :aria-describedby="cvvError ? 'cvv-error' : undefined"
++            inputmode="numeric"
+             v-model="cvv"
+             placeholder="123"
+             maxlength="4"
+@@ -154,7 +185,7 @@
+             :class="{ 'p-invalid': cvvError }"
+             class="sp__input"
+           />
+-          <small v-if="cvvError" class="p-error">{{ cvvError }}</small>
++          <small v-if="cvvError" id="cvv-error" class="field-error">{{ cvvError }}</small>
+         </div>
+       </div>
+ 
+@@ -216,7 +247,7 @@
+ }
+ .sp__hint {
+   font-size: 11px;
+-  color: var(--color-gray-400, #9ca3af);
++  color: var(--color-gray-600, #4b5563);
+ }
+ .sp__actions {
+   display: flex;
+@@ -224,4 +255,25 @@
+   padding-top: 8px;
+   gap: 12px;
+ }
++.field-error {
++  color: #b91c1c;
++  font-size: 14px;
++}
++.sp__field {
++  min-width: 0;
++}
++.sp__actions {
++  flex-wrap: wrap;
++}
++@media (max-width: 480px) {
++  .sp__row {
++    grid-template-columns: minmax(0, 1fr);
++  }
++  .sp__actions > * {
++    width: 100%;
++  }
++  .sp__input {
++    font-size: 16px;
++  }
++}
+ </style>
+--- a/frontend/customer-website/src/components/checkout/StepShippingAddress.vue
++++ b/frontend/customer-website/src/components/checkout/StepShippingAddress.vue
+@@ -1,8 +1,10 @@
+ <script setup lang="ts">
++import { ref } from 'vue'
+ import { useForm, useField } from 'vee-validate'
+ import { object, string } from 'yup'
+ import InputText from 'primevue/inputtext'
+ import Button from 'primevue/button'
++import FormErrorSummary from './FormErrorSummary.vue'
+ import { useCheckoutStore } from '@/stores/useCheckoutStore'
+ import type { ShippingFormData } from '@/types/checkout'
+ 
+@@ -20,7 +22,9 @@
+   country: string().required('Country is required'),
+ })
+ 
+-const { handleSubmit } = useForm<ShippingFormData>({
++const submitted = ref(false)
++const errorSummary = ref<InstanceType<typeof FormErrorSummary> | null>(null)
++const { handleSubmit, errors } = useForm<ShippingFormData>({
+   validationSchema: schema,
+   validateOnMount: false,
+   initialValues: checkoutStore.shippingData ?? {
+@@ -40,39 +44,54 @@
+ const { value: postalCode, errorMessage: postalCodeError } = useField<string>('postalCode')
+ const { value: country, errorMessage: countryError } = useField<string>('country')
+ 
+-const onSubmit = handleSubmit((values) => {
+-  checkoutStore.setShippingData(values)
+-  emit('continue')
+-})
++const onSubmit = handleSubmit(
++  (values) => {
++    checkoutStore.setShippingData(values)
++    emit('continue')
++  },
++  () => {
++    submitted.value = true
++    errorSummary.value?.focus()
++  },
++)
+ </script>
+ 
+ <template>
+   <div class="ssa">
+     <h2 class="ssa__heading">Shipping Address</h2>
+ 
++    <FormErrorSummary ref="errorSummary" :errors="submitted ? errors : {}" />
+     <form class="ssa__form" novalidate @submit.prevent="onSubmit">
+       <div class="ssa__field">
+         <label for="fullName" class="ssa__label">Full Name</label>
+         <InputText
+           id="fullName"
++          autocomplete="name"
++          :aria-invalid="!!fullNameError"
++          :aria-describedby="fullNameError ? 'fullName-error' : undefined"
+           v-model="fullName"
+           placeholder="Jane Doe"
+           :class="{ 'p-invalid': fullNameError }"
+           class="ssa__input"
+         />
+-        <small v-if="fullNameError" class="p-error">{{ fullNameError }}</small>
++        <small v-if="fullNameError" id="fullName-error" class="field-error">{{
++          fullNameError
++        }}</small>
+       </div>
+ 
+       <div class="ssa__field">
+         <label for="street" class="ssa__label">Street Address</label>
+         <InputText
+           id="street"
++          autocomplete="address-line1"
++          :aria-invalid="!!streetError"
++          :aria-describedby="streetError ? 'street-error' : undefined"
+           v-model="street"
+           placeholder="123 Main Street"
+           :class="{ 'p-invalid': streetError }"
+           class="ssa__input"
+         />
+-        <small v-if="streetError" class="p-error">{{ streetError }}</small>
++        <small v-if="streetError" id="street-error" class="field-error">{{ streetError }}</small>
+       </div>
+ 
+       <div class="ssa__row">
+@@ -80,24 +99,30 @@
+           <label for="city" class="ssa__label">City</label>
+           <InputText
+             id="city"
++            autocomplete="address-level2"
++            :aria-invalid="!!cityError"
++            :aria-describedby="cityError ? 'city-error' : undefined"
+             v-model="city"
+             placeholder="San Francisco"
+             :class="{ 'p-invalid': cityError }"
+             class="ssa__input"
+           />
+-          <small v-if="cityError" class="p-error">{{ cityError }}</small>
++          <small v-if="cityError" id="city-error" class="field-error">{{ cityError }}</small>
+         </div>
+ 
+         <div class="ssa__field">
+           <label for="state" class="ssa__label">State / Province</label>
+           <InputText
+             id="state"
++            autocomplete="address-level1"
++            :aria-invalid="!!stateError"
++            :aria-describedby="stateError ? 'state-error' : undefined"
+             v-model="state"
+             placeholder="CA"
+             :class="{ 'p-invalid': stateError }"
+             class="ssa__input"
+           />
+-          <small v-if="stateError" class="p-error">{{ stateError }}</small>
++          <small v-if="stateError" id="state-error" class="field-error">{{ stateError }}</small>
+         </div>
+       </div>
+ 
+@@ -106,24 +131,35 @@
+           <label for="postalCode" class="ssa__label">Postal Code</label>
+           <InputText
+             id="postalCode"
++            autocomplete="postal-code"
++            :aria-invalid="!!postalCodeError"
++            :aria-describedby="postalCodeError ? 'postalCode-error' : undefined"
++            inputmode="numeric"
+             v-model="postalCode"
+             placeholder="94105"
+             :class="{ 'p-invalid': postalCodeError }"
+             class="ssa__input"
+           />
+-          <small v-if="postalCodeError" class="p-error">{{ postalCodeError }}</small>
++          <small v-if="postalCodeError" id="postalCode-error" class="field-error">{{
++            postalCodeError
++          }}</small>
+         </div>
+ 
+         <div class="ssa__field">
+           <label for="country" class="ssa__label">Country</label>
+           <InputText
+             id="country"
++            autocomplete="country"
++            :aria-invalid="!!countryError"
++            :aria-describedby="countryError ? 'country-error' : undefined"
+             v-model="country"
+             placeholder="US"
+             :class="{ 'p-invalid': countryError }"
+             class="ssa__input"
+           />
+-          <small v-if="countryError" class="p-error">{{ countryError }}</small>
++          <small v-if="countryError" id="country-error" class="field-error">{{
++            countryError
++          }}</small>
+         </div>
+       </div>
+ 
+@@ -171,4 +207,25 @@
+   padding-top: 8px;
+   gap: 12px;
+ }
++.field-error {
++  color: #b91c1c;
++  font-size: 14px;
++}
++.ssa__field {
++  min-width: 0;
++}
++.ssa__actions {
++  flex-wrap: wrap;
++}
++@media (max-width: 480px) {
++  .ssa__row {
++    grid-template-columns: minmax(0, 1fr);
++  }
++  .ssa__actions > * {
++    width: 100%;
++  }
++  .ssa__input {
++    font-size: 16px;
++  }
++}
+ </style>
+--- a/frontend/customer-website/src/components/product/FilterSidebar.vue
++++ b/frontend/customer-website/src/components/product/FilterSidebar.vue
+@@ -1,5 +1,6 @@
+ <script setup lang="ts">
+-import { ref, watch } from 'vue'
++import { ref, watch, useId, nextTick } from 'vue'
++import { useMediaQuery } from '@robo-mart/shared'
+ import Checkbox from 'primevue/checkbox'
+ import Slider from 'primevue/slider'
+ import Rating from 'primevue/rating'
+@@ -23,7 +24,18 @@
+   props.initialFilters?.maxPrice ?? 1000,
+ ])
+ const minRating = ref<number>(props.initialFilters?.minRating ?? 0)
+-const isCollapsed = ref(false)
++const isMobile = useMediaQuery('(max-width: 767px)')
++const isCollapsed = ref(isMobile.value)
++const controlsId = useId()
++const filterContent = ref<HTMLElement | null>(null)
++watch(isMobile, async (value) => {
++  const focusWasInside = filterContent.value?.contains(document.activeElement)
++  isCollapsed.value = value
++  if (value && focusWasInside) {
++    await nextTick()
++    document.getElementById(`${controlsId}-toggle`)?.focus()
++  }
++})
+ 
+ function emitFilters() {
+   const params: ProductSearchParams = {}
+@@ -75,21 +87,29 @@
+     <div class="filter-sidebar__header">
+       <h2 class="filter-sidebar__title">Filters</h2>
+       <Button
++        :id="`${controlsId}-toggle`"
+         :icon="isCollapsed ? 'pi pi-chevron-down' : 'pi pi-chevron-up'"
+         text
+         size="small"
+         @click="isCollapsed = !isCollapsed"
+         :aria-label="isCollapsed ? 'Expand filters' : 'Collapse filters'"
+         :aria-expanded="!isCollapsed"
++        :aria-controls="controlsId"
+       />
+     </div>
+ 
+-    <div v-show="!isCollapsed" class="filter-sidebar__body">
++    <div ref="filterContent" :id="controlsId" v-show="!isCollapsed" class="filter-sidebar__body">
+       <div v-if="brands.length > 0" class="filter-sidebar__section">
+         <h3 class="filter-sidebar__section-title">Brand</h3>
+         <div v-for="brand in brands" :key="brand" class="filter-sidebar__option">
+-          <Checkbox v-model="selectedBrands" :inputId="`brand-${brand}`" :value="brand" />
+-          <label :for="`brand-${brand}`" class="filter-sidebar__label">{{ brand }}</label>
++          <Checkbox
++            v-model="selectedBrands"
++            :inputId="`${controlsId}-brand-${brand}`"
++            :value="brand"
++          />
++          <label :for="`${controlsId}-brand-${brand}`" class="filter-sidebar__label">{{
++            brand
++          }}</label>
+         </div>
+       </div>
+ 
+@@ -100,6 +120,10 @@
+         <Slider
+           v-model="priceRange"
+           range
++          :pt="{
++            startHandler: { 'aria-label': 'Minimum price' },
++            endHandler: { 'aria-label': 'Maximum price' },
++          }"
+           :min="0"
+           :max="1000"
+           :step="10"
+@@ -109,7 +133,7 @@
+ 
+       <div class="filter-sidebar__section">
+         <h3 class="filter-sidebar__section-title">Minimum Rating</h3>
+-        <Rating v-model="minRating" :cancel="true" />
++        <Rating v-model="minRating" role="radiogroup" aria-label="Minimum product rating" />
+       </div>
+ 
+       <Button
+@@ -186,4 +210,15 @@
+ .filter-sidebar__clear {
+   align-self: flex-start;
+ }
++@media (max-width: 767px) {
++  .filter-sidebar {
++    width: 100%;
++  }
++  .filter-sidebar__header {
++    margin-bottom: 0;
++  }
++  .filter-sidebar__body {
++    padding-top: 16px;
++  }
++}
+ </style>
+--- a/frontend/customer-website/src/components/product/ProductCard.vue
++++ b/frontend/customer-website/src/components/product/ProductCard.vue
+@@ -1,7 +1,6 @@
+ <script setup lang="ts">
+ import { computed, ref } from 'vue'
+-import { useRouter } from 'vue-router'
+-import Rating from 'primevue/rating'
++import { RouterLink } from 'vue-router'
+ import Tag from 'primevue/tag'
+ import Button from 'primevue/button'
+ import { useToast } from 'primevue/usetoast'
+@@ -12,7 +11,6 @@
+   product: ProductListItem
+ }>()
+ 
+-const router = useRouter()
+ const toast = useToast()
+ const cartStore = useCartStore()
+ const isAddingToCart = ref(false)
+@@ -30,10 +28,6 @@
+ })
+ 
+ const isOutOfStock = computed(() => props.product.stockQuantity === 0)
+-
+-function navigateToProduct() {
+-  router.push(`/products/${props.product.id}`)
+-}
+ 
+ async function addToCart(event: Event) {
+   event.stopPropagation()
+@@ -69,25 +63,29 @@
+   <article
+     class="product-card"
+     :class="{ 'product-card--out-of-stock': isOutOfStock }"
+-    @click="navigateToProduct"
+-    role="link"
+-    tabindex="0"
+     :aria-label="`${product.name}, $${product.price}`"
+-    @keydown.enter="navigateToProduct"
+   >
+-    <div class="product-card__image-wrapper">
+-      <img
+-        :src="product.primaryImageUrl"
+-        :alt="product.name"
+-        class="product-card__image"
+-        loading="lazy"
+-      />
+-    </div>
++    <RouterLink
++      :to="`/products/${product.id}`"
++      class="product-card__link"
++      :aria-label="`View ${product.name}`"
++    >
++      <div class="product-card__image-wrapper">
++        <img
++          :src="product.primaryImageUrl"
++          :alt="product.name"
++          class="product-card__image"
++          loading="lazy"
++        />
++      </div>
++      <h3 class="product-card__title">{{ product.name }}</h3>
++    </RouterLink>
+     <div class="product-card__body">
+-      <h3 class="product-card__title">{{ product.name }}</h3>
+       <p class="product-card__price">${{ product.price.toFixed(2) }}</p>
+-      <div class="product-card__rating">
+-        <Rating :modelValue="product.rating" :cancel="false" readonly />
++      <div class="product-card__rating" role="img" :aria-label="`${product.rating} out of 5 stars`">
++        <span v-for="star in 5" :key="star" aria-hidden="true" class="product-card__star">{{
++          star <= Math.round(product.rating) ? '★' : '☆'
++        }}</span>
+       </div>
+       <Tag
+         :value="stockLabel"
+@@ -98,11 +96,13 @@
+     <div v-if="!isOutOfStock" class="product-card__overlay">
+       <Button
+         label="Add to Cart"
+-        severity="secondary"
+-        text
++        severity="primary"
++        outlined
+         class="product-card__add-btn"
+         @click="addToCart"
+-        aria-label="Add to cart"
++        :aria-label="`Add ${product.name} to cart`"
++        :loading="isAddingToCart"
++        :disabled="isAddingToCart"
+       />
+     </div>
+   </article>
+@@ -117,7 +117,7 @@
+   border-radius: 8px;
+   background: #ffffff;
+   overflow: hidden;
+-  cursor: pointer;
++
+   transition: box-shadow 200ms;
+ }
+ 
+@@ -174,13 +174,10 @@
+ }
+ 
+ .product-card__overlay {
+-  position: absolute;
+-  bottom: 0;
+-  left: 0;
+-  right: 0;
++  margin-top: auto;
+   padding: 12px 16px;
+   background: linear-gradient(transparent, rgba(255, 255, 255, 0.95));
+-  opacity: 0;
++  opacity: 1;
+   transition: opacity 200ms;
+ }
+ 
+@@ -198,4 +195,36 @@
+     transition: none;
+   }
+ }
++
++.product-card {
++  min-width: 0;
++}
++.product-card__link {
++  color: inherit;
++  text-decoration: none;
++}
++.product-card__link .product-card__title {
++  padding: 12px 16px 0;
++  overflow-wrap: anywhere;
++}
++.product-card__body {
++  padding-top: 8px;
++}
++@media (max-width: 600px) {
++  .product-card__title {
++    font-size: 16px;
++  }
++  .product-card__body,
++  .product-card__overlay {
++    padding: 10px;
++  }
++  .product-card__link .product-card__title {
++    padding: 10px 10px 0;
++  }
++}
++.product-card__star {
++  color: var(--color-primary-600);
++  font-size: 22px;
++  line-height: 1;
++}
+ </style>
+--- a/frontend/customer-website/src/components/product/SearchBar.vue
++++ b/frontend/customer-website/src/components/product/SearchBar.vue
+@@ -117,4 +117,13 @@
+   font-weight: 600;
+   color: var(--color-primary-600);
+ }
++@media (max-width: 767px) {
++  .search-bar {
++    width: 100%;
++  }
++  .search-bar :deep(input) {
++    font-size: 16px;
++    min-width: 0;
++  }
++}
+ </style>
+--- a/frontend/customer-website/src/components/product/__tests__/FilterSidebar.spec.ts
++++ b/frontend/customer-website/src/components/product/__tests__/FilterSidebar.spec.ts
+@@ -1,4 +1,4 @@
+-import { describe, it, expect } from 'vitest'
++import { describe, it, expect, vi } from 'vitest'
+ import { mount } from '@vue/test-utils'
+ import PrimeVue from 'primevue/config'
+ import FilterSidebar from '../FilterSidebar.vue'
+@@ -59,3 +59,77 @@
+     expect(brandSection).toBeUndefined()
+   })
+ })
++
++describe('Filter disclosure', () => {
++  it('keeps its controlled content and named range handles mounted while collapsed', async () => {
++    const wrapper = mountSidebar()
++    const toggle = wrapper.get('button[aria-expanded]')
++    const id = toggle.attributes('aria-controls')
++    expect(wrapper.get('[id="' + id + '"]').isVisible()).toBe(true)
++    const handles = wrapper.findAll('[role="slider"]')
++    expect(handles.map((handle) => handle.attributes('aria-label'))).toEqual([
++      'Minimum price',
++      'Maximum price',
++    ])
++    await handles[0]!.trigger('keydown', { code: 'ArrowRight', key: 'ArrowRight' })
++    expect(wrapper.emitted('filter')?.slice(-1)[0]?.[0]).toMatchObject({ minPrice: 10 })
++    await toggle.trigger('click')
++    expect(toggle.attributes('aria-expanded')).toBe('false')
++    expect(wrapper.get('[id="' + id + '"]').isVisible()).toBe(false)
++    await toggle.trigger('click')
++    expect(wrapper.get('[id="' + id + '"]').isVisible()).toBe(true)
++    wrapper.unmount()
++  })
++
++  it('starts closed on mobile and follows breakpoint changes without duplicate controls', async () => {
++    let listener: (() => void) | undefined
++    const media = {
++      matches: true,
++      addEventListener: vi.fn((_: string, fn: () => void) => {
++        listener = fn
++      }),
++      removeEventListener: vi.fn(),
++    }
++    vi.stubGlobal('matchMedia', () => media)
++    const wrapper = mountSidebar()
++    expect(wrapper.get('[aria-expanded]').attributes('aria-expanded')).toBe('false')
++    media.matches = false
++    listener?.()
++    await wrapper.vm.$nextTick()
++    expect(wrapper.get('[aria-expanded]').attributes('aria-expanded')).toBe('true')
++    expect(wrapper.findAll('[role="slider"]')).toHaveLength(2)
++    wrapper.unmount()
++    expect(media.removeEventListener).toHaveBeenCalled()
++    vi.unstubAllGlobals()
++  })
++  it('returns focus to the disclosure when a resize hides the focused filter control', async () => {
++    let listener: (() => void) | undefined
++    const media = {
++      matches: false,
++      addEventListener: (_: string, fn: () => void) => {
++        listener = fn
++      },
++      removeEventListener: vi.fn(),
++    }
++    vi.stubGlobal('matchMedia', () => media)
++    const wrapper = mount(FilterSidebar, {
++      attachTo: document.body,
++      props: { brands: ['Fixture'] },
++      global: { plugins: [PrimeVue] },
++    })
++    try {
++      const slider = wrapper.get<HTMLElement>('[aria-label="Minimum price"]')
++      slider.element.focus()
++      expect(document.activeElement).toBe(slider.element)
++      media.matches = true
++      listener?.()
++      await wrapper.vm.$nextTick()
++      await wrapper.vm.$nextTick()
++      expect(document.activeElement).toBe(wrapper.get('button[aria-expanded]').element)
++      expect(wrapper.get('[aria-expanded]').attributes('aria-expanded')).toBe('false')
++    } finally {
++      wrapper.unmount()
++      vi.unstubAllGlobals()
++    }
++  })
++})
+--- a/frontend/customer-website/src/components/product/__tests__/ProductCard.spec.ts
++++ b/frontend/customer-website/src/components/product/__tests__/ProductCard.spec.ts
+@@ -127,7 +127,7 @@
+       global: { plugins: [router, pinia, PrimeVue, ToastService] },
+     })
+ 
+-    await wrapper.find('.product-card').trigger('click')
++    await wrapper.find('a.product-card__link').trigger('click')
+     expect(push).toHaveBeenCalledWith('/products/1')
+   })
+ 
+@@ -169,3 +169,57 @@
+     expect(wrapper.find('.product-card__add-btn').exists()).toBe(false)
+   })
+ })
++
++describe('ProductCard separate native controls', () => {
++  it('keeps a named navigation anchor separate from the cart button', async () => {
++    const wrapper = await mountCard()
++    const link = wrapper.get('a.product-card__link')
++    expect(link.attributes('href')).toBe('/products/1')
++    expect(link.attributes('aria-label')).toBe('View Test Product')
++    expect(link.find('button').exists()).toBe(false)
++    expect(wrapper.get('button.product-card__add-btn').attributes('aria-label')).toBe(
++      'Add Test Product to cart',
++    )
++    expect(wrapper.get('article').attributes('tabindex')).toBeUndefined()
++    expect(wrapper.get('article').attributes('role')).toBeUndefined()
++    expect(
++      wrapper.get('.product-card__rating').findAll('input, button, a, [tabindex]'),
++    ).toHaveLength(0)
++    expect(wrapper.get('.product-card__rating').attributes('aria-label')).toBe('4.5 out of 5 stars')
++    wrapper.unmount()
++  })
++
++  it('does not navigate when the cart action is clicked or its Enter key bubbles', async () => {
++    const wrapper = await mountCard()
++    const router = wrapper.vm.$router
++    const push = vi.spyOn(router, 'push')
++    const button = wrapper.get('button.product-card__add-btn')
++    await button.trigger('keydown', { key: 'Enter' })
++    await button.trigger('click')
++    await flushPromises()
++    expect(push).not.toHaveBeenCalled()
++    wrapper.unmount()
++  })
++
++  it('disables duplicate submissions until the first request settles, then recovers after rejection', async () => {
++    const { addToCart } = await import('@/api/cartApi')
++    vi.mocked(addToCart).mockClear()
++    let reject!: (reason: Error) => void
++    vi.mocked(addToCart).mockImplementationOnce(
++      () =>
++        new Promise((_, fail) => {
++          reject = fail
++        }),
++    )
++    const wrapper = await mountCard()
++    const button = wrapper.get('button.product-card__add-btn')
++    await button.trigger('click')
++    expect(button.attributes('disabled')).toBeDefined()
++    await button.trigger('click')
++    expect(addToCart).toHaveBeenCalledTimes(1)
++    reject(new Error('fixture failure'))
++    await flushPromises()
++    expect(button.attributes('disabled')).toBeUndefined()
++    wrapper.unmount()
++  })
++})
+--- a/frontend/customer-website/src/layouts/DefaultLayout.vue
++++ b/frontend/customer-website/src/layouts/DefaultLayout.vue
+@@ -176,7 +176,7 @@
+ 
+     <DegradationBanner />
+ 
+-    <main id="main-content" class="main-content">
++    <main id="main-content" class="main-content" tabindex="-1">
+       <RouterView />
+     </main>
+ 
+@@ -365,4 +365,32 @@
+     animation: none;
+   }
+ }
++
++.header__inner > .search-bar {
++  min-width: 0;
++}
++@media (max-width: 767px) {
++  .header__inner {
++    flex-wrap: wrap;
++    gap: 8px;
++    padding: 8px 16px;
++  }
++  .header__inner > .search-bar {
++    order: 3;
++    flex: 1 0 100%;
++    max-width: none;
++  }
++  .main-content,
++  .category-nav__inner {
++    padding: 16px;
++  }
++  .header__user-name {
++    max-width: 100px;
++  }
++  .header__cart-btn,
++  .header__user-btn {
++    min-width: 44px;
++    height: 44px;
++  }
++}
+ </style>
+--- a/frontend/customer-website/src/main.ts
++++ b/frontend/customer-website/src/main.ts
+@@ -1,3 +1,4 @@
++import 'primeicons/primeicons.css'
+ import './assets/app.css'
+ 
+ import { createApp } from 'vue'
+--- a/frontend/customer-website/src/views/CartView.vue
++++ b/frontend/customer-website/src/views/CartView.vue
+@@ -160,4 +160,17 @@
+   flex-direction: column;
+   gap: 8px;
+ }
++
++.cart__content {
++  grid-template-columns: minmax(0, 1fr) 320px;
++}
++.cart__items {
++  min-width: 0;
++}
++@media (max-width: 1023px) {
++  .cart__content {
++    grid-template-columns: minmax(0, 1fr);
++    gap: 24px;
++  }
++}
+ </style>
+--- a/frontend/customer-website/src/views/CheckoutView.vue
++++ b/frontend/customer-website/src/views/CheckoutView.vue
+@@ -1,5 +1,5 @@
+ <script setup lang="ts">
+-import { watch, onMounted } from 'vue'
++import { watch, onMounted, nextTick } from 'vue'
+ import { useRouter } from 'vue-router'
+ import Stepper from 'primevue/stepper'
+ import StepList from 'primevue/steplist'
+@@ -29,6 +29,22 @@
+   }
+ })
+ 
++// Give keyboard users a stable starting point after a successful step change.
++watch(
++  () => checkoutStore.currentStep,
++  async () => {
++    if (checkoutStore.isPlacingOrder) return
++    await nextTick()
++    const heading = [...document.querySelectorAll<HTMLElement>('.checkout h2')].find(
++      (element) => element.getClientRects().length,
++    )
++    if (heading) {
++      heading.tabIndex = -1
++      heading.focus()
++    }
++  },
++)
++
+ // Redirect to cart when inventory failure detected
+ watch(
+   () => checkoutStore.error,
+@@ -55,29 +71,69 @@
+   <div class="checkout">
+     <h1 class="checkout__title">Checkout</h1>
+ 
++    <div v-if="checkoutStore.error?.type === 'UNKNOWN'" class="checkout__error" role="alert">
++      {{ checkoutStore.error.message }}
++    </div>
+     <div class="checkout__layout">
+       <div class="checkout__stepper">
+-        <Stepper :value="checkoutStore.currentStep" linear>
+-          <StepList>
+-            <Step :value="1">Cart Review</Step>
+-            <Step :value="2">Shipping</Step>
+-            <Step :value="3">Payment</Step>
+-            <Step :value="4">Confirm</Step>
++        <Stepper :value="checkoutStore.currentStep" linear role="group" aria-label="Checkout">
++          <StepList role="tablist" aria-label="Checkout steps">
++            <Step
++              v-for="(label, index) in ['Cart Review', 'Shipping', 'Payment', 'Confirm']"
++              :key="label"
++              :value="index + 1"
++              as-child
++              v-slot="{ a11yAttrs }"
++            >
++              <button
++                v-bind="a11yAttrs.header"
++                :id="`checkout-step-${index + 1}`"
++                type="button"
++                role="tab"
++                :aria-controls="`checkout-panel-${index + 1}`"
++                :aria-selected="checkoutStore.currentStep === index + 1"
++                :tabindex="checkoutStore.currentStep === index + 1 ? 0 : -1"
++                class="checkout-step-tab"
++              >
++                <span class="checkout-step-number" aria-hidden="true">{{ index + 1 }}</span
++                ><span>{{ label }}</span>
++              </button>
++            </Step>
+           </StepList>
+           <StepPanels>
+-            <StepPanel :value="1">
++            <StepPanel
++              :value="1"
++              id="checkout-panel-1"
++              aria-labelledby="checkout-step-1"
++              aria-controls="checkout-step-1"
++            >
+               <StepCartReview @continue="checkoutStore.nextStep()" />
+             </StepPanel>
+-            <StepPanel :value="2">
++            <StepPanel
++              :value="2"
++              id="checkout-panel-2"
++              aria-labelledby="checkout-step-2"
++              aria-controls="checkout-step-2"
++            >
+               <StepShippingAddress
+                 @continue="checkoutStore.nextStep()"
+                 @back="checkoutStore.prevStep()"
+               />
+             </StepPanel>
+-            <StepPanel :value="3">
++            <StepPanel
++              :value="3"
++              id="checkout-panel-3"
++              aria-labelledby="checkout-step-3"
++              aria-controls="checkout-step-3"
++            >
+               <StepPayment @continue="checkoutStore.nextStep()" @back="checkoutStore.prevStep()" />
+             </StepPanel>
+-            <StepPanel :value="4">
++            <StepPanel
++              :value="4"
++              id="checkout-panel-4"
++              aria-labelledby="checkout-step-4"
++              aria-controls="checkout-step-4"
++            >
+               <StepConfirm @back="checkoutStore.prevStep()" />
+             </StepPanel>
+           </StepPanels>
+@@ -114,4 +170,76 @@
+     grid-template-columns: 1fr;
+   }
+ }
++
++.checkout__layout {
++  grid-template-columns: minmax(0, 1fr) 300px;
++}
++.checkout__stepper,
++.checkout__sidebar {
++  min-width: 0;
++}
++.checkout__stepper :deep(.p-steplist) {
++  overflow-x: auto;
++}
++.checkout__stepper :deep(.p-step) {
++  flex-shrink: 0;
++}
++@media (max-width: 1023px) {
++  .checkout__layout {
++    grid-template-columns: minmax(0, 1fr);
++  }
++}
++@media (max-width: 480px) {
++  .checkout__stepper :deep(.p-steppanels) {
++    padding: 16px 0;
++  }
++  .checkout__stepper :deep(.p-step-title) {
++    font-size: 12px;
++  }
++}
++
++.checkout-step-tab {
++  display: flex;
++  flex: 1;
++  flex-direction: column;
++  align-items: center;
++  gap: 6px;
++  background: transparent;
++  color: var(--color-gray-600);
++  border: 0;
++  border-bottom: 3px solid var(--color-gray-200);
++  padding: 8px 4px;
++  font: inherit;
++  font-size: 14px;
++  min-height: 72px;
++}
++.checkout-step-tab[aria-selected='true'] {
++  color: var(--color-primary-700);
++  border-color: var(--color-primary-600);
++  font-weight: 600;
++}
++.checkout-step-tab:disabled {
++  opacity: 1;
++}
++.checkout-step-number {
++  display: grid;
++  place-items: center;
++  border: 1px solid currentColor;
++  border-radius: 50%;
++  width: 28px;
++  height: 28px;
++}
++@media (max-width: 480px) {
++  .checkout-step-tab {
++    font-size: 12px;
++  }
++}
++.checkout__error {
++  padding: 16px;
++  margin-bottom: 16px;
++  background: #fef2f2;
++  color: #991b1b;
++  border: 1px solid #b91c1c;
++  border-radius: 6px;
++}
+ </style>
+--- a/frontend/customer-website/src/views/HomeView.vue
++++ b/frontend/customer-website/src/views/HomeView.vue
+@@ -109,4 +109,24 @@
+   text-align: center;
+   color: var(--color-gray-600);
+ }
++
++.home__grid {
++  grid-template-columns: repeat(4, minmax(0, 1fr));
++}
++@media (max-width: 1023px) {
++  .home__grid {
++    grid-template-columns: repeat(3, minmax(0, 1fr));
++    gap: 16px;
++  }
++}
++@media (max-width: 767px) {
++  .home__grid {
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++  }
++}
++@media (max-width: 380px) {
++  .home__grid {
++    grid-template-columns: minmax(0, 1fr);
++  }
++}
+ </style>
+--- a/frontend/customer-website/src/views/OrderConfirmationView.vue
++++ b/frontend/customer-website/src/views/OrderConfirmationView.vue
+@@ -1,5 +1,5 @@
+ <script setup lang="ts">
+-import { onMounted } from 'vue'
++import { onMounted, nextTick, ref } from 'vue'
+ import { useRoute, useRouter } from 'vue-router'
+ import Button from 'primevue/button'
+ import Skeleton from 'primevue/skeleton'
+@@ -10,6 +10,7 @@
+ const router = useRouter()
+ const orderStore = useOrderStore()
+ const checkoutStore = useCheckoutStore()
++const page = ref<HTMLElement | null>(null)
+ 
+ onMounted(async () => {
+   const rawParam = Array.isArray(route.params.orderId)
+@@ -23,11 +24,13 @@
+   }
+   checkoutStore.$reset()
+   await orderStore.fetchOrder(orderId)
++  await nextTick()
++  page.value?.querySelector<HTMLElement>('h1')?.focus()
+ })
+ </script>
+ 
+ <template>
+-  <div class="ocv">
++  <div ref="page" class="ocv">
+     <!-- Loading -->
+     <div v-if="orderStore.isLoading" class="ocv__skeleton">
+       <Skeleton width="64px" height="64px" border-radius="50%" />
+@@ -44,23 +47,31 @@
+ 
+     <!-- Success -->
+     <div v-else-if="orderStore.currentOrder" class="ocv__content">
+-      <div class="ocv__hero">
+-        <template v-if="orderStore.currentOrder.status === 'PAYMENT_PENDING'">
++      <div class="ocv__hero" role="status" aria-live="polite">
++        <template
++          v-if="
++            ['PENDING', 'PAYMENT_PENDING', 'INVENTORY_RESERVING', 'PAYMENT_PROCESSING'].includes(
++              orderStore.currentOrder.status,
++            )
++          "
++        >
+           <div class="ocv__icon ocv__icon--pending" aria-hidden="true">⏳</div>
+-          <h1 class="ocv__heading">Order Received!</h1>
++          <h1 class="ocv__heading" tabindex="-1">Order Received!</h1>
+           <p class="ocv__order-number">Order #{{ orderStore.currentOrder.id }}</p>
+           <p class="ocv__payment-pending">
+-            Order received. Payment is being processed — we'll notify you when confirmed.
++            Order received. Processing is still in progress; confirmation is pending. Track your
++            order for the latest status.
+           </p>
+         </template>
+         <template
+           v-else-if="
++            orderStore.currentOrder.status === 'PAYMENT_REFUNDING' ||
+             orderStore.currentOrder.status === 'INVENTORY_RELEASING' ||
+             orderStore.currentOrder.status === 'CANCELLED'
+           "
+         >
+           <div class="ocv__icon ocv__icon--pending" aria-hidden="true">ⓘ</div>
+-          <h1 class="ocv__heading">
++          <h1 class="ocv__heading" tabindex="-1">
+             {{
+               orderStore.currentOrder.status === 'CANCELLED'
+                 ? 'Order Cancelled'
+@@ -74,7 +85,7 @@
+         </template>
+         <template v-else>
+           <div class="ocv__icon" aria-hidden="true">✓</div>
+-          <h1 class="ocv__heading">Order Confirmed!</h1>
++          <h1 class="ocv__heading" tabindex="-1">Order Confirmed!</h1>
+           <p class="ocv__order-number">Order #{{ orderStore.currentOrder.id }}</p>
+           <p class="ocv__delivery">Estimated delivery: 3–5 business days</p>
+         </template>
+@@ -106,7 +117,8 @@
+     </div>
+ 
+     <!-- Error -->
+-    <div v-else class="ocv__error">
++    <div v-else class="ocv__error" role="alert">
++      <h1 tabindex="-1">Order status unavailable</h1>
+       <p>Could not load order details.</p>
+       <Button label="View My Orders" severity="primary" outlined @click="router.push('/orders')" />
+     </div>
+@@ -164,11 +176,11 @@
+ }
+ .ocv__icon--pending {
+   background: #fef9c3;
+-  color: #a16207;
++  color: #854d0e;
+ }
+ .ocv__payment-pending {
+   font-size: 14px;
+-  color: #a16207;
++  color: #854d0e;
+   margin: 0;
+   padding: 8px 16px;
+   background: #fef9c3;
+@@ -261,4 +273,8 @@
+     opacity: 1;
+   }
+ }
++.ocv__item-name {
++  min-width: 0;
++  overflow-wrap: anywhere;
++}
+ </style>
+--- a/frontend/customer-website/src/views/ProductDetailView.vue
++++ b/frontend/customer-website/src/views/ProductDetailView.vue
+@@ -1,6 +1,6 @@
+ <script setup lang="ts">
+ import { onMounted, computed, watch, ref } from 'vue'
+-import { useRoute } from 'vue-router'
++import { useRoute, RouterLink } from 'vue-router'
+ import Galleria from 'primevue/galleria'
+ import Rating from 'primevue/rating'
+ import Tag from 'primevue/tag'
+@@ -38,10 +38,13 @@
+ 
+ const breadcrumbItems = computed(() => {
+   if (!product.value) return []
+-  return [{ label: product.value.category.name }, { label: product.value.name }]
+-})
+-
+-const breadcrumbHome = { icon: 'pi pi-home', to: '/' }
++  return [
++    { label: product.value.category.name },
++    { label: product.value.name, class: 'product-detail__current-crumb' },
++  ]
++})
++
++const breadcrumbHome = { label: 'Home', icon: 'pi pi-home', to: '/' }
+ 
+ const galleriaImages = computed(() => {
+   if (!product.value) return []
+@@ -135,7 +138,14 @@
+         :model="breadcrumbItems"
+         :home="breadcrumbHome"
+         class="product-detail__breadcrumb"
+-      />
++      >
++        <template #item="{ item }">
++          <RouterLink v-if="item.to" :to="item.to" class="product-detail__breadcrumb-link">
++            <i v-if="item.icon" :class="item.icon" aria-hidden="true" /> {{ item.label }}
++          </RouterLink>
++          <span v-else>{{ item.label }}</span>
++        </template>
++      </Breadcrumb>
+ 
+       <div class="product-detail__content">
+         <div class="product-detail__gallery">
+@@ -332,4 +342,43 @@
+   flex-direction: column;
+   gap: 16px;
+ }
++
++.product-detail__info {
++  min-width: 0;
++  overflow-wrap: anywhere;
++}
++@media (max-width: 767px) {
++  .product-detail__content,
++  .product-detail__skeleton {
++    grid-template-columns: minmax(0, 1fr);
++    gap: 24px;
++  }
++  .product-detail__gallery {
++    position: static;
++  }
++  .product-detail__title {
++    font-size: 24px;
++  }
++  .product-detail__breadcrumb {
++    flex-wrap: wrap;
++  }
++}
++.product-detail__breadcrumb :deep(.p-breadcrumb-list) {
++  flex-wrap: wrap;
++}
++.product-detail__breadcrumb-link {
++  color: inherit;
++  text-decoration: none;
++  white-space: nowrap;
++}
++.product-detail__breadcrumb-link:hover {
++  text-decoration: underline;
++}
++@media (max-width: 767px) {
++  /* The full current product name remains the page h1 below the gallery. */
++  .product-detail__breadcrumb :deep(.product-detail__current-crumb),
++  .product-detail__breadcrumb :deep(.p-breadcrumb-list > li:nth-last-child(2)) {
++    display: none;
++  }
++}
+ </style>
+--- a/frontend/customer-website/src/views/SearchResultsView.vue
++++ b/frontend/customer-website/src/views/SearchResultsView.vue
+@@ -26,10 +26,17 @@
+   return tags
+ })
+ 
+-const brands = computed(() => {
+-  const unique = new Set(productStore.searchResults.map((p) => p.brand).filter(Boolean))
+-  return Array.from(unique).sort()
+-})
++// Keep known choices mounted during a request so a focused checkbox survives.
++// These are inferred choices for the current keyword, not server-wide facets.
++const brands = ref<string[]>([])
++watch(
++  () => productStore.searchResults,
++  (results) => {
++    const found = results.map((product) => product.brand).filter(Boolean)
++    if (found.length) brands.value = Array.from(new Set([...brands.value, ...found])).sort()
++  },
++  { immediate: true },
++)
+ 
+ function performSearch(filterSnapshot: ProductSearchParams = productStore.filters) {
+   const params: ProductSearchParams = {
+@@ -47,6 +54,7 @@
+ watch(
+   () => route.query.keyword,
+   () => {
++    brands.value = []
+     clearAllFilters()
+   },
+ )
+@@ -198,4 +206,31 @@
+   justify-content: center;
+   margin-top: 32px;
+ }
++
++.search-results__grid {
++  grid-template-columns: repeat(3, minmax(0, 1fr));
++}
++.search-results__remove-filter {
++  width: 32px;
++  height: 32px;
++}
++@media (max-width: 1100px) {
++  .search-results__grid {
++    grid-template-columns: repeat(2, minmax(0, 1fr));
++    gap: 16px;
++  }
++}
++@media (max-width: 767px) {
++  .search-results__content {
++    flex-direction: column;
++  }
++  .search-results__main {
++    width: 100%;
++  }
++}
++@media (max-width: 380px) {
++  .search-results__grid {
++    grid-template-columns: minmax(0, 1fr);
++  }
++}
+ </style>
+--- a/frontend/customer-website/src/views/__tests__/CheckoutStepper.spec.ts
++++ b/frontend/customer-website/src/views/__tests__/CheckoutStepper.spec.ts
+@@ -0,0 +1,54 @@
++import { expect, it } from 'vitest'
++import { flushPromises, mount } from '@vue/test-utils'
++import { createPinia } from 'pinia'
++import { createMemoryHistory, createRouter } from 'vue-router'
++import PrimeVue from 'primevue/config'
++import ToastService from 'primevue/toastservice'
++import CheckoutView from '../CheckoutView.vue'
++import { useCartStore } from '@/stores/useCartStore'
++
++// Keep the real PrimeVue stepper and cart review button: this guards ownership,
++// tab/panel associations and selected state as checkout advances.
++it('exposes checkout tabs as direct children of a named tablist and selects the current panel', async () => {
++  const pinia = createPinia()
++  useCartStore(pinia).items = [
++    { productId: 1, productName: 'Fixture', quantity: 1, price: 10, subtotal: 10 },
++  ]
++  const router = createRouter({
++    history: createMemoryHistory(),
++    routes: [{ path: '/checkout', component: CheckoutView }],
++  })
++  await router.push('/checkout')
++  await router.isReady()
++  const wrapper = mount(CheckoutView, {
++    global: { plugins: [pinia, router, PrimeVue, ToastService] },
++  })
++  await flushPromises()
++  const list = wrapper.get('[role="tablist"][aria-label="Checkout steps"]')
++  const tabs = list.findAll('[role="tab"]')
++  expect(tabs).toHaveLength(4)
++  expect([...list.element.children].every((child) => child.getAttribute('role') === 'tab')).toBe(
++    true,
++  )
++  expect(tabs.map((tab) => tab.attributes('aria-selected'))).toEqual([
++    'true',
++    'false',
++    'false',
++    'false',
++  ])
++  for (const tab of tabs) {
++    const panel = wrapper.get('#' + tab.attributes('aria-controls'))
++    expect(panel.attributes('aria-labelledby')).toBe(tab.attributes('id'))
++    expect(wrapper.find('#' + panel.attributes('aria-controls')).exists()).toBe(true)
++  }
++  await wrapper.get('button.scr__continue').trigger('click')
++  await flushPromises()
++  expect(tabs.map((tab) => tab.attributes('aria-selected'))).toEqual([
++    'false',
++    'true',
++    'false',
++    'false',
++  ])
++  expect(wrapper.get('#checkout-panel-2').isVisible()).toBe(true)
++  wrapper.unmount()
++})
+--- a/frontend/customer-website/src/views/__tests__/OrderConfirmationView.spec.ts
++++ b/frontend/customer-website/src/views/__tests__/OrderConfirmationView.spec.ts
+@@ -38,6 +38,11 @@
+   })
+ 
+   it.each<[OrderStatus, string]>([
++    ['PENDING', 'Order Received!'],
++    ['PAYMENT_PENDING', 'Order Received!'],
++    ['INVENTORY_RESERVING', 'Order Received!'],
++    ['PAYMENT_PROCESSING', 'Order Received!'],
++    ['PAYMENT_REFUNDING', 'Order Cancellation in Progress'],
+     ['INVENTORY_RELEASING', 'Order Cancellation in Progress'],
+     ['CANCELLED', 'Order Cancelled'],
+   ])('shows %s without promising confirmation or delivery', async (status, heading) => {
+--- a/frontend/customer-website/src/views/__tests__/ProductDetailView.spec.ts
++++ b/frontend/customer-website/src/views/__tests__/ProductDetailView.spec.ts
+@@ -226,4 +226,20 @@
+     // Component should not throw — error is caught and shown as toast
+     expect(wrapper.find('.product-detail__add-btn').exists()).toBe(true)
+   })
++  it('provides a named native Home link instead of a placeholder breadcrumb anchor', async () => {
++    const router = createTestRouter()
++    await router.push('/products/1')
++    await router.isReady()
++    const wrapper = mount(ProductDetailView, {
++      global: { plugins: [router, createPinia(), PrimeVue, ToastService] },
++    })
++    await flushPromises()
++    const link = wrapper.get('.product-detail__breadcrumb a')
++    expect(link.text()).toBe('Home')
++    expect(link.attributes('href')).toBe('/')
++    await link.trigger('click')
++    await flushPromises()
++    expect(router.currentRoute.value.path).toBe('/')
++    wrapper.unmount()
++  })
+ })
+--- a/frontend/customer-website/src/views/__tests__/SearchResultsView.filters.spec.ts
++++ b/frontend/customer-website/src/views/__tests__/SearchResultsView.filters.spec.ts
+@@ -17,7 +17,7 @@
+ 
+ const wrappers: ReturnType<typeof mount>[] = []
+ 
+-async function renderSearch(filters?: ProductSearchParams) {
++async function renderSearch(filters?: ProductSearchParams, attachTo?: HTMLElement) {
+   const router = createRouter({
+     history: createMemoryHistory(),
+     routes: [{ path: '/search', component: SearchResultsView }],
+@@ -27,6 +27,7 @@
+   await router.push('/search?keyword=mouse')
+   await router.isReady()
+   const wrapper = mount(SearchResultsView, {
++    ...(attachTo ? { attachTo } : {}),
+     global: { plugins: [router, pinia, PrimeVue, ToastService] },
+   })
+   wrappers.push(wrapper)
+@@ -218,4 +219,49 @@
+       expect(lastRequest()).toEqual({ ...remaining, keyword: 'mouse', page: 0, size: 20 })
+     },
+   )
++
++  describe('Closed mobile filter state', () => {
++    it('removes every tag while closed and cannot revive cleared values on reopen or another edit', async () => {
++      const { wrapper } = await renderSearch({
++        brand: 'Logitech',
++        minPrice: 10,
++        maxPrice: 200,
++        minRating: 4,
++      })
++      const sidebar = wrapper.findComponent(FilterSidebar)
++      await sidebar.get('button[aria-expanded]').trigger('click')
++      expect(sidebar.get('[aria-expanded]').attributes('aria-expanded')).toBe('false')
++      for (const label of ['Brand: Logitech', 'Min: $10', 'Max: $200', '4+ stars']) {
++        await removalButton(wrapper, label).trigger('click')
++        await flushPromises()
++      }
++      expect(lastRequest()).toEqual({ keyword: 'mouse', page: 0, size: 20 })
++      await sidebar.get('button[aria-expanded]').trigger('click')
++      await sidebar.get('input[type="checkbox"]').setValue(true)
++      await flushPromises()
++      expect(lastRequest()).toEqual({ keyword: 'mouse', brand: 'Logitech', page: 0, size: 20 })
++      expect(wrapper.findAll('.filter-sidebar')).toHaveLength(1)
++    })
++  })
++  it('keeps the focused brand checkbox mounted while a filtered request is pending and completes', async () => {
++    const { wrapper } = await renderSearch(undefined, document.body)
++    const response = await vi.mocked(searchProducts).mock.results[0]!.value
++    let resolve!: (value: typeof response) => void
++    vi.mocked(searchProducts).mockImplementationOnce(
++      () =>
++        new Promise((done) => {
++          resolve = done
++        }),
++    )
++    const checkbox = wrapper.get<HTMLInputElement>('.filter-sidebar input[type="checkbox"]')
++    checkbox.element.focus()
++    await checkbox.setValue(true)
++    await flushPromises()
++    expect(document.activeElement).toBe(checkbox.element)
++    expect(checkbox.element.isConnected).toBe(true)
++    resolve(response)
++    await flushPromises()
++    expect(document.activeElement).toBe(checkbox.element)
++    expect(lastRequest()).toMatchObject({ keyword: 'mouse', brand: 'Logitech' })
++  })
+ })
+--- a/frontend/shared/src/index.ts
++++ b/frontend/shared/src/index.ts
+@@ -11,3 +11,5 @@
+ // Components
+ export { default as EmptyState } from './components/EmptyState.vue'
+ export { default as OrderStateMachine } from './components/OrderStateMachine.vue'
++
++export { useMediaQuery } from './useMediaQuery'
+--- a/frontend/shared/src/useMediaQuery.ts
++++ b/frontend/shared/src/useMediaQuery.ts
+@@ -0,0 +1,13 @@
++import { onMounted, onUnmounted, ref } from 'vue'
++
++/** Follow the viewport without retaining listeners after the component unmounts. */
++export function useMediaQuery(query: string) {
++  const media = typeof window.matchMedia === 'function' ? window.matchMedia(query) : null
++  const matches = ref(media?.matches ?? false)
++  const update = () => {
++    matches.value = media?.matches ?? false
++  }
++  onMounted(() => media?.addEventListener('change', update))
++  onUnmounted(() => media?.removeEventListener('change', update))
++  return matches
++}

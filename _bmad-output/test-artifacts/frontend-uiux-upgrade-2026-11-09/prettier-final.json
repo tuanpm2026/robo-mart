@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "../_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/check-changed.py",
+    "prettier"
+  ],
+  "cwd": "frontend",
+  "exit_code": 0,
+  "timestamp_utc": "2026-11-09T13:45:25.161762+00:00"
+}

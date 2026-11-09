@@ -1,0 +1,5398 @@
+{
+  "phase": "after",
+  "timestamp": "2026-11-09T13:52:34.417Z",
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Chrome/156.0.8078.80",
+    "revision": "@fb096c0011f9d50f0a264a9376420cdea9c421e3",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.0.0 Safari/537.36",
+    "jsVersion": "15.6.75.27"
+  },
+  "harnessSha256": "4904e0c3ec99048fa5663445f760f51d1077f5efc5e5f6bb488fcde8c364aeb5",
+  "fixture": "Synthetic API/OIDC; all non-preview requests intercepted; no real backend/identity writes",
+  "screens": [
+    {
+      "screen": "customer-home",
+      "width": 360,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "layoutHeight": 950,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": {
+        "x": 16,
+        "y": 286.984375,
+        "width": 328,
+        "height": 4400.171875,
+        "clientWidth": 328,
+        "scrollWidth": 328,
+        "columns": "328px"
+      },
+      "searchGrid": null,
+      "card": {
+        "x": 16,
+        "y": 286.984375,
+        "width": 328,
+        "height": 563.5625,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 328,
+        "height": 47.59375,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-search",
+      "width": 360,
+      "path": "/search",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "layoutHeight": 950,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 16,
+        "y": 384.375,
+        "width": 328,
+        "height": 4400.171875,
+        "clientWidth": 328,
+        "scrollWidth": 328,
+        "columns": "328px"
+      },
+      "card": {
+        "x": 16,
+        "y": 384.375,
+        "width": 328,
+        "height": 563.5625,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 328,
+        "height": 47.59375,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-down",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-detail",
+      "width": 360,
+      "path": "/products/1",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "layoutHeight": 950,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 328,
+        "height": 47.59375,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon p-button-icon-left pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-cart",
+      "width": 360,
+      "path": "/cart",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "layoutHeight": 950,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 328,
+        "height": 47.59375,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-review",
+      "width": 360,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "layoutHeight": 950,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 328,
+        "height": 47.59375,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping",
+      "width": 360,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "layoutHeight": 950,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 328,
+        "height": 47.59375,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 16,
+        "y": 83.96875,
+        "width": 328,
+        "height": 623.09375,
+        "clientWidth": 328,
+        "scrollWidth": 328,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping-errors",
+      "width": 360,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "layoutHeight": 950,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 328,
+        "height": 47.59375,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 16,
+        "y": 568.53125,
+        "width": 328,
+        "height": 755.046875,
+        "clientWidth": 328,
+        "scrollWidth": 328,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "DIV",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-payment",
+      "width": 360,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "layoutHeight": 950,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 328,
+        "height": 47.59375,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "admin-orders",
+      "width": 360,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "layoutHeight": 950,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 157.59375,
+        "width": 328,
+        "height": 258.1875,
+        "clientWidth": 328,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 260.484375,
+          "right": 376.484375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column p-datatable-column-sorted",
+          "width": 180,
+          "right": 556.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 148,
+          "right": 540.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 31.234375,
+          "right": 423.71875
+        },
+        {
+          "tag": "SPAN",
+          "class": "",
+          "width": 14,
+          "right": 445.71875
+        }
+      ]
+    },
+    {
+      "screen": "admin-order-detail",
+      "width": 360,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "layoutHeight": 950,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 157.59375,
+        "width": 328,
+        "height": 258.1875,
+        "clientWidth": 328,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 0,
+        "y": 0,
+        "width": 360,
+        "height": 950,
+        "clientWidth": 359,
+        "scrollWidth": 359,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 260.484375,
+          "right": 376.484375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column p-datatable-column-sorted",
+          "width": 180,
+          "right": 556.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 148,
+          "right": 540.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 31.234375,
+          "right": 423.71875
+        },
+        {
+          "tag": "SPAN",
+          "class": "",
+          "width": 14,
+          "right": 445.71875
+        }
+      ]
+    },
+    {
+      "screen": "admin-products",
+      "width": 360,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "layoutHeight": 950,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 124,
+        "width": 328,
+        "height": 657.9375,
+        "clientWidth": 328,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 354.84375,
+          "right": 502.84375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 322.84375,
+          "right": 486.84375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 184.59375,
+          "right": 687.4375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 152.59375,
+          "right": 671.4375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 62.734375,
+          "right": 581.578125
+        }
+      ]
+    },
+    {
+      "screen": "admin-product-drawer",
+      "width": 360,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 360,
+      "layoutHeight": 950,
+      "clientWidth": 360,
+      "documentWidth": 360,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 124,
+        "width": 328,
+        "height": 678.78125,
+        "clientWidth": 328,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 0,
+        "y": 0,
+        "width": 360,
+        "height": 950,
+        "clientWidth": 359,
+        "scrollWidth": 359,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 354.84375,
+          "right": 502.84375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 322.84375,
+          "right": 486.84375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 184.59375,
+          "right": 687.4375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 152.59375,
+          "right": 671.4375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 62.734375,
+          "right": 581.578125
+        }
+      ]
+    },
+    {
+      "screen": "customer-home",
+      "width": 390,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "layoutHeight": 950,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": {
+        "x": 16,
+        "y": 286.984375,
+        "width": 358,
+        "height": 1674.25,
+        "clientWidth": 358,
+        "scrollWidth": 358,
+        "columns": "171px 171px"
+      },
+      "searchGrid": null,
+      "card": {
+        "x": 16,
+        "y": 286.984375,
+        "width": 171,
+        "height": 406.5625,
+        "clientWidth": 169,
+        "scrollWidth": 169,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-home-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 8
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 50
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-search",
+      "width": 390,
+      "path": "/search",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "layoutHeight": 950,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 16,
+        "y": 384.375,
+        "width": 358,
+        "height": 1674.25,
+        "clientWidth": 358,
+        "scrollWidth": 358,
+        "columns": "171px 171px"
+      },
+      "card": {
+        "x": 16,
+        "y": 384.375,
+        "width": 171,
+        "height": 406.5625,
+        "clientWidth": 169,
+        "scrollWidth": 169,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-down",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-search-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 8
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 50
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-detail",
+      "width": 390,
+      "path": "/products/1",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "layoutHeight": 950,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon p-button-icon-left pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-detail-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-cart",
+      "width": 390,
+      "path": "/cart",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "layoutHeight": 950,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-cart-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "checkout-review",
+      "width": 390,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "layoutHeight": 950,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-checkout-review-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "checkout-shipping",
+      "width": 390,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "layoutHeight": 950,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 16,
+        "y": 109.96875,
+        "width": 358,
+        "height": 623.09375,
+        "clientWidth": 358,
+        "scrollWidth": 358,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-checkout-shipping-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "checkout-shipping-errors",
+      "width": 390,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "layoutHeight": 950,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 16,
+        "y": 568.53125,
+        "width": 358,
+        "height": 755.046875,
+        "clientWidth": 358,
+        "scrollWidth": 358,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "DIV",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-checkout-shipping-errors-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "checkout-payment",
+      "width": 390,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "layoutHeight": 950,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-checkout-payment-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-orders",
+      "width": 390,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "layoutHeight": 950,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 157.59375,
+        "width": 358,
+        "height": 258.1875,
+        "clientWidth": 358,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column p-datatable-column-sorted",
+          "width": 180,
+          "right": 556.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 148,
+          "right": 540.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 31.234375,
+          "right": 423.71875
+        },
+        {
+          "tag": "SPAN",
+          "class": "",
+          "width": 14,
+          "right": 445.71875
+        },
+        {
+          "tag": "svg",
+          "class": {},
+          "width": 14,
+          "right": 445.71875
+        }
+      ],
+      "screenshot": "after-admin-orders-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-order-detail",
+      "width": 390,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "layoutHeight": 950,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 157.59375,
+        "width": 358,
+        "height": 258.1875,
+        "clientWidth": 358,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 950,
+        "clientWidth": 389,
+        "scrollWidth": 389,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column p-datatable-column-sorted",
+          "width": 180,
+          "right": 556.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 148,
+          "right": 540.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 31.234375,
+          "right": 423.71875
+        },
+        {
+          "tag": "SPAN",
+          "class": "",
+          "width": 14,
+          "right": 445.71875
+        },
+        {
+          "tag": "svg",
+          "class": {},
+          "width": 14,
+          "right": 445.71875
+        }
+      ],
+      "screenshot": "after-admin-order-detail-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-hidden-focus",
+            "nodes": 2
+          },
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-products",
+      "width": 390,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "layoutHeight": 950,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 124,
+        "width": 358,
+        "height": 657.9375,
+        "clientWidth": 358,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 354.84375,
+          "right": 502.84375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 322.84375,
+          "right": 486.84375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 184.59375,
+          "right": 687.4375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 152.59375,
+          "right": 671.4375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 62.734375,
+          "right": 581.578125
+        }
+      ],
+      "screenshot": "after-admin-products-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-product-drawer",
+      "width": 390,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "layoutHeight": 950,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": null,
+      "table": {
+        "x": 16,
+        "y": 124,
+        "width": 358,
+        "height": 678.78125,
+        "clientWidth": 358,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 950,
+        "clientWidth": 389,
+        "scrollWidth": 389,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-bars",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-search",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-bell",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1040
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 354.84375,
+          "right": 502.84375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 322.84375,
+          "right": 486.84375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 184.59375,
+          "right": 687.4375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 152.59375,
+          "right": 671.4375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 62.734375,
+          "right": 581.578125
+        }
+      ],
+      "screenshot": "after-admin-product-drawer-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-hidden-focus",
+            "nodes": 2
+          },
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-home",
+      "width": 768,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "layoutHeight": 950,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 720,
+        "height": 1490.328125,
+        "clientWidth": 720,
+        "scrollWidth": 720,
+        "columns": "229.328px 229.328px 229.328px"
+      },
+      "searchGrid": null,
+      "card": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 229.328125,
+        "height": 486.109375,
+        "clientWidth": 227,
+        "scrollWidth": 227,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 436.25,
+        "height": 44.390625,
+        "clientWidth": 434,
+        "scrollWidth": 434,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-search",
+      "width": 768,
+      "path": "/search",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "layoutHeight": 950,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 416,
+        "height": 1875.125,
+        "clientWidth": 416,
+        "scrollWidth": 416,
+        "columns": "200px 200px"
+      },
+      "card": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 200,
+        "height": 456.78125,
+        "clientWidth": 198,
+        "scrollWidth": 198,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 436.25,
+        "height": 44.390625,
+        "clientWidth": 434,
+        "scrollWidth": 434,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-up",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-detail",
+      "width": 768,
+      "path": "/products/1",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "layoutHeight": 950,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 436.25,
+        "height": 44.390625,
+        "clientWidth": 434,
+        "scrollWidth": 434,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon p-button-icon-left pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-cart",
+      "width": 768,
+      "path": "/cart",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "layoutHeight": 950,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 436.25,
+        "height": 44.390625,
+        "clientWidth": 434,
+        "scrollWidth": 434,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-review",
+      "width": 768,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "layoutHeight": 950,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 436.25,
+        "height": 44.390625,
+        "clientWidth": 434,
+        "scrollWidth": 434,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping",
+      "width": 768,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "layoutHeight": 950,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 436.25,
+        "height": 44.390625,
+        "clientWidth": 434,
+        "scrollWidth": 434,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 32,
+        "y": 254.96875,
+        "width": 704,
+        "height": 395.53125,
+        "clientWidth": 704,
+        "scrollWidth": 704,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping-errors",
+      "width": 768,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "layoutHeight": 950,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 436.25,
+        "height": 44.390625,
+        "clientWidth": 434,
+        "scrollWidth": 434,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 32,
+        "y": 394.53125,
+        "width": 704,
+        "height": 501.09375,
+        "clientWidth": 704,
+        "scrollWidth": 704,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "DIV",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-payment",
+      "width": 768,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "layoutHeight": 950,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 436.25,
+        "height": 44.390625,
+        "clientWidth": 434,
+        "scrollWidth": 434,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "admin-orders",
+      "width": 768,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "layoutHeight": 950,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 480,
+        "height": 258.1875,
+        "clientWidth": 480,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column p-datatable-column-sorted",
+          "width": 180,
+          "right": 804.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 148,
+          "right": 788.484375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell",
+          "width": 80,
+          "right": 884.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 48,
+          "right": 868.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 37.46875,
+          "right": 857.953125
+        }
+      ]
+    },
+    {
+      "screen": "admin-order-detail",
+      "width": 768,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "layoutHeight": 950,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 480,
+        "height": 258.1875,
+        "clientWidth": 480,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 128,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column p-datatable-column-sorted",
+          "width": 180,
+          "right": 804.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 148,
+          "right": 788.484375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell",
+          "width": 80,
+          "right": 884.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 48,
+          "right": 868.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 37.46875,
+          "right": 857.953125
+        }
+      ]
+    },
+    {
+      "screen": "admin-products",
+      "width": 768,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "layoutHeight": 950,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 480,
+        "height": 657.9375,
+        "clientWidth": 480,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 184.59375,
+          "right": 935.4375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 152.59375,
+          "right": 919.4375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 62.734375,
+          "right": 829.578125
+        },
+        {
+          "tag": "SPAN",
+          "class": "",
+          "width": 14,
+          "right": 851.578125
+        },
+        {
+          "tag": "svg",
+          "class": {},
+          "width": 14,
+          "right": 851.578125
+        }
+      ]
+    },
+    {
+      "screen": "admin-product-drawer",
+      "width": 768,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 768,
+      "layoutHeight": 950,
+      "clientWidth": 768,
+      "documentWidth": 768,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 480,
+        "height": 678.78125,
+        "clientWidth": 480,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 128,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 184.59375,
+          "right": 935.4375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 152.59375,
+          "right": 919.4375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 62.734375,
+          "right": 829.578125
+        },
+        {
+          "tag": "SPAN",
+          "class": "",
+          "width": 14,
+          "right": 851.578125
+        },
+        {
+          "tag": "svg",
+          "class": {},
+          "width": 14,
+          "right": 851.578125
+        }
+      ]
+    },
+    {
+      "screen": "customer-home",
+      "width": 1024,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "layoutHeight": 950,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 976,
+        "height": 989.5625,
+        "clientWidth": 976,
+        "scrollWidth": 976,
+        "columns": "226px 226px 226px 226px"
+      },
+      "searchGrid": null,
+      "card": {
+        "x": 24,
+        "y": 231.78125,
+        "width": 226,
+        "height": 482.78125,
+        "clientWidth": 224,
+        "scrollWidth": 224,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-search",
+      "width": 1024,
+      "path": "/search",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "layoutHeight": 950,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 672,
+        "height": 2387.125,
+        "clientWidth": 672,
+        "scrollWidth": 672,
+        "columns": "328px 328px"
+      },
+      "card": {
+        "x": 328,
+        "y": 231.171875,
+        "width": 328,
+        "height": 584.78125,
+        "clientWidth": 326,
+        "scrollWidth": 326,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-up",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-detail",
+      "width": 1024,
+      "path": "/products/1",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "layoutHeight": 950,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon p-button-icon-left pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "customer-cart",
+      "width": 1024,
+      "path": "/cart",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "layoutHeight": 950,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-review",
+      "width": 1024,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "layoutHeight": 950,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping",
+      "width": 1024,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "layoutHeight": 950,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 32,
+        "y": 378.96875,
+        "width": 628,
+        "height": 395.53125,
+        "clientWidth": 628,
+        "scrollWidth": 628,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-shipping-errors",
+      "width": 1024,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "layoutHeight": 950,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 32,
+        "y": 566.53125,
+        "width": 628,
+        "height": 501.09375,
+        "clientWidth": 628,
+        "scrollWidth": 628,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "DIV",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "checkout-payment",
+      "width": 1024,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "layoutHeight": 950,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 159.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": []
+    },
+    {
+      "screen": "admin-orders",
+      "width": 1024,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "layoutHeight": 950,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 736,
+        "height": 258.1875,
+        "clientWidth": 736,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell",
+          "width": 200,
+          "right": 1204.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 168,
+          "right": 1188.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 43.375,
+          "right": 1063.859375
+        },
+        {
+          "tag": "TBODY",
+          "class": "p-datatable-tbody",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "p-row-even",
+          "width": 1024,
+          "right": 1288
+        }
+      ]
+    },
+    {
+      "screen": "admin-order-detail",
+      "width": 1024,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "layoutHeight": 950,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 736,
+        "height": 258.1875,
+        "clientWidth": 736,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 384,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell",
+          "width": 200,
+          "right": 1204.484375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 168,
+          "right": 1188.484375
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 43.375,
+          "right": 1063.859375
+        },
+        {
+          "tag": "TBODY",
+          "class": "p-datatable-tbody",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "p-row-even",
+          "width": 1024,
+          "right": 1288
+        }
+      ]
+    },
+    {
+      "screen": "admin-products",
+      "width": 1024,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "layoutHeight": 950,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 736,
+        "height": 657.9375,
+        "clientWidth": 736,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 140,
+          "right": 1075.4375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 108,
+          "right": 1059.4375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 92.5625,
+          "right": 1168
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 60.5625,
+          "right": 1152
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 38.5625,
+          "right": 1130
+        }
+      ]
+    },
+    {
+      "screen": "admin-product-drawer",
+      "width": 1024,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 1024,
+      "layoutHeight": 950,
+      "clientWidth": 1024,
+      "documentWidth": 1024,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 736,
+        "height": 678.78125,
+        "clientWidth": 736,
+        "scrollWidth": 1024,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 384,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [
+        {
+          "tag": "TABLE",
+          "class": "p-datatable-table",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "THEAD",
+          "class": "p-datatable-thead",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TR",
+          "class": "",
+          "width": 1024,
+          "right": 1288
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 140,
+          "right": 1075.4375
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 108,
+          "right": 1059.4375
+        },
+        {
+          "tag": "TH",
+          "class": "p-datatable-header-cell p-datatable-sortable-column",
+          "width": 92.5625,
+          "right": 1168
+        },
+        {
+          "tag": "DIV",
+          "class": "p-datatable-column-header-content",
+          "width": 60.5625,
+          "right": 1152
+        },
+        {
+          "tag": "SPAN",
+          "class": "p-datatable-column-title",
+          "width": 38.5625,
+          "right": 1130
+        }
+      ]
+    },
+    {
+      "screen": "customer-home",
+      "width": 1440,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "layoutHeight": 950,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": {
+        "x": 104,
+        "y": 231.78125,
+        "width": 1232,
+        "height": 1117.5625,
+        "clientWidth": 1232,
+        "scrollWidth": 1232,
+        "columns": "290px 290px 290px 290px"
+      },
+      "searchGrid": null,
+      "card": {
+        "x": 104,
+        "y": 231.78125,
+        "width": 290,
+        "height": 546.78125,
+        "clientWidth": 288,
+        "scrollWidth": 288,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-home-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 8
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 47
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-search",
+      "width": 1440,
+      "path": "/search",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "layoutHeight": 950,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 408,
+        "y": 231.171875,
+        "width": 928,
+        "height": 1698.359375,
+        "clientWidth": 928,
+        "scrollWidth": 928,
+        "columns": "293.328px 293.328px 293.344px"
+      },
+      "card": {
+        "x": 408,
+        "y": 231.171875,
+        "width": 293.328125,
+        "height": 550.125,
+        "clientWidth": 291,
+        "scrollWidth": 291,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-up",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-search-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 8
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 47
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-detail",
+      "width": 1440,
+      "path": "/products/1",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "layoutHeight": 950,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon p-button-icon-left pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-detail-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-cart",
+      "width": 1440,
+      "path": "/cart",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "layoutHeight": 950,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-cart-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      }
+    },
+    {
+      "screen": "checkout-review",
+      "width": 1440,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "layoutHeight": 950,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-checkout-review-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      }
+    },
+    {
+      "screen": "checkout-shipping",
+      "width": 1440,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "layoutHeight": 950,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 112,
+        "y": 378.96875,
+        "width": 884,
+        "height": 395.53125,
+        "clientWidth": 884,
+        "scrollWidth": 884,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-checkout-shipping-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      }
+    },
+    {
+      "screen": "checkout-shipping-errors",
+      "width": 1440,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "layoutHeight": 950,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 112,
+        "y": 566.53125,
+        "width": 884,
+        "height": 501.09375,
+        "clientWidth": 884,
+        "scrollWidth": 884,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "DIV",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-checkout-shipping-errors-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      }
+    },
+    {
+      "screen": "checkout-payment",
+      "width": 1440,
+      "path": "/checkout",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "layoutHeight": 950,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 239.359375,
+        "y": 12,
+        "width": 600,
+        "height": 44.390625,
+        "clientWidth": 598,
+        "scrollWidth": 598,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": {
+        "x": 0,
+        "y": 0,
+        "width": 0,
+        "height": 0,
+        "clientWidth": 0,
+        "scrollWidth": 0,
+        "columns": "none"
+      },
+      "active": {
+        "tag": "H2",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-plus",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-minus",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-checkout-payment-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      }
+    },
+    {
+      "screen": "admin-orders",
+      "width": 1440,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "layoutHeight": 950,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 1152,
+        "height": 218.1875,
+        "clientWidth": 1152,
+        "scrollWidth": 1152,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-admin-orders-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-order-detail",
+      "width": 1440,
+      "path": "/admin/orders",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "layoutHeight": 950,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 109.59375,
+        "width": 1152,
+        "height": 218.1875,
+        "clientWidth": 1152,
+        "scrollWidth": 1152,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 800,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-admin-order-detail-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-hidden-focus",
+            "nodes": 2
+          },
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-products",
+      "width": 1440,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "layoutHeight": 950,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 1152,
+        "height": 657.9375,
+        "clientWidth": 1152,
+        "scrollWidth": 1152,
+        "columns": "none"
+      },
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-admin-products-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 1
+          }
+        ]
+      }
+    },
+    {
+      "screen": "admin-product-drawer",
+      "width": 1440,
+      "path": "/admin/products",
+      "configuredWidth": 800,
+      "layoutWidth": 1440,
+      "layoutHeight": 950,
+      "clientWidth": 1440,
+      "documentWidth": 1440,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": null,
+      "sidebar": {
+        "x": 0,
+        "y": 0,
+        "width": 240,
+        "height": 950,
+        "clientWidth": 239,
+        "scrollWidth": 239,
+        "columns": "none"
+      },
+      "table": {
+        "x": 264,
+        "y": 112.390625,
+        "width": 1152,
+        "height": 678.78125,
+        "clientWidth": 1152,
+        "scrollWidth": 1152,
+        "columns": "none"
+      },
+      "drawer": {
+        "x": 800,
+        "y": 0,
+        "width": 640,
+        "height": 950,
+        "clientWidth": 639,
+        "scrollWidth": 639,
+        "columns": "none"
+      },
+      "form": null,
+      "active": {
+        "tag": "BUTTON",
+        "id": "",
+        "name": "Close"
+      },
+      "icons": [
+        {
+          "class": "pi pi-home",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-shopping-cart",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "pi pi-box",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-admin-product-drawer-1440.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-hidden-focus",
+            "nodes": 2
+          },
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 1
+          },
+          {
+            "id": "aria-valid-attr-value",
+            "nodes": 2
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-error",
+      "width": 390,
+      "path": "/",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "layoutHeight": 950,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": null,
+      "card": null,
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "BODY",
+        "id": "",
+        "name": null
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-error-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "nodes": 3
+          }
+        ]
+      }
+    },
+    {
+      "screen": "customer-search-open-filters",
+      "width": 390,
+      "path": "/search",
+      "configuredWidth": 800,
+      "layoutWidth": 390,
+      "layoutHeight": 950,
+      "clientWidth": 390,
+      "documentWidth": 390,
+      "overflow": 0,
+      "homeGrid": null,
+      "searchGrid": {
+        "x": 16,
+        "y": 656.9375,
+        "width": 358,
+        "height": 1674.25,
+        "clientWidth": 358,
+        "scrollWidth": 358,
+        "columns": "171px 171px"
+      },
+      "card": {
+        "x": 16,
+        "y": 656.9375,
+        "width": 171,
+        "height": 406.5625,
+        "clientWidth": 169,
+        "scrollWidth": 169,
+        "columns": "none"
+      },
+      "searchInput": {
+        "x": 16,
+        "y": 60,
+        "width": 358,
+        "height": 47.59375,
+        "clientWidth": 356,
+        "scrollWidth": 356,
+        "columns": "none"
+      },
+      "sidebar": null,
+      "table": null,
+      "drawer": null,
+      "form": null,
+      "active": {
+        "tag": "INPUT",
+        "id": "",
+        "name": "4 stars"
+      },
+      "icons": [
+        {
+          "class": "pi pi-chevron-down header__user-chevron",
+          "content": "\"\"",
+          "font": "primeicons"
+        },
+        {
+          "class": "p-button-icon pi pi-chevron-up",
+          "content": "\"\"",
+          "font": "primeicons"
+        }
+      ],
+      "offenders": [],
+      "screenshot": "after-customer-search-open-filters-390.png",
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "aria-prohibited-attr",
+            "nodes": 8
+          },
+          {
+            "id": "color-contrast",
+            "nodes": 50
+          }
+        ]
+      }
+    }
+  ],
+  "interactions": [
+    {
+      "name": "orders initial action visible 360",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "products initial edit visible 360",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "orders initial action visible 390",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "products initial edit visible 390",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "orders initial action visible 768",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "products initial edit visible 768",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "orders initial action visible 1024",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "products initial edit visible 1024",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "orders initial action visible 1440",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "products initial edit visible 1440",
+      "actual": true,
+      "expected": true
+    },
+    {
+      "name": "card-focused-cta",
+      "opacity": "1"
+    },
+    {
+      "name": "card-native-enter",
+      "path": "/",
+      "cartPosts": 1
+    },
+    {
+      "name": "card Tab reaches separate cart button",
+      "actual": true,
+      "expected": true,
+      "pass": true
+    },
+    {
+      "name": "cart Enter submits once",
+      "actual": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "name": "cart Enter keeps route",
+      "actual": "/",
+      "expected": "/",
+      "pass": true
+    },
+    {
+      "name": "cart Space submits once",
+      "actual": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "name": "cart Space keeps route",
+      "actual": "/",
+      "expected": "/",
+      "pass": true
+    },
+    {
+      "name": "touch cart action submits once",
+      "actual": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "name": "touch action keeps route",
+      "actual": "/",
+      "expected": "/",
+      "pass": true
+    },
+    {
+      "name": "link Enter navigates without adding",
+      "actual": 1,
+      "expected": 1,
+      "pass": true
+    },
+    {
+      "name": "mobile filters start closed",
+      "actual": "false",
+      "expected": "false",
+      "pass": true
+    },
+    {
+      "name": "filter Space opens disclosure",
+      "actual": "true",
+      "expected": "true",
+      "pass": true
+    },
+    {
+      "name": "closed removal then reopen cannot revive price/rating",
+      "actual": {
+        "brand": "Fixture Brand",
+        "keyword": "wireless",
+        "page": "0",
+        "size": "20"
+      },
+      "expected": {
+        "keyword": "wireless",
+        "brand": "Fixture Brand",
+        "page": "0",
+        "size": "20"
+      },
+      "pass": true
+    },
+    {
+      "name": "filter resize returns focus from hidden input",
+      "actual": null,
+      "expected": "Expand filters",
+      "pass": false
+    }
+  ],
+  "errors": [],
+  "finalDiagnostics": {
+    "url": "http://127.0.0.1:16573/search?keyword=wireless",
+    "text": "Skip to main content\nRoboMart\nNo results found\nFixture\nAll\nElectronics\nHome & Garden\nSports & Outdoors\nHealth & Beauty\nToys & Games\n8 results for \"wireless\"\nBrand: Fixture Brand\n×\nClear all\nFilters\nWireless noise cancelling headphones with extended battery and travel case\n\n$49.99\n\n★\n★\n★\n★\n☆\nIn Stock\nAdd to Cart\nEveryday home and travel accessory 2\n\n$49.99\n\n★\n★\n★\n★\n☆\nIn Stock\nAdd to Cart\nEveryday home and travel accessory 3\n\n$49.99\n\n★\n★\n★\n★\n☆\nIn Stock\nAdd to Cart\nEveryday home and travel accessory 4\n\n$49.99\n\n★\n★\n★\n★\n☆\nIn Stock\nAdd to Cart\nEveryday home and travel accessory 5\n\n$49.99\n\n★\n★\n★\n★\n☆\nIn Stock\nAdd to Cart\nEveryday home and travel accessory 6\n\n$49.99\n\n★\n★\n★\n★\n☆\nIn Stock\nAdd to Cart\nEveryday home and travel accessory 7\n\n$49.99\n\n★\n★\n★\n★\n☆\nIn Stock\nAdd to Cart\nEveryday home and travel accessory 8\n\n$49.99\n\n★\n★\n★\n★\n☆\nOut of Stock\n\n© 2026 RoboMart. All rights reserved.",
+    "active": "<body>\n    <div id=\"app\" data-v-app=\"\"><a href=\"#main-content\" class=\"skip-to-main\">Skip to main content</a><div data-v-8242a339=\"\" class=\"layout\"><header data-v-8242a339=\"\" class=\"header\"><div data-v-8242a339=\"\" class=\"header__inner\"><div data-v-8242a339=\"\" class=\"header__logo\"><a data-v-8242a339=\"\" href=\"/\" class=\"\" aria-label=\"RoboMart Home\"><span data-v-8242a339=\"\" class=\"header__logo-text\">RoboMart</span></a></div><div data-v-61f9c889=\"\" data-v-8242a339=\"\" class=\"search-bar\"><div data-v-61f9c889=\"\" class=\"p-autocomplete p-component p-inputwrapper search-bar__input\" data-p=\"\" data-pc-name=\"autocomplete\" pc1=\"\" data-pc-section=\"root\" style=\"position: relative;\"><input type=\"text\" class=\"p-inputtext p-component p-autocomplete-input search-bar__field\" data-p=\"\" id=\"pv_id_2\" placeholder=\"Search products...\" tabindex=\"0\" autocomplete=\"off\" role=\"combobox\" aria-label=\"Search products\" aria-haspopup=\"listbox\" aria-autocomplete=\"list\" aria-expanded=\"false\" data-p-has-dropdown=\"false\" data-pc-name=\"pcinputtext\" data-pc-extend=\"inputtext\" pc2=\"\" data-pc-section=\"root\"><!----><!----><!----><!----><span role=\"status\" aria-live=\"polite\" class=\"p-hidden-accessible\" data-pc-section=\"hiddensearchresult\" data-p-hidden-accessible=\"true\">No results found</span></div></div><div data-v-8242a339=\"\" class=\"header__actions\"><a data-v-8242a339=\"\" href=\"/cart\" class=\"header__cart-btn\" aria-label=\"Shopping cart, 0 items\"><svg data-v-8242a339=\"\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" aria-hidden=\"true\"><path data-v-8242a339=\"\" d=\"M6 2L3 6V20C3 20.5304 3.21071 21.0391 3.58579 21.4142C3.96086 21.7893 4.46957 22 5 22H19C19.5304 22 20.0391 21.7893 20.4142 21.4142C20.7893 21.0391 21 20.5304 21 20V6L18 2H6Z\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path><path data-v-8242a339=\"\" d=\"M3 6H21\" stroke=\"currentColor\" stroke-width=\"2\"></path><path data-v-8242a339=\"\" d=\"M16 10C16 11.0609 15.5786 12.0783 14.8284 12.8284C14.0783 13.5786 13.0609 14 12 14C10.9391 14 9.92172 13.5786 9.17157 12.8284C8.42143 12.0783 8 11.0609 8 10\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"></path></svg><!----></a><button data-v-8242a339=\"\" class=\"header__user-btn\" type=\"button\" aria-label=\"User menu\"><span data-v-8242a339=\"\" class=\"header__user-name\">Fixture</span><i data-v-8242a339=\"\" class=\"pi pi-chevron-down header__user-chevron\"></i></button></div></div></header><nav data-v-8242a339=\"\" class=\"category-nav\" aria-label=\"Product categories\"><div data-v-8242a339=\"\" class=\"category-nav__inner\"><a data-v-8242a339=\"\" href=\"/\" class=\"category-nav__link category-nav__link--active\"> All </a><a data-v-8242a339=\"\" href=\"/?categoryId=1\" class=\"category-nav__link\">Electronics</a><a data-v-8242a339=\"\" href=\"/?categoryId=2\" class=\"category-nav__link\">Home &amp; Garden</a><a data-v-8242a339=\"\" href=\"/?categoryId=3\" class=\"category-nav__link\">Sports &amp; Outdoors</a><a data-v-8242a339=\"\" href=\"/?categoryId=4\" class=\"category-nav__link\">Health &amp; Beauty</a><a data-v-8242a339=\"\" href=\"/?categoryId=5\" class=\"category-nav__link\">Toys &amp; Games</a></div></nav><!----><!----><main data-v-8242a339=\"\" id=\"main-content\" class=\"main-content\" tabindex=\"-1\"><div data-v-b661c86d=\"\" data-v-8242a339=\"\" class=\"search-results\"><div data-v-b661c86d=\"\" class=\"search-results__header\"><h1 data-v-b661c86d=\"\" class=\"search-results__title\">8 results for \"wireless\" </h1><div data-v-b661c86d=\"\" class=\"search-results__filters\"><span data-v-b661c86d=\"\" class=\"p-tag p-component p-tag-info\" data-p=\"info\" data-pc-name=\"tag\" pc252=\"\" data-pc-section=\"root\"><!----><span data-v-b661c86d=\"\">Brand: Fixture Brand</span><button data-v-b661c86d=\"\" type=\"button\" class=\"search-results__remove-filter\" aria-label=\"Remove Brand: Fixture Brand filter\"><span data-v-b661c86d=\"\" aria-hidden=\"true\">×</span></button></span><button data-v-b661c86d=\"\" class=\"p-button p-component p-button-text p-button-sm\" data-p=\"small text\" type=\"button\" aria-label=\"Clear all\" data-pc-name=\"button\" data-p-disabled=\"false\" pc253=\"\" data-pc-section=\"root\"><!----><span class=\"p-button-label\" data-pc-section=\"label\" data-p=\"small\">Clear all</span><!----></button></div></div><div data-v-b661c86d=\"\" class=\"search-results__content\"><aside data-v-f737b7ba=\"\" data-v-b661c86d=\"\" class=\"filter-sidebar\" aria-label=\"Search filters\"><div data-v-f737b7ba=\"\" class=\"filter-sidebar__header\"><h2 data-v-f737b7ba=\"\" class=\"filter-sidebar__title\">Filters</h2><button data-v-f737b7ba=\"\" class=\"p-button p-component p-button-icon-only p-button-text p-button-sm\" data-p=\"small icon-only text\" type=\"button\" aria-label=\"Expand filters\" data-pc-name=\"button\" data-p-disabled=\"false\" id=\"v-5-toggle\" aria-expanded=\"false\" aria-controls=\"v-5\" pc6=\"\" data-pc-section=\"root\"><span class=\"p-button-icon pi pi-chevron-down\" data-p=\"left small\" data-pc-section=\"icon\"></span><!----><!----></button></div><div data-v-f737b7ba=\"\" id=\"v-5\" class=\"filter-sidebar__body\" style=\"display: none;\"><div data-v-f737b7ba=\"\" class=\"filter-sidebar__section\"><h3 data-v-f737b7ba=\"\" class=\"filter-sidebar__section-title\">Brand</h3><div data-v-f737b7ba=\"\" class=\"filter-sidebar__option\"><div data-v-f737b7ba=\"\" class=\"p-checkbox p-component p-checkbox-checked\" data-pc-name=\"checkbox\" pc294=\"\" data-pc-section=\"root\" data-p-checked=\"true\" data-p-disabled=\"false\" data-p=\"checked\"><input id=\"v-5-brand-Fixture Brand\" type=\"checkbox\" class=\"p-checkbox-input\" checked=\"\" data-pc-section=\"input\" value=\"Fixture Brand\"><div class=\"p-checkbox-box\" data-pc-section=\"box\" data-p=\"checked\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 14 14\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"p-icon p-checkbox-icon\" aria-hidden=\"true\" data-pc-section=\"icon\" data-p=\"checked\"><path d=\"M4.86199 11.5948C4.78717 11.5923 4.71366 11.5745 4.64596 11.5426C4.57826 11.5107 4.51779 11.4652 4.46827 11.4091L0.753985 7.69483C0.683167 7.64891 0.623706 7.58751 0.580092 7.51525C0.536478 7.44299 0.509851 7.36177 0.502221 7.27771C0.49459 7.19366 0.506156 7.10897 0.536046 7.03004C0.565935 6.95111 0.613367 6.88 0.674759 6.82208C0.736151 6.76416 0.8099 6.72095 0.890436 6.69571C0.970973 6.67046 1.05619 6.66385 1.13966 6.67635C1.22313 6.68886 1.30266 6.72017 1.37226 6.76792C1.44186 6.81567 1.4997 6.8786 1.54141 6.95197L4.86199 10.2503L12.6397 2.49483C12.7444 2.42694 12.8689 2.39617 12.9932 2.40745C13.1174 2.41873 13.2343 2.47141 13.3251 2.55705C13.4159 2.64268 13.4753 2.75632 13.4938 2.87973C13.5123 3.00315 13.4888 3.1292 13.4271 3.23768L5.2557 11.4091C5.20618 11.4652 5.14571 11.5107 5.07801 11.5426C5.01031 11.5745 4.9368 11.5923 4.86199 11.5948Z\" fill=\"currentColor\"></path></svg></div></div><label data-v-f737b7ba=\"\" for=\"v-5-brand-Fixture Brand\" class=\"filter-sidebar__label\">Fixture Brand</label></div></div><div data-v-f737b7ba=\"\" class=\"filter-sidebar__section\"><h3 data-v-f737b7ba=\"\" class=\"filter-sidebar__section-title\"> Price: $0 – $1000</h3><div data-v-f737b7ba=\"\" class=\"p-slider p-component p-slider-horizontal filter-sidebar__slider\" data-pc-name=\"slider\" pc7=\"\" data-pc-section=\"root\" data-p-sliding=\"false\" data-p=\"horizontal\"><span class=\"p-slider-range\" data-pc-section=\"range\" data-p=\"horizontal\" style=\"position: absolute; inset-inline-start: 0%; width: 100%;\"></span><!----><span class=\"p-slider-handle\" tabindex=\"0\" role=\"slider\" aria-valuemin=\"0\" aria-valuenow=\"0\" aria-valuemax=\"1000\" aria-label=\"Minimum price\" aria-orientation=\"horizontal\" data-pc-section=\"starthandler\" data-p=\"horizontal\" style=\"position: absolute; inset-inline-start: 0%;\"></span><span class=\"p-slider-handle\" tabindex=\"0\" role=\"slider\" aria-valuemin=\"0\" aria-valuenow=\"1000\" aria-valuemax=\"1000\" aria-label=\"Maximum price\" aria-orientation=\"horizontal\" data-pc-section=\"endhandler\" data-p=\"horizontal\" style=\"position: absolute; inset-inline-start: 100%;\"></span></div></div><div data-v-f737b7ba=\"\" class=\"filter-sidebar__section\"><h3 data-v-f737b7ba=\"\" class=\"filter-sidebar__section-title\">Minimum Rating</h3><div data-v-f737b7ba=\"\" class=\"p-rating\" role=\"radiogroup\" aria-label=\"Minimum product rating\" data-pc-name=\"rating\" pc8=\"\" data-pc-section=\"root\" data-p=\"\"><div class=\"p-rating-option\" data-pc-section=\"option\" data-p-active=\"false\" data-p-focused=\"false\" data-p=\"\"><span class=\"p-hidden-accessible\" data-pc-section=\"hiddenoptioninputcontainer\" data-p-hidden-accessible=\"true\"><input type=\"radio\" name=\"pc8_name\" aria-label=\"1 star\" data-pc-section=\"hiddenoptioninput\" value=\"1\"></span><svg width=\"14\" height=\"14\" viewBox=\"0 0 14 14\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"p-icon p-rating-icon p-rating-off-icon\" aria-hidden=\"true\" data-pc-section=\"officon\"><path d=\"M10.9741 13.6721C10.8806 13.6719 10.7886 13.6483 10.7066 13.6033L7.00002 11.6545L3.29345 13.6033C3.19926 13.6539 3.09281 13.6771 2.98612 13.6703C2.87943 13.6636 2.77676 13.6271 2.6897 13.5651C2.60277 13.5014 2.53529 13.4147 2.4948 13.3148C2.45431 13.215 2.44241 13.1058 2.46042 12.9995L3.17881 8.87264L0.167699 5.95324C0.0922333 5.8777 0.039368 5.78258 0.0150625 5.67861C-0.00924303 5.57463 -0.00402231 5.46594 0.030136 5.36477C0.0621323 5.26323 0.122141 5.17278 0.203259 5.10383C0.284377 5.03488 0.383311 4.99023 0.488681 4.97501L4.63087 4.37126L6.48797 0.618832C6.54083 0.530159 6.61581 0.456732 6.70556 0.405741C6.79532 0.35475 6.89678 0.327942 7.00002 0.327942C7.10325 0.327942 7.20471 0.35475 7.29447 0.405741C7.38422 0.456732 7.4592 0.530159 7.51206 0.618832L9.36916 4.37126L13.5114 4.97501C13.6167 4.99023 13.7157 5.03488 13.7968 5.10383C13.8779 5.17278 13.9379 5.26323 13.9699 5.36477C14.0041 5.46594 14.0093 5.57463 13.985 5.67861C13.9607 5.78258 13.9078 5.8777 13.8323 5.95324L10.8212 8.87264L11.532 12.9995C11.55 13.1058 11.5381 13.215 11.4976 13.3148C11.4571 13.4147 11.3896 13.5014 11.3027 13.5651C11.2059 13.632 11.0917 13.6692 10.9741 13.6721ZM7.00002 10.4393C7.09251 10.4404 7.18371 10.4613 7.2675 10.5005L10.2098 12.029L9.65193 8.75036C9.6368 8.6584 9.64343 8.56418 9.6713 8.47526C9.69918 8.38633 9.74751 8.30518 9.81242 8.23832L12.1969 5.94559L8.90298 5.45648C8.81188 5.44198 8.72555 5.406 8.65113 5.35152C8.57671 5.29703 8.51633 5.2256 8.475 5.14314L7.00002 2.1626L5.52503 5.15078C5.4837 5.23324 5.42332 5.30467 5.3489 5.35916C5.27448 5.41365 5.18815 5.44963 5.09705 5.46412L1.80318 5.94559L4.18761 8.23832C4.25252 8.30518 4.30085 8.38633 4.32873 8.47526C4.3566 8.56418 4.36323 8.6584 4.3481 8.75036L3.7902 12.0519L6.73253 10.5234C6.81451 10.4762 6.9058 10.4475 7.00002 10.4393Z\" fill=\"currentColor\"></path></svg></div><div class=\"p-rating-option\" data-pc-section=\"option\" data-p-active=\"false\" data-p-focused=\"false\" data-p=\"\"><span class=\"p-hidden-accessible\" data-pc-section=\"hiddenoptioninputcontainer\" data-p-hidden-accessible=\"true\"><input type=\"radio\" name=\"pc8_name\" aria-label=\"2 stars\" data-pc-section=\"hiddenoptioninput\" value=\"2\"></span><svg width=\"14\" height=\"14\" viewBox=\"0 0 14 14\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"p-icon p-rating-icon p-rating-off-icon\" aria-hidden=\"true\" data-pc-section=\"officon\"><path d=\"M10.9741 13.6721C10.8806 13.6719 10.7886 13.6483 10.7066 13.6033L7.00002 11.6545L3.29345 13.6033C3.19926 13.6539 3.09281 13.6771 2.98612 13.6703C2.87943 13.6636 2.77676 13.6271 2.6897 13.5651C2.60277 13.5014 2.53529 13.4147 2.4948 13.3148C2.45431 13.215 2.44241 13.1058 2.46042 12.9995L3.17881 8.87264L0.167699 5.95324C0.0922333 5.8777 0.039368 5.78258 0.0150625 5.67861C-0.00924303 5.57463 -0.00402231 5.46594 0.030136 5.36477C0.0621323 5.26323 0.122141 5.17278 0.203259 5.10383C0.284377 5.03488 0.383311 4.99023 0.488681 4.97501L4.63087 4.37126L6.48797 0.618832C6.54083 0.530159 6.61581 0.456732 6.70556 0.405741C6.79532 0.35475 6.89678 0.327942 7.00002 0.327942C7.10325 0.327942 7.20471 0.35475 7.29447 0.405741C7.38422 0.456732 7.4592 0.530159 7.51206 0.618832L9.36916 4.37126L13.5114 4.97501C13.6167 4.99023 13.7157 5.03488 13.7968 5.10383C13.8779 5.17278 13.9379 5.26323 13.9699 5.36477C14.0041 5.46594 14.0093 5.57463 13.985 5.67861C13.9607 5.78258 13.9078 5.8777 13.8323 5.95324L10.8212 8.87264L11.532 12.9995C11.55 13.1058 11.5381 13.215 11.4976 13.3148C11.4571 13.4147 11.3896 13.5014 11.3027 13.5651C11.2059 13.632 11.0917 13.6692 10.9741 13.6721ZM7.00002 10.4393C7.09251 10.4404 7.18371 10.4613 7.2675 10.5005L10.2098 12.029L9.65193 8.75036C9.6368 8.6584 9.64343 8.56418 9.6713 8.47526C9.69918 8.38633 9.74751 8.30518 9.81242 8.23832L12.1969 5.94559L8.90298 5.45648C8.81188 5.44198 8.72555 5.406 8.65113 5.35152C8.57671 5.29703 8.51633 5.2256 8.475 5.14314L7.00002 2.1626L5.52503 5.15078C5.4837 5.23324 5.42332 5.30467 5.3489 5.35916C5.27448 5.41365 5.18815 5.44963 5.09705 5.46412L1.80318 5.94559L4.18761 8.23832C4.25252 8.30518 4.30085 8.38633 4.32873 8.47526C4.3566 8.56418 4.36323 8.6584 4.3481 8.75036L3.7902 12.0519L6.73253 10.5234C6.81451 10.4762 6.9058 10.4475 7.00002 10.4393Z\" fill=\"currentColor\"></path></svg></div><div class=\"p-rating-option\" data-pc-section=\"option\" data-p-active=\"false\" data-p-focused=\"false\" data-p=\"\"><span class=\"p-hidden-accessible\" data-pc-section=\"hiddenoptioninputcontainer\" data-p-hidden-accessible=\"true\"><input type=\"radio\" name=\"pc8_name\" aria-label=\"3 stars\" data-pc-section=\"hiddenoptioninput\" value=\"3\"></span><svg width=\"14\" height=\"14\" viewBox=\"0 0 14 14\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"p-icon p-rating-icon p-rating-off-icon\" aria-hidden=\"true\" data-pc-section=\"officon\"><path d=\"M10.9741 13.6721C10.8806 13.6719 10.7886 13.6483 10.7066 13.6033L7.00002 11.6545L3.29345 13.6033C3.19926 13.6539 3.09281 13.6771 2.98612 13.6703C2.87943 13.6636 2.77676 13.6271 2.6897 13.5651C2.60277 13.5014 2.53529 13.4147 2.4948 13.3148C2.45431 13.215 2.44241 13.1058 2.46042 12.9995L3.17881 8.87264L0.167699 5.95324C0.0922333 5.8777 0.039368 5.78258 0.0150625 5.67861C-0.00924303 5.57463 -0.00402231 5.46594 0.030136 5.36477C0.0621323 5.26323 0.122141 5.17278 0.203259 5.10383C0.284377 5.03488 0.383311 4.99023 0.488681 4.97501L4.63087 4.37126L6.48797 0.618832C6.54083 0.530159 6.61581 0.456732 6.70556 0.405741C6.79532 0.35475 6.89678 0.327942 7.00002 0.327942C7.10325 0.327942 7.20471 0.35475 7.29447 0.405741C7.38422 0.456732 7.4592 0.530159 7.51206 0.618832L9.36916 4.37126L13.5114 4.97501C13.6167 4.99023 13.7157 5.03488 13.7968 5.10383C13.8779 5.17278 13.9379 5.26323 13.9699 5.36477C14.0041 5.46594 14.0093 5.57463 13.985 5.67861C13.9607 5.78258 13.9078 5.8777 13.8323 5.95324L10.8212 8.87264L11.532 12.9995C11.55 13.1058 11.5381 13.215 11.4976 13.3148C11.4571 13.4147 11.3896 13.5014 11.3027 13.5651C11.2059 13.632 11.0917 13.6692 10.9741 13.6721ZM7.00002 10.4393C7.09251 10.4404 7.18371 10.4613 7.2675 10.5005L10.2098 12.029L9.65193 8.75036C9.6368 8.6584 9.64343 8.56418 9.6713 8.47526C9.69918 8.38633 9.74751 8.30518 9.81242 8.23832L12.1969 5.94559L8.90298 5.45648C8.81188 5.44198 8.72555 5.406 8.65113 5.35152C8.57671 5.29703 8.51633 5.2256 8.475 5.14314L7.00002 2.1626L5.52503 5.15078C5.4837 5.23324 5.42332 5.30467 5.3489 5.35916C5.27448 5.41365 5.18815 5.44963 5.09705 5.46412L1.80318 5.94559L4.18761 8.23832C4.25252 8.30518 4.30085 8.38633 4.32873 8.47526C4.3566 8.56418 4.36323 8.6584 4.3481 8.75036L3.7902 12.0519L6.73253 10.5234C6.81451 10.4762 6.9058 10.4475 7.00002 10.4393Z\" fill=\"currentColor\"></path></svg></div><div class=\"p-rating-option\" data-pc-section=\"option\" data-p-active=\"false\" data-p-focused=\"false\" data-p=\"\"><span class=\"p-hidden-accessible\" data-pc-section=\"hiddenoptioninputcontainer\" data-p-hidden-accessible=\"true\"><input type=\"radio\" name=\"pc8_name\" aria-label=\"4 stars\" data-pc-section=\"hiddenoptioninput\" value=\"4\"></span><svg width=\"14\" height=\"14\" viewBox=\"0 0 14 14\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"p-icon p-rating-icon p-rating-off-icon\" aria-hidden=\"true\" data-pc-section=\"officon\"><path d=\"M10.9741 13.6721C10.8806 13.6719 10.7886 13.6483 10.7066 13.6033L7.00002 11.6545L3.29345 13.6033C3.19926 13.6539 3.09281 13.6771 2.98612 13.6703C2.87943 13.6636 2.77676 13.6271 2.6897 13.5651C2.60277 13.5014 2.53529 13.4147 2.4948 13.3148C2.45431 13.215 2.44241 13.1058 2.46042 12.9995L3.17881 8.87264L0.167699 5.95324C0.0922333 5.8777 0.039368 5.78258 0.0150625 5.67861C-0.00924303 5.57463 -0.00402231 5.46594 0.030136 5.36477C0.0621323 5.26323 0.122141 5.17278 0.203259 5.10383C0.284377 5.03488 0.383311 4.99023 0.488681 4.97501L4.63087 4.37126L6.48797 0.618832C6.54083 0.530159 6.61581 0.456732 6.70556 0.405741C6.79532 0.35475 6.89678 0.327942 7.00002 0.327942C7.10325 0.327942 7.20471 0.35475 7.29447 0.405741C7.38422 0.456732 7.4592 0.530159 7.51206 0.618832L9.36916 4.37126L13.5114 4.97501C13.6167 4.99023 13.7157 5.03488 13.7968 5.10383C13.8779 5.17278 13.9379 5.26323 13.9699 5.36477C14.0041 5.46594 14.0093 5.57463 13.985 5.67861C13.9607 5.78258 13.9078 5.8777 13.8323 5.95324L10.8212 8.87264L11.532 12.9995C11.55 13.1058 11.5381 13.215 11.4976 13.3148C11.4571 13.4147 11.3896 13.5014 11.3027 13.5651C11.2059 13.632 11.0917 13.6692 10.9741 13.6721ZM7.00002 10.4393C7.09251 10.4404 7.18371 10.4613 7.2675 10.5005L10.2098 12.029L9.65193 8.75036C9.6368 8.6584 9.64343 8.56418 9.6713 8.47526C9.69918 8.38633 9.74751 8.30518 9.81242 8.23832L12.1969 5.94559L8.90298 5.45648C8.81188 5.44198 8.72555 5.406 8.65113 5.35152C8.57671 5.29703 8.51633 5.2256 8.475 5.14314L7.00002 2.1626L5.52503 5.15078C5.4837 5.23324 5.42332 5.30467 5.3489 5.35916C5.27448 5.41365 5.18815 5.44963 5.09705 5.46412L1.80318 5.94559L4.18761 8.23832C4.25252 8.30518 4.30085 8.38633 4.32873 8.47526C4.3566 8.56418 4.36323 8.6584 4.3481 8.75036L3.7902 12.0519L6.73253 10.5234C6.81451 10.4762 6.9058 10.4475 7.00002 10.4393Z\" fill=\"currentColor\"></path></svg></div><div class=\"p-rating-option\" data-pc-section=\"option\" data-p-active=\"false\" data-p-focused=\"false\" data-p=\"\"><span class=\"p-hidden-accessible\" data-pc-section=\"hiddenoptioninputcontainer\" data-p-hidden-accessible=\"true\"><input type=\"radio\" name=\"pc8_name\" aria-label=\"5 stars\" data-pc-section=\"hiddenoptioninput\" value=\"5\"></span><svg width=\"14\" height=\"14\" viewBox=\"0 0 14 14\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\" class=\"p-icon p-rating-icon p-rating-off-icon\" aria-hidden=\"true\" data-pc-section=\"officon\"><path d=\"M10.9741 13.6721C10.8806 13.6719 10.7886 13.6483 10.7066 13.6033L7.00002 11.6545L3.29345 13.6033C3.19926 13.6539 3.09281 13.6771 2.98612 13.6703C2.87943 13.6636 2.77676 13.6271 2.6897 13.5651C2.60277 13.5014 2.53529 13.4147 2.4948 13.3148C2.45431 13.215 2.44241 13.1058 2.46042 12.9995L3.17881 8.87264L0.167699 5.95324C0.0922333 5.8777 0.039368 5.78258 0.0150625 5.67861C-0.00924303 5.57463 -0.00402231 5.46594 0.030136 5.36477C0.0621323 5.26323 0.122141 5.17278 0.203259 5.10383C0.284377 5.03488 0.383311 4.99023 0.488681 4.97501L4.63087 4.37126L6.48797 0.618832C6.54083 0.530159 6.61581 0.456732 6.70556 0.405741C6.79532 0.35475 6.89678 0.327942 7.00002 0.327942C7.10325 0.327942 7.20471 0.35475 7.29447 0.405741C7.38422 0.456732 7.4592 0.530159 7.51206 0.618832L9.36916 4.37126L13.5114 4.97501C13.6167 4.99023 13.7157 5.03488 13.7968 5.10383C13.8779 5.17278 13.9379 5.26323 13.9699 5.36477C14.0041 5.46594 14.0093 5.57463 13.985 5.67861C13.9607 5.78258 13.9078 5.8777 13.8323 5.95324L10.8212 8.87264L11.532 12.9995C11.55 13.1058 11.5381 13.215 11.4976 13.3148C11.4571 13.4147 11.3896 13.5014 11.3027 13.5651C11.2059 13.632 11.0917 13.6692 10.9741 13.6721ZM7.00002 10.4393C7.09251 10.4404 7.18371 10.4613 7.2675 10.5005L10.2098 12.029L9.65193 8.75036C9.6368 8.6584 9.64343 8.56418 9.6713 8.47526C9.69918 8.38633 9.74751 8.30518 9.81242 8.23832L12.1969 5.94559L8.90298 5.45648C8.81188 5.44198 8.72555 5.406 8.65113 5.35152C8.57671 5.29703 8.51633 5.2256 8.475 5.14314L7.00002 2.1626L5.52503 5.15078C5.4837 5.23324 5.42332 5.30467 5.3489 5.35916C5.27448 5.41365 5.18815 5.44963 5.09705 5.46412L1.80318 5.94559L4.18761 8.23832C4.25252 8.30518 4.30085 8.38633 4.32873 8.47526C4.3566 8.56418 4.36323 8.6584 4.3481 8.75036L3.7902 12.0519L6.73253 10.5234C6.81451 10.4762 6.9058 10.4475 7.00002 10.4393Z\" fill=\"currentColor\"></path></svg></div></div></div><button data-v-f737b7ba=\"\" class=\"p-button p-component p-button-secondary p-button-text p-button-sm filter-sidebar__clear\" data-p=\"small text\" type=\"button\" aria-label=\"Clear Filters\" data-pc-name=\"button\" data-p-disabled=\"false\" data-p-severity=\"secondary\" pc14=\"\" data-pc-section=\"root\"><!----><span class=\"p-button-label\" data-pc-section=\"label\" data-p=\"small\">Clear Filters</span><!----></button></div></aside><div data-v-b661c86d=\"\" class=\"search-results__main\"><div data-v-b661c86d=\"\" class=\"search-results__grid\"><article data-v-ea19a2d6=\"\" data-v-b661c86d=\"\" class=\"product-card\" aria-label=\"Wireless noise cancelling headphones with extended battery and travel case, $49.99\"><a data-v-ea19a2d6=\"\" href=\"/products/1\" class=\"product-card__link\" aria-label=\"View Wireless noise cancelling headphones with extended battery and travel case\"><div data-v-ea19a2d6=\"\" class=\"product-card__image-wrapper\"><img data-v-ea19a2d6=\"\" src=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22400%22%3E%3Crect%20width%3D%22400%22%20height%3D%22400%22%20fill%3D%22%23dbeafe%22%2F%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22175%22%20r%3D%2285%22%20fill%3D%22%232563eb%22%2F%3E%3Cpath%20d%3D%22M95%20320h210%22%20stroke%3D%22%231e40af%22%20stroke-width%3D%2225%22%2F%3E%3C%2Fsvg%3E\" alt=\"Wireless noise cancelling headphones with extended battery and travel case\" class=\"product-card__image\" loading=\"lazy\"></div><h3 data-v-ea19a2d6=\"\" class=\"product-card__title\">Wireless noise cancelling headphones with extended battery and travel case</h3></a><div data-v-ea19a2d6=\"\" class=\"product-card__body\"><p data-v-ea19a2d6=\"\" class=\"product-card__price\">$49.99</p><div data-v-ea19a2d6=\"\" class=\"product-card__rating\" role=\"img\" aria-label=\"4 out of 5 stars\"><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">☆</span></div><span data-v-ea19a2d6=\"\" class=\"p-tag p-component p-tag-success\" data-p=\"success\" aria-label=\"Stock status: In Stock\" data-pc-name=\"tag\" pc296=\"\" data-pc-section=\"root\"><!----><span class=\"p-tag-label\" data-pc-section=\"label\">In Stock</span></span></div><div data-v-ea19a2d6=\"\" class=\"product-card__overlay\"><button data-v-ea19a2d6=\"\" class=\"p-button p-component p-button-primary p-button-outlined product-card__add-btn\" data-p=\"outlined\" type=\"button\" aria-label=\"Add Wireless noise cancelling headphones with extended battery and travel case to cart\" data-pc-name=\"button\" data-p-disabled=\"false\" data-p-severity=\"primary\" pc297=\"\" data-pc-section=\"root\"><!----><span class=\"p-button-label\" data-pc-section=\"label\" data-p=\"\">Add to Cart</span><!----></button></div></article><article data-v-ea19a2d6=\"\" data-v-b661c86d=\"\" class=\"product-card\" aria-label=\"Everyday home and travel accessory 2, $49.99\"><a data-v-ea19a2d6=\"\" href=\"/products/2\" class=\"product-card__link\" aria-label=\"View Everyday home and travel accessory 2\"><div data-v-ea19a2d6=\"\" class=\"product-card__image-wrapper\"><img data-v-ea19a2d6=\"\" src=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22400%22%3E%3Crect%20width%3D%22400%22%20height%3D%22400%22%20fill%3D%22%23dbeafe%22%2F%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22175%22%20r%3D%2285%22%20fill%3D%22%232563eb%22%2F%3E%3Cpath%20d%3D%22M95%20320h210%22%20stroke%3D%22%231e40af%22%20stroke-width%3D%2225%22%2F%3E%3C%2Fsvg%3E\" alt=\"Everyday home and travel accessory 2\" class=\"product-card__image\" loading=\"lazy\"></div><h3 data-v-ea19a2d6=\"\" class=\"product-card__title\">Everyday home and travel accessory 2</h3></a><div data-v-ea19a2d6=\"\" class=\"product-card__body\"><p data-v-ea19a2d6=\"\" class=\"product-card__price\">$49.99</p><div data-v-ea19a2d6=\"\" class=\"product-card__rating\" role=\"img\" aria-label=\"4 out of 5 stars\"><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">☆</span></div><span data-v-ea19a2d6=\"\" class=\"p-tag p-component p-tag-success\" data-p=\"success\" aria-label=\"Stock status: In Stock\" data-pc-name=\"tag\" pc298=\"\" data-pc-section=\"root\"><!----><span class=\"p-tag-label\" data-pc-section=\"label\">In Stock</span></span></div><div data-v-ea19a2d6=\"\" class=\"product-card__overlay\"><button data-v-ea19a2d6=\"\" class=\"p-button p-component p-button-primary p-button-outlined product-card__add-btn\" data-p=\"outlined\" type=\"button\" aria-label=\"Add Everyday home and travel accessory 2 to cart\" data-pc-name=\"button\" data-p-disabled=\"false\" data-p-severity=\"primary\" pc299=\"\" data-pc-section=\"root\"><!----><span class=\"p-button-label\" data-pc-section=\"label\" data-p=\"\">Add to Cart</span><!----></button></div></article><article data-v-ea19a2d6=\"\" data-v-b661c86d=\"\" class=\"product-card\" aria-label=\"Everyday home and travel accessory 3, $49.99\"><a data-v-ea19a2d6=\"\" href=\"/products/3\" class=\"product-card__link\" aria-label=\"View Everyday home and travel accessory 3\"><div data-v-ea19a2d6=\"\" class=\"product-card__image-wrapper\"><img data-v-ea19a2d6=\"\" src=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22400%22%3E%3Crect%20width%3D%22400%22%20height%3D%22400%22%20fill%3D%22%23dbeafe%22%2F%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22175%22%20r%3D%2285%22%20fill%3D%22%232563eb%22%2F%3E%3Cpath%20d%3D%22M95%20320h210%22%20stroke%3D%22%231e40af%22%20stroke-width%3D%2225%22%2F%3E%3C%2Fsvg%3E\" alt=\"Everyday home and travel accessory 3\" class=\"product-card__image\" loading=\"lazy\"></div><h3 data-v-ea19a2d6=\"\" class=\"product-card__title\">Everyday home and travel accessory 3</h3></a><div data-v-ea19a2d6=\"\" class=\"product-card__body\"><p data-v-ea19a2d6=\"\" class=\"product-card__price\">$49.99</p><div data-v-ea19a2d6=\"\" class=\"product-card__rating\" role=\"img\" aria-label=\"4 out of 5 stars\"><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">☆</span></div><span data-v-ea19a2d6=\"\" class=\"p-tag p-component p-tag-success\" data-p=\"success\" aria-label=\"Stock status: In Stock\" data-pc-name=\"tag\" pc300=\"\" data-pc-section=\"root\"><!----><span class=\"p-tag-label\" data-pc-section=\"label\">In Stock</span></span></div><div data-v-ea19a2d6=\"\" class=\"product-card__overlay\"><button data-v-ea19a2d6=\"\" class=\"p-button p-component p-button-primary p-button-outlined product-card__add-btn\" data-p=\"outlined\" type=\"button\" aria-label=\"Add Everyday home and travel accessory 3 to cart\" data-pc-name=\"button\" data-p-disabled=\"false\" data-p-severity=\"primary\" pc301=\"\" data-pc-section=\"root\"><!----><span class=\"p-button-label\" data-pc-section=\"label\" data-p=\"\">Add to Cart</span><!----></button></div></article><article data-v-ea19a2d6=\"\" data-v-b661c86d=\"\" class=\"product-card\" aria-label=\"Everyday home and travel accessory 4, $49.99\"><a data-v-ea19a2d6=\"\" href=\"/products/4\" class=\"product-card__link\" aria-label=\"View Everyday home and travel accessory 4\"><div data-v-ea19a2d6=\"\" class=\"product-card__image-wrapper\"><img data-v-ea19a2d6=\"\" src=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22400%22%3E%3Crect%20width%3D%22400%22%20height%3D%22400%22%20fill%3D%22%23dbeafe%22%2F%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22175%22%20r%3D%2285%22%20fill%3D%22%232563eb%22%2F%3E%3Cpath%20d%3D%22M95%20320h210%22%20stroke%3D%22%231e40af%22%20stroke-width%3D%2225%22%2F%3E%3C%2Fsvg%3E\" alt=\"Everyday home and travel accessory 4\" class=\"product-card__image\" loading=\"lazy\"></div><h3 data-v-ea19a2d6=\"\" class=\"product-card__title\">Everyday home and travel accessory 4</h3></a><div data-v-ea19a2d6=\"\" class=\"product-card__body\"><p data-v-ea19a2d6=\"\" class=\"product-card__price\">$49.99</p><div data-v-ea19a2d6=\"\" class=\"product-card__rating\" role=\"img\" aria-label=\"4 out of 5 stars\"><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">☆</span></div><span data-v-ea19a2d6=\"\" class=\"p-tag p-component p-tag-success\" data-p=\"success\" aria-label=\"Stock status: In Stock\" data-pc-name=\"tag\" pc302=\"\" data-pc-section=\"root\"><!----><span class=\"p-tag-label\" data-pc-section=\"label\">In Stock</span></span></div><div data-v-ea19a2d6=\"\" class=\"product-card__overlay\"><button data-v-ea19a2d6=\"\" class=\"p-button p-component p-button-primary p-button-outlined product-card__add-btn\" data-p=\"outlined\" type=\"button\" aria-label=\"Add Everyday home and travel accessory 4 to cart\" data-pc-name=\"button\" data-p-disabled=\"false\" data-p-severity=\"primary\" pc303=\"\" data-pc-section=\"root\"><!----><span class=\"p-button-label\" data-pc-section=\"label\" data-p=\"\">Add to Cart</span><!----></button></div></article><article data-v-ea19a2d6=\"\" data-v-b661c86d=\"\" class=\"product-card\" aria-label=\"Everyday home and travel accessory 5, $49.99\"><a data-v-ea19a2d6=\"\" href=\"/products/5\" class=\"product-card__link\" aria-label=\"View Everyday home and travel accessory 5\"><div data-v-ea19a2d6=\"\" class=\"product-card__image-wrapper\"><img data-v-ea19a2d6=\"\" src=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22400%22%3E%3Crect%20width%3D%22400%22%20height%3D%22400%22%20fill%3D%22%23dbeafe%22%2F%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22175%22%20r%3D%2285%22%20fill%3D%22%232563eb%22%2F%3E%3Cpath%20d%3D%22M95%20320h210%22%20stroke%3D%22%231e40af%22%20stroke-width%3D%2225%22%2F%3E%3C%2Fsvg%3E\" alt=\"Everyday home and travel accessory 5\" class=\"product-card__image\" loading=\"lazy\"></div><h3 data-v-ea19a2d6=\"\" class=\"product-card__title\">Everyday home and travel accessory 5</h3></a><div data-v-ea19a2d6=\"\" class=\"product-card__body\"><p data-v-ea19a2d6=\"\" class=\"product-card__price\">$49.99</p><div data-v-ea19a2d6=\"\" class=\"product-card__rating\" role=\"img\" aria-label=\"4 out of 5 stars\"><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">☆</span></div><span data-v-ea19a2d6=\"\" class=\"p-tag p-component p-tag-success\" data-p=\"success\" aria-label=\"Stock status: In Stock\" data-pc-name=\"tag\" pc304=\"\" data-pc-section=\"root\"><!----><span class=\"p-tag-label\" data-pc-section=\"label\">In Stock</span></span></div><div data-v-ea19a2d6=\"\" class=\"product-card__overlay\"><button data-v-ea19a2d6=\"\" class=\"p-button p-component p-button-primary p-button-outlined product-card__add-btn\" data-p=\"outlined\" type=\"button\" aria-label=\"Add Everyday home and travel accessory 5 to cart\" data-pc-name=\"button\" data-p-disabled=\"false\" data-p-severity=\"primary\" pc305=\"\" data-pc-section=\"root\"><!----><span class=\"p-button-label\" data-pc-section=\"label\" data-p=\"\">Add to Cart</span><!----></button></div></article><article data-v-ea19a2d6=\"\" data-v-b661c86d=\"\" class=\"product-card\" aria-label=\"Everyday home and travel accessory 6, $49.99\"><a data-v-ea19a2d6=\"\" href=\"/products/6\" class=\"product-card__link\" aria-label=\"View Everyday home and travel accessory 6\"><div data-v-ea19a2d6=\"\" class=\"product-card__image-wrapper\"><img data-v-ea19a2d6=\"\" src=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22400%22%3E%3Crect%20width%3D%22400%22%20height%3D%22400%22%20fill%3D%22%23dbeafe%22%2F%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22175%22%20r%3D%2285%22%20fill%3D%22%232563eb%22%2F%3E%3Cpath%20d%3D%22M95%20320h210%22%20stroke%3D%22%231e40af%22%20stroke-width%3D%2225%22%2F%3E%3C%2Fsvg%3E\" alt=\"Everyday home and travel accessory 6\" class=\"product-card__image\" loading=\"lazy\"></div><h3 data-v-ea19a2d6=\"\" class=\"product-card__title\">Everyday home and travel accessory 6</h3></a><div data-v-ea19a2d6=\"\" class=\"product-card__body\"><p data-v-ea19a2d6=\"\" class=\"product-card__price\">$49.99</p><div data-v-ea19a2d6=\"\" class=\"product-card__rating\" role=\"img\" aria-label=\"4 out of 5 stars\"><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">☆</span></div><span data-v-ea19a2d6=\"\" class=\"p-tag p-component p-tag-success\" data-p=\"success\" aria-label=\"Stock status: In Stock\" data-pc-name=\"tag\" pc306=\"\" data-pc-section=\"root\"><!----><span class=\"p-tag-label\" data-pc-section=\"label\">In Stock</span></span></div><div data-v-ea19a2d6=\"\" class=\"product-card__overlay\"><button data-v-ea19a2d6=\"\" class=\"p-button p-component p-button-primary p-button-outlined product-card__add-btn\" data-p=\"outlined\" type=\"button\" aria-label=\"Add Everyday home and travel accessory 6 to cart\" data-pc-name=\"button\" data-p-disabled=\"false\" data-p-severity=\"primary\" pc307=\"\" data-pc-section=\"root\"><!----><span class=\"p-button-label\" data-pc-section=\"label\" data-p=\"\">Add to Cart</span><!----></button></div></article><article data-v-ea19a2d6=\"\" data-v-b661c86d=\"\" class=\"product-card\" aria-label=\"Everyday home and travel accessory 7, $49.99\"><a data-v-ea19a2d6=\"\" href=\"/products/7\" class=\"product-card__link\" aria-label=\"View Everyday home and travel accessory 7\"><div data-v-ea19a2d6=\"\" class=\"product-card__image-wrapper\"><img data-v-ea19a2d6=\"\" src=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22400%22%3E%3Crect%20width%3D%22400%22%20height%3D%22400%22%20fill%3D%22%23dbeafe%22%2F%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22175%22%20r%3D%2285%22%20fill%3D%22%232563eb%22%2F%3E%3Cpath%20d%3D%22M95%20320h210%22%20stroke%3D%22%231e40af%22%20stroke-width%3D%2225%22%2F%3E%3C%2Fsvg%3E\" alt=\"Everyday home and travel accessory 7\" class=\"product-card__image\" loading=\"lazy\"></div><h3 data-v-ea19a2d6=\"\" class=\"product-card__title\">Everyday home and travel accessory 7</h3></a><div data-v-ea19a2d6=\"\" class=\"product-card__body\"><p data-v-ea19a2d6=\"\" class=\"product-card__price\">$49.99</p><div data-v-ea19a2d6=\"\" class=\"product-card__rating\" role=\"img\" aria-label=\"4 out of 5 stars\"><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">☆</span></div><span data-v-ea19a2d6=\"\" class=\"p-tag p-component p-tag-success\" data-p=\"success\" aria-label=\"Stock status: In Stock\" data-pc-name=\"tag\" pc308=\"\" data-pc-section=\"root\"><!----><span class=\"p-tag-label\" data-pc-section=\"label\">In Stock</span></span></div><div data-v-ea19a2d6=\"\" class=\"product-card__overlay\"><button data-v-ea19a2d6=\"\" class=\"p-button p-component p-button-primary p-button-outlined product-card__add-btn\" data-p=\"outlined\" type=\"button\" aria-label=\"Add Everyday home and travel accessory 7 to cart\" data-pc-name=\"button\" data-p-disabled=\"false\" data-p-severity=\"primary\" pc309=\"\" data-pc-section=\"root\"><!----><span class=\"p-button-label\" data-pc-section=\"label\" data-p=\"\">Add to Cart</span><!----></button></div></article><article data-v-ea19a2d6=\"\" data-v-b661c86d=\"\" class=\"product-card product-card--out-of-stock\" aria-label=\"Everyday home and travel accessory 8, $49.99\"><a data-v-ea19a2d6=\"\" href=\"/products/8\" class=\"product-card__link\" aria-label=\"View Everyday home and travel accessory 8\"><div data-v-ea19a2d6=\"\" class=\"product-card__image-wrapper\"><img data-v-ea19a2d6=\"\" src=\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22400%22%20height%3D%22400%22%3E%3Crect%20width%3D%22400%22%20height%3D%22400%22%20fill%3D%22%23dbeafe%22%2F%3E%3Ccircle%20cx%3D%22200%22%20cy%3D%22175%22%20r%3D%2285%22%20fill%3D%22%232563eb%22%2F%3E%3Cpath%20d%3D%22M95%20320h210%22%20stroke%3D%22%231e40af%22%20stroke-width%3D%2225%22%2F%3E%3C%2Fsvg%3E\" alt=\"Everyday home and travel accessory 8\" class=\"product-card__image\" loading=\"lazy\"></div><h3 data-v-ea19a2d6=\"\" class=\"product-card__title\">Everyday home and travel accessory 8</h3></a><div data-v-ea19a2d6=\"\" class=\"product-card__body\"><p data-v-ea19a2d6=\"\" class=\"product-card__price\">$49.99</p><div data-v-ea19a2d6=\"\" class=\"product-card__rating\" role=\"img\" aria-label=\"4 out of 5 stars\"><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">★</span><span data-v-ea19a2d6=\"\" aria-hidden=\"true\" class=\"product-card__star\">☆</span></div><span data-v-ea19a2d6=\"\" class=\"p-tag p-component p-tag-danger\" data-p=\"danger\" aria-label=\"Stock status: Out of Stock\" data-pc-name=\"tag\" pc310=\"\" data-pc-section=\"root\"><!----><span class=\"p-tag-label\" data-pc-section=\"label\">Out of Stock</span></span></div><!----></article></div><!----></div></div></div></main><footer data-v-8242a339=\"\" class=\"footer\"><div data-v-8242a339=\"\" class=\"footer__inner\"><p data-v-8242a339=\"\">© 2026 RoboMart. All rights reserved.</p></div></footer></div></div>\n  \n\n<div class=\"p-toast p-component p-toast-bottom-right\" data-p=\"bottom-right\" max=\"3\" data-pc-name=\"toast\" pc0=\"\" data-pc-section=\"root\" style=\"position: fixed; right: 20px; bottom: 20px;\"><div></div></div><!----><!----></body>",
+    "shipping": []
+  },
+  "requests": [
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/cart",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders",
+      "query": "?page=0&size=25"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/orders/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=100"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/categories",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products",
+      "query": "?page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/cart/items",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/1",
+      "query": ""
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?minPrice=10&keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?minPrice=10&keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?brand=Fixture+Brand&minPrice=10&keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?brand=Fixture+Brand&minPrice=10&keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?brand=Fixture+Brand&minPrice=10&minRating=4&keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?brand=Fixture+Brand&minPrice=10&minRating=4&keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?minPrice=10&minRating=4&keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?minPrice=10&minRating=4&keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?minRating=4&keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?minRating=4&keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "OPTIONS",
+      "path": "/api/v1/products/search",
+      "query": "?brand=Fixture+Brand&keyword=wireless&page=0&size=20"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/search",
+      "query": "?brand=Fixture+Brand&keyword=wireless&page=0&size=20"
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+after: captured width 360
+after: captured width 390
+after: captured width 768
+after: captured width 1024
+after: captured width 1440
+Error: {"exceptionId":1,"text":"Uncaught","lineNumber":0,"columnNumber":69,"scriptId":"211","stackTrace":{"callFrames":[{"functionName":"","scriptId":"211","url":"","lineNumber":0,"columnNumber":75},{"functionName":"","scriptId":"211","url":"","lineNumber":0,"columnNumber":230}]},"exception":{"type":"object","subtype":"error","className":"Error","description":"Error: Missing .filter-sidebar__label\n    at <anonymous>:1:76\n    at <anonymous>:1:231","objectId":"2533554805828202113.40.2"}}
+    at evaluate (/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs:87:181)
+    at async click (/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs:97:19)
+    at async run (/Users/tuanphung/orca/workspaces/robo-mart/codex-frontend-upgrade-assessment/_bmad-output/test-artifacts/frontend-uiux-upgrade-2026-11-09/browser.cjs:189:48)
