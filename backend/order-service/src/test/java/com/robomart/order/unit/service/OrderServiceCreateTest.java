@@ -76,7 +76,10 @@ class OrderServiceCreateTest {
             throw new RuntimeException(e);
         }
         order.setStatus(status);
-        order.setItems(List.of());
+        var item = new com.robomart.order.entity.OrderItem();
+        item.setProductId(1L); item.setQuantity(2);
+        order.setItems(List.of(item));
+        order.setShippingAddress("123 Main St");
         return order;
     }
 
@@ -223,6 +226,7 @@ class OrderServiceCreateTest {
         Order order = orderService.createOrder("user-1", ITEMS, "123 Main St", "key-2");
 
         assertThat(order.getIdempotencyKey()).isEqualTo("key-2");
+        assertThat(order.getRequestFingerprint()).hasSize(64);
         assertThat(order.getTotalAmount()).isEqualByComparingTo("99.98");
         verify(orderSagaOrchestrator).executeSaga(order);
     }
@@ -252,4 +256,14 @@ class OrderServiceCreateTest {
                 .isInstanceOf(DataIntegrityViolationException.class);
         verifyNoInteractions(orderSagaOrchestrator);
     }
+    @Test
+    void replayWithDifferentCheckoutIsRejectedInEmbeddedMode() {
+        Order existing = buildOrder(43L, OrderStatus.CONFIRMED);
+        existing.setRequestFingerprint("original-checkout");
+        when(orderRepository.findByUserIdAndIdempotencyKey("user-1", "key")).thenReturn(Optional.of(existing));
+        assertThatThrownBy(() -> orderService.createOrder("user-1", ITEMS, "other address", "key"))
+                .isInstanceOf(com.robomart.common.exception.BusinessRuleException.class);
+        verifyNoInteractions(productPricingService, orderSagaOrchestrator);
+    }
+
 }

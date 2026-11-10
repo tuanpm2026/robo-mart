@@ -83,7 +83,7 @@ jobs:
       # in the parallel matrix job below, each isolated on its own runner.
       - name: Unit-only modules — tests + coverage gate
         working-directory: backend
-        run: ./mvnw verify -pl :common-lib,:security-lib,:proto,:api-gateway -DskipITs -DskipE2ETests
+        run: ./mvnw verify -pl :build-support,:common-core,:common-web-starter,:common-lib,:security-lib,:proto,:api-gateway -DskipITs -DskipE2ETests
 
       # OpenAPI drift detection (no-op until baselines are committed under docs/api).
       - name: OpenAPI Drift Detection
@@ -126,6 +126,7 @@ jobs:
       fail-fast: false
       matrix:
         module:
+          - outbox-lib           # Postgres delivery claims
           - product-service      # Elasticsearch + Redis
           - cart-service         # Redis
           - order-service        # Postgres + Kafka + gRPC (also runs its Pact provider IT)

@@ -152,7 +152,7 @@ class OrderSagaIT {
         when(inventoryStub.releaseInventory(any(ReleaseInventoryRequest.class)))
                 .thenReturn(ReleaseInventoryResponse.newBuilder().setSuccess(true).build());
         RestClient client = RestClient.builder().baseUrl("http://localhost:" + port)
-                .defaultHeader("Authorization", TestJwt.customerBearer())
+                .defaultHeader("Authorization", "Bearer customer-" + "user-http-orphan-regression")
                 .defaultHeader("X-User-Id", "user-http-orphan-regression")
                 .defaultStatusHandler(status -> status.isError(), (request, response) -> { })
                 .build();

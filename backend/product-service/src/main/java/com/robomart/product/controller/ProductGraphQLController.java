@@ -52,7 +52,7 @@ public class ProductGraphQLController {
     @QueryMapping
     public Product product(@Argument Long id) {
         log.debug("GraphQL: Fetching product with id={}", id);
-        return productRepository.findById(id).orElse(null);
+        return productRepository.findByIdWithDetails(id).orElse(null);
     }
 
     @QueryMapping
@@ -93,6 +93,7 @@ public class ProductGraphQLController {
         List<Product> ordered = productIds.stream()
                 .map(entityMap::get)
                 .filter(Objects::nonNull)
+                .filter(Product::isActive)
                 .toList();
 
         return new ProductConnection(

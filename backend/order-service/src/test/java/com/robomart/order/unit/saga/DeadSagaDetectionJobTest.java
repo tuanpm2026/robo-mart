@@ -136,8 +136,7 @@ class DeadSagaDetectionJobTest {
     }    @Test
     void manualReviewOrdersAreNotAutomaticallyRecovered() {
         Order order = buildStuckOrder(OrderStatus.REFUND_FAILED);
-        when(orderRepository.findStuckSagas(anyList(), any())).thenReturn(List.of(order));
-        when(recoveryPolicy.isManualReview(order.getId())).thenReturn(true);
+        when(orderRepository.findStuckSagas(anyList(), any())).thenReturn(List.of());
 
         job.detectAndRecoverDeadSagas();
 

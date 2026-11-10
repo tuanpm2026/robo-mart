@@ -565,4 +565,20 @@ class InventoryServiceTest {
         verify(inventoryItemRepository, never()).save(any());
     }
 
+    @Test
+    void bulkOperationProducesBoundedAuditIdentityForEveryAcceptedBatch() {
+        InventoryItem item = createTestInventoryItem(PRODUCT_ID, 1, 0, 1);
+        when(inventoryItemRepository.findByProductId(PRODUCT_ID)).thenReturn(Optional.of(item));
+        when(inventoryItemRepository.saveAndFlush(any())).thenAnswer(call -> call.getArgument(0));
+        var recorded = new java.util.ArrayList<com.robomart.common.audit.AuditEvent>();
+        var factory = new org.springframework.aop.aspectj.annotation.AspectJProxyFactory(inventoryService);
+        factory.addAspect(new com.robomart.common.audit.AuditAspect(List.of(recorded::add)));
+        InventoryService proxy = factory.getProxy();
+        proxy.bulkRestock(List.of(PRODUCT_ID), 1, "restock");
+        assertThat(recorded).singleElement().satisfies(event -> {
+            assertThat(event.entityType()).isEqualTo("InventoryBatch");
+            assertThat(event.entityId()).hasSize(36);
+        });
+    }
+
 }

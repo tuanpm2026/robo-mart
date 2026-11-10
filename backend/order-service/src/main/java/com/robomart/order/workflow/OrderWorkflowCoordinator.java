@@ -295,6 +295,9 @@ public class OrderWorkflowCoordinator {
         jdbc.update(
                 "INSERT INTO order_status_history(order_id,status) VALUES (?,?)", row.id(), target);
         if ("CANCELLED".equals(target)) {
+            outbox.save(new OutboxEvent("Order", Long.toString(row.id()), "order_status_changed",
+                    mapper.writeValueAsString(Map.of("orderId", Long.toString(row.id()),
+                            "previousStatus", row.status(), "newStatus", target))));
             outbox.save(
                     new OutboxEvent(
                             "Order",

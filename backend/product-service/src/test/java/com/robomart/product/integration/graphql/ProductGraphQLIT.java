@@ -47,6 +47,8 @@ class ProductGraphQLIT {
     /** Consumer group of {@link com.robomart.product.event.consumer.ProductIndexConsumer} (the only ES-index writer). */
     private static final String INDEX_CONSUMER_GROUP = "product-service-product-index-group";
 
+    @Autowired private org.springframework.jdbc.core.JdbcTemplate jdbc;
+
     @LocalServerPort
     private int port;
 
@@ -232,6 +234,17 @@ class ProductGraphQLIT {
         // Native GraphQL format — no REST API wrapper fields
         assertThat(response.getBody()).doesNotContain("\"traceId\"");
         assertThat(response.getBody()).doesNotContain("\"pagination\"");
+    }
+
+
+    @Test
+    void hiddenProductIsNotExposedByPublicGraphQLLookup() {
+        Long id = jdbc.queryForObject("INSERT INTO products(sku,name,price,category_id,active) VALUES (?,?,1.00,1,false) RETURNING id",
+                Long.class, "hidden-" + java.util.UUID.randomUUID(), "Hidden product");
+        try {
+            var response = postGraphQL("{ product(id: " + id + ") { id name } }");
+            assertThat(response.getBody()).contains("\"product\":null").doesNotContain("Hidden product");
+        } finally { jdbc.update("DELETE FROM products WHERE id=?", id); }
     }
 
     private org.springframework.http.ResponseEntity<String> postGraphQL(String query) {

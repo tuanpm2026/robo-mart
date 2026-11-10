@@ -13,7 +13,9 @@ import com.robomart.common.dto.PagedResponse;
 @HttpExchange(url = "/api/v1/admin/orders", accept = "application/json")
 public interface OrderAdminReadClient {
     @GetExchange("/reconciliation-summary")
-    ApiResponse<List<AdminReadModels.OrderSummary>> reconciliation();
+    ApiResponse<List<AdminReadModels.OrderSummary>> reconciliation(@RequestParam("page") int page);
+
+    default ApiResponse<List<AdminReadModels.OrderSummary>> reconciliation() { return reconciliation(0); }
 
     @GetExchange("/audit-logs")
     PagedResponse<AdminReadModels.AuditEntry> audits(@RequestParam Map<String, String> filters);

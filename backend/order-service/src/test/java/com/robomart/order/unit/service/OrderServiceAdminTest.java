@@ -54,6 +54,8 @@ class OrderServiceAdminTest {
         orderService = new OrderService(
                 orderRepository, orderItemRepository, orderStatusHistoryRepository,
                 orderSagaOrchestrator, transactionTemplate, null);
+        org.springframework.test.util.ReflectionTestUtils.setField(orderService, "statusOutbox",
+                org.mockito.Mockito.mock(com.robomart.order.repository.OutboxEventRepository.class));
     }
 
     private Order buildOrder(Long id, String userId, OrderStatus status) {
@@ -146,7 +148,7 @@ class OrderServiceAdminTest {
         history.setChangedAt(Instant.now().minusSeconds(60));
 
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-        when(orderItemRepository.findByOrderId(orderId)).thenReturn(List.of(item));
+        order.setItems(new java.util.ArrayList<>(List.of(item)));
         when(orderStatusHistoryRepository.findByOrderIdOrderByChangedAtAsc(orderId))
                 .thenReturn(List.of(history));
 

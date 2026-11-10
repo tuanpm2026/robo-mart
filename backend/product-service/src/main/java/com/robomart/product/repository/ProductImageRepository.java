@@ -17,5 +17,8 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, Long
 
     boolean existsByIdAndProductId(Long id, Long productId);
 
+    @org.springframework.data.jpa.repository.Query("SELECT new com.robomart.product.dto.ProductThumbnail(i.product.id, i.imageUrl) FROM ProductImage i WHERE i.product.id IN :ids ORDER BY i.displayOrder, i.id")
+    List<com.robomart.product.dto.ProductThumbnail> thumbnails(@org.springframework.data.repository.query.Param("ids") List<Long> ids);
+
     long countByProductId(Long productId);
 }
