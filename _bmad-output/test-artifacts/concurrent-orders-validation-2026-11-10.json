@@ -1,0 +1,1369 @@
+{
+  "date": "2026-11-10",
+  "scope": "Local isolated closed-burst concurrent checkout experiment; mock payment provider",
+  "sourceBaseCommit": "82d32b1596216a108f3a0b86e16419d7d04534ba",
+  "runtimeImages": {
+    "order-service": "sha256:40b2560ff5009062c3a2008afca758fbd10ebdeedc18edacbb4af31612ebac0e",
+    "inventory-service": "sha256:f058a4c9bcb9d3f2d969cd908e116712608a7f1341a010d4185b5816a8ef232f",
+    "payment-service": "sha256:3c7e9e478a6625f8b1b05de3a4d20d7e890fbb85c8595a840a7326f136ab1ed3",
+    "checkout-saga-service": "sha256:a3fd3524adc4f2f51ef13c6e114473f2186cfe65d5e30824ae1dc2223d6e1f41"
+  },
+  "k6Version": "k6 v2.3.0 (commit/devel, go1.27.1, darwin/arm64)",
+  "correctness": "passed",
+  "performanceObjective": "failed",
+  "objective": "p95 Saga completion after API acceptance <3000ms; enforced and unchanged",
+  "confirmedAndRefundedOrdersInComparison": 350,
+  "clientTimingProtocolSHA256": "fc1aab923437b2a63bed1f879ddc57c319ef697856017865357fe0ad36ba7618",
+  "profiles": [
+    {
+      "mode": "baseline",
+      "workerIntervalMs": 500,
+      "overallStatus": "failed",
+      "startedAt": "2026-11-10T08:09:34.804108+00:00",
+      "finishedAt": "2026-11-10T08:14:27.258569+00:00",
+      "workerRestored": "no configuration change requested",
+      "rawEvidenceSHA256": "5a65503639ae8c198ac4001f43b2bc3cabd512570cb6ffecaac946f076fce63c",
+      "fullLocalEvidence": "backend/k6/results/concurrent-baseline-2026-11-10.json",
+      "runs": [
+        {
+          "customers": 25,
+          "runId": "load-1a70fb34ef224ca48501dc7cdd51e93d",
+          "productId": 126,
+          "k6ExitCode": 99,
+          "status": "failed",
+          "correctness": "passed",
+          "performance": "failed",
+          "thresholds": {
+            "order_failures: count==0": true,
+            "http_req_failed: rate<0.01": true,
+            "accepted_orders: count==25": true,
+            "completion_samples: count==25": true,
+            "saga_completion_time: p(95)<3000": false,
+            "iterations: count==25": true,
+            "order_successes: count==25": true
+          },
+          "orderIds": [
+            603,
+            604,
+            605,
+            606,
+            607,
+            608,
+            609,
+            610,
+            611,
+            612,
+            613,
+            614,
+            615,
+            616,
+            617,
+            618,
+            619,
+            620,
+            621,
+            622,
+            623,
+            624,
+            625,
+            626,
+            627
+          ],
+          "measurement": {
+            "samples": 25,
+            "observedBurstSeconds": 13.915,
+            "confirmedOrdersPerSecond": 1.7966223499820337,
+            "submissionSpreadMs": 7,
+            "httpAttempts": 25,
+            "acceptanceMs": {
+              "p50": 76.0,
+              "p95": 92.6,
+              "p99": 96.79999999999998,
+              "max": 98
+            },
+            "afterAcceptanceMs": {
+              "p50": 10293.0,
+              "p95": 13720.999999999998,
+              "p99": 13830.36,
+              "max": 13833
+            },
+            "endToEndMs": {
+              "p50": 10365.0,
+              "p95": 13808.399999999998,
+              "p99": 13913.56,
+              "max": 13915
+            }
+          },
+          "serverTimelineP95Ms": {
+            "orderToSagaInbox": 2593.95283203125,
+            "inboxToReserveDispatch": 2612.06884765625,
+            "reserveToChargeDispatch": 3545.326025390625,
+            "chargeToConfirmDispatch": 5562.83642578125,
+            "serverConfirmation": 13698.955615234374
+          },
+          "postMeasurementTraceAuditCorrelation": {
+            "kind": "Response trace IDs correlated with Order CREATE audit and structured logs; not exported span timings",
+            "responseTraceIds": 25,
+            "correlatedTraceIds": 0,
+            "examples": [],
+            "auditedOrdersCorrelated": 25,
+            "auditExamples": [
+              {
+                "trace_id": "854a5b0401554dfc75844917b19bc607",
+                "entity_id": "605",
+                "created_at": "2026-11-10T08:09:42.89672+00:00"
+              },
+              {
+                "trace_id": "65f020ddcf0feae57043e3756a7c1d40",
+                "entity_id": "609",
+                "created_at": "2026-11-10T08:09:42.90161+00:00"
+              },
+              {
+                "trace_id": "a8a03243e88f5a2d7ac79774723998d5",
+                "entity_id": "608",
+                "created_at": "2026-11-10T08:09:42.901573+00:00"
+              },
+              {
+                "trace_id": "45387e9c58f29e7bf62c7d688f5b51db",
+                "entity_id": "604",
+                "created_at": "2026-11-10T08:09:42.896522+00:00"
+              },
+              {
+                "trace_id": "06a850c0c8f17fac16d75a0951f4378a",
+                "entity_id": "612",
+                "created_at": "2026-11-10T08:09:42.905402+00:00"
+              }
+            ]
+          },
+          "beforeCleanup": {
+            "orders": {
+              "CONFIRMED": 25
+            },
+            "inventory": [
+              {
+                "total_quantity": 0,
+                "reserved_quantity": 0,
+                "available_quantity": 0
+              }
+            ],
+            "payments": {
+              "COMPLETED": 25
+            },
+            "providerOperations": {
+              "COMPLETED": 25
+            },
+            "movements": {
+              "RESERVE": 25,
+              "COMMIT": 25
+            }
+          },
+          "afterCleanup": {
+            "orders": {
+              "CANCELLED": 25
+            },
+            "inventory": [
+              {
+                "total_quantity": 25,
+                "reserved_quantity": 0,
+                "available_quantity": 25
+              }
+            ],
+            "payments": {
+              "REFUNDED": 25
+            },
+            "providerOperations": {
+              "COMPLETED": 25,
+              "REFUNDED": 25
+            },
+            "movements": {
+              "RESERVE": 25,
+              "COMMIT": 25,
+              "RELEASE": 25
+            }
+          },
+          "cleanup": {
+            "status": "passed",
+            "errors": []
+          },
+          "timingRunSourceSHA256": {
+            "backend/k6/run_concurrent_orders.py": "61561d837e3b5c223ae38e3d455c8ef216a9f1f923279355a090abcfb894a0f9",
+            "backend/k6/scripts/concurrent-orders.js": "fc1aab923437b2a63bed1f879ddc57c319ef697856017865357fe0ad36ba7618",
+            "backend/k6/run_flash_sale.py": "1537edf65dd62b9634d5b2dd3a24e4e71175d8895f2b89d1b3aeefd32cae096a"
+          }
+        },
+        {
+          "customers": 50,
+          "runId": "load-5a7f94feaa344ad4897ac28ab15953e4",
+          "productId": 127,
+          "k6ExitCode": 99,
+          "status": "failed",
+          "correctness": "passed",
+          "performance": "failed",
+          "thresholds": {
+            "accepted_orders: count==50": true,
+            "iterations: count==50": true,
+            "order_failures: count==0": true,
+            "completion_samples: count==50": true,
+            "order_successes: count==50": true,
+            "http_req_failed: rate<0.01": true,
+            "saga_completion_time: p(95)<3000": false
+          },
+          "orderIds": [
+            628,
+            629,
+            630,
+            631,
+            632,
+            633,
+            634,
+            635,
+            636,
+            637,
+            638,
+            639,
+            640,
+            641,
+            642,
+            643,
+            644,
+            645,
+            646,
+            647,
+            648,
+            649,
+            650,
+            651,
+            652,
+            653,
+            654,
+            655,
+            656,
+            657,
+            658,
+            659,
+            660,
+            661,
+            662,
+            663,
+            664,
+            665,
+            666,
+            667,
+            668,
+            669,
+            670,
+            671,
+            672,
+            673,
+            674,
+            675,
+            676,
+            677
+          ],
+          "measurement": {
+            "samples": 50,
+            "observedBurstSeconds": 26.16,
+            "confirmedOrdersPerSecond": 1.9113149847094801,
+            "submissionSpreadMs": 10,
+            "httpAttempts": 50,
+            "acceptanceMs": {
+              "p50": 138.5,
+              "p95": 172.29999999999998,
+              "p99": 176.0,
+              "max": 176
+            },
+            "afterAcceptanceMs": {
+              "p50": 18404.5,
+              "p95": 25489.7,
+              "p99": 25987.97,
+              "max": 26011
+            },
+            "endToEndMs": {
+              "p50": 18551.5,
+              "p95": 25625.0,
+              "p99": 26125.99,
+              "max": 26150
+            }
+          },
+          "serverTimelineP95Ms": {
+            "orderToSagaInbox": 2630.3645629882812,
+            "inboxToReserveDispatch": 6018.811901855469,
+            "reserveToChargeDispatch": 6680.537634277343,
+            "chargeToConfirmDispatch": 12425.928967285156,
+            "serverConfirmation": 25431.63918457031
+          },
+          "postMeasurementTraceAuditCorrelation": {
+            "kind": "Response trace IDs correlated with Order CREATE audit and structured logs; not exported span timings",
+            "responseTraceIds": 50,
+            "correlatedTraceIds": 0,
+            "examples": [],
+            "auditedOrdersCorrelated": 50,
+            "auditExamples": [
+              {
+                "trace_id": "5b582edfaed0bc317f05496daf33089b",
+                "entity_id": "629",
+                "created_at": "2026-11-10T08:10:38.053363+00:00"
+              },
+              {
+                "trace_id": "57b9f23e2b4ead57bca270b84deb2e0a",
+                "entity_id": "631",
+                "created_at": "2026-11-10T08:10:38.053675+00:00"
+              },
+              {
+                "trace_id": "a334c63f0030bd61988de7c0eab921d7",
+                "entity_id": "630",
+                "created_at": "2026-11-10T08:10:38.053931+00:00"
+              },
+              {
+                "trace_id": "e64b9faa6b5762f351efe194f4566c2c",
+                "entity_id": "633",
+                "created_at": "2026-11-10T08:10:38.061452+00:00"
+              },
+              {
+                "trace_id": "3623c0971d2b2bc5ad3e79791c744262",
+                "entity_id": "634",
+                "created_at": "2026-11-10T08:10:38.061453+00:00"
+              }
+            ]
+          },
+          "beforeCleanup": {
+            "orders": {
+              "CONFIRMED": 50
+            },
+            "inventory": [
+              {
+                "total_quantity": 0,
+                "reserved_quantity": 0,
+                "available_quantity": 0
+              }
+            ],
+            "payments": {
+              "COMPLETED": 50
+            },
+            "providerOperations": {
+              "COMPLETED": 50
+            },
+            "movements": {
+              "RESERVE": 50,
+              "COMMIT": 50
+            }
+          },
+          "afterCleanup": {
+            "orders": {
+              "CANCELLED": 50
+            },
+            "inventory": [
+              {
+                "total_quantity": 50,
+                "reserved_quantity": 0,
+                "available_quantity": 50
+              }
+            ],
+            "payments": {
+              "REFUNDED": 50
+            },
+            "providerOperations": {
+              "COMPLETED": 50,
+              "REFUNDED": 50
+            },
+            "movements": {
+              "RESERVE": 50,
+              "COMMIT": 50,
+              "RELEASE": 50
+            }
+          },
+          "cleanup": {
+            "status": "passed",
+            "errors": []
+          },
+          "timingRunSourceSHA256": {
+            "backend/k6/run_concurrent_orders.py": "61561d837e3b5c223ae38e3d455c8ef216a9f1f923279355a090abcfb894a0f9",
+            "backend/k6/scripts/concurrent-orders.js": "fc1aab923437b2a63bed1f879ddc57c319ef697856017865357fe0ad36ba7618",
+            "backend/k6/run_flash_sale.py": "1537edf65dd62b9634d5b2dd3a24e4e71175d8895f2b89d1b3aeefd32cae096a"
+          }
+        },
+        {
+          "customers": 100,
+          "runId": "load-fb1549b3bda74c7db47413de12593bbe",
+          "productId": 128,
+          "k6ExitCode": 99,
+          "status": "failed",
+          "correctness": "passed",
+          "performance": "failed",
+          "thresholds": {
+            "saga_completion_time: p(95)<3000": false,
+            "iterations: count==100": true,
+            "order_successes: count==100": true,
+            "accepted_orders: count==100": true,
+            "completion_samples: count==100": true,
+            "http_req_failed: rate<0.01": true,
+            "order_failures: count==0": true
+          },
+          "orderIds": [
+            678,
+            679,
+            680,
+            681,
+            682,
+            683,
+            684,
+            685,
+            686,
+            687,
+            688,
+            689,
+            690,
+            691,
+            692,
+            693,
+            694,
+            695,
+            696,
+            697,
+            698,
+            699,
+            700,
+            701,
+            702,
+            703,
+            704,
+            705,
+            706,
+            707,
+            708,
+            709,
+            710,
+            711,
+            712,
+            713,
+            714,
+            715,
+            716,
+            717,
+            718,
+            719,
+            720,
+            721,
+            722,
+            723,
+            724,
+            725,
+            726,
+            727,
+            728,
+            729,
+            730,
+            731,
+            732,
+            733,
+            734,
+            735,
+            736,
+            737,
+            738,
+            739,
+            740,
+            741,
+            742,
+            743,
+            744,
+            745,
+            746,
+            747,
+            748,
+            749,
+            750,
+            751,
+            752,
+            753,
+            754,
+            755,
+            756,
+            757,
+            758,
+            759,
+            760,
+            761,
+            762,
+            763,
+            764,
+            765,
+            766,
+            767,
+            768,
+            769,
+            770,
+            771,
+            772,
+            773,
+            774,
+            775,
+            776,
+            777
+          ],
+          "measurement": {
+            "samples": 100,
+            "observedBurstSeconds": 53.9,
+            "confirmedOrdersPerSecond": 1.8552875695732838,
+            "submissionSpreadMs": 9,
+            "httpAttempts": 100,
+            "acceptanceMs": {
+              "p50": 270.0,
+              "p95": 327.1,
+              "p99": 338.06000000000006,
+              "max": 344
+            },
+            "afterAcceptanceMs": {
+              "p50": 39666.0,
+              "p95": 47456.75,
+              "p99": 53270.01,
+              "max": 53568
+            },
+            "endToEndMs": {
+              "p50": 39967.0,
+              "p95": 47784.25,
+              "p99": 53592.03,
+              "max": 53892
+            }
+          },
+          "serverTimelineP95Ms": {
+            "orderToSagaInbox": 3773.858544921875,
+            "inboxToReserveDispatch": 12119.593627929688,
+            "reserveToChargeDispatch": 12762.895788574218,
+            "chargeToConfirmDispatch": 24267.42099609375,
+            "serverConfirmation": 47191.34923095703
+          },
+          "postMeasurementTraceAuditCorrelation": {
+            "kind": "Response trace IDs correlated with Order CREATE audit and structured logs; not exported span timings",
+            "responseTraceIds": 100,
+            "correlatedTraceIds": 0,
+            "examples": [],
+            "auditedOrdersCorrelated": 100,
+            "auditExamples": [
+              {
+                "trace_id": "77f08bebed79ade4fe2a987cfa1c10d1",
+                "entity_id": "679",
+                "created_at": "2026-11-10T08:12:12.001661+00:00"
+              },
+              {
+                "trace_id": "ef57fc2b8896335641a675ef0ccd4ede",
+                "entity_id": "680",
+                "created_at": "2026-11-10T08:12:12.003601+00:00"
+              },
+              {
+                "trace_id": "c6b1d4f41a79fcd1bfd51d354a26524e",
+                "entity_id": "685",
+                "created_at": "2026-11-10T08:12:12.020037+00:00"
+              },
+              {
+                "trace_id": "bcd1fd0c884710e22747ff8f8978ddb1",
+                "entity_id": "689",
+                "created_at": "2026-11-10T08:12:12.031748+00:00"
+              },
+              {
+                "trace_id": "89cb4f97095f51241e92ab2974af2084",
+                "entity_id": "693",
+                "created_at": "2026-11-10T08:12:12.044706+00:00"
+              }
+            ]
+          },
+          "beforeCleanup": {
+            "orders": {
+              "CONFIRMED": 100
+            },
+            "inventory": [
+              {
+                "total_quantity": 0,
+                "reserved_quantity": 0,
+                "available_quantity": 0
+              }
+            ],
+            "payments": {
+              "COMPLETED": 100
+            },
+            "providerOperations": {
+              "COMPLETED": 100
+            },
+            "movements": {
+              "RESERVE": 100,
+              "COMMIT": 100
+            }
+          },
+          "afterCleanup": {
+            "orders": {
+              "CANCELLED": 100
+            },
+            "inventory": [
+              {
+                "total_quantity": 100,
+                "reserved_quantity": 0,
+                "available_quantity": 100
+              }
+            ],
+            "payments": {
+              "REFUNDED": 100
+            },
+            "providerOperations": {
+              "COMPLETED": 100,
+              "REFUNDED": 100
+            },
+            "movements": {
+              "RESERVE": 100,
+              "COMMIT": 100,
+              "RELEASE": 100
+            }
+          },
+          "cleanup": {
+            "status": "passed",
+            "errors": []
+          },
+          "timingRunSourceSHA256": {
+            "backend/k6/run_concurrent_orders.py": "61561d837e3b5c223ae38e3d455c8ef216a9f1f923279355a090abcfb894a0f9",
+            "backend/k6/scripts/concurrent-orders.js": "fc1aab923437b2a63bed1f879ddc57c319ef697856017865357fe0ad36ba7618",
+            "backend/k6/run_flash_sale.py": "1537edf65dd62b9634d5b2dd3a24e4e71175d8895f2b89d1b3aeefd32cae096a"
+          }
+        }
+      ]
+    },
+    {
+      "mode": "tuned",
+      "workerIntervalMs": 25,
+      "overallStatus": "failed",
+      "startedAt": "2026-11-10T08:14:27.346479+00:00",
+      "finishedAt": "2026-11-10T08:17:11.084039+00:00",
+      "workerRestored": true,
+      "rawEvidenceSHA256": "238bbd9fe915c66a25044457b1ec3555912c7091fe67b41d89c9ad82652e7d7c",
+      "fullLocalEvidence": "backend/k6/results/concurrent-tuned-2026-11-10.json",
+      "runs": [
+        {
+          "customers": 25,
+          "runId": "load-8bacf9a1bc3e4f00ab3e628292c62128",
+          "productId": 129,
+          "k6ExitCode": 99,
+          "status": "failed",
+          "correctness": "passed",
+          "performance": "failed",
+          "thresholds": {
+            "iterations: count==25": true,
+            "accepted_orders: count==25": true,
+            "completion_samples: count==25": true,
+            "http_req_failed: rate<0.01": true,
+            "order_failures: count==0": true,
+            "order_successes: count==25": true,
+            "saga_completion_time: p(95)<3000": false
+          },
+          "orderIds": [
+            778,
+            779,
+            780,
+            781,
+            782,
+            783,
+            784,
+            785,
+            786,
+            787,
+            788,
+            789,
+            790,
+            791,
+            792,
+            793,
+            794,
+            795,
+            796,
+            797,
+            798,
+            799,
+            800,
+            801,
+            802
+          ],
+          "measurement": {
+            "samples": 25,
+            "observedBurstSeconds": 10.955,
+            "confirmedOrdersPerSecond": 2.2820629849383844,
+            "submissionSpreadMs": 4,
+            "httpAttempts": 25,
+            "acceptanceMs": {
+              "p50": 170.0,
+              "p95": 295.19999999999993,
+              "p99": 330.1599999999999,
+              "max": 340
+            },
+            "afterAcceptanceMs": {
+              "p50": 5765.0,
+              "p95": 10425.0,
+              "p99": 10711.599999999999,
+              "max": 10798
+            },
+            "endToEndMs": {
+              "p50": 5987.0,
+              "p95": 10567.2,
+              "p99": 10861.8,
+              "max": 10953
+            }
+          },
+          "serverTimelineP95Ms": {
+            "orderToSagaInbox": 4481.069482421875,
+            "inboxToReserveDispatch": 588.172265625,
+            "reserveToChargeDispatch": 413.047265625,
+            "chargeToConfirmDispatch": 5119.364453125,
+            "serverConfirmation": 10314.50732421875
+          },
+          "postMeasurementTraceAuditCorrelation": {
+            "kind": "Response trace IDs correlated with Order CREATE audit and structured logs; not exported span timings",
+            "responseTraceIds": 25,
+            "correlatedTraceIds": 0,
+            "examples": [],
+            "auditedOrdersCorrelated": 25,
+            "auditExamples": [
+              {
+                "trace_id": "0955c2eaa9b9696f466b5198a727eb6a",
+                "entity_id": "782",
+                "created_at": "2026-11-10T08:14:42.535951+00:00"
+              },
+              {
+                "trace_id": "59b9b5e865e4aceca78895acc8c69d34",
+                "entity_id": "787",
+                "created_at": "2026-11-10T08:14:42.553718+00:00"
+              },
+              {
+                "trace_id": "6d6118fd5742c9401587e10b625bd07e",
+                "entity_id": "791",
+                "created_at": "2026-11-10T08:14:42.576802+00:00"
+              },
+              {
+                "trace_id": "ee5c652a63b3a94ee5b52fe38d74fd3a",
+                "entity_id": "784",
+                "created_at": "2026-11-10T08:14:42.536953+00:00"
+              },
+              {
+                "trace_id": "b3564ae924c54bb9399bbb6de7b0654d",
+                "entity_id": "779",
+                "created_at": "2026-11-10T08:14:42.528953+00:00"
+              }
+            ]
+          },
+          "beforeCleanup": {
+            "orders": {
+              "CONFIRMED": 25
+            },
+            "inventory": [
+              {
+                "total_quantity": 0,
+                "reserved_quantity": 0,
+                "available_quantity": 0
+              }
+            ],
+            "payments": {
+              "COMPLETED": 25
+            },
+            "providerOperations": {
+              "COMPLETED": 25
+            },
+            "movements": {
+              "RESERVE": 25,
+              "COMMIT": 25
+            }
+          },
+          "afterCleanup": {
+            "orders": {
+              "CANCELLED": 25
+            },
+            "inventory": [
+              {
+                "total_quantity": 25,
+                "reserved_quantity": 0,
+                "available_quantity": 25
+              }
+            ],
+            "payments": {
+              "REFUNDED": 25
+            },
+            "providerOperations": {
+              "COMPLETED": 25,
+              "REFUNDED": 25
+            },
+            "movements": {
+              "RESERVE": 25,
+              "COMMIT": 25,
+              "RELEASE": 25
+            }
+          },
+          "cleanup": {
+            "status": "passed",
+            "errors": []
+          },
+          "timingRunSourceSHA256": {
+            "backend/k6/run_concurrent_orders.py": "61561d837e3b5c223ae38e3d455c8ef216a9f1f923279355a090abcfb894a0f9",
+            "backend/k6/scripts/concurrent-orders.js": "fc1aab923437b2a63bed1f879ddc57c319ef697856017865357fe0ad36ba7618",
+            "backend/k6/run_flash_sale.py": "1537edf65dd62b9634d5b2dd3a24e4e71175d8895f2b89d1b3aeefd32cae096a"
+          }
+        },
+        {
+          "customers": 50,
+          "runId": "load-a971ea085bd144f4a67a42dca6ba156d",
+          "productId": 130,
+          "k6ExitCode": 99,
+          "status": "failed",
+          "correctness": "passed",
+          "performance": "failed",
+          "thresholds": {
+            "completion_samples: count==50": true,
+            "order_failures: count==0": true,
+            "saga_completion_time: p(95)<3000": false,
+            "order_successes: count==50": true,
+            "http_req_failed: rate<0.01": true,
+            "iterations: count==50": true,
+            "accepted_orders: count==50": true
+          },
+          "orderIds": [
+            803,
+            804,
+            805,
+            806,
+            807,
+            808,
+            809,
+            810,
+            811,
+            812,
+            813,
+            814,
+            815,
+            816,
+            817,
+            818,
+            819,
+            820,
+            821,
+            822,
+            823,
+            824,
+            825,
+            826,
+            827,
+            828,
+            829,
+            830,
+            831,
+            832,
+            833,
+            834,
+            835,
+            836,
+            837,
+            838,
+            839,
+            840,
+            841,
+            842,
+            843,
+            844,
+            845,
+            846,
+            847,
+            848,
+            849,
+            850,
+            851,
+            852
+          ],
+          "measurement": {
+            "samples": 50,
+            "observedBurstSeconds": 14.968,
+            "confirmedOrdersPerSecond": 3.3404596472474615,
+            "submissionSpreadMs": 4,
+            "httpAttempts": 50,
+            "acceptanceMs": {
+              "p50": 181.5,
+              "p95": 212.64999999999998,
+              "p99": 215.51,
+              "max": 216
+            },
+            "afterAcceptanceMs": {
+              "p50": 4611.5,
+              "p95": 9696.2,
+              "p99": 12280.45999999999,
+              "max": 14753
+            },
+            "endToEndMs": {
+              "p50": 4783.0,
+              "p95": 9862.1,
+              "p99": 12466.54999999999,
+              "max": 14968
+            }
+          },
+          "serverTimelineP95Ms": {
+            "orderToSagaInbox": 3669.467138671875,
+            "inboxToReserveDispatch": 352.885693359375,
+            "reserveToChargeDispatch": 388.86920166015625,
+            "chargeToConfirmDispatch": 5058.778308105469,
+            "serverConfirmation": 9422.648950195313
+          },
+          "postMeasurementTraceAuditCorrelation": {
+            "kind": "Response trace IDs correlated with Order CREATE audit and structured logs; not exported span timings",
+            "responseTraceIds": 50,
+            "correlatedTraceIds": 0,
+            "examples": [],
+            "auditedOrdersCorrelated": 50,
+            "auditExamples": [
+              {
+                "trace_id": "2d3903cbda7e460387f8f0e3bc6abc66",
+                "entity_id": "803",
+                "created_at": "2026-11-10T08:15:28.61815+00:00"
+              },
+              {
+                "trace_id": "49db818e93e329b6a306ee38cbb5f47c",
+                "entity_id": "810",
+                "created_at": "2026-11-10T08:15:28.628551+00:00"
+              },
+              {
+                "trace_id": "e2c8a6660504e546b67b227ddebcab7c",
+                "entity_id": "812",
+                "created_at": "2026-11-10T08:15:28.637171+00:00"
+              },
+              {
+                "trace_id": "ebf043c9612cad39f9d0061f2f78c135",
+                "entity_id": "817",
+                "created_at": "2026-11-10T08:15:28.643614+00:00"
+              },
+              {
+                "trace_id": "56b939a4a861f4e68ac94de7deed1f0d",
+                "entity_id": "822",
+                "created_at": "2026-11-10T08:15:28.651301+00:00"
+              }
+            ]
+          },
+          "beforeCleanup": {
+            "orders": {
+              "CONFIRMED": 50
+            },
+            "inventory": [
+              {
+                "total_quantity": 0,
+                "reserved_quantity": 0,
+                "available_quantity": 0
+              }
+            ],
+            "payments": {
+              "COMPLETED": 50
+            },
+            "providerOperations": {
+              "COMPLETED": 50
+            },
+            "movements": {
+              "RESERVE": 50,
+              "COMMIT": 50
+            }
+          },
+          "afterCleanup": {
+            "orders": {
+              "CANCELLED": 50
+            },
+            "inventory": [
+              {
+                "total_quantity": 50,
+                "reserved_quantity": 0,
+                "available_quantity": 50
+              }
+            ],
+            "payments": {
+              "REFUNDED": 50
+            },
+            "providerOperations": {
+              "COMPLETED": 50,
+              "REFUNDED": 50
+            },
+            "movements": {
+              "RESERVE": 50,
+              "COMMIT": 50,
+              "RELEASE": 50
+            }
+          },
+          "cleanup": {
+            "status": "passed",
+            "errors": []
+          },
+          "timingRunSourceSHA256": {
+            "backend/k6/run_concurrent_orders.py": "61561d837e3b5c223ae38e3d455c8ef216a9f1f923279355a090abcfb894a0f9",
+            "backend/k6/scripts/concurrent-orders.js": "fc1aab923437b2a63bed1f879ddc57c319ef697856017865357fe0ad36ba7618",
+            "backend/k6/run_flash_sale.py": "1537edf65dd62b9634d5b2dd3a24e4e71175d8895f2b89d1b3aeefd32cae096a"
+          }
+        },
+        {
+          "customers": 100,
+          "runId": "load-8c225be4208d4d3991bf994ddb543a0d",
+          "productId": 131,
+          "k6ExitCode": 99,
+          "status": "failed",
+          "correctness": "passed",
+          "performance": "failed",
+          "thresholds": {
+            "accepted_orders: count==100": true,
+            "saga_completion_time: p(95)<3000": false,
+            "completion_samples: count==100": true,
+            "http_req_failed: rate<0.01": true,
+            "iterations: count==100": true,
+            "order_successes: count==100": true,
+            "order_failures: count==0": true
+          },
+          "orderIds": [
+            853,
+            854,
+            855,
+            856,
+            857,
+            858,
+            859,
+            860,
+            861,
+            862,
+            863,
+            864,
+            865,
+            866,
+            867,
+            868,
+            869,
+            870,
+            871,
+            872,
+            873,
+            874,
+            875,
+            876,
+            877,
+            878,
+            879,
+            880,
+            881,
+            882,
+            883,
+            884,
+            885,
+            886,
+            887,
+            888,
+            889,
+            890,
+            891,
+            892,
+            893,
+            894,
+            895,
+            896,
+            897,
+            898,
+            899,
+            900,
+            901,
+            902,
+            903,
+            904,
+            905,
+            906,
+            907,
+            908,
+            909,
+            910,
+            911,
+            912,
+            913,
+            914,
+            915,
+            916,
+            917,
+            918,
+            919,
+            920,
+            921,
+            922,
+            923,
+            924,
+            925,
+            926,
+            927,
+            928,
+            929,
+            930,
+            931,
+            932,
+            933,
+            934,
+            935,
+            936,
+            937,
+            938,
+            939,
+            940,
+            941,
+            942,
+            943,
+            944,
+            945,
+            946,
+            947,
+            948,
+            949,
+            950,
+            951,
+            952
+          ],
+          "measurement": {
+            "samples": 100,
+            "observedBurstSeconds": 12.694,
+            "confirmedOrdersPerSecond": 7.877737513786041,
+            "submissionSpreadMs": 8,
+            "httpAttempts": 100,
+            "acceptanceMs": {
+              "p50": 256.0,
+              "p95": 333.05,
+              "p99": 334.02,
+              "max": 336
+            },
+            "afterAcceptanceMs": {
+              "p50": 2747.5,
+              "p95": 8014.54999999999,
+              "p99": 12306.41,
+              "max": 12446
+            },
+            "endToEndMs": {
+              "p50": 3023.0,
+              "p95": 8310.09999999999,
+              "p99": 12639.48,
+              "max": 12687
+            }
+          },
+          "serverTimelineP95Ms": {
+            "orderToSagaInbox": 1568.0869750976562,
+            "inboxToReserveDispatch": 372.68870849609374,
+            "reserveToChargeDispatch": 387.988232421875,
+            "chargeToConfirmDispatch": 5364.643835449205,
+            "serverConfirmation": 7552.017382812489
+          },
+          "postMeasurementTraceAuditCorrelation": {
+            "kind": "Response trace IDs correlated with Order CREATE audit and structured logs; not exported span timings",
+            "responseTraceIds": 100,
+            "correlatedTraceIds": 0,
+            "examples": [],
+            "auditedOrdersCorrelated": 100,
+            "auditExamples": [
+              {
+                "trace_id": "96279fb21010d452580a111998f1fb4a",
+                "entity_id": "854",
+                "created_at": "2026-11-10T08:16:27.524379+00:00"
+              },
+              {
+                "trace_id": "73a29449348bdc1e94afe6e83565f1ca",
+                "entity_id": "858",
+                "created_at": "2026-11-10T08:16:27.531281+00:00"
+              },
+              {
+                "trace_id": "6e097dd9bab8c095c872262fd48181eb",
+                "entity_id": "862",
+                "created_at": "2026-11-10T08:16:27.537925+00:00"
+              },
+              {
+                "trace_id": "896eb23a1ca8880ecdbe4ebce40d3470",
+                "entity_id": "867",
+                "created_at": "2026-11-10T08:16:27.542692+00:00"
+              },
+              {
+                "trace_id": "18c494d061e71ee93d10aebf0d8f8750",
+                "entity_id": "872",
+                "created_at": "2026-11-10T08:16:27.552336+00:00"
+              }
+            ]
+          },
+          "beforeCleanup": {
+            "orders": {
+              "CONFIRMED": 100
+            },
+            "inventory": [
+              {
+                "total_quantity": 0,
+                "reserved_quantity": 0,
+                "available_quantity": 0
+              }
+            ],
+            "payments": {
+              "COMPLETED": 100
+            },
+            "providerOperations": {
+              "COMPLETED": 100
+            },
+            "movements": {
+              "RESERVE": 100,
+              "COMMIT": 100
+            }
+          },
+          "afterCleanup": {
+            "orders": {
+              "CANCELLED": 100
+            },
+            "inventory": [
+              {
+                "total_quantity": 100,
+                "reserved_quantity": 0,
+                "available_quantity": 100
+              }
+            ],
+            "payments": {
+              "REFUNDED": 100
+            },
+            "providerOperations": {
+              "COMPLETED": 100,
+              "REFUNDED": 100
+            },
+            "movements": {
+              "RESERVE": 100,
+              "COMMIT": 100,
+              "RELEASE": 100
+            }
+          },
+          "cleanup": {
+            "status": "passed",
+            "errors": []
+          },
+          "timingRunSourceSHA256": {
+            "backend/k6/run_concurrent_orders.py": "61561d837e3b5c223ae38e3d455c8ef216a9f1f923279355a090abcfb894a0f9",
+            "backend/k6/scripts/concurrent-orders.js": "fc1aab923437b2a63bed1f879ddc57c319ef697856017865357fe0ad36ba7618",
+            "backend/k6/run_flash_sale.py": "1537edf65dd62b9634d5b2dd3a24e4e71175d8895f2b89d1b3aeefd32cae096a"
+          }
+        }
+      ]
+    }
+  ],
+  "finalSourceSmoke": {
+    "command": "python3 backend/k6/run_concurrent_orders.py --levels 5",
+    "exitCode": 1,
+    "correctness": "passed",
+    "performance": "failed",
+    "traceCorrelation": {
+      "kind": "Response trace IDs correlated with Order CREATE audit and structured logs; not exported span timings",
+      "responseTraceIds": 5,
+      "correlatedTraceIds": 0,
+      "examples": [],
+      "auditedOrdersCorrelated": 5,
+      "auditExamples": [
+        {
+          "trace_id": "b43fe712b05a669b5d669311328196f0",
+          "entity_id": "956",
+          "created_at": "2026-11-10T08:17:55.141378+00:00"
+        },
+        {
+          "trace_id": "50fbd154ff222dc53ff6a8625e4ef9ce",
+          "entity_id": "954",
+          "created_at": "2026-11-10T08:17:55.141379+00:00"
+        },
+        {
+          "trace_id": "c1ed435d05fdaf74235b516af3dc1bc9",
+          "entity_id": "955",
+          "created_at": "2026-11-10T08:17:55.141631+00:00"
+        },
+        {
+          "trace_id": "6d1e3114ed89f517b9e8255a9139c60b",
+          "entity_id": "953",
+          "created_at": "2026-11-10T08:17:55.141778+00:00"
+        },
+        {
+          "trace_id": "2c9823e439f0cd52d4051625e5c29a02",
+          "entity_id": "957",
+          "created_at": "2026-11-10T08:17:55.143926+00:00"
+        }
+      ]
+    },
+    "cleanup": {
+      "status": "passed",
+      "errors": []
+    },
+    "testSourceSHA256": {
+      "backend/k6/run_concurrent_orders.py": "c838ba57bf70f6e392c2ec429109634a6b0823de61b32128c71eadfc6b8d6290",
+      "backend/k6/scripts/concurrent-orders.js": "fc1aab923437b2a63bed1f879ddc57c319ef697856017865357fe0ad36ba7618",
+      "backend/k6/run_flash_sale.py": "1537edf65dd62b9634d5b2dd3a24e4e71175d8895f2b89d1b3aeefd32cae096a"
+    }
+  },
+  "checks": [
+    {
+      "command": "python3 -m unittest discover -s backend/k6 -p 'test_*.py' -v",
+      "result": "15 passed"
+    },
+    {
+      "command": "node --experimental-vm-modules --test backend/k6/*.test.cjs",
+      "result": "15 passed"
+    },
+    {
+      "command": "docker compose --env-file /dev/null --project-name robomart-java25-e2e-resume --file infra/docker/docker-compose.e2e.yml config --quiet",
+      "result": "passed"
+    },
+    {
+      "command": "node --check backend/k6/scripts/concurrent-orders.js",
+      "result": "passed"
+    },
+    {
+      "command": "python3 -m py_compile backend/k6/run_concurrent_orders.py backend/k6/run_flash_sale.py",
+      "result": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    }
+  ],
+  "commands": [
+    {
+      "command": "python3 backend/k6/run_concurrent_orders.py",
+      "exitCode": 1,
+      "result": "All business and cleanup checks passed; all three latency SLO checks failed"
+    },
+    {
+      "command": "python3 backend/k6/run_concurrent_orders.py --worker-interval-ms 25",
+      "exitCode": 1,
+      "result": "All business and cleanup checks passed; all three latency SLO checks failed; original worker restored"
+    }
+  ],
+  "provenanceNotes": [
+    "The added CREATE-audit trace correlation is post-measurement diagnostics. It was verified independently on all 350 comparison orders and on a final-source five-customer smoke. Timing runs retain their original runner hashes.",
+    "The JavaScript timing protocol SHA256 is identical for all six timing runs and the committed client source.",
+    "An exploratory five-customer run and earlier 25/50/100 baseline preceded the recorded comparison and warmed the retained fixture. They are excluded from the headline comparison."
+  ],
+  "limitations": [
+    "These are one closed-burst sample per level/configuration, not sustained capacity or production SLA evidence.",
+    "The 25 ms configuration recreates the worker; its first 25-customer run includes worker warmup effects. Both 100-customer comparison runs follow 25/50-customer runs.",
+    "Existing backend images were reused with the recorded identities. No backend Java business implementation or production scheduling defaults were changed.",
+    "The fixture has tracing sampling disabled. Trace IDs are correlated to durable audit rows, not exported distributed-span timings.",
+    "Client completion includes polling/network overhead; SQL intent-stage differences include queueing and operation work and must not be interpreted as raw RPC duration.",
+    "Stage p95 values need not belong to the same order and must not be summed.",
+    "The Docker VM has 8321429504 bytes of memory and other unrelated containers remained running; results are local development observations."
+  ],
+  "sharedHarnessFlashRegression": {
+    "command": "python3 backend/k6/run_flash_sale.py --customers 5",
+    "status": "passed",
+    "cleanup": {
+      "status": "passed",
+      "errors": []
+    },
+    "fullLocalEvidence": "backend/k6/results/flash-after-concurrent-2026-11-10.json"
+  },
+  "teardown": {
+    "command": "infra/e2e/stack.sh down",
+    "result": "passed",
+    "remainingFixtureContainers": [],
+    "retainedVolumes": [
+      "robomart-java25-e2e-resume_elasticsearch-data",
+      "robomart-java25-e2e-resume_kafka-data",
+      "robomart-java25-e2e-resume_minio-data",
+      "robomart-java25-e2e-resume_postgres-data",
+      "robomart-java25-e2e-resume_product-images"
+    ],
+    "unrelatedContainersStillRunning": [
+      "backend-backend-1",
+      "backend-db-1",
+      "backend-ims_mock-1",
+      "backend-redis-1",
+      "backend-test_db-1",
+      "monopoly-m3-postgres-1"
+    ]
+  }
+}
