@@ -1,0 +1,1276 @@
+{
+  "date": "2026-11-10",
+  "scope": "Flash-sale correctness and Payment outage recovery in the isolated local E2E fixture",
+  "sourceCommit": "375c3a0abb2d2f6661f31a82692adc2e2fcd002f",
+  "testSourceSHA256": {
+    "backend/k6/run_flash_sale.py": "ef247d006803437ea6bed619701937e6bb9ba52b39081f20969417c86f2ed1b7",
+    "backend/k6/scripts/flash-sale.js": "7980d7920639b4be82fea9be3e38d1b750ada3dd1b42621262acc773d11fa8cd",
+    "backend/k6/test_flash_sale.py": "c234689025d5e4a3cad8c12648b62edf08e0734ba8a580554a05a06a3384572f",
+    "backend/k6/flash-sale.test.cjs": "5d5365af8fbc4a0ad96bf188a65d08cef28a09398842d463b8135bda2806e172"
+  },
+  "runtimeImages": {
+    "order-service": "sha256:40b2560ff5009062c3a2008afca758fbd10ebdeedc18edacbb4af31612ebac0e",
+    "inventory-service": "sha256:f058a4c9bcb9d3f2d969cd908e116712608a7f1341a010d4185b5816a8ef232f",
+    "payment-service": "sha256:3c7e9e478a6625f8b1b05de3a4d20d7e890fbb85c8595a840a7326f136ab1ed3",
+    "checkout-saga-service": "sha256:a3fd3524adc4f2f51ef13c6e114473f2186cfe65d5e30824ae1dc2223d6e1f41"
+  },
+  "k6Version": "k6 v2.3.0 (commit/devel, go1.27.1, darwin/arm64)",
+  "commands": [
+    {
+      "command": "infra/e2e/stack.sh up",
+      "result": "passed; reused available fixture images"
+    },
+    {
+      "command": "python3 -m unittest discover -s backend/k6 -p 'test_*.py' -v",
+      "result": "passed; 5 tests, including 27 corrupted-evidence subcases"
+    },
+    {
+      "command": "node --experimental-vm-modules --test backend/k6/flash-sale.test.cjs",
+      "result": "passed; 6 tests against the actual k6 module"
+    },
+    {
+      "command": "node --check backend/k6/scripts/flash-sale.js",
+      "result": "passed"
+    },
+    {
+      "command": "python3 -m py_compile backend/k6/run_flash_sale.py backend/k6/test_flash_sale.py",
+      "result": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    },
+    {
+      "command": "infra/e2e/stack.sh down",
+      "result": "passed; fixture containers removed; data volumes retained"
+    }
+  ],
+  "runs": [
+    {
+      "scenario": "rehearsal-5",
+      "command": "python3 backend/k6/run_flash_sale.py --customers 5",
+      "status": "passed",
+      "runId": "flash-112c76b33d41473c9bcd331610973cb3",
+      "startedAt": "2026-11-10T02:37:47.786439+00:00",
+      "productId": 119,
+      "k6ExitCode": 0,
+      "k6Metrics": {
+        "successful_orders": {
+          "type": "counter",
+          "contains": "default",
+          "values": {
+            "count": 1,
+            "rate": 0.11960673783028354
+          },
+          "thresholds": {
+            "count==1": {
+              "ok": true
+            }
+          }
+        },
+        "cancelled_orders": {
+          "thresholds": {
+            "count==4": {
+              "ok": true
+            }
+          },
+          "type": "counter",
+          "contains": "default",
+          "values": {
+            "count": 4,
+            "rate": 0.47842695132113416
+          }
+        },
+        "iterations": {
+          "type": "counter",
+          "contains": "default",
+          "values": {
+            "count": 5,
+            "rate": 0.5980336891514177
+          },
+          "thresholds": {
+            "count==5": {
+              "ok": true
+            }
+          }
+        },
+        "unexpected_outcomes": {
+          "thresholds": {
+            "count==0": {
+              "ok": true
+            }
+          },
+          "type": "counter",
+          "contains": "default",
+          "values": {
+            "count": 0,
+            "rate": 0
+          }
+        },
+        "checkout_completion_ms": {
+          "type": "trend",
+          "contains": "time",
+          "values": {
+            "avg": 4327,
+            "min": 4327,
+            "med": 4327,
+            "max": 4327,
+            "p(90)": 4327,
+            "p(95)": 4327
+          }
+        },
+        "replay_mismatches": {
+          "type": "counter",
+          "contains": "default",
+          "values": {
+            "count": 0,
+            "rate": 0
+          },
+          "thresholds": {
+            "count==0": {
+              "ok": true
+            }
+          }
+        }
+      },
+      "initialInventory": [
+        {
+          "total_quantity": 1,
+          "reserved_quantity": 0,
+          "available_quantity": 1
+        }
+      ],
+      "beforeCleanup": {
+        "orderIds": [
+          218,
+          219,
+          220,
+          221,
+          222
+        ],
+        "orderStatuses": {
+          "CONFIRMED": 1,
+          "CANCELLED": 4
+        },
+        "sagaStates": {
+          "CHECKOUT_CONFIRMED": 1,
+          "CANCELLED": 4
+        },
+        "sagaReasons": {
+          "": 1,
+          "Inventory rejected reservation": 4
+        },
+        "manualReview": 0,
+        "inventory": [
+          {
+            "total_quantity": 0,
+            "reserved_quantity": 0,
+            "available_quantity": 0
+          }
+        ],
+        "reservationStatuses": {
+          "COMMITTED": 1,
+          "RELEASED": 4
+        },
+        "movements": [
+          {
+            "type": "RESERVE",
+            "order_id": "218",
+            "quantity": 1
+          },
+          {
+            "type": "COMMIT",
+            "order_id": "218",
+            "quantity": 1
+          }
+        ],
+        "payments": [
+          {
+            "amount": 9.99,
+            "status": "COMPLETED",
+            "order_id": "218",
+            "refunded_amount": 0.0
+          }
+        ],
+        "providerOperations": [
+          {
+            "amount": 9.99,
+            "status": "COMPLETED",
+            "operation_key": "charge:218",
+            "request_order_id": "218"
+          }
+        ]
+      },
+      "afterCleanup": {
+        "orderIds": [
+          218,
+          219,
+          220,
+          221,
+          222
+        ],
+        "orderStatuses": {
+          "CANCELLED": 5
+        },
+        "sagaStates": {
+          "CANCELLED": 5
+        },
+        "sagaReasons": {
+          "Flash sale fixture cleanup": 1,
+          "Inventory rejected reservation": 4
+        },
+        "manualReview": 0,
+        "inventory": [
+          {
+            "total_quantity": 1,
+            "reserved_quantity": 0,
+            "available_quantity": 1
+          }
+        ],
+        "reservationStatuses": {
+          "RELEASED": 5
+        },
+        "movements": [
+          {
+            "type": "RESERVE",
+            "order_id": "218",
+            "quantity": 1
+          },
+          {
+            "type": "COMMIT",
+            "order_id": "218",
+            "quantity": 1
+          },
+          {
+            "type": "RELEASE",
+            "order_id": "218",
+            "quantity": 1
+          }
+        ],
+        "payments": [
+          {
+            "amount": 9.99,
+            "status": "REFUNDED",
+            "order_id": "218",
+            "refunded_amount": 9.99
+          }
+        ],
+        "providerOperations": [
+          {
+            "amount": 9.99,
+            "status": "COMPLETED",
+            "operation_key": "charge:218",
+            "request_order_id": "218"
+          },
+          {
+            "amount": 9.99,
+            "status": "REFUNDED",
+            "operation_key": "refund:txn-e7220b9a-50fb-45b6-a796-8697d40677eb:9f00d09a-4ace-403e-b497-1562c033f937:refund",
+            "request_order_id": null
+          }
+        ]
+      },
+      "cleanup": {
+        "status": "passed",
+        "errors": []
+      },
+      "fullLocalEvidence": "backend/k6/results/rehearsal-5-2026-11-10.json"
+    },
+    {
+      "scenario": "baseline-100",
+      "command": "python3 backend/k6/run_flash_sale.py",
+      "status": "passed",
+      "runId": "flash-870a22d8088141af8dfdd0e27e583c95",
+      "startedAt": "2026-11-10T02:38:29.593159+00:00",
+      "productId": 120,
+      "k6ExitCode": 0,
+      "k6Metrics": {
+        "unexpected_outcomes": {
+          "type": "counter",
+          "contains": "default",
+          "values": {
+            "count": 0,
+            "rate": 0
+          },
+          "thresholds": {
+            "count==0": {
+              "ok": true
+            }
+          }
+        },
+        "checkout_completion_ms": {
+          "type": "trend",
+          "contains": "time",
+          "values": {
+            "avg": 6486,
+            "min": 6486,
+            "med": 6486,
+            "max": 6486,
+            "p(90)": 6486,
+            "p(95)": 6486
+          }
+        },
+        "replay_mismatches": {
+          "type": "counter",
+          "contains": "default",
+          "values": {
+            "count": 0,
+            "rate": 0
+          },
+          "thresholds": {
+            "count==0": {
+              "ok": true
+            }
+          }
+        },
+        "iterations": {
+          "type": "counter",
+          "contains": "default",
+          "values": {
+            "rate": 1.4796261617969138,
+            "count": 100
+          },
+          "thresholds": {
+            "count==100": {
+              "ok": true
+            }
+          }
+        },
+        "cancelled_orders": {
+          "values": {
+            "rate": 1.4648299001789447,
+            "count": 99
+          },
+          "thresholds": {
+            "count==99": {
+              "ok": true
+            }
+          },
+          "type": "counter",
+          "contains": "default"
+        },
+        "successful_orders": {
+          "type": "counter",
+          "contains": "default",
+          "values": {
+            "count": 1,
+            "rate": 0.014796261617969137
+          },
+          "thresholds": {
+            "count==1": {
+              "ok": true
+            }
+          }
+        }
+      },
+      "initialInventory": [
+        {
+          "total_quantity": 1,
+          "reserved_quantity": 0,
+          "available_quantity": 1
+        }
+      ],
+      "beforeCleanup": {
+        "orderIds": [
+          223,
+          224,
+          225,
+          226,
+          227,
+          228,
+          229,
+          230,
+          231,
+          232,
+          233,
+          234,
+          235,
+          236,
+          237,
+          238,
+          239,
+          240,
+          241,
+          242,
+          243,
+          244,
+          245,
+          246,
+          247,
+          248,
+          249,
+          250,
+          251,
+          252,
+          253,
+          254,
+          255,
+          256,
+          257,
+          258,
+          259,
+          260,
+          261,
+          262,
+          263,
+          264,
+          265,
+          266,
+          267,
+          268,
+          269,
+          270,
+          271,
+          272,
+          273,
+          274,
+          275,
+          276,
+          277,
+          278,
+          279,
+          280,
+          281,
+          282,
+          283,
+          284,
+          285,
+          286,
+          287,
+          288,
+          289,
+          290,
+          291,
+          292,
+          293,
+          294,
+          295,
+          296,
+          297,
+          298,
+          299,
+          300,
+          301,
+          302,
+          303,
+          304,
+          305,
+          306,
+          307,
+          308,
+          309,
+          310,
+          311,
+          312,
+          313,
+          314,
+          315,
+          316,
+          317,
+          318,
+          319,
+          320,
+          321,
+          322
+        ],
+        "orderStatuses": {
+          "CANCELLED": 99,
+          "CONFIRMED": 1
+        },
+        "sagaStates": {
+          "CANCELLED": 99,
+          "CHECKOUT_CONFIRMED": 1
+        },
+        "sagaReasons": {
+          "Inventory rejected reservation": 99,
+          "": 1
+        },
+        "manualReview": 0,
+        "inventory": [
+          {
+            "total_quantity": 0,
+            "reserved_quantity": 0,
+            "available_quantity": 0
+          }
+        ],
+        "reservationStatuses": {
+          "RELEASED": 99,
+          "COMMITTED": 1
+        },
+        "movements": [
+          {
+            "type": "RESERVE",
+            "order_id": "234",
+            "quantity": 1
+          },
+          {
+            "type": "COMMIT",
+            "order_id": "234",
+            "quantity": 1
+          }
+        ],
+        "payments": [
+          {
+            "amount": 9.99,
+            "status": "COMPLETED",
+            "order_id": "234",
+            "refunded_amount": 0.0
+          }
+        ],
+        "providerOperations": [
+          {
+            "amount": 9.99,
+            "status": "COMPLETED",
+            "operation_key": "charge:234",
+            "request_order_id": "234"
+          }
+        ]
+      },
+      "afterCleanup": {
+        "orderIds": [
+          223,
+          224,
+          225,
+          226,
+          227,
+          228,
+          229,
+          230,
+          231,
+          232,
+          233,
+          234,
+          235,
+          236,
+          237,
+          238,
+          239,
+          240,
+          241,
+          242,
+          243,
+          244,
+          245,
+          246,
+          247,
+          248,
+          249,
+          250,
+          251,
+          252,
+          253,
+          254,
+          255,
+          256,
+          257,
+          258,
+          259,
+          260,
+          261,
+          262,
+          263,
+          264,
+          265,
+          266,
+          267,
+          268,
+          269,
+          270,
+          271,
+          272,
+          273,
+          274,
+          275,
+          276,
+          277,
+          278,
+          279,
+          280,
+          281,
+          282,
+          283,
+          284,
+          285,
+          286,
+          287,
+          288,
+          289,
+          290,
+          291,
+          292,
+          293,
+          294,
+          295,
+          296,
+          297,
+          298,
+          299,
+          300,
+          301,
+          302,
+          303,
+          304,
+          305,
+          306,
+          307,
+          308,
+          309,
+          310,
+          311,
+          312,
+          313,
+          314,
+          315,
+          316,
+          317,
+          318,
+          319,
+          320,
+          321,
+          322
+        ],
+        "orderStatuses": {
+          "CANCELLED": 100
+        },
+        "sagaStates": {
+          "CANCELLED": 100
+        },
+        "sagaReasons": {
+          "Inventory rejected reservation": 99,
+          "Flash sale fixture cleanup": 1
+        },
+        "manualReview": 0,
+        "inventory": [
+          {
+            "total_quantity": 1,
+            "reserved_quantity": 0,
+            "available_quantity": 1
+          }
+        ],
+        "reservationStatuses": {
+          "RELEASED": 100
+        },
+        "movements": [
+          {
+            "type": "RESERVE",
+            "order_id": "234",
+            "quantity": 1
+          },
+          {
+            "type": "COMMIT",
+            "order_id": "234",
+            "quantity": 1
+          },
+          {
+            "type": "RELEASE",
+            "order_id": "234",
+            "quantity": 1
+          }
+        ],
+        "payments": [
+          {
+            "amount": 9.99,
+            "status": "REFUNDED",
+            "order_id": "234",
+            "refunded_amount": 9.99
+          }
+        ],
+        "providerOperations": [
+          {
+            "amount": 9.99,
+            "status": "COMPLETED",
+            "operation_key": "charge:234",
+            "request_order_id": "234"
+          },
+          {
+            "amount": 9.99,
+            "status": "REFUNDED",
+            "operation_key": "refund:txn-e882b952-ef5e-45ba-bc67-7085039d8d58:5d80a79e-83ee-44bf-ac98-9685b3b48c32:refund",
+            "request_order_id": null
+          }
+        ]
+      },
+      "cleanup": {
+        "status": "passed",
+        "errors": []
+      },
+      "fullLocalEvidence": "backend/k6/results/baseline-100-2026-11-10.json"
+    },
+    {
+      "scenario": "payment-outage-100",
+      "command": "python3 backend/k6/run_flash_sale.py --payment-outage",
+      "status": "passed",
+      "runId": "flash-ae32e535000f47d4ab8c45133b87d814",
+      "startedAt": "2026-11-10T02:40:17.741056+00:00",
+      "productId": 121,
+      "k6ExitCode": 0,
+      "k6Metrics": {
+        "cancelled_orders": {
+          "type": "counter",
+          "contains": "default",
+          "values": {
+            "rate": 1.4852202581642857,
+            "count": 99
+          },
+          "thresholds": {
+            "count==99": {
+              "ok": true
+            }
+          }
+        },
+        "unexpected_outcomes": {
+          "type": "counter",
+          "contains": "default",
+          "values": {
+            "count": 0,
+            "rate": 0
+          },
+          "thresholds": {
+            "count==0": {
+              "ok": true
+            }
+          }
+        },
+        "iterations": {
+          "values": {
+            "count": 100,
+            "rate": 1.5002224829942281
+          },
+          "thresholds": {
+            "count==100": {
+              "ok": true
+            }
+          },
+          "type": "counter",
+          "contains": "default"
+        },
+        "replay_mismatches": {
+          "type": "counter",
+          "contains": "default",
+          "values": {
+            "count": 0,
+            "rate": 0
+          },
+          "thresholds": {
+            "count==0": {
+              "ok": true
+            }
+          }
+        },
+        "checkout_completion_ms": {
+          "type": "trend",
+          "contains": "time",
+          "values": {
+            "avg": 20378,
+            "min": 20378,
+            "med": 20378,
+            "max": 20378,
+            "p(90)": 20378,
+            "p(95)": 20378
+          }
+        },
+        "successful_orders": {
+          "type": "counter",
+          "contains": "default",
+          "values": {
+            "count": 1,
+            "rate": 0.015002224829942281
+          },
+          "thresholds": {
+            "count==1": {
+              "ok": true
+            }
+          }
+        }
+      },
+      "initialInventory": [
+        {
+          "total_quantity": 1,
+          "reserved_quantity": 0,
+          "available_quantity": 1
+        }
+      ],
+      "beforeCleanup": {
+        "orderIds": [
+          323,
+          324,
+          325,
+          326,
+          327,
+          328,
+          329,
+          330,
+          331,
+          332,
+          333,
+          334,
+          335,
+          336,
+          337,
+          338,
+          339,
+          340,
+          341,
+          342,
+          343,
+          344,
+          345,
+          346,
+          347,
+          348,
+          349,
+          350,
+          351,
+          352,
+          353,
+          354,
+          355,
+          356,
+          357,
+          358,
+          359,
+          360,
+          361,
+          362,
+          363,
+          364,
+          365,
+          366,
+          367,
+          368,
+          369,
+          370,
+          371,
+          372,
+          373,
+          374,
+          375,
+          376,
+          377,
+          378,
+          379,
+          380,
+          381,
+          382,
+          383,
+          384,
+          385,
+          386,
+          387,
+          388,
+          389,
+          390,
+          391,
+          392,
+          393,
+          394,
+          395,
+          396,
+          397,
+          398,
+          399,
+          400,
+          401,
+          402,
+          403,
+          404,
+          405,
+          406,
+          407,
+          408,
+          409,
+          410,
+          411,
+          412,
+          413,
+          414,
+          415,
+          416,
+          417,
+          418,
+          419,
+          420,
+          421,
+          422
+        ],
+        "orderStatuses": {
+          "CANCELLED": 99,
+          "CONFIRMED": 1
+        },
+        "sagaStates": {
+          "CANCELLED": 99,
+          "CHECKOUT_CONFIRMED": 1
+        },
+        "sagaReasons": {
+          "Inventory rejected reservation": 99,
+          "": 1
+        },
+        "manualReview": 0,
+        "inventory": [
+          {
+            "total_quantity": 0,
+            "reserved_quantity": 0,
+            "available_quantity": 0
+          }
+        ],
+        "reservationStatuses": {
+          "RELEASED": 99,
+          "COMMITTED": 1
+        },
+        "movements": [
+          {
+            "type": "RESERVE",
+            "order_id": "326",
+            "quantity": 1
+          },
+          {
+            "type": "COMMIT",
+            "order_id": "326",
+            "quantity": 1
+          }
+        ],
+        "payments": [
+          {
+            "amount": 9.99,
+            "status": "COMPLETED",
+            "order_id": "326",
+            "refunded_amount": 0.0
+          }
+        ],
+        "providerOperations": [
+          {
+            "amount": 9.99,
+            "status": "COMPLETED",
+            "operation_key": "charge:326",
+            "request_order_id": "326"
+          }
+        ]
+      },
+      "afterCleanup": {
+        "orderIds": [
+          323,
+          324,
+          325,
+          326,
+          327,
+          328,
+          329,
+          330,
+          331,
+          332,
+          333,
+          334,
+          335,
+          336,
+          337,
+          338,
+          339,
+          340,
+          341,
+          342,
+          343,
+          344,
+          345,
+          346,
+          347,
+          348,
+          349,
+          350,
+          351,
+          352,
+          353,
+          354,
+          355,
+          356,
+          357,
+          358,
+          359,
+          360,
+          361,
+          362,
+          363,
+          364,
+          365,
+          366,
+          367,
+          368,
+          369,
+          370,
+          371,
+          372,
+          373,
+          374,
+          375,
+          376,
+          377,
+          378,
+          379,
+          380,
+          381,
+          382,
+          383,
+          384,
+          385,
+          386,
+          387,
+          388,
+          389,
+          390,
+          391,
+          392,
+          393,
+          394,
+          395,
+          396,
+          397,
+          398,
+          399,
+          400,
+          401,
+          402,
+          403,
+          404,
+          405,
+          406,
+          407,
+          408,
+          409,
+          410,
+          411,
+          412,
+          413,
+          414,
+          415,
+          416,
+          417,
+          418,
+          419,
+          420,
+          421,
+          422
+        ],
+        "orderStatuses": {
+          "CANCELLED": 100
+        },
+        "sagaStates": {
+          "CANCELLED": 100
+        },
+        "sagaReasons": {
+          "Inventory rejected reservation": 99,
+          "Flash sale fixture cleanup": 1
+        },
+        "manualReview": 0,
+        "inventory": [
+          {
+            "total_quantity": 1,
+            "reserved_quantity": 0,
+            "available_quantity": 1
+          }
+        ],
+        "reservationStatuses": {
+          "RELEASED": 100
+        },
+        "movements": [
+          {
+            "type": "RESERVE",
+            "order_id": "326",
+            "quantity": 1
+          },
+          {
+            "type": "COMMIT",
+            "order_id": "326",
+            "quantity": 1
+          },
+          {
+            "type": "RELEASE",
+            "order_id": "326",
+            "quantity": 1
+          }
+        ],
+        "payments": [
+          {
+            "amount": 9.99,
+            "status": "REFUNDED",
+            "order_id": "326",
+            "refunded_amount": 9.99
+          }
+        ],
+        "providerOperations": [
+          {
+            "amount": 9.99,
+            "status": "COMPLETED",
+            "operation_key": "charge:326",
+            "request_order_id": "326"
+          },
+          {
+            "amount": 9.99,
+            "status": "REFUNDED",
+            "operation_key": "refund:txn-3c86a9ee-058a-47e6-88b7-012acf11cf73:3e703661-e0e3-4534-92cd-2a04e3b6b544:refund",
+            "request_order_id": null
+          }
+        ]
+      },
+      "cleanup": {
+        "status": "passed",
+        "errors": []
+      },
+      "fullLocalEvidence": "backend/k6/results/payment-outage-100-2026-11-10.json",
+      "duringOutage": {
+        "orderIds": [
+          323,
+          324,
+          325,
+          326,
+          327,
+          328,
+          329,
+          330,
+          331,
+          332,
+          333,
+          334,
+          335,
+          336,
+          337,
+          338,
+          339,
+          340,
+          341,
+          342,
+          343,
+          344,
+          345,
+          346,
+          347,
+          348,
+          349,
+          350,
+          351,
+          352,
+          353,
+          354,
+          355,
+          356,
+          357,
+          358,
+          359,
+          360,
+          361,
+          362,
+          363,
+          364,
+          365,
+          366,
+          367,
+          368,
+          369,
+          370,
+          371,
+          372,
+          373,
+          374,
+          375,
+          376,
+          377,
+          378,
+          379,
+          380,
+          381,
+          382,
+          383,
+          384,
+          385,
+          386,
+          387,
+          388,
+          389,
+          390,
+          391,
+          392,
+          393,
+          394,
+          395,
+          396,
+          397,
+          398,
+          399,
+          400,
+          401,
+          402,
+          403,
+          404,
+          405,
+          406,
+          407,
+          408,
+          409,
+          410,
+          411,
+          412,
+          413,
+          414,
+          415,
+          416,
+          417,
+          418,
+          419,
+          420,
+          421,
+          422
+        ],
+        "orderStatuses": {
+          "PENDING": 100
+        },
+        "sagaStates": {
+          "RESERVE": 34,
+          "CHARGE": 1,
+          "BEGIN_CANCEL": 15
+        },
+        "sagaReasons": {
+          "": 35,
+          "Inventory rejected reservation": 15
+        },
+        "manualReview": 0,
+        "inventory": [
+          {
+            "total_quantity": 1,
+            "reserved_quantity": 1,
+            "available_quantity": 0
+          }
+        ],
+        "reservationStatuses": {
+          "RESERVED": 1
+        },
+        "movements": [
+          {
+            "type": "RESERVE",
+            "order_id": "326",
+            "quantity": 1
+          }
+        ],
+        "payments": [],
+        "providerOperations": []
+      },
+      "recoveredSameOriginalOrders": true
+    }
+  ],
+  "limitations": [
+    "Payment is the existing durable mock, not a real PSP.",
+    "Backend images were reused with the recorded identities; no Maven build, backend unit/IT suite, hosted CI or deployment was executed for this change.",
+    "There is one winning latency sample per experiment; no production p95/capacity/SLA claim is made.",
+    "This service-stop/restart exercise does not inject lost committed RPC responses or transport latency.",
+    "The separate legacy concurrent-orders.js benchmark remains unchanged and is documented as incompatible with external asynchronous Saga admission."
+  ],
+  "harnessDevelopment": "Two initial 5-customer rehearsals failed on probe-schema and cancellation-reason assumptions. Their own fixtures were cleaned. The corrected 5-customer run passed before both full 100-customer runs.",
+  "teardown": {
+    "remainingFixtureContainers": [],
+    "retainedVolumes": [
+      "robomart-java25-e2e-resume_elasticsearch-data",
+      "robomart-java25-e2e-resume_kafka-data",
+      "robomart-java25-e2e-resume_minio-data",
+      "robomart-java25-e2e-resume_postgres-data",
+      "robomart-java25-e2e-resume_product-images"
+    ],
+    "unrelatedContainer": "monopoly-m3-postgres-1 remained running and healthy (reported uptime 7 days)"
+  }
+}

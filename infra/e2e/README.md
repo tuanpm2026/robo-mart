@@ -18,6 +18,11 @@ The default developer/production admission stays off until participant migration
 
 Metrics include `saga.steps`, `saga.workflows.pending`, `saga.workflows.manual` and `saga.queue.oldest.seconds`, without order/saga ID tags. Prometheus scrapes Saga and loads backlog/manual-review rules. Admin inspection/resume is available through Gateway at `/api/v1/admin/sagas`.
 
+For a guided concurrent checkout exercise, see the [k6 flash-sale experiment](../../backend/k6/README.md).
+It creates disposable customers and one stock unit, checks HTTP replay plus provider/stock
+evidence, and supports Payment outage/recovery. Run it separately from the Java/browser suites;
+it uses this same isolated stack and restores/cancels/refunds its own fixtures.
+
 ## Customer browser regression tests
 
 The Customer suite uses Playwright Chromium against this same isolated backend and real
