@@ -1236,7 +1236,93 @@
       ]
     }
   ],
-  "finalSourceSmoke": {
+  "checks": [
+    {
+      "command": "python3 -m unittest discover -s backend/k6 -p 'test_*.py' -v",
+      "result": "15 passed"
+    },
+    {
+      "command": "node --experimental-vm-modules --test backend/k6/*.test.cjs",
+      "result": "15 passed"
+    },
+    {
+      "command": "docker compose --env-file /dev/null --project-name robomart-java25-e2e-resume --file infra/docker/docker-compose.e2e.yml config --quiet",
+      "result": "passed"
+    },
+    {
+      "command": "node --check backend/k6/scripts/concurrent-orders.js",
+      "result": "passed"
+    },
+    {
+      "command": "python3 -m py_compile backend/k6/run_concurrent_orders.py backend/k6/run_flash_sale.py",
+      "result": "passed"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed"
+    },
+    {
+      "command": "python3 -m unittest discover -s backend/k6 -p 'test_concurrent_orders.py' -k trace_audit -v",
+      "result": "Red: null/null trace false match reproduced; green after valid-trace guard. Full Python/JavaScript suites passed again."
+    }
+  ],
+  "commands": [
+    {
+      "command": "python3 backend/k6/run_concurrent_orders.py",
+      "exitCode": 1,
+      "result": "All business and cleanup checks passed; all three latency SLO checks failed"
+    },
+    {
+      "command": "python3 backend/k6/run_concurrent_orders.py --worker-interval-ms 25",
+      "exitCode": 1,
+      "result": "All business and cleanup checks passed; all three latency SLO checks failed; original worker restored"
+    }
+  ],
+  "provenanceNotes": [
+    "The added CREATE-audit trace correlation is post-measurement diagnostics. It was verified independently on all 350 comparison orders and on a post-measurement five-customer smoke. Timing runs retain their original runner hashes.",
+    "The JavaScript timing protocol SHA256 is identical for all six timing runs and the committed client source.",
+    "An exploratory five-customer run and earlier 25/50/100 baseline preceded the recorded comparison and warmed the retained fixture. They are excluded from the headline comparison.",
+    "Self-review then added a diagnostic-only guard rejecting missing/invalid trace IDs as audit matches. A regression reproduced the null/null false match (failed before the guard, passed afterward). Both complete regression suites passed again. The JavaScript timing protocol and measured results are unchanged."
+  ],
+  "limitations": [
+    "These are one closed-burst sample per level/configuration, not sustained capacity or production SLA evidence.",
+    "The 25 ms configuration recreates the worker; its first 25-customer run includes worker warmup effects. Both 100-customer comparison runs follow 25/50-customer runs.",
+    "Existing backend images were reused with the recorded identities. No backend Java business implementation or production scheduling defaults were changed.",
+    "The fixture has tracing sampling disabled. Trace IDs are correlated to durable audit rows, not exported distributed-span timings.",
+    "Client completion includes polling/network overhead; SQL intent-stage differences include queueing and operation work and must not be interpreted as raw RPC duration.",
+    "Stage p95 values need not belong to the same order and must not be summed.",
+    "The Docker VM has 8321429504 bytes of memory and other unrelated containers remained running; results are local development observations."
+  ],
+  "sharedHarnessFlashRegression": {
+    "command": "python3 backend/k6/run_flash_sale.py --customers 5",
+    "status": "passed",
+    "cleanup": {
+      "status": "passed",
+      "errors": []
+    },
+    "fullLocalEvidence": "backend/k6/results/flash-after-concurrent-2026-11-10.json"
+  },
+  "teardown": {
+    "command": "infra/e2e/stack.sh down",
+    "result": "passed",
+    "remainingFixtureContainers": [],
+    "retainedVolumes": [
+      "robomart-java25-e2e-resume_elasticsearch-data",
+      "robomart-java25-e2e-resume_kafka-data",
+      "robomart-java25-e2e-resume_minio-data",
+      "robomart-java25-e2e-resume_postgres-data",
+      "robomart-java25-e2e-resume_product-images"
+    ],
+    "unrelatedContainersStillRunning": [
+      "backend-backend-1",
+      "backend-db-1",
+      "backend-ims_mock-1",
+      "backend-redis-1",
+      "backend-test_db-1",
+      "monopoly-m3-postgres-1"
+    ]
+  },
+  "postMeasurementAuditSmoke": {
     "command": "python3 backend/k6/run_concurrent_orders.py --levels 5",
     "exitCode": 1,
     "correctness": "passed",
@@ -1285,85 +1371,11 @@
       "backend/k6/run_flash_sale.py": "1537edf65dd62b9634d5b2dd3a24e4e71175d8895f2b89d1b3aeefd32cae096a"
     }
   },
-  "checks": [
-    {
-      "command": "python3 -m unittest discover -s backend/k6 -p 'test_*.py' -v",
-      "result": "15 passed"
-    },
-    {
-      "command": "node --experimental-vm-modules --test backend/k6/*.test.cjs",
-      "result": "15 passed"
-    },
-    {
-      "command": "docker compose --env-file /dev/null --project-name robomart-java25-e2e-resume --file infra/docker/docker-compose.e2e.yml config --quiet",
-      "result": "passed"
-    },
-    {
-      "command": "node --check backend/k6/scripts/concurrent-orders.js",
-      "result": "passed"
-    },
-    {
-      "command": "python3 -m py_compile backend/k6/run_concurrent_orders.py backend/k6/run_flash_sale.py",
-      "result": "passed"
-    },
-    {
-      "command": "git diff --check",
-      "result": "passed"
-    }
-  ],
-  "commands": [
-    {
-      "command": "python3 backend/k6/run_concurrent_orders.py",
-      "exitCode": 1,
-      "result": "All business and cleanup checks passed; all three latency SLO checks failed"
-    },
-    {
-      "command": "python3 backend/k6/run_concurrent_orders.py --worker-interval-ms 25",
-      "exitCode": 1,
-      "result": "All business and cleanup checks passed; all three latency SLO checks failed; original worker restored"
-    }
-  ],
-  "provenanceNotes": [
-    "The added CREATE-audit trace correlation is post-measurement diagnostics. It was verified independently on all 350 comparison orders and on a final-source five-customer smoke. Timing runs retain their original runner hashes.",
-    "The JavaScript timing protocol SHA256 is identical for all six timing runs and the committed client source.",
-    "An exploratory five-customer run and earlier 25/50/100 baseline preceded the recorded comparison and warmed the retained fixture. They are excluded from the headline comparison."
-  ],
-  "limitations": [
-    "These are one closed-burst sample per level/configuration, not sustained capacity or production SLA evidence.",
-    "The 25 ms configuration recreates the worker; its first 25-customer run includes worker warmup effects. Both 100-customer comparison runs follow 25/50-customer runs.",
-    "Existing backend images were reused with the recorded identities. No backend Java business implementation or production scheduling defaults were changed.",
-    "The fixture has tracing sampling disabled. Trace IDs are correlated to durable audit rows, not exported distributed-span timings.",
-    "Client completion includes polling/network overhead; SQL intent-stage differences include queueing and operation work and must not be interpreted as raw RPC duration.",
-    "Stage p95 values need not belong to the same order and must not be summed.",
-    "The Docker VM has 8321429504 bytes of memory and other unrelated containers remained running; results are local development observations."
-  ],
-  "sharedHarnessFlashRegression": {
-    "command": "python3 backend/k6/run_flash_sale.py --customers 5",
-    "status": "passed",
-    "cleanup": {
-      "status": "passed",
-      "errors": []
-    },
-    "fullLocalEvidence": "backend/k6/results/flash-after-concurrent-2026-11-10.json"
-  },
-  "teardown": {
-    "command": "infra/e2e/stack.sh down",
-    "result": "passed",
-    "remainingFixtureContainers": [],
-    "retainedVolumes": [
-      "robomart-java25-e2e-resume_elasticsearch-data",
-      "robomart-java25-e2e-resume_kafka-data",
-      "robomart-java25-e2e-resume_minio-data",
-      "robomart-java25-e2e-resume_postgres-data",
-      "robomart-java25-e2e-resume_product-images"
-    ],
-    "unrelatedContainersStillRunning": [
-      "backend-backend-1",
-      "backend-db-1",
-      "backend-ims_mock-1",
-      "backend-redis-1",
-      "backend-test_db-1",
-      "monopoly-m3-postgres-1"
-    ]
+  "reviewedSourceSHA256": {
+    "backend/k6/run_concurrent_orders.py": "ae5e84e32e01338e5ffd5bdf8d96e96ba2d5928ea562a1dc805ddafd3dbedb78",
+    "backend/k6/scripts/concurrent-orders.js": "fc1aab923437b2a63bed1f879ddc57c319ef697856017865357fe0ad36ba7618",
+    "backend/k6/run_flash_sale.py": "1537edf65dd62b9634d5b2dd3a24e4e71175d8895f2b89d1b3aeefd32cae096a",
+    "backend/k6/test_concurrent_orders.py": "ce6e6682aee868465195a2b990811b6c05558a77cc089a0226e52acea6b1a58c",
+    "backend/k6/concurrent-orders.test.cjs": "99b8f1c24c528d1c338b3198b381d403c719c6f2b0cb0a7186653441f1f8e1b6"
   }
 }

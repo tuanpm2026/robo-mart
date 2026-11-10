@@ -144,7 +144,7 @@ def correlate_traces(data, postgres=None):
         ids = ','.join("'" + str(int(x['id'])) + "'" for x in data)
         audits = rows(postgres, 'order_db', 'SELECT entity_id,trace_id,created_at FROM audit_log '
                       f"WHERE entity_type='Order' AND action='CREATE' AND entity_id IN ({ids})")
-        expected = {(str(x['id']), x.get('traceId')) for x in data}
+        expected = {(str(x['id']), x['traceId']) for x in data if x.get('traceId') in trace_ids}
         audited = [x for x in audits if (x['entity_id'], x['trace_id']) in expected]
     return {'kind': 'Response trace IDs correlated with Order CREATE audit and structured logs; not exported span timings',
             'responseTraceIds': len(trace_ids), 'correlatedTraceIds': len(matched),

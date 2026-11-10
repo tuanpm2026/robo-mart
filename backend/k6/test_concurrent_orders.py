@@ -88,8 +88,10 @@ class MeasurementTest(unittest.TestCase):
     def test_trace_audit_must_match_both_order_and_trace(self, _container, _command, rows):
         trace_id = 'a' * 32
         rows.return_value = [{'entity_id': '1', 'trace_id': trace_id, 'created_at': 'now'},
-                             {'entity_id': '2', 'trace_id': trace_id, 'created_at': 'now'}]
-        result = correlate_traces([{'id': 1, 'traceId': trace_id, 'submittedAt': 1000}], 'postgres')
+                             {'entity_id': '2', 'trace_id': None, 'created_at': 'now'},
+                             {'entity_id': '3', 'trace_id': trace_id, 'created_at': 'now'}]
+        result = correlate_traces([{'id': 1, 'traceId': trace_id, 'submittedAt': 1000},
+                                   {'id': 2, 'traceId': None, 'submittedAt': 1000}], 'postgres')
         self.assertEqual(result['auditedOrdersCorrelated'], 1)
 
     @patch('run_concurrent_orders.command')
