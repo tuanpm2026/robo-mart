@@ -317,6 +317,8 @@ services:
       SPRING_DATASOURCE_USERNAME: saga
       SPRING_DATASOURCE_PASSWORD: robomart_e2e_saga_only
       SAGA_WORKER_ENABLED: "true"
+      # Explicit local load-test tuning; production defaults are configured separately.
+      SAGA_WORKER_INTERVAL_MS: "${E2E_SAGA_WORKER_INTERVAL_MS:-500}"
       SAGA_CLIENT_SECRET: e2e-saga-secret
       SAGA_TOKEN_URL: http://keycloak:8180/realms/robomart/protocol/openid-connect/token
       GRPC_CLIENT_ORDER_SERVICE_ADDRESS: static://order-service:9093

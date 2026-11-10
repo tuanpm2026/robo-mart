@@ -55,11 +55,12 @@ jobs:
       - name: Release policy regression tests
         run: node --test infra/ci/scripts/release-policy.test.cjs
 
-      - name: Flash-sale harness regression tests
+      - name: Checkout load harness regression tests
         run: |
           python3 -m unittest discover -s backend/k6 -p 'test_*.py' -v
-          node --experimental-vm-modules --test backend/k6/flash-sale.test.cjs
+          node --experimental-vm-modules --test backend/k6/*.test.cjs
           node --check backend/k6/scripts/flash-sale.js
+          node --check backend/k6/scripts/concurrent-orders.js
 
       - name: Set up Java 25
         uses: actions/setup-java@v4

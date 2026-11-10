@@ -113,10 +113,10 @@ def capture(postgres, product_id):
                           "FROM stock_movements m JOIN inventory_items i ON i.id=m.inventory_item_id "
                           f"WHERE i.product_id={product_id} AND m.type IN ('RESERVE','COMMIT','RELEASE') "
                           "ORDER BY m.id"),
-        "payments": rows(postgres, "payment_db", "SELECT order_id, status, amount, refunded_amount "
+        "payments": rows(postgres, "payment_db", "SELECT order_id, status, amount, currency, transaction_id, refunded_amount "
                          f"FROM payments WHERE order_id IN ({ids}) ORDER BY order_id"),
         "providerOperations": rows(postgres, "payment_db", "SELECT operation_key, request_order_id, "
-                                   "status, amount FROM mock_gateway_operations WHERE "
+                                   "status, amount, currency, request_identity FROM mock_gateway_operations WHERE "
                                    f"request_order_id IN ({ids}) OR operation_key IN "
                                    f"(SELECT 'refund:' || transaction_id FROM payments "
                                    f"WHERE order_id IN ({ids})) OR (operation_key LIKE 'refund:%' "
@@ -187,12 +187,12 @@ def validate(evidence, user_ids, cleaned=False):
             == Counter(expected), "Missing/duplicate stock movements or stock granted to a loser")
 
 
-def await_valid(postgres, product_id, user_ids, timeout, cleaned=False):
+def await_valid(postgres, product_id, user_ids, timeout, cleaned=False, validator=validate):
     deadline = time.monotonic() + timeout
     while True:
         evidence = capture(postgres, product_id)
         try:
-            validate(evidence, user_ids, cleaned)
+            validator(evidence, user_ids, cleaned)
             return evidence
         except AssertionError:
             if time.monotonic() >= deadline:
@@ -201,6 +201,15 @@ def await_valid(postgres, product_id, user_ids, timeout, cleaned=False):
 
 
 class Experiment:
+    def stock_quantity(self):
+        return 1
+
+    def evidence_validator(self, evidence, user_ids, cleaned=False):
+        validate(evidence, user_ids, cleaned)
+
+    def cleanup_timeout(self):
+        return 90
+
     def __init__(self, args):
         self.args = args
         self.run_id = "flash-" + uuid.uuid4().hex
@@ -261,15 +270,15 @@ class Experiment:
         deadline = time.monotonic() + 60
         while True:
             status, _, _ = http(API, f"/api/v1/admin/inventory/{self.product_id}/restock", "PUT",
-                                 {"quantity": 1, "reason": self.run_id}, self.admin_token)
+                                 {"quantity": self.stock_quantity(), "reason": self.run_id}, self.admin_token)
             if status == 200:
                 break
             require(status == 404 and time.monotonic() < deadline,
                     f"Inventory bootstrap/restock failed: HTTP {status}")
             time.sleep(1)
         self.report["initialInventory"] = capture(self.postgres, self.product_id)["inventory"]
-        require(self.report["initialInventory"] == [{"available_quantity": 1,
-                "reserved_quantity": 0, "total_quantity": 1}], "Initial stock is not exactly one")
+        require(self.report["initialInventory"] == [{"available_quantity": self.stock_quantity(),
+                "reserved_quantity": 0, "total_quantity": self.stock_quantity()}], "Unexpected initial stock")
 
     def run(self, directory):
         customers = [{"token": login(u["username"], PASSWORD)} for u in self.users]
@@ -345,7 +354,9 @@ class Experiment:
                         require(status in (200, 202), f"Cleanup cancellation failed: HTTP {status}")
                 if "beforeCleanup" in self.report:
                     self.report["afterCleanup"] = await_valid(self.postgres, self.product_id,
-                                                               [u["id"] for u in self.users], 90, True)
+                                                               [u["id"] for u in self.users],
+                                                               self.cleanup_timeout(), True,
+                                                               self.evidence_validator)
                 else:
                     deadline = time.monotonic() + 90
                     while any(o["status"] != "CANCELLED" for o in capture(self.postgres, self.product_id)["orders"]):

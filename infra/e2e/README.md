@@ -22,6 +22,10 @@ For a guided concurrent checkout exercise, see the [k6 flash-sale experiment](..
 It creates disposable customers and one stock unit, checks HTTP replay plus provider/stock
 evidence, and supports Payment outage/recovery. Run it separately from the Java/browser suites;
 it uses this same isolated stack and restores/cancels/refunds its own fixtures.
+The same guide also covers `run_concurrent_orders.py`: enough stock for 25/50/100 customers,
+separate admission/completion clocks, trace-ID/log correlation and read-only Saga timing
+probes. Its optional 25 ms worker polling comparison restores the original isolated-worker
+configuration, and retains the enforced p95 completion target of less than 3 seconds.
 
 ## Customer browser regression tests
 
