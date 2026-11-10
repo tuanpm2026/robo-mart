@@ -1,109 +1,121 @@
 import http from 'k6/http';
 import { sleep } from 'k6';
-import { Counter } from 'k6/metrics';
-import { getToken } from './helpers/auth.js';
+import { Counter, Trend } from 'k6/metrics';
 
-const BASE_URL = __ENV.BASE_URL || 'http://localhost:8080';
-// FLASH_SALE_PRODUCT_ID: a product seeded with stock_quantity = 1 EXACTLY
-const FLASH_SALE_PRODUCT_ID = __ENV.FLASH_SALE_PRODUCT_ID || '2';
-
+// The Python runner owns disposable customers, stock, ledger probes and cleanup.
+// Tokens live in a temporary mode-0600 file, never in logs or command arguments.
+const fixture = JSON.parse(open(__ENV.FLASH_SALE_FIXTURE));
+const BASE_URL = 'http://127.0.0.1:18080';
 const successfulOrders = new Counter('successful_orders');
-const outOfStockResponses = new Counter('out_of_stock_responses');
-const duplicateCharges = new Counter('duplicate_charges');
+const cancelledOrders = new Counter('cancelled_orders');
+const unexpectedOutcomes = new Counter('unexpected_outcomes');
+const replayMismatches = new Counter('replay_mismatches');
+const checkoutTime = new Trend('checkout_completion_ms', true);
 
 export const options = {
     scenarios: {
         flash_sale: {
-            executor: 'shared-iterations',
-            vus: 100,
-            iterations: 100,
-            maxDuration: '60s',
+            // shared-iterations can reuse a faster VU/customer.
+            executor: 'per-vu-iterations',
+            vus: fixture.customers.length,
+            iterations: 1,
+            maxDuration: `${fixture.timeoutSeconds + 60}s`,
         },
     },
     thresholds: {
-        // NFR6: Exactly 1 success — only 1 item in stock
-        'successful_orders': ['count==1'],
-        // NFR6: 99 out-of-stock responses (or compensation failures)
-        'out_of_stock_responses': ['count>=99'],
-        // NFR6: No duplicate charges
-        'duplicate_charges': ['count==0'],
+        successful_orders: ['count==1'],
+        cancelled_orders: [`count==${fixture.customers.length - 1}`],
+        unexpected_outcomes: ['count==0'],
+        replay_mismatches: ['count==0'],
+        iterations: [`count==${fixture.customers.length}`],
     },
 };
 
-// Setup: authenticate all 100 test users before the flash sale starts
 export function setup() {
-    const tokens = [];
-    for (let i = 0; i < 100; i++) {
-        // Pre-seeded test users: testuser001@robomart.com ... testuser100@robomart.com
-        const token = getToken(
-            `testuser${String(i + 1).padStart(3, '0')}@robomart.com`,
-            'testpassword123'
-        );
-        tokens.push(token);
+    // Align the burst without promising identical network arrival times.
+    return { startAt: Date.now() + 2000 };
+}
+
+function dataOf(response) {
+    try {
+        return response.json().data;
+    } catch (_) {
+        return null;
     }
-    return { tokens };
+}
+
+function place(body, headers) {
+    // Ambiguous responses reuse BOTH the original payload and key.
+    let response;
+    for (let attempt = 0; attempt < 3; attempt++) {
+        response = http.post(`${BASE_URL}/api/v1/orders`, body, {
+            headers, timeout: '10s', tags: { name: 'flash-sale/create-or-replay' },
+        });
+        if (response.status !== 0 && response.status < 500) return response;
+        sleep(1);
+    }
+    return response;
 }
 
 export default function (data) {
-    const vuIndex = __VU - 1;
-    const token = data.tokens[vuIndex % data.tokens.length];
-
-    if (!token) return;
-
+    successfulOrders.add(0);
+    cancelledOrders.add(0);
+    unexpectedOutcomes.add(0);
+    replayMismatches.add(0);
+    const customer = fixture.customers[__VU - 1];
     const headers = {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${customer.token}`,
+        'Idempotency-Key': `${fixture.runId}-${__VU}`,
     };
-
-    // All 100 VUs fire simultaneously — shared-iterations ensures 100 parallel requests
-    const res = http.post(
-        `${BASE_URL}/api/v1/orders`,
-        JSON.stringify({
-            items: [{ productId: parseInt(FLASH_SALE_PRODUCT_ID), quantity: 1 }],
-            shippingAddress: '1 Flash Sale St, Austin, TX, 75001, US',
-        }),
-        { headers, tags: { name: 'flash-sale/order' } }
-    );
-
-    if (res.status === 201 || res.status === 200) {
-        const orderId = JSON.parse(res.body)?.data?.id;
-
-        if (orderId) {
-            // Poll until saga reaches terminal state (max 15s — flash sale saga under contention)
-            let confirmedCount = 0;
-            for (let attempt = 0; attempt < 6; attempt++) {
-                sleep(3);
-                const orderStatus = http.get(`${BASE_URL}/api/v1/orders/${orderId}`, { headers });
-                const status = JSON.parse(orderStatus.body)?.data?.status;
-                if (status === 'CONFIRMED') {
-                    confirmedCount++;
-                    break;
-                }
-                if (status === 'CANCELLED') {
-                    break;
-                }
-            }
-
-            if (confirmedCount > 0) {
-                successfulOrders.add(1);
-            }
-            // duplicateCharges: detect if a VU that SHOULD have been rejected (out-of-stock)
-            // got a 2xx AND confirmed — this would indicate an oversell (stock=1, >1 confirmed).
-            // We track via successfulOrders threshold count==1 instead; duplicateCharges
-            // is incremented only when we detect a second successful confirmation.
-            if (confirmedCount > 1) {
-                duplicateCharges.add(1);
-            }
-        }
-    } else if (res.status === 409 || res.status === 422) {
-        const body = JSON.parse(res.body);
-        if (body?.error?.code === 'OUT_OF_STOCK' || body?.error?.code === 'INVENTORY_INSUFFICIENT') {
-            outOfStockResponses.add(1);
-        } else {
-            console.log(`Non-stock rejection: ${res.status} - ${JSON.stringify(body?.error)}`);
-            outOfStockResponses.add(1);
-        }
-    } else {
-        console.error(`Unexpected: ${res.status} ${res.body?.substring(0, 80)}`);
+    const body = JSON.stringify({
+        items: [{ productId: String(fixture.productId), quantity: 1 }],
+        shippingAddress: '1 Flash Sale Fixture St, Austin, TX 75001, US',
+    });
+    sleep(Math.max(0, data.startAt - Date.now()) / 1000);
+    const start = Date.now();
+    const created = place(body, headers);
+    const order = dataOf(created);
+    if (![200, 201, 202].includes(created.status) || !order?.id) {
+        unexpectedOutcomes.add(1);
+        console.error(`Customer ${__VU}: checkout HTTP ${created.status}, no accepted order`);
+        return;
     }
+
+    // Deliberately replay every accepted checkout, including 202/PENDING.
+    const replay = place(body, headers);
+    if (![200, 201, 202].includes(replay.status) || dataOf(replay)?.id !== order.id) {
+        replayMismatches.add(1);
+    }
+
+    const deadline = start + fixture.timeoutSeconds * 1000;
+    while (Date.now() < deadline) {
+        const response = http.get(`${BASE_URL}/api/v1/orders/${order.id}`, {
+            headers, timeout: '10s', tags: { name: 'flash-sale/status' },
+        });
+        const current = dataOf(response);
+        if (response.status === 200 && current?.status === 'CONFIRMED') {
+            successfulOrders.add(1);
+            checkoutTime.add(Date.now() - start);
+            return;
+        }
+        if (response.status === 200 && current?.status === 'CANCELLED') {
+            // The runner checks the durable Saga reason; Order can expose a generic reason.
+            cancelledOrders.add(1);
+            return;
+        }
+        if ([401, 403, 404].includes(response.status)) break;
+        sleep(2);
+    }
+    unexpectedOutcomes.add(1);
+    console.error(`Order ${order.id}: unresolved checkout within ${fixture.timeoutSeconds}s`);
+}
+
+export function handleSummary(data) {
+    return {
+        [__ENV.FLASH_SALE_SUMMARY]: JSON.stringify(data, null, 2),
+        stdout: `Flash sale: ${data.metrics.successful_orders?.values.count || 0} confirmed, ` +
+            `${data.metrics.cancelled_orders?.values.count || 0} cancelled, ` +
+            `${data.metrics.unexpected_outcomes?.values.count || 0} unexpected outcomes.\n`,
+    };
 }
