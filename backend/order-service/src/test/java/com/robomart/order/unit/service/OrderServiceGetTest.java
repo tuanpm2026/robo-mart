@@ -139,7 +139,7 @@ class OrderServiceGetTest {
         history.setChangedAt(Instant.now().minusSeconds(60));
 
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-        when(orderItemRepository.findByOrderId(orderId)).thenReturn(List.of(item));
+        order.setItems(new java.util.ArrayList<>(List.of(item)));
         when(orderStatusHistoryRepository.findByOrderIdOrderByChangedAtAsc(orderId))
                 .thenReturn(List.of(history));
 
@@ -160,7 +160,6 @@ class OrderServiceGetTest {
         Order order = buildOrder(orderId, "user-owner", OrderStatus.CONFIRMED);
 
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
-        when(orderItemRepository.findByOrderId(orderId)).thenReturn(List.of());
 
         assertThatThrownBy(() -> orderService.getOrderForUser(orderId, "user-intruder"))
                 .isInstanceOf(ResourceNotFoundException.class)

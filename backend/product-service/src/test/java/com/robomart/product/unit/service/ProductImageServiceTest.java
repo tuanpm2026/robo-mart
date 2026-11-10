@@ -173,9 +173,8 @@ class ProductImageServiceTest {
         ProductImage img2 = new ProductImage();
         img2.setDisplayOrder(0);
 
-        when(productImageRepository.countByProductId(10L)).thenReturn(2L);
-        when(productImageRepository.findByIdAndProductId(1L, 10L)).thenReturn(Optional.of(img1));
-        when(productImageRepository.findByIdAndProductId(2L, 10L)).thenReturn(Optional.of(img2));
+        org.springframework.test.util.ReflectionTestUtils.setField(img1, "id", 1L);
+        org.springframework.test.util.ReflectionTestUtils.setField(img2, "id", 2L);
         when(productImageRepository.findByProductIdOrderByDisplayOrderAsc(10L))
                 .thenReturn(List.of(img1, img2));
         when(productMapper.toImageResponseList(any())).thenReturn(List.of(
@@ -197,7 +196,11 @@ class ProductImageServiceTest {
                 new ImageOrderItem(1L, 0)
         ));
 
-        when(productImageRepository.countByProductId(10L)).thenReturn(2L);
+        ProductImage one = new ProductImage();
+        ProductImage two = new ProductImage();
+        org.springframework.test.util.ReflectionTestUtils.setField(one, "id", 1L);
+        org.springframework.test.util.ReflectionTestUtils.setField(two, "id", 2L);
+        when(productImageRepository.findByProductIdOrderByDisplayOrderAsc(10L)).thenReturn(List.of(one, two));
 
         assertThatThrownBy(() -> productImageService.reorderImages(10L, request))
                 .isInstanceOf(ValidationException.class)
@@ -205,4 +208,22 @@ class ProductImageServiceTest {
 
         verify(productImageRepository, never()).save(any());
     }
+    @Test
+    void duplicateImageIdsAndPositionsAreRejectedBeforeMutation() {
+        var one = new ProductImage(); one.setDisplayOrder(0);
+        var two = new ProductImage(); two.setDisplayOrder(1);
+        org.springframework.test.util.ReflectionTestUtils.setField(one, "id", 1L);
+        org.springframework.test.util.ReflectionTestUtils.setField(two, "id", 2L);
+        when(productImageRepository.findByProductIdOrderByDisplayOrderAsc(10L)).thenReturn(List.of(one, two));
+        for (var items : List.of(
+                List.of(new ImageOrderItem(1L, 0), new ImageOrderItem(1L, 1)),
+                List.of(new ImageOrderItem(1L, 0), new ImageOrderItem(2L, 0)))) {
+            assertThatThrownBy(() -> productImageService.reorderImages(10L, new ReorderImagesRequest(items)))
+                    .isInstanceOf(ValidationException.class);
+            assertThat(one.getDisplayOrder()).isZero();
+            assertThat(two.getDisplayOrder()).isEqualTo(1);
+        }
+        verify(productImageRepository, never()).findByIdAndProductId(any(), any());
+    }
+
 }

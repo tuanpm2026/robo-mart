@@ -182,6 +182,11 @@ public class ProductService {
         log.info("Product soft-deleted: id={}", productId);
     }
 
+    public List<ProductListResponse> getProductBatch(List<Long> ids) {
+        if (ids.isEmpty() || ids.size() > 100) throw new com.robomart.common.exception.ValidationException("Batch size must be 1..100");
+        return productMapper.toListResponse(productRepository.findActiveBatch(ids));
+    }
+
     public List<CategoryResponse> getAllCategories() {
         return categoryRepository.findAll().stream()
                 .map(productMapper::toCategoryResponse)

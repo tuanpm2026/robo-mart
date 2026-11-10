@@ -86,9 +86,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     Page<Order> findByStatusIn(List<OrderStatus> statuses, Pageable pageable);
 
+    List<Order> findByStatusInOrderByIdAsc(List<OrderStatus> statuses, Pageable pageable);
+
     long countByCreatedAtAfter(Instant since);
 
-    @Query("SELECT COALESCE(SUM(o.totalAmount), 0.0) FROM Order o WHERE o.createdAt > :since")
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0.0) FROM Order o WHERE o.createdAt > :since AND o.status IN ('CONFIRMED', 'SHIPPED', 'DELIVERED')")
     BigDecimal sumTotalAmountByCreatedAtAfter(@Param("since") Instant since);
 
     @Query(value = "SELECT DATE(o.created_at) as date, o.status, COUNT(*) as cnt " +
@@ -97,11 +99,17 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
            nativeQuery = true)
     List<Object[]> findOrderTrends(@Param("from") Instant from, @Param("to") Instant to);
 
-    // Items are needed by inventory release; the scheduled job has no session to load them lazily.
+    @Query(value = "SELECT o.id FROM orders o WHERE o.orchestrator_owner='EMBEDDED' AND o.status IN :statuses "
+            + "AND o.updated_at < :cutoff AND NOT EXISTS (SELECT 1 FROM saga_recovery_state s WHERE s.order_id=o.id "
+            + "AND (s.manual_review_at IS NOT NULL OR s.retry_after > now()) AND s.completed_at IS NULL) ORDER BY o.updated_at,o.id LIMIT 20", nativeQuery = true)
+    List<Long> findStuckIds(@Param("statuses") List<String> statuses, @Param("cutoff") Instant cutoff);
+
     @EntityGraph(attributePaths = {"items"})
-    @Query(
-            "SELECT o FROM Order o WHERE o.orchestratorOwner = 'EMBEDDED' AND o.status IN :statuses"
-                + " AND o.updatedAt < :cutoff")
-    List<Order> findStuckSagas(
-            @Param("statuses") List<OrderStatus> statuses, @Param("cutoff") Instant cutoff);
+    @Query("SELECT o FROM Order o WHERE o.id IN :ids ORDER BY o.updatedAt, o.id")
+    List<Order> findRecoveryBatch(@Param("ids") List<Long> ids);
+
+    default List<Order> findStuckSagas(List<OrderStatus> statuses, Instant cutoff) {
+        var ids = findStuckIds(statuses.stream().map(Enum::name).toList(), cutoff);
+        return ids.isEmpty() ? List.of() : findRecoveryBatch(ids);
+    }
 }

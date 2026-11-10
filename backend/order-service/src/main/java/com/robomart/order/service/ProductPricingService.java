@@ -39,7 +39,24 @@ public class ProductPricingService {
      */
     public Map<Long, PricedProduct> currentPrices(Collection<Long> productIds) {
         Map<Long, PricedProduct> prices = new LinkedHashMap<>();
-        for (Long productId : new LinkedHashSet<>(productIds)) {
+        var distinct = new java.util.ArrayList<>(new LinkedHashSet<>(productIds));
+        if (distinct.size() > 100) throw new com.robomart.common.exception.ValidationException("Checkout supports at most 100 products");
+        if (distinct.size() > 1) {
+            try {
+                var response = productCatalogClient.getProducts(distinct);
+                if (response == null || response.data() == null) throw new ExternalServiceException("Invalid catalog batch");
+                for (var product : response.data()) {
+                    if (product.id() == null || !distinct.contains(product.id()) || prices.containsKey(product.id()))
+                        throw new ExternalServiceException("Invalid catalog batch binding");
+                    prices.put(product.id(), priced(product.id(), product));
+                }
+                for (var id : distinct) if (!prices.containsKey(id)) throw unavailable(id);
+                return prices;
+            } catch (RestClientException failure) {
+                throw new ExternalServiceException("Product catalog is temporarily unavailable", failure);
+            }
+        }
+        for (Long productId : distinct) {
             prices.put(productId, fetch(productId));
         }
         return prices;
@@ -56,6 +73,10 @@ public class ProductPricingService {
             throw new ExternalServiceException("Product catalog is temporarily unavailable", e);
         }
         ProductSnapshot product = response != null ? response.data() : null;
+        return priced(productId, product);
+    }
+
+    private PricedProduct priced(Long productId, ProductSnapshot product) {
         if (product == null || product.price() == null || product.price().signum() <= 0
                 || product.name() == null || product.name().isBlank()) {
             log.warn("Product {} has no sellable name/price in the catalog response", productId);

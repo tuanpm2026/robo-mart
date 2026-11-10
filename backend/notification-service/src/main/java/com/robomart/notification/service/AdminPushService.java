@@ -33,6 +33,15 @@ public class AdminPushService {
     private final OrderServiceClient orderServiceClient;
     private final ProductServiceClient productServiceClient;
     private final Tracer tracer;
+    private OperationsStateStore shared;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setOperationsStateStore(OperationsStateStore store) { shared = store; }
+
+    private void broadcast(String topic, Object payload) {
+        if (shared == null) messagingTemplate.convertAndSend(topic, payload, buildHeaders());
+        else shared.publish(topic, payload, getTraceId());
+    }
 
     public AdminPushService(SimpMessagingTemplate messagingTemplate,
                             OrderServiceClient orderServiceClient,
@@ -60,7 +69,7 @@ public class AdminPushService {
 
             OrderEventPayload payload = new OrderEventPayload(
                     "ORDER_STATUS_CHANGED", orderId, status, userId, total, timestamp);
-            messagingTemplate.convertAndSend(TOPIC_ORDERS, payload, buildHeaders());
+            broadcast(TOPIC_ORDERS, payload);
             log.debug("Pushed order event to {}: orderId={}, status={}", TOPIC_ORDERS, orderId, status);
         } catch (Exception e) {
             log.warn("Failed to push order event to WebSocket: {}", e.getMessage());
@@ -78,7 +87,7 @@ public class AdminPushService {
 
             InventoryAlertPayload payload = new InventoryAlertPayload(
                     "INVENTORY_ALERT", productId, productName, currentStock, threshold, timestamp);
-            messagingTemplate.convertAndSend(TOPIC_INVENTORY_ALERTS, payload, buildHeaders());
+            broadcast(TOPIC_INVENTORY_ALERTS, payload);
             log.debug("Pushed inventory alert to {}: productId={}, stock={}", TOPIC_INVENTORY_ALERTS, productId, currentStock);
         } catch (Exception e) {
             log.warn("Failed to push inventory alert to WebSocket: {}", e.getMessage());
@@ -87,7 +96,7 @@ public class AdminPushService {
 
     public void pushReconciliationAlert(ReconciliationResult result) {
         try {
-            messagingTemplate.convertAndSend(TOPIC_RECONCILIATION_ALERTS, result, buildHeaders());
+            broadcast(TOPIC_RECONCILIATION_ALERTS, result);
             log.debug("Pushed reconciliation alert: type={}, discrepancies={}", result.type(), result.discrepancies().size());
         } catch (Exception e) {
             log.warn("Failed to push reconciliation alert to WebSocket: {}", e.getMessage());
@@ -96,7 +105,7 @@ public class AdminPushService {
 
     public void pushSystemHealth(SystemHealthResponse health) {
         try {
-            messagingTemplate.convertAndSend(TOPIC_SYSTEM_HEALTH, health, buildHeaders());
+            broadcast(TOPIC_SYSTEM_HEALTH, health);
             log.debug("Pushed system health update: {} services", health.services().size());
         } catch (Exception e) {
             log.warn("Failed to push system health to WebSocket: {}", e.getMessage());

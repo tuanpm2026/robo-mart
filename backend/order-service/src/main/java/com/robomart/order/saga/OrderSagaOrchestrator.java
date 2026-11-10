@@ -389,6 +389,7 @@ public class OrderSagaOrchestrator {
             payload.put("orderId", order.getId().toString());
             payload.put("reason", reason);
             payload.put("cancelledBy", cancelledBy);
+            outboxEventRepository.save(statusChangedEvent(order, from, OrderStatus.CANCELLED));
             return new OutboxEvent("Order", order.getId().toString(), "order_cancelled",
                     objectMapper.writeValueAsString(payload));
         });

@@ -56,10 +56,8 @@ class ProductPricingServiceTest {
     @Test
     @DisplayName("fetches each distinct product once and normalises prices to scale 2")
     void fetchesDistinctProducts() {
-        server.expect(requestTo(BASE + "/api/v1/products/1")).andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess(product(1, "Robot", "150"), MediaType.APPLICATION_JSON));
-        server.expect(requestTo(BASE + "/api/v1/products/2"))
-                .andRespond(withSuccess(product(2, "Arm", "20.5"), MediaType.APPLICATION_JSON));
+        server.expect(requestTo(BASE + "/api/v1/products/batch?ids=1&ids=2")).andExpect(method(HttpMethod.GET))
+                .andRespond(withSuccess("{\"data\":[{\"id\":1,\"name\":\"Robot\",\"price\":150},{\"id\":2,\"name\":\"Arm\",\"price\":20.5}]}", MediaType.APPLICATION_JSON));
 
         Map<Long, PricedProduct> prices = pricingService.currentPrices(List.of(1L, 2L, 1L));
 

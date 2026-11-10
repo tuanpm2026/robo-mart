@@ -16,6 +16,8 @@ public interface InventoryItemRepository extends JpaRepository<InventoryItem, Lo
 
     Optional<InventoryItem> findByProductId(Long productId);
 
+    java.util.List<InventoryItem> findAllBy(org.springframework.data.domain.Pageable pageable);
+
     @Modifying
     @Query(value = "INSERT INTO inventory_items (product_id) VALUES (:productId) "
             + "ON CONFLICT (product_id) DO NOTHING", nativeQuery = true)

@@ -128,7 +128,7 @@ class OrderCheckoutSafetyIT {
 
     private RestClient client(String userId) {
         return RestClient.builder().baseUrl("http://localhost:" + port)
-                .defaultHeader("Authorization", TestJwt.customerBearer())
+                .defaultHeader("Authorization", "Bearer customer-" + userId)
                 .defaultHeader("X-User-Id", userId)
                 .defaultStatusHandler(status -> status.isError(), (request, response) -> { })
                 .build();
@@ -288,6 +288,30 @@ class OrderCheckoutSafetyIT {
         job.detectAndRecoverDeadSagas();
 
         assertThat(statusOf(order.getId())).isEqualTo("CANCELLED");
+    }
+
+
+    @Test
+    void committedPendingOrderIsResumedAfterCrashBeforeFirstSagaTransition() {
+        long id = insertReservingOrder("10 minutes");
+        jdbc.update("UPDATE orders SET status='PENDING' WHERE id=?", id);
+        DeadSagaDetectionJob job = AopTestUtils.getTargetObject(deadSagaDetectionJob);
+        job.detectAndRecoverDeadSagas();
+        assertThat(statusOf(id)).isEqualTo("CONFIRMED");
+        verify(paymentStub, times(1)).processPayment(any());
+    }
+
+
+    @Test
+    void recoveryFiltersManualReviewInSqlAndBoundsLoadedItems() {
+        long manual = insertReservingOrder("10 minutes");
+        jdbc.update("UPDATE orders SET status='REFUND_FAILED' WHERE id=?", manual);
+        jdbc.update("INSERT INTO saga_recovery_state(order_id,phase,started_at,manual_review_at) VALUES (?,'REFUND',now(),now())", manual);
+        assertThat(orderRepository.findStuckSagas(List.of(OrderStatus.REFUND_FAILED), java.time.Instant.now())).isEmpty();
+        for (int i = 0; i < 25; i++) insertReservingOrder("10 minutes");
+        var batch = orderRepository.findStuckSagas(List.of(OrderStatus.INVENTORY_RESERVING), java.time.Instant.now());
+        assertThat(batch).hasSize(20);
+        assertThat(batch).allSatisfy(order -> assertThat(order.getItems()).hasSize(1));
     }
 
     private long insertReservingOrder(String age) {

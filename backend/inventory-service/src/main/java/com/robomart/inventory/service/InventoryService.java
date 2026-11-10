@@ -439,8 +439,12 @@ public class InventoryService {
      * @return ReconciliationSummaryResponse with all inventory items
      */
     @Transactional(readOnly = true)
-    public ReconciliationSummaryResponse getReconciliationSummary() {
-        List<ReconciliationSummaryResponse.ProductInventorySummary> items = inventoryItemRepository.findAll().stream()
+    public ReconciliationSummaryResponse getReconciliationSummary() { return getReconciliationSummary(0); }
+
+    @Transactional(readOnly = true)
+    public ReconciliationSummaryResponse getReconciliationSummary(int page) {
+        if (page < 0) throw new ValidationException("Invalid reconciliation page");
+        List<ReconciliationSummaryResponse.ProductInventorySummary> items = inventoryItemRepository.findAllBy(org.springframework.data.domain.PageRequest.of(page, 100, org.springframework.data.domain.Sort.by("productId"))).stream()
                 .map(i -> new ReconciliationSummaryResponse.ProductInventorySummary(
                         i.getProductId(),
                         i.getAvailableQuantity(),
@@ -459,6 +463,7 @@ public class InventoryService {
      * @param reason     audit reason (nullable)
      * @return list of updated InventoryItems
      */
+    @Auditable(action = AuditAction.UPDATE, entityType = "InventoryBatch", entityIdExpression = "T(java.util.UUID).nameUUIDFromBytes(#productIds.toString().getBytes()).toString()")
     @Transactional
     public List<InventoryItem> bulkRestock(List<Long> productIds, int quantity, String reason) {
         if (productIds.isEmpty() || productIds.size() > 100) {

@@ -101,7 +101,7 @@ public class NotificationService {
     public void sendCartExpiryWarning(String cartId, String userId, CartExpiryWarningEvent event) {
         String subject = "Your cart is expiring soon!";
         String body = buildCartExpiryBody(event);
-        sendAndLog(userId, cartId, NotificationType.CART_EXPIRY_WARNING, subject, body);
+        sendAndLog(userId, cartId, NotificationType.CART_EXPIRY_WARNING, subject, body, event.getEventId().toString());
     }
 
     private String buildCartExpiryBody(CartExpiryWarningEvent event) {
@@ -137,7 +137,11 @@ public class NotificationService {
      * error handler retries / dead-letters the event and the consumer does not mark it processed.
      */
     private void sendAndLog(String userId, String orderId, NotificationType type, String subject, String body) {
-        NotificationLog claimed = claim(userId, orderId, type, subject, body);
+        sendAndLog(userId, orderId, type, subject, body, null);
+    }
+
+    private void sendAndLog(String userId, String orderId, NotificationType type, String subject, String body, String deliveryKey) {
+        NotificationLog claimed = claim(userId, orderId, type, subject, body, deliveryKey);
         if (claimed != null) {
             deliver(claimed);
         }
@@ -147,11 +151,15 @@ public class NotificationService {
      * @return the claimed row, or {@code null} when the notification was already SENT
      * @throws IllegalStateException when another delivery currently holds a fresh claim (retryable)
      */
-    private NotificationLog claim(String userId, String orderId, NotificationType type, String subject, String body) {
-        Optional<NotificationLog> existing = notificationLogRepository.findByOrderIdAndNotificationType(orderId, type);
+    private NotificationLog claim(String userId, String orderId, NotificationType type, String subject, String body, String deliveryKey) {
+        Optional<NotificationLog> existing = deliveryKey == null
+                ? notificationLogRepository.findByOrderIdAndNotificationType(orderId, type)
+                : notificationLogRepository.findByDeliveryKey(deliveryKey);
         if (existing.isEmpty()) {
             try {
-                return notificationLogRepository.saveAndFlush(newPendingLog(userId, orderId, type, subject, body));
+                var pending = newPendingLog(userId, orderId, type, subject, body);
+                pending.setDeliveryKey(deliveryKey);
+                return notificationLogRepository.saveAndFlush(pending);
             } catch (DataIntegrityViolationException e) {
                 throw new IllegalStateException("Concurrent delivery claim for orderId=" + orderId
                         + ", type=" + type + "; will retry", e);

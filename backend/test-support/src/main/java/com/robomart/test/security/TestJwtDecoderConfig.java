@@ -26,8 +26,9 @@ public class TestJwtDecoderConfig {
     @Bean
     public JwtDecoder jwtDecoder() {
         return token -> {
+            String identityToken = token.startsWith("customer-") ? TestJwt.CUSTOMER_TOKEN : token;
             List<String> roles =
-                    switch (token) {
+                    switch (identityToken) {
                         case TestJwt.SAGA_TOKEN -> List.of("SAGA_SERVICE");
                         case TestJwt.ADMIN_TOKEN -> List.of("ADMIN");
                         case TestJwt.CUSTOMER_TOKEN -> List.of("CUSTOMER");
@@ -38,7 +39,7 @@ public class TestJwtDecoderConfig {
             Instant now = Instant.now();
             return Jwt.withTokenValue(token)
                     .header("alg", "none")
-                    .subject("test-user-" + roles.get(0).toLowerCase())
+                    .subject(token.startsWith("customer-") ? token.substring(9) : "test-user-" + roles.get(0).toLowerCase())
                     .audience(List.of("robomart-api"))
                     .claim(
                             "azp",

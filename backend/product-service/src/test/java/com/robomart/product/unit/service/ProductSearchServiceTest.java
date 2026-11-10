@@ -49,6 +49,9 @@ class ProductSearchServiceTest {
     private ProductRepository productRepository;
 
     @Mock
+    private com.robomart.product.repository.ProductImageRepository images;
+
+    @Mock
     private ProductMapper productMapper;
 
     @Mock
@@ -77,10 +80,12 @@ class ProductSearchServiceTest {
         when(elasticsearchOperations.search(any(NativeQuery.class), eq(ProductDocument.class)))
                 .thenReturn(searchHits);
 
+        when(images.thumbnails(List.of(1L))).thenReturn(List.of(new com.robomart.product.dto.ProductThumbnail(1L, "https://images.test/robot.png")));
         var request = new ProductSearchRequest("wireless headphone", null, null, null, null, null);
         PagedResponse<ProductListResponse> result = productSearchService.search(request, PageRequest.of(0, 20));
 
         assertThat(result.data()).hasSize(1);
+        assertThat(result.data().getFirst().primaryImageUrl()).isEqualTo("https://images.test/robot.png");
         assertThat(result.data().getFirst().name()).isEqualTo("Wireless Headphone");
         assertThat(result.data().getFirst().brand()).isEqualTo("Sony");
         assertThat(result.data().getFirst().price()).isEqualByComparingTo(BigDecimal.valueOf(99.99));

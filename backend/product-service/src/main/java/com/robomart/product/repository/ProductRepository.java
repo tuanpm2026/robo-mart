@@ -45,6 +45,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT p FROM Product p WHERE p.id > :after ORDER BY p.id")
     List<Product> findProjectionPage(@Param("after") Long after, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"category", "images"})
+    @Query("SELECT p FROM Product p WHERE p.id IN :ids AND p.active = true")
+    List<Product> findActiveBatch(@Param("ids") List<Long> ids);
+
     boolean existsBySku(String sku);
 
     @EntityGraph(attributePaths = {"category"})

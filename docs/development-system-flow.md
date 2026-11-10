@@ -519,7 +519,7 @@ stateDiagram-v2
 
 ### Recovery
 
-Saga lưu audit theo bước với key `{orderId}:{stepName}`; nếu đã ghi `SUCCESS` thì forward step có thể skip khi thực thi lại. Khi app ready, orchestrator tìm các Saga ở trạng thái trung gian để phục hồi. Scheduled job chạy mặc định mỗi 60 giây, sau initial delay 30 giây, ngưỡng kẹt 5 phút; ShedLock hạn chế job chạy đồng thời giữa replica.
+Saga lưu audit theo bước với key `{orderId}:{stepName}`; nếu đã ghi `SUCCESS` thì forward step có thể skip khi thực thi lại. Recovery quét tối đa 20 đơn mỗi lượt, bao gồm đơn EMBEDDED bị bỏ lại ở `PENDING` sau khi transaction tạo đơn đã commit. SQL loại các phase đang chờ retry hoặc cần manual review trước khi tải items. Scheduled job chạy mặc định mỗi 60 giây, sau initial delay 30 giây, ngưỡng kẹt 5 phút; ShedLock hạn chế job chạy đồng thời giữa replica.
 
 `PAYMENT_PENDING` có worker riêng `PendingPaymentRecoveryJob`, mặc định scan mỗi 5 giây và backoff 30 giây sau provider failure. Worker dùng lại order/payment key và reservation cũ; giới hạn attempt/age được lưu bền vững. Hết budget chuyển manual review, giữ stock và có ADMIN API để review/resume. Customer cancel vẫn chỉ nhận `PENDING` hoặc `CONFIRMED`; không xem pending là đơn có thể tự bỏ qua charge rồi giải phóng stock.
 
@@ -683,3 +683,14 @@ Các nhận định cũ về giá do client quyết định, thiếu API idempot
 | Build/deploy | [`.github/workflows/`](../.github/workflows/), [`infra/k8s/`](../infra/k8s/) |
 
 Khi cập nhật tài liệu này, kiểm tra lại endpoint/route, trạng thái Saga, topic/consumer, scripts build và workflow deploy liên quan. Ghi rõ ngày đối chiếu và tách tính năng hiện có khỏi thiết kế hoặc đề xuất.
+
+
+## Backend hardening — 2026-11-10
+
+- Order HTTP lấy chủ đơn từ JWT đã xác thực; header `X-User-Id` không được phép thay đổi danh tính đó. Test JWT dùng subject riêng cho từng fixture, không mô phỏng đăng nhập bằng header tùy ý.
+- Checkout giới hạn 100 dòng và lấy giá nhiều sản phẩm qua `GET /api/v1/products/batch?ids=...`. Fingerprint được lưu cho cả EMBEDDED và EXTERNAL; đơn cũ được đối chiếu với items và địa chỉ đã lưu khi replay.
+- Triển khai Order/Inventory trước Notification khi đổi contract phân trang. Các endpoint reconciliation-summary của Order và Inventory nhận `page` (từ 0), cố định 100 dòng/trang. Notification đọc đến trang ngắn cuối cùng, có giới hạn 1.000 trang và thời gian; lỗi hoặc vượt giới hạn trả trạng thái ERROR. Doanh thu là tổng giá trị đơn CONFIRMED/SHIPPED/DELIVERED, không phải doanh thu ròng sau mọi khoản hoàn tiền riêng lẻ.
+- Notification lưu kết quả đối soát trong DB. Mỗi replica đọc log `admin_broadcasts` để phát tới các WebSocket session cục bộ; log giữ một ngày và cleanup theo batch. Client mới vẫn dùng REST để lấy snapshot hiện tại. Trace ID được giữ trong envelope phát lại.
+- Migration Notification V8 tạo trạng thái operations dùng chung; V9 tách `delivery_key` theo event khỏi liên kết cart trong notification log. Cần dừng consumer Notification cũ trước rollout V9 (deployment hiện dùng Recreate), vì một cart có thể có nhiều chu kỳ cảnh báo sau migration.
+- p95 được ước lượng từ các histogram bucket Prometheus gộp theo service, không lấy tag quantile từ Actuator metrics. Endpoint Prometheus nội bộ cần được expose và histogram cần có samples.
+- Cart giữ fence của event giá khi ADD về muộn, và dọn tối đa 100 thành viên reverse index đã hết hạn mỗi lần refresh. Checkout tiếp tục định giá lại và kiểm tra stock tại service sở hữu dữ liệu.

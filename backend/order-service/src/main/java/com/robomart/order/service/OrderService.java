@@ -65,6 +65,9 @@ public class OrderService {
     private final TransactionTemplate transactionTemplate;
     private final ProductPricingService productPricingService;
     private com.robomart.order.workflow.OrderWorkflowCoordinator workflow;
+    @org.springframework.beans.factory.annotation.Autowired
+    private com.robomart.order.repository.OutboxEventRepository statusOutbox;
+
 
     @org.springframework.beans.factory.annotation.Autowired
     public void setWorkflowCoordinator(com.robomart.order.workflow.OrderWorkflowCoordinator value) {
@@ -81,8 +84,14 @@ public class OrderService {
     }
 
     private Order replay(Order order, String fingerprint) {
-        if (order.getRequestFingerprint() != null
-                && !order.getRequestFingerprint().equals(fingerprint)) {
+        String original = order.getRequestFingerprint();
+        if (original == null) {
+            // Older embedded orders predate persisted fingerprints; bind replays to their stored lines.
+            original = requestFingerprint(order.getItems().stream()
+                    .map(i -> new OrderItemRequest(i.getProductId().toString(), null, i.getQuantity(), null)).toList(),
+                    order.getShippingAddress());
+        }
+        if (!original.equals(fingerprint)) {
             throw new com.robomart.common.exception.BusinessRuleException(
                     "Idempotency key is bound to a different checkout");
         }
@@ -118,6 +127,9 @@ public class OrderService {
             List<OrderItemRequest> items,
             String shippingAddress,
             String idempotencyKey) {
+        if (items == null || items.isEmpty() || items.size() > 100) {
+            throw new ValidationException("Checkout requires between 1 and 100 lines");
+        }
         String key = normalizeIdempotencyKey(idempotencyKey);
         String fingerprint = requestFingerprint(items, shippingAddress);
         if (key != null) {
@@ -212,6 +224,7 @@ public class OrderService {
         newOrder.setStatus(OrderStatus.PENDING);
         newOrder.setShippingAddress(shippingAddress);
         newOrder.setIdempotencyKey(idempotencyKey);
+        newOrder.setRequestFingerprint(fingerprint);
 
         List<OrderItem> orderItems = new ArrayList<>();
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -272,7 +285,6 @@ public class OrderService {
     public Order getOrder(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
-        order.setItems(orderItemRepository.findByOrderId(orderId));
         return order;
     }
 
@@ -389,7 +401,11 @@ public class OrderService {
             throw new IllegalStateException(
                     "Invalid status transition: " + order.getStatus() + " -> " + newStatus);
         }
+        OrderStatus previous = order.getStatus();
         order.setStatus(newStatus);
+        statusOutbox.save(new com.robomart.order.entity.OutboxEvent("Order", orderId.toString(), "order_status_changed",
+                tools.jackson.databind.json.JsonMapper.builder().build().writeValueAsString(
+                        Map.of("orderId", orderId.toString(), "previousStatus", previous.name(), "newStatus", newStatus.name()))));
         OrderStatusHistory history = new OrderStatusHistory();
         history.setOrder(order);
         history.setStatus(newStatus);
@@ -427,7 +443,6 @@ public class OrderService {
                     "Order " + orderId + " cannot be cancelled in state: " + order.getStatus());
         }
 
-        order.setItems(orderItemRepository.findByOrderId(orderId));
 
         String cancelReason =
                 (reason != null && !reason.isBlank()) ? reason : "Customer requested cancellation";
@@ -449,6 +464,12 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<OrderReconciliationSummary> getOrderReconciliationSummary() {
+        return getOrderReconciliationSummary(0);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderReconciliationSummary> getOrderReconciliationSummary(int page) {
+        if (page < 0) throw new ValidationException("Invalid reconciliation page");
         List<OrderStatus> activeStatuses =
                 List.of(
                         OrderStatus.PENDING,
@@ -460,17 +481,16 @@ public class OrderService {
                         OrderStatus.SHIPPED,
                         OrderStatus.DELIVERED,
                         OrderStatus.PAYMENT_REFUNDING,
-                        OrderStatus.INVENTORY_RELEASING);
-        List<Order> orders = orderRepository.findByStatusIn(activeStatuses);
+                        OrderStatus.INVENTORY_RELEASING, OrderStatus.CANCELLED, OrderStatus.REFUND_FAILED);
+        var ids = orderRepository.findByStatusInOrderByIdAsc(activeStatuses, PageRequest.of(page, 100)).stream().map(Order::getId).toList();
+        List<Order> orders = ids.isEmpty() ? List.of() : orderRepository.findRecoveryBatch(ids);
         if (orders.isEmpty()) {
             return List.of();
         }
-        List<Long> orderIds = orders.stream().map(Order::getId).toList();
-        Map<Long, List<OrderItem>> itemsByOrderId = orderItemRepository.findByOrderIdIn(orderIds).stream()
-                .collect(Collectors.groupingBy(item -> item.getOrder().getId()));
+
         return orders.stream()
                 .map(order -> {
-                    List<OrderItem> items = itemsByOrderId.getOrDefault(order.getId(), List.of());
+                    List<OrderItem> items = order.getItems();
                     List<OrderReconciliationSummary.OrderItemSummary> itemSummaries = items.stream()
                             .map(i -> new OrderReconciliationSummary.OrderItemSummary(i.getProductId(), i.getQuantity()))
                             .toList();

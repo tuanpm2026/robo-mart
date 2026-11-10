@@ -48,6 +48,12 @@ public class NotificationLog {
     @Column(name = "order_id", length = 50)
     private String orderId;
 
+    @Column(name = "delivery_key", length = 100)
+    private String deliveryKey;
+
+    public String getDeliveryKey() { return deliveryKey; }
+    public void setDeliveryKey(String value) { deliveryKey = value; }
+
     @Column(name = "trace_id", length = 64)
     private String traceId;
 
