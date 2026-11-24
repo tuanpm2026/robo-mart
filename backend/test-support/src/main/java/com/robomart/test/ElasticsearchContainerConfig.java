@@ -9,7 +9,7 @@ import org.testcontainers.elasticsearch.ElasticsearchContainer;
 public class ElasticsearchContainerConfig {
 
     private static final ElasticsearchContainer ELASTICSEARCH =
-            new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:9.4.8")
+            new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:9.4.9")
                     .withEnv("xpack.security.enabled", "false")
                     .withEnv("discovery.type", "single-node");
 

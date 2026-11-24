@@ -33,6 +33,10 @@ spring:
         webflux:
           globalcors:
             add-to-simple-url-handler-mapping: true
+          websocket:
+            allowed-origins:
+              - ${gateway.cors.customer-origin}
+              - ${gateway.cors.admin-origin}
           default-filters:
             - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
           httpclient:

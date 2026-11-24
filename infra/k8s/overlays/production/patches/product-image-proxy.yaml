@@ -14,7 +14,7 @@ spec:
         seccompProfile: {type: RuntimeDefault}
       containers:
       - name: product-image-proxy
-        image: nginx:stable-alpine@sha256:47928bf67eb62a1863cb08d9ecb52d3e704304ba614eaee17884204677702951
+        image: nginx:1.30.8-alpine@sha256:6437a63b5c529f0e06162b3f593c0154cff6fa2ea0f94fd7c27928cb399e022d
         command: [nginx]
         args: [-c, /etc/nginx/nginx.conf, -g, "daemon off;"]
         ports: [{name: image-proxy, containerPort: 8088}]

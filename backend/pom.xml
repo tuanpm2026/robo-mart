@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>4.1.2</version>
+        <version>4.1.3</version>
         <relativePath/>
     </parent>
 
@@ -22,7 +22,10 @@
         <java.version>25</java.version>
         <checkstyle.version>12.3.1</checkstyle.version>
         <nullaway.version>0.13.8</nullaway.version>
-        <spring-cloud.version>2025.1.4</spring-cloud.version>
+        <spring-cloud.version>2025.1.5</spring-cloud.version>
+        <!-- Patch updates ahead of the Spring Boot 4.1.3 BOM. -->
+        <netty.version>4.2.21.Final</netty.version>
+        <tomcat.version>11.0.29</tomcat.version>
         <swagger-annotations.version>2.2.55</swagger-annotations.version>
         <mapstruct.version>1.6.3</mapstruct.version>
         <aws-sdk.version>2.57.4</aws-sdk.version>

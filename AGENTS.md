@@ -10,7 +10,7 @@
 
 ## Repository map and context
 
-- `backend/`: Java 25, Spring Boot 4.1.2, Spring Cloud 2025.1.4; Maven multimodule project.
+- `backend/`: Java 25, Spring Boot 4.1.3, Spring Cloud 2025.1.5; Maven multimodule project.
 - `frontend/`: npm workspaces containing Vue 3 / TypeScript apps `customer-website` and `admin-dashboard`, plus `@robo-mart/shared`. UI uses Pinia, PrimeVue, Tailwind, and Vite.
 - `infra/docker/`: local dependencies and optional application containers. `infra/k8s/`: Kubernetes and GitOps configuration.
 - `.github/workflows/ci-backend.yml` and `ci-frontend.yml`: executable CI reference.
@@ -32,7 +32,7 @@ BMAD core/BMM 6.8.0 and BMB, CIS, TEA, WDS modules are installed under `_bmad/`.
 
 ## Prerequisites and local infrastructure
 
-Use JDK 25 and `backend/mvnw`, matching the current parent POM and backend CI. Use npm with `frontend/package-lock.json`; CI uses Node 22, and app engines allow `^20.19.0 || >=22.12.0`. Docker with Compose v2 is needed for local infrastructure and Testcontainers integration tests.
+Use JDK 25 and `backend/mvnw`, matching the current parent POM and backend CI. Use npm with `frontend/package-lock.json`; CI uses Node 22, and app engines allow `^22.22.2 || ^24.15.0 || >=26.0.0`. Docker with Compose v2 is needed for local infrastructure and Testcontainers integration tests.
 
 Run these commands from the **repository root**:
 

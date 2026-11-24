@@ -10,7 +10,7 @@ import org.springframework.test.context.DynamicPropertyRegistrar;
 public class KeycloakContainerConfig {
 
     private static final KeycloakContainer KEYCLOAK =
-            new KeycloakContainer("quay.io/keycloak/keycloak:26.1.4")
+            new KeycloakContainer("quay.io/keycloak/keycloak:26.8.2")
                     .withRealmImportFile("test-realm.json");
 
     static {
