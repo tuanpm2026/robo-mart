@@ -26,7 +26,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -440,7 +442,20 @@ public class InventoryService {
      */
     @Transactional(readOnly = true)
     public ReconciliationSummaryResponse getReconciliationSummary() {
-        List<ReconciliationSummaryResponse.ProductInventorySummary> items = inventoryItemRepository.findAll().stream()
+        return toReconciliationSummary(inventoryItemRepository.findAll());
+    }
+
+    @Transactional(readOnly = true)
+    public ReconciliationSummaryResponse getReconciliationSummary(int page) {
+        if (page < 0) {
+            throw new ValidationException("Invalid reconciliation page");
+        }
+        var pageable = PageRequest.of(page, 100, Sort.by("productId"));
+        return toReconciliationSummary(inventoryItemRepository.findAllBy(pageable));
+    }
+
+    private ReconciliationSummaryResponse toReconciliationSummary(List<InventoryItem> inventory) {
+        List<ReconciliationSummaryResponse.ProductInventorySummary> items = inventory.stream()
                 .map(i -> new ReconciliationSummaryResponse.ProductInventorySummary(
                         i.getProductId(),
                         i.getAvailableQuantity(),
@@ -459,6 +474,7 @@ public class InventoryService {
      * @param reason     audit reason (nullable)
      * @return list of updated InventoryItems
      */
+    @Auditable(action = AuditAction.UPDATE, entityType = "InventoryBatch", entityIdExpression = "T(java.util.UUID).nameUUIDFromBytes(#productIds.toString().getBytes()).toString()")
     @Transactional
     public List<InventoryItem> bulkRestock(List<Long> productIds, int quantity, String reason) {
         if (productIds.isEmpty() || productIds.size() > 100) {

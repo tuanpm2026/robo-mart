@@ -142,7 +142,7 @@ public class HealthAggregatorService {
             String actuatorStatus = healthResp.status();
 
             // Step 2: p95 response time (value in seconds → ms)
-            Double p95Seconds = fetchMetric(client, "http.server.requests", "quantile:0.95");
+            Double p95Seconds = fetchP95(client);
             Long p95ResponseTimeMs = (p95Seconds != null && Double.isFinite(p95Seconds))
                     ? (long) (p95Seconds * 1000) : null;
 
@@ -198,6 +198,45 @@ public class HealthAggregatorService {
                     Instant.now()
             );
         }
+    }
+
+    private Double fetchP95(RestClient client) {
+        try {
+            return histogramP95(client.get().uri("/actuator/prometheus").retrieve().body(String.class));
+        } catch (org.springframework.web.client.HttpClientErrorException.NotFound noHistogram) {
+            return null;
+        }
+    }
+
+    /** Aggregate cumulative buckets across route/method tags, as histogram_quantile does. */
+    static Double histogramP95(String scrape) {
+        if (scrape == null) return null;
+        var buckets = new java.util.TreeMap<Double, Double>();
+        var pattern = java.util.regex.Pattern.compile(
+                "^http_server_requests_seconds_bucket\\{.*le=\"([^\"]+)\".*}\\s+([^\\s]+).*$");
+        for (String line : scrape.split("\\n")) {
+            var match = pattern.matcher(line).matches() ? pattern.matcher(line) : null;
+            if (match == null || !match.matches()) continue;
+            double bound = "+Inf".equals(match.group(1)) ? Double.POSITIVE_INFINITY : Double.parseDouble(match.group(1));
+            double count = Double.parseDouble(match.group(2));
+            if (Double.isNaN(bound) || !Double.isFinite(count) || count < 0) return null;
+            buckets.merge(bound, count, Double::sum);
+        }
+        Double total = buckets.get(Double.POSITIVE_INFINITY);
+        if (total == null || total <= 0) return null;
+        double target = total * .95;
+        double previousBound = 0;
+        double previousCount = 0;
+        for (var bucket : buckets.entrySet()) {
+            if (bucket.getValue() < previousCount) return null;
+            if (bucket.getValue() >= target) {
+                if (!Double.isFinite(bucket.getKey())) return previousBound;
+                return previousBound + (bucket.getKey() - previousBound)
+                        * (target - previousCount) / (bucket.getValue() - previousCount);
+            }
+            previousBound = bucket.getKey(); previousCount = bucket.getValue();
+        }
+        return null;
     }
 
     private Double fetchMetric(RestClient client, String metricName, String... tags) {

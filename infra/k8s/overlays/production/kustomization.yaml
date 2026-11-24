@@ -10,6 +10,7 @@ resources:
 #   kustomize edit set image ghcr.io/tuanpm2026/robomart/<service>:<tag>
 patches:
 - path: patches/single-node-replicas.yaml
+- path: patches/backend-rollout-waves.yaml
 - path: patches/product-image-storage.yaml
 - path: patches/product-image-proxy.yaml
 - path: patches/product-image-proxy-service.yaml

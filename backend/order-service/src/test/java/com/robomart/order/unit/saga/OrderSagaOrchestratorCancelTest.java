@@ -8,6 +8,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -133,8 +134,9 @@ class OrderSagaOrchestratorCancelTest {
             assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
             assertThat(order.getCancellationReason()).isEqualTo("Changed my mind");
             verify(releaseInventoryStep, never()).compensate(any());
-            verify(outboxEventRepository).save(outboxCaptor.capture());
-            assertThat(outboxCaptor.getValue().getEventType()).isEqualTo("order_cancelled");
+            verify(outboxEventRepository, times(2)).save(outboxCaptor.capture());
+            assertThat(outboxCaptor.getAllValues()).extracting(OutboxEvent::getEventType)
+                    .containsExactly("order_status_changed", "order_cancelled");
         }
 
         @Test
@@ -148,8 +150,9 @@ class OrderSagaOrchestratorCancelTest {
 
             assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
             verify(releaseInventoryStep).compensate(any(SagaContext.class));
-            verify(outboxEventRepository).save(outboxCaptor.capture());
-            assertThat(outboxCaptor.getValue().getEventType()).isEqualTo("order_cancelled");
+            verify(outboxEventRepository, times(2)).save(outboxCaptor.capture());
+            assertThat(outboxCaptor.getAllValues()).extracting(OutboxEvent::getEventType)
+                    .containsExactly("order_status_changed", "order_cancelled");
         }
     }
 
@@ -170,8 +173,9 @@ class OrderSagaOrchestratorCancelTest {
             assertThat(order.getCancellationReason()).isEqualTo("Customer cancelled");
             verify(refundPaymentStep).execute(any(SagaContext.class));
             verify(releaseInventoryStep).compensate(any(SagaContext.class));
-            verify(outboxEventRepository).save(outboxCaptor.capture());
-            assertThat(outboxCaptor.getValue().getEventType()).isEqualTo("order_cancelled");
+            verify(outboxEventRepository, times(2)).save(outboxCaptor.capture());
+            assertThat(outboxCaptor.getAllValues()).extracting(OutboxEvent::getEventType)
+                    .containsExactly("order_status_changed", "order_cancelled");
         }
 
         @Test
@@ -212,8 +216,9 @@ class OrderSagaOrchestratorCancelTest {
             assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
             verify(refundPaymentStep).execute(any(SagaContext.class));
             verify(releaseInventoryStep).compensate(any(SagaContext.class));
-            verify(outboxEventRepository).save(outboxCaptor.capture());
-            assertThat(outboxCaptor.getValue().getEventType()).isEqualTo("order_cancelled");
+            verify(outboxEventRepository, times(2)).save(outboxCaptor.capture());
+            assertThat(outboxCaptor.getAllValues()).extracting(OutboxEvent::getEventType)
+                    .containsExactly("order_status_changed", "order_cancelled");
         }
 
         @Test

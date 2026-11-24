@@ -24,6 +24,7 @@ public class DeadSagaDetectionJob {
     // PAYMENT_PENDING is intentionally excluded: it is a circuit-breaker hold state, not a dead saga.
     // Orders in PAYMENT_PENDING are awaiting circuit recovery and should not be auto-cancelled.
     private static final List<OrderStatus> STUCK_STATUSES = List.of(
+        OrderStatus.PENDING,
         OrderStatus.INVENTORY_RESERVING,
         OrderStatus.PAYMENT_PROCESSING,
         OrderStatus.PAYMENT_REFUNDING,
@@ -74,9 +75,8 @@ public class DeadSagaDetectionJob {
 
         for (Order order : stuckOrders) {
             try {
-                if (!recoveryPolicy.isManualReview(order.getId())) {
-                    sagaOrchestrator.handleDeadSaga(order);
-                }
+                if (order.getStatus() == OrderStatus.PENDING) sagaOrchestrator.executeSaga(order);
+                else sagaOrchestrator.handleDeadSaga(order);
             } catch (Exception e) {
                 log.error("Recovery failed for dead saga orderId={}: {}",
                           order.getId(), e.getMessage(), e);

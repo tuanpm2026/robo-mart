@@ -1,0 +1,32 @@
+# Product provides batch pricing. Order and Inventory provide paginated reconciliation.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  namespace: robomart
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: robomart
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-service
+  namespace: robomart
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: robomart
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"

@@ -22,12 +22,12 @@ public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
     List<Object[]> countsByOrderIds(@Param("orderIds") List<Long> orderIds);
 
     @Query("SELECT i.productId, i.productName, SUM(i.quantity), SUM(i.subtotal) FROM OrderItem i " +
-           "JOIN i.order o WHERE o.createdAt BETWEEN :from AND :to AND o.status != 'CANCELLED' " +
+           "JOIN i.order o WHERE o.createdAt BETWEEN :from AND :to AND o.status IN ('CONFIRMED', 'SHIPPED', 'DELIVERED') " +
            "GROUP BY i.productId, i.productName ORDER BY SUM(i.quantity) DESC")
     List<Object[]> findTopSellingProducts(@Param("from") Instant from, @Param("to") Instant to, Pageable pageable);
 
     @Query("SELECT i.productName, SUM(i.subtotal) FROM OrderItem i " +
-           "JOIN i.order o WHERE o.createdAt BETWEEN :from AND :to AND o.status != 'CANCELLED' " +
+           "JOIN i.order o WHERE o.createdAt BETWEEN :from AND :to AND o.status IN ('CONFIRMED', 'SHIPPED', 'DELIVERED') " +
            "GROUP BY i.productId, i.productName ORDER BY SUM(i.subtotal) DESC")
     List<Object[]> findRevenueByProduct(@Param("from") Instant from, @Param("to") Instant to, Pageable pageable);
 }

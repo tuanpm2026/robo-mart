@@ -58,6 +58,11 @@ class ProductSearchServiceCacheTest {
         }
 
         @Bean
+        com.robomart.product.repository.ProductImageRepository images() {
+            return mock(com.robomart.product.repository.ProductImageRepository.class);
+        }
+
+        @Bean
         ProductRepository productRepository() {
             return mock(ProductRepository.class);
         }

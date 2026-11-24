@@ -36,13 +36,16 @@ public class ProductSearchService {
     private final ElasticsearchOperations elasticsearchOperations;
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
+    private final com.robomart.product.repository.ProductImageRepository images;
     private final Tracer tracer;
     private final TransactionTemplate fallbackTransactions;
 
     public ProductSearchService(ElasticsearchOperations elasticsearchOperations,
                                 ProductRepository productRepository,
                                 ProductMapper productMapper,
-                                Tracer tracer, PlatformTransactionManager transactionManager) {
+                                Tracer tracer, PlatformTransactionManager transactionManager,
+                                com.robomart.product.repository.ProductImageRepository images) {
+        this.images = images;
         this.elasticsearchOperations = elasticsearchOperations;
         this.productRepository = productRepository;
         this.productMapper = productMapper;
@@ -72,8 +75,11 @@ public class ProductSearchService {
 
             SearchHits<ProductDocument> searchHits = elasticsearchOperations.search(query, ProductDocument.class);
 
+            var urls = new java.util.HashMap<Long, String>();
+            var ids = searchHits.getSearchHits().stream().map(hit -> hit.getContent().getId()).toList();
+            if (!ids.isEmpty()) images.thumbnails(ids).forEach(image -> urls.putIfAbsent(image.productId(), image.imageUrl()));
             List<ProductListResponse> products = searchHits.getSearchHits().stream()
-                    .map(hit -> toProductListResponse(hit.getContent()))
+                    .map(hit -> toProductListResponse(hit.getContent(), urls.get(hit.getContent().getId())))
                     .toList();
 
             var pagination = new PaginationMeta(
@@ -168,7 +174,7 @@ public class ProductSearchService {
                 .build();
     }
 
-    private ProductListResponse toProductListResponse(ProductDocument doc) {
+    private ProductListResponse toProductListResponse(ProductDocument doc, String imageUrl) {
         return new ProductListResponse(
                 doc.getId(),
                 doc.getSku(),
@@ -180,7 +186,7 @@ public class ProductSearchService {
                 doc.getStockQuantity(),
                 doc.getCategoryId(),
                 doc.getCategoryName(),
-                null
+                imageUrl
         );
     }
 

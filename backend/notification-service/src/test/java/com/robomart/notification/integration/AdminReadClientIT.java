@@ -150,8 +150,8 @@ class AdminReadClientIT {
 
     @Test
     void importedClientsAuthenticateEveryAdminReadAndReuseOneToken() {
-        assertThat(orders.reconciliation().data()).hasSize(2);
-        assertThat(inventory.reconciliation().data().items()).isEmpty();
+        assertThat(orders.reconciliation(0).data()).hasSize(2);
+        assertThat(inventory.reconciliation(0).data().items()).isEmpty();
         assertThat(payments.reconciliation(0, 100).data().hasNext()).isTrue();
         assertThat(details.getOrderDetail("42").id()).isEqualTo(42L);
         Map<String, String> filters = Map.of("actor", "Nguyễn A & B", "page", "0", "size", "100");

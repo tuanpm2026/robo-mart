@@ -298,4 +298,25 @@ class AtomicCartStorageIT {
         assertThat(redis.opsForValue().get("cart:warned:" + key)).isNotNull();
         assertThat(redis.opsForZSet().score(CartRepository.EXPIRY_KEY, key)).isNull();
     }
+    @Test
+    void lateAddCannotRegressEventPriceOrDiscardItsFence() {
+        String cart = id();
+        carts.add(cart, item(4, 1), "user");
+        var version = Instant.now();
+        carts.updateProduct(4, "Latest", new BigDecimal("99.00"), version);
+        carts.add(cart, item(4, 2), "user");
+        carts.updateProduct(4, "Delayed", BigDecimal.ONE, version.minusSeconds(1));
+        var line = carts.getAndRefresh(cart).findItem(4L).orElseThrow();
+        assertThat(line.getPrice()).isEqualByComparingTo("99.00");
+        assertThat(line.getQuantity()).isEqualTo(3);
+    }
+
+    @Test
+    void activeProductIndexPrunesExpiredMembersWithoutWaitingForPriceEvent() {
+        String cart = id();
+        redis.opsForZSet().add("cart:product:4", "cart:expired", 0);
+        carts.add(cart, item(4, 1), "user");
+        assertThat(redis.opsForZSet().score("cart:product:4", "cart:expired")).isNull();
+    }
+
 }

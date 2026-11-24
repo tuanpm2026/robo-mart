@@ -35,11 +35,14 @@ import com.robomart.test.PostgresContainerConfig;
 import com.robomart.test.security.TestJwt;
 import com.robomart.test.security.TestJwtDecoderConfig;
 
+import tools.jackson.databind.JsonNode;
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @Import({PostgresContainerConfig.class, TestJwtDecoderConfig.class})
 @DisplayName("OrderAdminRestController Integration Tests")
 class OrderAdminRestIT {
+    @Autowired private com.robomart.order.service.OrderService orders;
 
     @MockitoBean(answers = Answers.RETURNS_SELF)
     private InventoryServiceGrpc.InventoryServiceBlockingStub inventoryStub;
@@ -330,6 +333,29 @@ class OrderAdminRestIT {
                 .defaultStatusHandler(HttpStatusCode::isError, (request, response) -> { }).build();
         assertThat(customer.get().uri("/api/v1/admin/orders/audit-logs").retrieve().toBodilessEntity().getStatusCode())
                 .isEqualTo(HttpStatus.FORBIDDEN);
+    }
+
+    @Test
+    void cancelledAndUnpaidOrdersAreExcludedFromRevenueButIncludedInReconciliation() {
+        var since = java.time.LocalDate.now(java.time.ZoneOffset.UTC).atStartOfDay().toInstant(java.time.ZoneOffset.UTC);
+        var before = orderRepository.sumTotalAmountByCreatedAtAfter(since);
+        var cancelled = persistOrderInState(OrderStatus.CANCELLED, "cancelled-ledger");
+        persistOrderInState(OrderStatus.PAYMENT_PENDING, "unpaid-ledger");
+        var paid = persistOrderInState(OrderStatus.CONFIRMED, "paid-ledger");
+        assertThat(orderRepository.sumTotalAmountByCreatedAtAfter(since).subtract(before)).isEqualByComparingTo("149.99");
+        var ids = new java.util.HashSet<String>();
+        for (int page = 0; page < 100; page++) {
+            var rows = orders.getOrderReconciliationSummary(page);
+            rows.forEach(row -> ids.add(row.orderId()));
+            if (rows.size() < 100) break;
+        }
+        assertThat(ids).contains(paid.getId().toString(), cancelled.getId().toString());
+
+        var legacy = restClient.get().uri("/api/v1/admin/orders/reconciliation-summary")
+                .retrieve().toEntity(JsonNode.class);
+        assertThat(legacy.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(legacy.getBody().path("data").valueStream().map(row -> row.path("orderId").asText()))
+                .contains(paid.getId().toString()).doesNotContain(cancelled.getId().toString());
     }
 
 }

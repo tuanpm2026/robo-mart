@@ -154,8 +154,7 @@ class NotificationServiceExtendedTest {
         NotificationLog sent = new NotificationLog();
         sent.setId(5L);
         sent.setStatus(NotificationStatus.SENT);
-        when(notificationLogRepository.findByOrderIdAndNotificationType(
-                "cart-1", NotificationType.CART_EXPIRY_WARNING)).thenReturn(Optional.of(sent));
+        when(notificationLogRepository.findByDeliveryKey("evt-1")).thenReturn(Optional.of(sent));
 
         CartExpiryWarningEvent event = buildCartExpiryEvent("cart-1", "user-1", 3600L);
 

@@ -13,7 +13,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.client.RestClient;
+import tools.jackson.databind.JsonNode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -33,6 +35,9 @@ class InventoryAdminRestIT {
 
     @Autowired
     private InventoryItemRepository inventoryItemRepository;
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     private RestClient restClient;
 
@@ -184,6 +189,26 @@ class InventoryAdminRestIT {
         assertThat(new20).isEqualTo(original20 + 30);
         assertThat(new21).isEqualTo(original21 + 30);
     }
+    @Test
+    void onlyExplicitPageLimitsReconciliationToOneHundredItems() {
+        long first = 10_000_000;
+        long last = first + 100;
+        jdbc.update("INSERT INTO inventory_items(product_id) SELECT generate_series(?, ?)", first, last);
+        try {
+            String endpoint = "/api/v1/admin/inventory/reconciliation-summary";
+            var firstPage = restClient.get().uri(endpoint + "?page=0").retrieve().toEntity(JsonNode.class);
+            assertThat(firstPage.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(firstPage.getBody().path("data").path("items").size()).isEqualTo(100);
+
+            var legacy = restClient.get().uri(endpoint).retrieve().toEntity(JsonNode.class);
+            assertThat(legacy.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(legacy.getBody().path("data").path("items").valueStream()
+                    .map(item -> item.path("productId").asLong())).contains(first, last);
+        } finally {
+            jdbc.update("DELETE FROM inventory_items WHERE product_id BETWEEN ? AND ?", first, last);
+        }
+    }
+
     @Test
     void notificationIdentityCanReadOnlyRequiredOperationsEndpoints() {
         RestClient operations = RestClient.builder().baseUrl("http://localhost:" + port)

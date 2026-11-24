@@ -9,6 +9,8 @@ local function index(k, untilTime)
     for _, field in ipairs(redis.call('HKEYS', k)) do
         if string.sub(field, 1, 2) == 'p:' then
             local reverse = 'cart:product:' .. string.sub(field, 3)
+            local stale = redis.call('ZRANGEBYSCORE', reverse, '-inf', now, 'LIMIT', 0, 100)
+            if #stale > 0 then redis.call('ZREM', reverse, unpack(stale)) end
             redis.call('ZADD', reverse, untilTime, k)
             redis.call('EXPIRE', reverse, ttl + 3600)
         end
@@ -106,6 +108,12 @@ elseif op == 'ADD' then
         local existing = cjson.decode(current)
         incoming.quantity = math.min(999, incoming.quantity + existing.quantity)
         incoming.lineId = existing.lineId
+        -- Preserve the event fence when a catalog lookup that began earlier finishes late.
+        if existing.priceUpdatedAt then
+            incoming.price = existing.price
+            incoming.productName = existing.productName
+            incoming.priceUpdatedAt = existing.priceUpdatedAt
+        end
     end
     redis.call('HSET', cart, field, cjson.encode(incoming))
     redis.call('HSETNX', cart, '__created', ARGV[3])

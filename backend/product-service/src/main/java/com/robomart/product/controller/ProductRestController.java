@@ -55,6 +55,11 @@ public class ProductRestController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/batch")
+    public ApiResponse<java.util.List<ProductListResponse>> batch(@RequestParam java.util.List<Long> ids) {
+        return new ApiResponse<>(productService.getProductBatch(ids), getTraceId());
+    }
+
     @GetMapping("/{productId}")
     public ResponseEntity<ApiResponse<ProductDetailResponse>> getProductById(
             @PathVariable Long productId) {

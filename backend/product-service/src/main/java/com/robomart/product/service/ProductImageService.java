@@ -46,7 +46,10 @@ public class ProductImageService {
     }
 
     @Transactional(isolation = Isolation.SERIALIZABLE)
-    @CacheEvict(value = "productDetail", key = "#productId")
+    @org.springframework.cache.annotation.Caching(evict = {
+        @CacheEvict(value = "productDetail", key = "#productId"),
+        @CacheEvict(value = "productSearch", allEntries = true)
+    })
     public List<ProductImageResponse> uploadImages(Long productId, List<MultipartFile> files) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ProductNotFoundException(productId));
@@ -88,7 +91,10 @@ public class ProductImageService {
         return productMapper.toImageResponseList(saved);
     }
 
-    @CacheEvict(value = "productDetail", key = "#productId")
+    @org.springframework.cache.annotation.Caching(evict = {
+        @CacheEvict(value = "productDetail", key = "#productId"),
+        @CacheEvict(value = "productSearch", allEntries = true)
+    })
     public void deleteImage(Long productId, Long imageId) {
         // Single fetch — eliminates existsByIdAndProductId + findById double round-trip
         ProductImage image = productImageRepository.findByIdAndProductId(imageId, productId)
@@ -107,25 +113,27 @@ public class ProductImageService {
         }
     }
 
-    @CacheEvict(value = "productDetail", key = "#productId")
+    @org.springframework.cache.annotation.Caching(evict = {
+        @CacheEvict(value = "productDetail", key = "#productId"),
+        @CacheEvict(value = "productSearch", allEntries = true)
+    })
     public List<ProductImageResponse> reorderImages(Long productId, ReorderImagesRequest request) {
-        // Require all images to be included — partial reorder causes duplicate displayOrder values
-        long totalImages = productImageRepository.countByProductId(productId);
-        if (request.items().size() != totalImages) {
-            throw new ValidationException(
-                    "Reorder request must include all " + totalImages + " images for this product");
+        List<ProductImage> images = new ArrayList<>(productImageRepository.findByProductIdOrderByDisplayOrderAsc(productId));
+        var byId = images.stream().collect(java.util.stream.Collectors.toMap(ProductImage::getId, image -> image));
+        var ids = new java.util.HashSet<Long>();
+        var positions = new java.util.HashSet<Integer>();
+        if (request.items().size() != images.size()) {
+            throw new ValidationException("Reorder request must include all " + images.size() + " images for this product");
         }
-
-        // Single loop: validate ownership and update in one pass (eliminates N+1 and TOCTOU gap)
         for (ImageOrderItem item : request.items()) {
-            ProductImage image = productImageRepository.findByIdAndProductId(item.imageId(), productId)
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Image " + item.imageId() + " not found for product " + productId));
-            image.setDisplayOrder(item.displayOrder());
-            productImageRepository.save(image);
+            if (!byId.containsKey(item.imageId()) || !ids.add(item.imageId())
+                    || item.displayOrder() == null || item.displayOrder() < 0
+                    || item.displayOrder() >= images.size() || !positions.add(item.displayOrder())) {
+                throw new ValidationException("Image IDs and positions must be a complete unique permutation");
+            }
         }
-
-        return productMapper.toImageResponseList(
-                productImageRepository.findByProductIdOrderByDisplayOrderAsc(productId));
+        request.items().forEach(item -> byId.get(item.imageId()).setDisplayOrder(item.displayOrder()));
+        images.sort(java.util.Comparator.comparing(ProductImage::getDisplayOrder));
+        return productMapper.toImageResponseList(images);
     }
 }

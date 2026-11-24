@@ -12,7 +12,9 @@ import com.robomart.common.dto.PagedResponse;
 @HttpExchange(url = "/api/v1/admin/inventory", accept = "application/json")
 public interface InventoryAdminReadClient {
     @GetExchange("/reconciliation-summary")
-    ApiResponse<AdminReadModels.InventorySummary> reconciliation();
+    ApiResponse<AdminReadModels.InventorySummary> reconciliation(@RequestParam("page") int page);
+
+    default ApiResponse<AdminReadModels.InventorySummary> reconciliation() { return reconciliation(0); }
 
     @GetExchange("/audit-logs")
     PagedResponse<AdminReadModels.AuditEntry> audits(@RequestParam Map<String, String> filters);

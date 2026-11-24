@@ -14,6 +14,9 @@ import com.robomart.common.dto.ApiResponse;
 @HttpExchange("/api/v1/products")
 public interface ProductCatalogClient {
 
+    @GetExchange("/batch")
+    ApiResponse<java.util.List<ProductSnapshot>> getProducts(@org.springframework.web.bind.annotation.RequestParam("ids") java.util.List<Long> ids);
+
     @GetExchange("/{productId}")
     ApiResponse<ProductSnapshot> getProduct(@PathVariable("productId") Long productId);
 }

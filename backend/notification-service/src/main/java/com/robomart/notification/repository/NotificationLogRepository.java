@@ -16,6 +16,8 @@ import com.robomart.notification.enums.NotificationType;
 
 public interface NotificationLogRepository extends JpaRepository<NotificationLog, Long> {
 
+    Optional<NotificationLog> findByDeliveryKey(String deliveryKey);
+
     List<NotificationLog> findByOrderId(String orderId);
 
     List<NotificationLog> findByRecipient(String recipient);

@@ -203,6 +203,25 @@ test('the actual demo overlay routes Product HTTP through the image proxy and re
 })
 
 
+test('production rolls out reconciliation and checkout dependencies before their consumers', () => {
+  const root = path.resolve(__dirname, '../../..')
+  const rendered = run(root, 'kustomize', ['build', 'infra/k8s/overlays/production'])
+  const deployments = rendered.split(/\n---\n/).filter(doc => /^kind: Deployment$/m.test(doc))
+  const waves = new Map([
+    ['product-service', '0'],
+    ['order-service', '1'],
+    ['inventory-service', '1'],
+    ['notification-service', '2'],
+  ])
+  for (const [service, wave] of waves) {
+    const deployment = deployments.find(doc => doc.includes(`\n  name: ${service}\n`))
+    assert.ok(deployment, service)
+    assert.ok(deployment.includes(`argocd.argoproj.io/sync-wave: "${wave}"`), service)
+  }
+  const notification = deployments.find(doc => doc.includes('\n  name: notification-service\n'))
+  assert.match(notification, /strategy:\n    type: Recreate/)
+})
+
 test('security/schema failures and failing SARIF summaries block release even when app CI passes', async () => {
   for (const type of ['security', 'schema', 'CodeQL']) {
     const { options, state } = apiFixture()

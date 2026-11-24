@@ -93,7 +93,6 @@ class OrderServiceCancelTest {
     void shouldDelegateToCancelPendingSagaForPendingOrder() {
         Order order = buildOrder(OrderStatus.PENDING);
         when(orderRepository.findById(99L)).thenReturn(Optional.of(order));
-        when(orderItemRepository.findByOrderId(99L)).thenReturn(List.of());
         doNothing().when(orderSagaOrchestrator).cancelPendingSaga(any(), any(), any());
 
         orderService.cancelOrder(99L, "Changed my mind", "user-1");
@@ -107,7 +106,6 @@ class OrderServiceCancelTest {
     void shouldDelegateToCancelConfirmedSagaForConfirmedOrder() {
         Order order = buildOrder(OrderStatus.CONFIRMED);
         when(orderRepository.findById(99L)).thenReturn(Optional.of(order));
-        when(orderItemRepository.findByOrderId(99L)).thenReturn(List.of());
         doNothing().when(orderSagaOrchestrator).cancelConfirmedSaga(any(), any(), any());
 
         orderService.cancelOrder(99L, "No longer needed", "user-1");
@@ -121,7 +119,6 @@ class OrderServiceCancelTest {
     void shouldUseDefaultReasonWhenReasonIsNull() {
         Order order = buildOrder(OrderStatus.PENDING);
         when(orderRepository.findById(99L)).thenReturn(Optional.of(order));
-        when(orderItemRepository.findByOrderId(99L)).thenReturn(List.of());
         doNothing().when(orderSagaOrchestrator).cancelPendingSaga(any(), any(), any());
 
         orderService.cancelOrder(99L, null, "user-1");

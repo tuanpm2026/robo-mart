@@ -38,6 +38,11 @@ public class OrderRestController {
         this.orderService = orderService;
     }
 
+    private static String authenticatedUser(String header) {
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        return auth == null ? header : com.robomart.security.util.AuthContext.getUserId(auth);
+    }
+
     static final String IDEMPOTENCY_KEY_HEADER = "Idempotency-Key";
     private static final String INVENTORY_CANCELLATION_REASON = "Insufficient stock";
     private static final String INVENTORY_CIRCUIT_REASON = ReserveInventoryStep.CIRCUIT_OPEN_CANCELLATION_REASON;
@@ -47,6 +52,7 @@ public class OrderRestController {
             @Valid @RequestBody CreateOrderRequest request,
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @RequestHeader(value = IDEMPOTENCY_KEY_HEADER, required = false) String idempotencyKey) {
+        userId = authenticatedUser(userId);
         if (userId == null || userId.isBlank()) {
             throw new ResourceNotFoundException("Unauthorized");
         }
@@ -73,7 +79,10 @@ public class OrderRestController {
                     .body(new ApiResponse<>(summary, MDC.get("traceId")));
         }
 
-        if (order.getStatus() == OrderStatus.PAYMENT_PENDING
+        if (order.getStatus() == OrderStatus.PENDING
+                || order.getStatus() == OrderStatus.INVENTORY_RESERVING
+                || order.getStatus() == OrderStatus.PAYMENT_PROCESSING
+                || order.getStatus() == OrderStatus.PAYMENT_PENDING
                 || order.getStatus() == OrderStatus.INVENTORY_RELEASING) {
             // Checkout or compensation is still in progress; expose the current state.
             OrderSummaryResponse summary = new OrderSummaryResponse(
@@ -117,6 +126,7 @@ public class OrderRestController {
             @RequestParam(defaultValue = "10") int size) {
         int safePage = Math.max(0, page);
         int safeSize = Math.min(Math.max(1, size), 100);
+        userId = authenticatedUser(userId);
         if (userId == null || userId.isBlank()) {
             Page<OrderSummaryResponse> empty = Page.empty();
             PagedResponse<OrderSummaryResponse> response = new PagedResponse<>(
@@ -137,6 +147,7 @@ public class OrderRestController {
     public ResponseEntity<ApiResponse<OrderDetailResponse>> getOrder(
             @PathVariable Long orderId,
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        userId = authenticatedUser(userId);
         if (userId == null || userId.isBlank()) {
             throw new ResourceNotFoundException("Order not found: " + orderId);
         }
@@ -149,6 +160,7 @@ public class OrderRestController {
             @PathVariable Long orderId,
             @RequestBody(required = false) CancelOrderHttpRequest request,
             @RequestHeader(value = "X-User-Id", required = false) String userId) {
+        userId = authenticatedUser(userId);
         if (userId == null || userId.isBlank()) {
             throw new ResourceNotFoundException("Order not found: " + orderId);
         }

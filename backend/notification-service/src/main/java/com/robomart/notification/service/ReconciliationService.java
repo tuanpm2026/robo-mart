@@ -31,6 +31,15 @@ public class ReconciliationService {
     private final PaymentAdminReadClient payments;
     private final OrderAdminReadClient orders;
     private final AdminPushService push;
+    private OperationsStateStore shared;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setOperationsStateStore(OperationsStateStore store) { shared = store; }
+
+    private ReconciliationResult persist(ReconciliationResult result) {
+        if (shared != null) shared.save(result);
+        return result;
+    }
     @Value("${notification.reconciliation.inventory-threshold-absolute:5}") private int absoluteThreshold = 5;
     @Value("${notification.reconciliation.inventory-threshold-percent:1.0}") private double percentThreshold = 1;
     private volatile ReconciliationResult lastInventory = notRun("INVENTORY");
@@ -46,8 +55,8 @@ public class ReconciliationService {
 
     public ReconciliationResult runInventoryReconciliation() {
         try {
-            InventorySummary stock = data(inventory.reconciliation());
-            List<OrderSummary> orderRows = data(orders.reconciliation());
+            InventorySummary stock = new InventorySummary(inventoryRows(), Instant.now());
+            List<OrderSummary> orderRows = orderRows();
             if (stock.items() == null) throw new IllegalStateException("Inventory items are missing");
             Map<Long, Integer> expected = new HashMap<>();
             for (OrderSummary order : orderRows) {
@@ -103,14 +112,14 @@ public class ReconciliationService {
                 if (!response.hasNext()) break;
             }
             List<ReconciliationDiscrepancy> differences = new ArrayList<>();
-            for (OrderSummary order : data(orders.reconciliation())) {
+            for (OrderSummary order : orderRows()) {
                 if (order.status() == null || order.orderId() == null) throw new IllegalStateException("Invalid order summary");
                 String actual = byOrder.get(order.orderId());
                 boolean settledOrder = Set.of("CONFIRMED", "SHIPPED", "DELIVERED").contains(order.status());
                 if (settledOrder && !"COMPLETED".equals(actual)) {
                     differences.add(new ReconciliationDiscrepancy("Payment", order.orderId(), "COMPLETED",
                             actual == null ? "MISSING" : actual, "Review payment settlement"));
-                } else if ("CANCELLED".equals(order.status()) && "COMPLETED".equals(actual)) {
+                } else if (Set.of("CANCELLED", "REFUND_FAILED").contains(order.status()) && "COMPLETED".equals(actual)) {
                     differences.add(new ReconciliationDiscrepancy("Payment", order.orderId(), "REFUNDED",
                             actual, "Review cancellation refund"));
                 }
@@ -120,6 +129,29 @@ public class ReconciliationService {
             lastPayment = failed("PAYMENT", failed);
         }
         return lastPayment;
+    }
+
+    private List<OrderSummary> orderRows() {
+        List<OrderSummary> rows = new ArrayList<>();
+        long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(30);
+        for (int page = 0; page < 1000 && System.nanoTime() < deadline; page++) {
+            var batch = data(orders.reconciliation(page));
+            rows.addAll(batch);
+            if (batch.size() < 100) return rows;
+        }
+        throw new IllegalStateException("Order reconciliation page budget exceeded");
+    }
+
+    private List<com.robomart.notification.client.AdminReadModels.InventoryItem> inventoryRows() {
+        List<com.robomart.notification.client.AdminReadModels.InventoryItem> rows = new ArrayList<>();
+        long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(30);
+        for (int page = 0; page < 1000 && System.nanoTime() < deadline; page++) {
+            var batch = data(inventory.reconciliation(page)).items();
+            if (batch == null) throw new IllegalStateException("Missing inventory rows");
+            rows.addAll(batch);
+            if (batch.size() < 100) return rows;
+        }
+        throw new IllegalStateException("Inventory reconciliation page budget exceeded");
     }
 
     private boolean isReserving(String status) {
@@ -135,7 +167,7 @@ public class ReconciliationService {
     private ReconciliationResult completed(String type, List<ReconciliationDiscrepancy> differences) {
         var result = new ReconciliationResult(type, differences, !differences.isEmpty(), Instant.now());
         if (!differences.isEmpty()) push.pushReconciliationAlert(result);
-        return result;
+        return persist(result);
     }
 
     private ReconciliationResult failed(String type, RuntimeException failure) {
@@ -144,13 +176,13 @@ public class ReconciliationService {
                 "Downstream reconciliation failed: " + failure.getClass().getSimpleName());
         try { push.pushReconciliationAlert(result); }
         catch (RuntimeException alertFailure) { LOG.error("Reconciliation error alert failed", alertFailure); }
-        return result;
+        return persist(result);
     }
 
     private static ReconciliationResult notRun(String type) {
         return new ReconciliationResult(type, List.of(), false, Instant.now(), "NOT_RUN", null);
     }
 
-    public ReconciliationResult getLastInventoryResult() { return lastInventory; }
-    public ReconciliationResult getLastPaymentResult() { return lastPayment; }
+    public ReconciliationResult getLastInventoryResult() { return shared == null ? lastInventory : shared.load("INVENTORY", notRun("INVENTORY")); }
+    public ReconciliationResult getLastPaymentResult() { return shared == null ? lastPayment : shared.load("PAYMENT", notRun("PAYMENT")); }
 }

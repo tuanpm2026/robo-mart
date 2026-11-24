@@ -31,7 +31,7 @@ class ReconciliationServiceTest {
     private final ReconciliationService service = new ReconciliationService(inventory, payments, orders, push);
 
     private void stock(int reserved) {
-        when(inventory.reconciliation()).thenReturn(new ApiResponse<>(new InventorySummary(
+        when(inventory.reconciliation(0)).thenReturn(new ApiResponse<>(new InventorySummary(
                 List.of(new InventoryItem(1L, 2000 - reserved, reserved, 2000)), Instant.now()), null));
     }
     private OrderSummary order(String id, String status, int quantity) {
@@ -51,7 +51,7 @@ class ReconciliationServiceTest {
     @Test
     void confirmedStockIsCommittedWhilePendingAndReleasingStockRemainsReserved() {
         stock(10);
-        when(orders.reconciliation()).thenReturn(new ApiResponse<>(List.of(order("1", "CONFIRMED", 20),
+        when(orders.reconciliation(0)).thenReturn(new ApiResponse<>(List.of(order("1", "CONFIRMED", 20),
                 order("2", "PAYMENT_PENDING", 6), order("3", "INVENTORY_RELEASING", 4)), null));
         var result = service.runInventoryReconciliation();
         assertThat(result.status()).isEqualTo("OK");
@@ -62,7 +62,7 @@ class ReconciliationServiceTest {
     @Test
     void mismatchedReservedUnitsGenerateAnAlert() {
         stock(15);
-        when(orders.reconciliation()).thenReturn(new ApiResponse<>(List.of(order("1", "PAYMENT_PENDING", 10)), null));
+        when(orders.reconciliation(0)).thenReturn(new ApiResponse<>(List.of(order("1", "PAYMENT_PENDING", 10)), null));
         var result = service.runInventoryReconciliation();
         assertThat(result.hasDiscrepancies()).isTrue();
         assertThat(result.discrepancies()).hasSize(1);
@@ -72,14 +72,14 @@ class ReconciliationServiceTest {
     @Test
     void smallDifferenceBelowBothConfiguredThresholdsIsClean() {
         stock(1002);
-        when(orders.reconciliation()).thenReturn(new ApiResponse<>(List.of(order("1", "PAYMENT_PENDING", 1000)), null));
+        when(orders.reconciliation(0)).thenReturn(new ApiResponse<>(List.of(order("1", "PAYMENT_PENDING", 1000)), null));
         assertThat(service.runInventoryReconciliation().hasDiscrepancies()).isFalse();
     }
 
     @Test
     void expectedProductMissingFromInventoryIsNotSilentlyIgnored() {
-        when(inventory.reconciliation()).thenReturn(new ApiResponse<>(new InventorySummary(List.of(), Instant.now()), null));
-        when(orders.reconciliation()).thenReturn(new ApiResponse<>(List.of(order("1", "PAYMENT_PENDING", 2)), null));
+        when(inventory.reconciliation(0)).thenReturn(new ApiResponse<>(new InventorySummary(List.of(), Instant.now()), null));
+        when(orders.reconciliation(0)).thenReturn(new ApiResponse<>(List.of(order("1", "PAYMENT_PENDING", 2)), null));
         var result = service.runInventoryReconciliation();
         assertThat(result.hasDiscrepancies()).isTrue();
         assertThat(result.discrepancies().getFirst().actual()).isEqualTo("MISSING");
@@ -87,7 +87,7 @@ class ReconciliationServiceTest {
 
     @Test
     void authenticationTransportAndMalformedResponseBecomeErrorInsteadOfClean() {
-        when(inventory.reconciliation()).thenThrow(new RestClientException("401 Unauthorized"));
+        when(inventory.reconciliation(0)).thenThrow(new RestClientException("401 Unauthorized"));
         assertThat(service.runInventoryReconciliation().status()).isEqualTo("ERROR");
         doReturn(new ApiResponse<>(null, null)).when(inventory).reconciliation();
         assertThat(service.runInventoryReconciliation().status()).isEqualTo("ERROR");
@@ -98,7 +98,7 @@ class ReconciliationServiceTest {
     void paymentReconciliationReadsEveryBoundedPage() {
         paymentPage(0, true, new OrderPayment("1", "COMPLETED", "10"));
         paymentPage(1, false, new OrderPayment("2", "COMPLETED", "20"));
-        when(orders.reconciliation()).thenReturn(new ApiResponse<>(List.of(order("1", "CONFIRMED", 1),
+        when(orders.reconciliation(0)).thenReturn(new ApiResponse<>(List.of(order("1", "CONFIRMED", 1),
                 order("2", "SHIPPED", 1)), null));
         var result = service.runPaymentReconciliation();
         assertThat(result.status()).isEqualTo("OK");
@@ -118,7 +118,7 @@ class ReconciliationServiceTest {
     @Test
     void missingSettledPaymentAndUnrefundedCancellationAreDiscrepancies() {
         paymentPage(0, false, new OrderPayment("cancelled", "COMPLETED", "10"));
-        when(orders.reconciliation()).thenReturn(new ApiResponse<>(List.of(order("missing", "DELIVERED", 1),
+        when(orders.reconciliation(0)).thenReturn(new ApiResponse<>(List.of(order("missing", "DELIVERED", 1),
                 order("cancelled", "CANCELLED", 1), order("pending", "PAYMENT_PENDING", 1)), null));
         var result = service.runPaymentReconciliation();
         assertThat(result.discrepancies()).hasSize(2);
@@ -136,7 +136,7 @@ class ReconciliationServiceTest {
 
     @Test
     void failedErrorAlertDoesNotHideErrorStatus() {
-        when(inventory.reconciliation()).thenThrow(new RestClientException("unavailable"));
+        when(inventory.reconciliation(0)).thenThrow(new RestClientException("unavailable"));
         doThrow(new IllegalStateException("push unavailable")).when(push).pushReconciliationAlert(any());
         assertThat(service.runInventoryReconciliation().status()).isEqualTo("ERROR");
     }
