@@ -85,7 +85,7 @@ services:
       retries: 30
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.8
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.9
     mem_limit: 1152m
     environment:
       discovery.type: single-node
@@ -145,7 +145,7 @@ services:
       retries: 45
 
   keycloak:
-    image: robomart-e2e/keycloak:26.1.4
+    image: robomart-e2e/keycloak:26.8.2
     build: {context: ../.., dockerfile: infra/e2e/Dockerfile.keycloak}
     mem_limit: 640m
     depends_on:

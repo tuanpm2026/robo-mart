@@ -4,8 +4,8 @@ import argparse
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-JDK = 'eclipse-temurin:25-jdk-jammy@sha256:d6ac622efdaafbf92f92f526910c2ea2e8312a47c3af981475eb21579513fae1'
-JRE = 'eclipse-temurin:25-jre-jammy@sha256:7ea228ef5a43661c3ea8ed08e2819d8bc844d0868b255040c61db3006ca67dcd'
+JDK = 'eclipse-temurin:25.0.5.1_2-jdk-jammy@sha256:43d6f1775a0660b561c1c42edfdf8538a89672a040961acb3730c3ccc53c53de'
+JRE = 'eclipse-temurin:25.0.5.1_2-jre-jammy@sha256:1c6798886da1ae157e6c751cedb80eacf15d883e651ffe9acdcc534c19f482de'
 SERVICES = {
     'api-gateway': '8080 8090', 'product-service': '8081', 'cart-service': '8082',
     'order-service': '8083 9093', 'inventory-service': '8084 9094',

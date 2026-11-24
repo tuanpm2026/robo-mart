@@ -52,6 +52,18 @@ public class OrderService {
 
     private static final int MAX_IDEMPOTENCY_KEY_LENGTH = 255;
 
+    private static final List<OrderStatus> LEGACY_RECONCILIATION_STATUSES = List.of(
+            OrderStatus.PENDING,
+            OrderStatus.PAYMENT_PENDING,
+            OrderStatus.CANCELLATION_PENDING,
+            OrderStatus.INVENTORY_RESERVING,
+            OrderStatus.PAYMENT_PROCESSING,
+            OrderStatus.CONFIRMED,
+            OrderStatus.SHIPPED,
+            OrderStatus.DELIVERED,
+            OrderStatus.PAYMENT_REFUNDING,
+            OrderStatus.INVENTORY_RELEASING);
+
     private static final Set<OrderStatus> CANCELLABLE_STATUSES = Set.of(OrderStatus.PENDING, OrderStatus.CONFIRMED);
 
     private static final Map<OrderStatus, OrderStatus> ADMIN_TRANSITIONS = Map.of(
@@ -464,30 +476,23 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public List<OrderReconciliationSummary> getOrderReconciliationSummary() {
-        return getOrderReconciliationSummary(0);
+        return toReconciliationSummaries(orderRepository.findByStatusIn(LEGACY_RECONCILIATION_STATUSES));
     }
 
     @Transactional(readOnly = true)
     public List<OrderReconciliationSummary> getOrderReconciliationSummary(int page) {
-        if (page < 0) throw new ValidationException("Invalid reconciliation page");
-        List<OrderStatus> activeStatuses =
-                List.of(
-                        OrderStatus.PENDING,
-                        OrderStatus.PAYMENT_PENDING,
-                        OrderStatus.CANCELLATION_PENDING,
-                        OrderStatus.INVENTORY_RESERVING,
-                        OrderStatus.PAYMENT_PROCESSING,
-                        OrderStatus.CONFIRMED,
-                        OrderStatus.SHIPPED,
-                        OrderStatus.DELIVERED,
-                        OrderStatus.PAYMENT_REFUNDING,
-                        OrderStatus.INVENTORY_RELEASING, OrderStatus.CANCELLED, OrderStatus.REFUND_FAILED);
-        var ids = orderRepository.findByStatusInOrderByIdAsc(activeStatuses, PageRequest.of(page, 100)).stream().map(Order::getId).toList();
-        List<Order> orders = ids.isEmpty() ? List.of() : orderRepository.findRecoveryBatch(ids);
-        if (orders.isEmpty()) {
-            return List.of();
+        if (page < 0) {
+            throw new ValidationException("Invalid reconciliation page");
         }
+        var statuses = new ArrayList<>(LEGACY_RECONCILIATION_STATUSES);
+        statuses.add(OrderStatus.CANCELLED);
+        statuses.add(OrderStatus.REFUND_FAILED);
+        List<Long> ids = orderRepository.findByStatusInOrderByIdAsc(statuses, PageRequest.of(page, 100))
+                .stream().map(Order::getId).toList();
+        return ids.isEmpty() ? List.of() : toReconciliationSummaries(orderRepository.findRecoveryBatch(ids));
+    }
 
+    private List<OrderReconciliationSummary> toReconciliationSummaries(List<Order> orders) {
         return orders.stream()
                 .map(order -> {
                     List<OrderItem> items = order.getItems();

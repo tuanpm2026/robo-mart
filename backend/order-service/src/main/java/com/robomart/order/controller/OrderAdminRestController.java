@@ -67,8 +67,11 @@ public class OrderAdminRestController {
 
     @GetMapping("/reconciliation-summary")
     @PreAuthorize("hasAnyRole('ADMIN', 'NOTIFICATION_SERVICE')")
-    public ResponseEntity<ApiResponse<List<OrderReconciliationSummary>>> getReconciliationSummary(@RequestParam(defaultValue = "0") int page) {
-        return ResponseEntity.ok(new ApiResponse<>(orderService.getOrderReconciliationSummary(page), getTraceId()));
+    public ResponseEntity<ApiResponse<List<OrderReconciliationSummary>>> getReconciliationSummary(@RequestParam(required = false) Integer page) {
+        var summary = page == null
+                ? orderService.getOrderReconciliationSummary()
+                : orderService.getOrderReconciliationSummary(page);
+        return ResponseEntity.ok(new ApiResponse<>(summary, getTraceId()));
     }
 
     @GetMapping

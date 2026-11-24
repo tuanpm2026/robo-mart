@@ -55,7 +55,7 @@ services:
           memory: 512M
 
   loki:
-    image: grafana/loki:3.0.0
+    image: grafana/loki:3.6.22@sha256:4cf4ceb20e88b0543c88b541a71797c22a46eade04dd588dcdebf9f2b9c36063
     container_name: robomart-loki
     profiles: ["full"]
     ports:
@@ -103,7 +103,7 @@ services:
           memory: 512M
 
   grafana:
-    image: grafana/grafana:12.3.0
+    image: grafana/grafana:12.4.15@sha256:2894082f6cf7081aefdc1389265c04000812309208c190d75e8c65f7a30e4b7e
     container_name: robomart-grafana
     profiles: ["full"]
     depends_on:

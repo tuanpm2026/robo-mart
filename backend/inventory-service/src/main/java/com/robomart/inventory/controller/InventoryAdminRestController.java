@@ -63,8 +63,11 @@ public class InventoryAdminRestController {
 
     @GetMapping("/reconciliation-summary")
     @PreAuthorize("hasAnyRole('ADMIN', 'NOTIFICATION_SERVICE')")
-    public ResponseEntity<ApiResponse<ReconciliationSummaryResponse>> getReconciliationSummary(@RequestParam(defaultValue = "0") int page) {
-        return ResponseEntity.ok(new ApiResponse<>(inventoryService.getReconciliationSummary(page), getTraceId()));
+    public ResponseEntity<ApiResponse<ReconciliationSummaryResponse>> getReconciliationSummary(@RequestParam(required = false) Integer page) {
+        var summary = page == null
+                ? inventoryService.getReconciliationSummary()
+                : inventoryService.getReconciliationSummary(page);
+        return ResponseEntity.ok(new ApiResponse<>(summary, getTraceId()));
     }
 
     @GetMapping

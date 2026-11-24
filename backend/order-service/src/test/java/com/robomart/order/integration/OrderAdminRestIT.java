@@ -35,6 +35,8 @@ import com.robomart.test.PostgresContainerConfig;
 import com.robomart.test.security.TestJwt;
 import com.robomart.test.security.TestJwtDecoderConfig;
 
+import tools.jackson.databind.JsonNode;
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @Import({PostgresContainerConfig.class, TestJwtDecoderConfig.class})
@@ -339,7 +341,7 @@ class OrderAdminRestIT {
         var before = orderRepository.sumTotalAmountByCreatedAtAfter(since);
         var cancelled = persistOrderInState(OrderStatus.CANCELLED, "cancelled-ledger");
         persistOrderInState(OrderStatus.PAYMENT_PENDING, "unpaid-ledger");
-        persistOrderInState(OrderStatus.CONFIRMED, "paid-ledger");
+        var paid = persistOrderInState(OrderStatus.CONFIRMED, "paid-ledger");
         assertThat(orderRepository.sumTotalAmountByCreatedAtAfter(since).subtract(before)).isEqualByComparingTo("149.99");
         var ids = new java.util.HashSet<String>();
         for (int page = 0; page < 100; page++) {
@@ -347,7 +349,13 @@ class OrderAdminRestIT {
             rows.forEach(row -> ids.add(row.orderId()));
             if (rows.size() < 100) break;
         }
-        assertThat(ids).contains(cancelled.getId().toString());
+        assertThat(ids).contains(paid.getId().toString(), cancelled.getId().toString());
+
+        var legacy = restClient.get().uri("/api/v1/admin/orders/reconciliation-summary")
+                .retrieve().toEntity(JsonNode.class);
+        assertThat(legacy.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(legacy.getBody().path("data").valueStream().map(row -> row.path("orderId").asText()))
+                .contains(paid.getId().toString()).doesNotContain(cancelled.getId().toString());
     }
 
 }

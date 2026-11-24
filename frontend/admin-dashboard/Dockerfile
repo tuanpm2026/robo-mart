@@ -1,4 +1,4 @@
-FROM node:22-alpine AS builder
+FROM node:22.23.5-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a AS builder
 WORKDIR /app
 
 # Copy workspace root (needed for npm workspaces)
@@ -26,7 +26,7 @@ RUN npm run build-only
 # port (8080) — satisfies Trivy DS-0002 (non-root image) and KSV-0117 (no
 # privileged-port bind). COPY runs as root so the static assets/config land with
 # the right ownership; the final USER is 101.
-FROM nginxinc/nginx-unprivileged:alpine
+FROM nginx/nginx-unprivileged:1.30.8-alpine@sha256:637c35e46af7bc0dd3d3bcf7162e004e13ab3b370fde7cd416e2ac410b5a985a
 USER root
 COPY --from=builder /app/admin-dashboard/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
