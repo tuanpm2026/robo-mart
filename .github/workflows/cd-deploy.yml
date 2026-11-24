@@ -62,6 +62,7 @@ jobs:
       packages: write
 
     strategy:
+      fail-fast: false
       matrix:
         service:
           - name: product-service
@@ -98,6 +99,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: temurin
+          cache: maven
+      - name: Package the approved service
+        working-directory: backend
+        env:
+          RELEASE_SERVICE: ${{ matrix.service.name }}
+        run: ./mvnw -B -ntp package -pl ":${RELEASE_SERVICE}" -am -DskipTests -DskipITs -DskipE2ETests
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Log in to GitHub Container Registry
@@ -110,8 +122,9 @@ jobs:
         id: image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: infra/docker/${{ matrix.service.name }}/Dockerfile
+          context: backend
+          file: backend/Dockerfile.prebuilt
+          target: ${{ matrix.service.name }}
           push: true
           tags: ${{ needs.resolve.outputs.prefix }}/${{ matrix.service.name }}:${{ needs.resolve.outputs.tag }}
           labels: |
