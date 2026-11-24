@@ -60,7 +60,7 @@ services:
   elasticsearch:
     # Existing 8.17 data must migrate through 8.19 before upgrading to 9.4.
     # Keep the volume; follow Elastic's upgrade guide and snapshot before migration.
-    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.8
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.9
     container_name: robomart-elasticsearch
     profiles: ["core"]
     environment:
@@ -187,7 +187,7 @@ services:
       retries: 5
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.1.4
+    image: quay.io/keycloak/keycloak:26.8.2
     container_name: robomart-keycloak
     profiles: ["core"]
     depends_on:

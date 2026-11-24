@@ -41,7 +41,7 @@ Bản này nối các phần thành luồng onboarding → phát triển → ki�
 
 ## 2. Tổng quan kiến trúc
 
-Robo-Mart là ứng dụng thương mại điện tử theo microservices, có website khách hàng và dashboard quản trị. Backend dùng Java 25, Spring Boot 4.1.2, Spring Cloud 2025.1.4; frontend dùng Vue 3, TypeScript, Pinia, PrimeVue, Tailwind và Vite.
+Robo-Mart là ứng dụng thương mại điện tử theo microservices, có website khách hàng và dashboard quản trị. Backend dùng Java 25, Spring Boot 4.1.3, Spring Cloud 2025.1.5; frontend dùng Vue 3, TypeScript, Pinia, PrimeVue, Tailwind và Vite.
 
 ```mermaid
 flowchart TB
@@ -151,7 +151,7 @@ Nguồn: [`backend/pom.xml`](../backend/pom.xml), [`docker-compose.yml`](../infr
 
 - JDK 25; dùng Maven Wrapper đã có trong `backend/`, khớp parent POM và Backend CI.
 - Docker có Compose v2 để chạy dependencies và Testcontainers.
-- Node phù hợp `engines` của frontend (`^20.19.0 || >=22.12.0`); CI dùng Node 22. Dùng npm với lockfile đã commit.
+- Node phù hợp `engines` của frontend (`^22.22.2 || ^24.15.0 || >=26.0.0`); CI dùng Node 22. Dùng npm với lockfile đã commit.
 - Chừa đủ tài nguyên cho PostgreSQL, Kafka, Elasticsearch và nhiều JVM. Dựng một phần stack khi chỉ sửa một service sẽ nhẹ hơn chạy toàn bộ.
 
 Các lệnh dưới đây được chạy từ thư mục gốc repository, trừ nơi có ghi khác. Đây là runbook dựa trên cấu hình; chưa thực thi smoke test toàn stack trong lần cập nhật tài liệu này.

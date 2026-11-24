@@ -22,7 +22,7 @@ spec:
           type: RuntimeDefault
       containers:
       - name: loki
-        image: grafana/loki:3.0.0
+        image: grafana/loki:3.6.22@sha256:4cf4ceb20e88b0543c88b541a71797c22a46eade04dd588dcdebf9f2b9c36063
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
